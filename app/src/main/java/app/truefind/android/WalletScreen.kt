@@ -1569,8 +1569,8 @@ class WalletScreen(
             "method" -> {
                 val s = WSheet(this, "Payment", { closeFlow() })
                 val c = WV.card(ctx, 18f, 18f).apply { gravity = Gravity.CENTER_HORIZONTAL }
-                c.addView(WV.text(ctx, "You pay", 13f, WC.sub))
-                c.addView(WV.text(ctx, "₹${wRupees(f.pack.price)}", 40f, WC.ink, true).apply { letterSpacing = -0.02f })
+                c.addView(WV.text(ctx, "You pay", 13f, WC.sub).apply { gravity = Gravity.CENTER })
+                c.addView(WV.text(ctx, "₹${wRupees(f.pack.price)}", 40f, WC.ink, true).apply { letterSpacing = -0.02f; gravity = Gravity.CENTER })
                 val cr = WV.box(ctx, false, Gravity.CENTER)
                 cr.addView(WCoins.flat(ctx, 20f))
                 cr.addView(WV.text(ctx, "${wRupees(f.pack.coins)} coins", 15f, WC.ink, true), WV.lp(WV.WRAP, WV.WRAP, l = 6f))
