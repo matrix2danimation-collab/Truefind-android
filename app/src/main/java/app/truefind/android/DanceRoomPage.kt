@@ -545,7 +545,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             avBox.addView(Ui.text(context, "👑", 17f, Color.WHITE, false), DK.flp(DK.WRAP, DK.WRAP, Gravity.TOP or Gravity.CENTER_HORIZONTAL, t = -6f))
             hostRow.addView(avBox)
             val names = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(10f), 0, 0, 0) }
-            names.addView(nameWithBadge(r.optJSONObject("host")?.optString("name").orEmpty(), 18f, 16f))
+            names.addView(nameWithBadge(r.optJSONObject("host")?.optString("name").orEmpty(), 18f, 16f), DK.llp(DK.WRAP, DK.WRAP))
             names.addView(DK.t(context, r.optString("title"), 13.5f, Ui.ca("#ffffff", 0.88f), false))
             hostRow.addView(names, DK.llp(DK.WRAP, DK.WRAP))
             cover.addView(hostRow, DK.flp(DK.WRAP, DK.WRAP, Gravity.BOTTOM or Gravity.START, l = 14f, b = 82f))
@@ -995,8 +995,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
                         setOnClickListener { click() }
                         Ui.pressable(this, 0.96f)
                     }
-                    t.addView(ImageView(context).apply { setImageDrawable(DIcon(icon, if (danger) DK.ERR else DK.PURPLE, 20f)) })
-                    t.addView(Ui.text(context, label, 11f, if (danger) DK.ERR else DK.INK).apply { setPadding(0, Ui.dpi(2f), 0, 0) })
+                    t.addView(ImageView(context).apply { setImageDrawable(DIcon(icon, if (danger) DK.ERR else DK.PURPLE, 20f)) }, DK.llp(DK.WRAP, DK.WRAP))
+                    t.addView(Ui.text(context, label, 11f, if (danger) DK.ERR else DK.INK).apply { setPadding(0, Ui.dpi(2f), 0, 0) }, DK.llp(DK.WRAP, DK.WRAP))
                     toolRow.addView(t, DK.llp(0, Ui.dpi(58f), 1f, l = if (toolRow.childCount == 0) 0f else 5f))
                 }
                 val muted = m?.optBoolean("muted") == true
@@ -1198,7 +1198,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
                 avBox.addView(Ui.text(ctx, "👑", 16f, Color.WHITE, false), DK.flp(DK.WRAP, DK.WRAP, Gravity.TOP or Gravity.CENTER_HORIZONTAL, t = -6f))
                 chip.addView(avBox)
                 val names = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(8f), 0, 0, 0) }
-                names.addView(nameWithBadge(room()?.optJSONObject("host")?.optString("name").orEmpty(), 16f, 15f))
+                // WRAP: in a column that is only as wide as its content, a full-width child gets squeezed to the "Host" tag's width
+                names.addView(nameWithBadge(room()?.optJSONObject("host")?.optString("name").orEmpty(), 16f, 15f), DK.llp(DK.WRAP, DK.WRAP))
                 names.addView(Ui.text(ctx, if (host.optBoolean("muted")) "🔇 Host" else "Host", 11.5f, Color.WHITE).apply { background = DK.glass(); setPadding(Ui.dpi(8f), Ui.dpi(1f), Ui.dpi(8f), Ui.dpi(1f)) }, DK.llp(DK.WRAP, DK.WRAP, t = 2f))
                 chip.addView(names)
                 people.addView(chip, DK.flp(DK.WRAP, DK.WRAP, Gravity.BOTTOM or Gravity.START, l = 12f, b = 14f))
@@ -1364,7 +1365,9 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
         fun refreshVideo() {
             val v = video
             tiles.forEach { it.refresh(v) }
-            soon.visibility = if (videoOn == false && !onStage() && mode() != "duo") View.VISIBLE else View.GONE
+            // "starts soon" only when the video itself is missing (not when the host simply turned the camera off)
+            val hostCamOff = st?.optJSONObject("host")?.optBoolean("cam_off") == true
+            soon.visibility = if (videoOn == false && !onStage() && mode() != "duo" && !(mode() == "solo" && hostCamOff)) View.VISIBLE else View.GONE
         }
 
         // ── gift pop-up, winner ──
@@ -1403,7 +1406,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             f.addView(conf, DK.flp())
             val col = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
             val crown = Ui.text(context, if (tie) "🤝" else "👑", 44f, Color.WHITE, false)
-            col.addView(crown); crown.bob()
+            col.addView(crown, DK.llp(DK.WRAP, DK.WRAP)); crown.bob()
             if (w != null) col.addView(AvatarView(context, 84f, DK.GOLD_TEXT).apply { set(w.optString("photo")) }, DK.llp(DK.WRAP, DK.WRAP, t = 8f))
             col.addView(Ui.text(context, if (tie) "It's a tie!" else "${w?.optString("name")} wins!", 28f, DK.GOLD_TEXT).apply {
                 typeface = DK.italic(); setShadowLayer(1f, 0f, Ui.dp(2f), Ui.c("#92400e")); gravity = Gravity.CENTER

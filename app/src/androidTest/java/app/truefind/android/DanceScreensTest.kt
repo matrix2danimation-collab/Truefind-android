@@ -199,10 +199,11 @@ class DanceScreensTest {
         tap("Send hearts")
         pause(400)
         shot("10_hearts")
-        // quick gift: the first tap asks, the second tap sends
+        // quick gift: the first tap asks, the second tap sends (it stops asking after 3.5 s)
         tap("Send Rose for 10 coins", true)
         pause(300)
         shot("11_quick_armed")
+        if (!has("Tap again to send Rose", true)) tap("Send Rose for 10 coins", true)
         tap("Tap again to send Rose", true)
         pause(1200)
         shot("12_gift_sent")
@@ -223,7 +224,9 @@ class DanceScreensTest {
         }
         tap("Send"); pause(1200)
         check(called("message"), "message not sent")
+        pause(800)
         shot("19b_message_sent")
+        check(has("Vikas"), "my message is not in the chat")
         tap("Emojis"); pause(400); shot("20_emoji"); back(); pause(300)
 
         // ── camera-off solo + a song request that is waiting ──
@@ -234,14 +237,16 @@ class DanceScreensTest {
         act { it.open("/dance/battle1") }
         pause(2500)
         shot("23_battle_live")
-        tap("Vote Riya", true); pause(1200); shot("24_voted")
+        tap("Vote Riya", true); pause(1500); shot("24_voted")
         check(called("vote"), "vote not sent")
+        check(has("Voted Riya", true), "vote button did not change to Voted")
         tap("Battle Rank"); pause(1200); shot("25_rank"); back(); pause(500)
 
         // ── a battle ends → the winner ──
         act { it.open("/dance/battle3") }
-        pause(7000)
+        pause(6500)
         shot("26_winner")
+        check(has("Close"), "winner not shown — calls: ${fake.timeline("battle3")}")
 
         // ── empty seat → request to dance → on the stage ──
         act { it.open("/dance/battle2") }

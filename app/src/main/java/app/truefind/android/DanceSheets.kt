@@ -295,7 +295,7 @@ object DanceSheets {
         head.addView(AvatarView(ctx, 76f, Ui.c("#e9d5ff")).apply { set(u.optString("photo")) })
         head.addView(DK.t(ctx, u.optString("name"), 19f, DK.INK).apply { gravity = Gravity.CENTER }, DK.llp(DK.WRAP, DK.WRAP, t = 8f))
         val onStage = page.targets().firstOrNull { it.optString("user_id") == u.optString("user_id") }
-        if (onStage != null) head.addView(Ui.text(ctx, onStage.optString("label"), 13f, DK.PURPLE))
+        if (onStage != null) head.addView(Ui.text(ctx, onStage.optString("label"), 13f, DK.PURPLE), DK.llp(DK.WRAP, DK.WRAP, t = 2f))
         s.body.addView(head)
         fun row(icon: String, label: String, danger: Boolean, click: () -> Unit) {
             s.body.addView(Ui.text(ctx, label, 15f, if (danger) DK.ERR else DK.INK).apply {
@@ -373,7 +373,7 @@ object DanceSheets {
         val my = page.myRequest()
         if (my?.optString("kind") == "song" && my.optString("status") == "pending") {
             val box = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, Ui.dpi(10f), 0, Ui.dpi(6f)) }
-            box.addView(Ui.text(ctx, "⏳", 42f, DK.INK, false))
+            box.addView(Ui.text(ctx, "⏳", 42f, DK.INK, false), DK.llp(DK.WRAP, DK.WRAP))
             box.addView(DK.t(ctx, "Your request is waiting", 17f, DK.INK).apply { gravity = Gravity.CENTER }, DK.llp(DK.WRAP, DK.WRAP, t = 6f))
             box.addView(DK.t(ctx, "${my.optString("genre")}${if (my.optString("style").isNotBlank()) " · ${my.optString("style")}" else ""}. The host sees it.", 14f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER }, DK.llp(DK.WRAP, DK.WRAP, t = 6f))
             s.body.addView(box)
@@ -482,8 +482,7 @@ object DanceSheets {
             setPadding(Ui.dpi(12f), Ui.dpi(8f), Ui.dpi(12f), Ui.dpi(8f)); clipToPadding = false
             overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         }
-        val gh = (screen.height.takeIf { it > 0 } ?: ctx.resources.displayMetrics.heightPixels) * 0.36f
-        s.body.addView(grid, DK.llp(DK.MATCH, gh.toInt()))
+        s.body.addView(grid, DK.llp(DK.MATCH, DK.WRAP)) // every group has 8 gifts: two rows, no empty gap
         // footer
         val foot = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(16f), Ui.dpi(8f), Ui.dpi(16f), Ui.dpi(16f)) }
         s.body.addView(View(ctx).apply { setBackgroundColor(DK.LINE) }, DK.llp(DK.MATCH, Ui.dpi(1f)))

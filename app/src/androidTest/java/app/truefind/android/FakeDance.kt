@@ -13,12 +13,19 @@ import java.util.TimeZone
  */
 class FakeDance {
     private val calls = ArrayList<String>()
+    private val timeline = ArrayList<String>()
+    private val t0 = System.currentTimeMillis()
     private var paid = HashSet<String>()
     private var stateCount = HashMap<String, Int>()
+    private val battleStart = HashMap<String, Long>()
+    private val myVote = HashMap<String, String>()
+    private val sent = HashMap<String, ArrayList<JSONObject>>()
     private var onStage = false
     var balance = 5115L
 
     fun log(): List<String> = synchronized(calls) { calls.toList() }
+    /** "+1234ms state battle3" lines, to explain a timing problem */
+    fun timeline(room: String): String = synchronized(calls) { timeline.filter { it.endsWith(" $room") }.joinToString(", ") }
 
     private fun iso(t: Long): String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(t))
     private fun pic(name: String) = "https://api.dicebear.com/9.x/avataaars/png?seed=${name.replace(" ", "")}&size=256"
@@ -54,11 +61,14 @@ class FakeDance {
     private fun battleOf(id: String, mode: String, dancers: JSONArray, now: Long, ended: Boolean): JSONObject? {
         if (mode == "solo" || dancers.length() == 0 || id == "battle2") return null
         val h = ROOMS.first { it.first == id }.third.first
+        val start = battleStart.getOrPut(id) { now - 107_000 } // a 5-minute battle that started 1:47 ago
         val a = if (mode == "battle") JSONObject().put("user_id", "h_$h").put("name", h).put("photo", pic(h)) else dancers.getJSONObject(0).let { JSONObject().put("user_id", it.getString("user_id")).put("name", it.getString("name")).put("photo", it.getString("photo")) }
         val b = (if (mode == "battle") dancers.getJSONObject(0) else dancers.getJSONObject(1)).let { JSONObject().put("user_id", it.getString("user_id")).put("name", it.getString("name")).put("photo", it.getString("photo")) }
+        val voted = myVote[id].orEmpty()
         return JSONObject().put("id", "bt_$id").put("no", 3).put("status", if (ended) "ended" else "running").put("minutes", 5)
-            .put("started_at", iso(now - 107_000)).put("ends_at", iso(now + if (ended) -1000 else 193_000)).put("ended_at", if (ended) iso(now) else JSONObject.NULL)
-            .put("a", a).put("b", b).put("votes_a", 148).put("votes_b", 96).put("gifts_a", 1200).put("gifts_b", 640).put("winner", if (ended) a.getString("user_id") else "")
+            .put("started_at", iso(start)).put("ends_at", iso(if (ended) now - 1000 else start + 300_000)).put("ended_at", if (ended) iso(now) else JSONObject.NULL)
+            .put("a", a).put("b", b).put("votes_a", 148 + if (voted == a.getString("user_id")) 1 else 0).put("votes_b", 96 + if (voted == b.getString("user_id")) 1 else 0)
+            .put("gifts_a", 1200).put("gifts_b", 640).put("winner", if (ended) a.getString("user_id") else "")
     }
 
     private fun top() = JSONArray().apply {
@@ -90,7 +100,7 @@ class FakeDance {
         return a
     }
 
-    private fun state(id: String, action: String, now: Long): Api.Result {
+    private fun state(id: String, action: String, now: Long, p: JSONObject): Api.Result {
         if (id == "gone1") return Api.Result(404, JSONObject().put("error", "This room doesn't exist any more."), "This room doesn't exist any more.")
         val n = (stateCount[id] ?: 0) + if (action == "state") 1 else 0
         stateCount[id] = n
@@ -108,8 +118,13 @@ class FakeDance {
         base.put("likes", if (action == "state" && n % 3 == 1) 3 else 0).put("pending", JSONObject.NULL)
         base.put("me", JSONObject().put("user_id", "me").put("role", if (dancer) "dancer" else "viewer").put("seat", if (dancer) 1 else 0).put("paid", true).put("in_room", true)
             .put("muted", false).put("host_muted", false).put("cam_off", !dancer).put("agora_uid", uid("me")).put("name", "Vikas").put("photo", pic("Vikas"))
-            .put("vote", "").put("request", if (id == "solo3") JSONObject().put("id", "rq1").put("kind", "song").put("status", "pending").put("genre", "Punjabi").put("style", "Bhangra").put("at", iso(now)) else JSONObject.NULL))
-        base.put("messages", if (action == "join") msgs(id, now) else JSONArray())
+            .put("vote", myVote[id].orEmpty()).put("request", if (id == "solo3") JSONObject().put("id", "rq1").put("kind", "song").put("status", "pending").put("genre", "Punjabi").put("style", "Bhangra").put("at", iso(now)) else JSONObject.NULL))
+        // chat: the starting lines on join, then what this person sent (newer than "since")
+        val mine = synchronized(sent) { sent[id]?.toList().orEmpty() }
+        val since = p.optString("since")
+        val out = if (action == "join") msgs(id, now) else JSONArray()
+        mine.filter { action == "join" || since.isEmpty() || it.optString("at") > since }.forEach { out.put(it) }
+        base.put("messages", out)
         if (action == "join") base.put("balance", balance).put("blocked", JSONArray()).put("followed", false)
             .put("genres", JSONArray(DK.GENRES)).put("styles", JSONArray(DK.STYLES)).put("minutes", JSONArray(listOf(3, 5, 10, 15)))
         return Api.Result(200, base, null)
@@ -117,7 +132,10 @@ class FakeDance {
 
     fun handle(name: String, p: JSONObject): Api.Result {
         val action = p.optString("action")
-        synchronized(calls) { calls.add(if (name == "liveDance") action else name) }
+        synchronized(calls) {
+            calls.add(if (name == "liveDance") action else name)
+            timeline.add("+${System.currentTimeMillis() - t0}ms ${if (name == "liveDance") action else name} ${p.optString("room_id")}")
+        }
         Thread.sleep(120) // a little network time
         val now = System.currentTimeMillis()
         if (name == "liveDanceToken") return Api.Result(200, JSONObject().put("ok", true).put("enabled", false), null)
@@ -129,7 +147,14 @@ class FakeDance {
                 Api.Result(200, JSONObject().put("ok", true).put("rooms", rooms).put("can_host", true).put("my_room", JSONObject.NULL).put("is_admin", true).put("balance", balance)
                     .put("languages", JSONArray(listOf("Hindi", "English", "Hinglish"))).put("genres", JSONArray(DK.GENRES)).put("styles", JSONArray(DK.STYLES)), null)
             }
-            "join", "state" -> state(id, action, now)
+            "join", "state" -> state(id, action, now, p)
+            "vote" -> { myVote[id] = p.optString("for_user_id"); Api.Result(200, JSONObject().put("ok", true), null) }
+            "message" -> {
+                val m = JSONObject().put("id", "s_${now}").put("kind", "text").put("user_id", "me").put("profile_id", "").put("name", "Vikas").put("photo", pic("Vikas"))
+                    .put("text", p.optString("text")).put("gift_id", "").put("count", 1).put("to_user_id", "").put("to_name", "").put("at", iso(now))
+                synchronized(sent) { sent.getOrPut(id) { ArrayList() }.add(m) }
+                Api.Result(200, JSONObject().put("ok", true), null)
+            }
             "pay" -> { paid.add(id); balance -= 50; Api.Result(200, ok.put("balance", balance), null) }
             "gift" -> {
                 val g = DK.gift(p.optString("gift_id")); val cost = (g?.price ?: 0) * p.optInt("count", 1)
