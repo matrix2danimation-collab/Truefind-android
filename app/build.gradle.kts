@@ -27,10 +27,11 @@ android {
         }
     }
 
-    // size test only (-PtfPackedLibs=true): native libraries stored compressed inside the APK
+    // Live Dance video libraries are stored compressed in the APK: about half the download
+    // (measured: 36.4 MB instead of 66.6 MB for the phone APK). -PtfPackedLibs=false turns it off.
     packaging {
         jniLibs {
-            useLegacyPackaging = project.findProperty("tfPackedLibs") == "true"
+            useLegacyPackaging = project.findProperty("tfPackedLibs") != "false"
         }
     }
 

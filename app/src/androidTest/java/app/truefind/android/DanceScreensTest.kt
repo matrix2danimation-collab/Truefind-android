@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -43,6 +44,7 @@ class DanceScreensTest {
         inst.targetContext.startActivity(Intent(inst.targetContext, DanceTestActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         assertTrue("the test screen did not open", ready.await(60, TimeUnit.SECONDS))
         a = DanceTestActivity.last!!
+        dismissSystemDialogs()
         pause(800)
     }
 
@@ -66,7 +68,36 @@ class DanceScreensTest {
     private fun pause(ms: Long) { Thread.sleep(ms); main { } }
     private fun check(ok: Boolean, what: String) { if (!ok) problems.add(what) }
 
+    /** a slow emulator sometimes shows "… isn't responding" for its own home screen: tap "Wait" */
+    private fun dismissSystemDialogs() {
+        try {
+            val ua = inst.uiAutomation
+            for (i in 0 until 3) {
+                val root = ua.rootInActiveWindow ?: return
+                if (root.packageName?.toString() == inst.targetContext.packageName) return
+                val btn = root.findAccessibilityNodeInfosByText("Wait").firstOrNull() ?: root.findAccessibilityNodeInfosByText("Close app").firstOrNull() ?: return
+                var n: AccessibilityNodeInfo? = btn
+                while (n != null && !n.isClickable) n = n.parent
+                (n ?: btn).performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                Thread.sleep(700)
+            }
+        } catch (e: Throwable) { }
+    }
+
+    /** all contentDescriptions on screen (to explain a missing one) */
+    private fun onScreen(): String {
+        val out = ArrayList<String>()
+        fun walk(v: View) {
+            if (!v.isShown) return
+            v.contentDescription?.let { out.add(it.toString()) }
+            if (v is ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+        main { walk(a.window.decorView) }
+        return out.take(40).joinToString(" | ")
+    }
+
     private fun shot(name: String) {
+        dismissSystemDialogs()
         pause(300)
         shell("screencap -p $dir/$name.png")
         if (!File("$dir/$name.png").exists()) {
@@ -102,7 +133,7 @@ class DanceScreensTest {
             find(a.window.decorView, desc, prefix, list)
             list.lastOrNull()?.let { it.performClick(); done = true }
         }
-        check(done, "nothing to tap: \"$desc\"")
+        check(done, "nothing to tap: \"$desc\" — on screen: ${if (done) "" else onScreen()}")
     }
 
     private fun has(desc: String, prefix: Boolean = false) = views(desc, prefix).isNotEmpty()
@@ -116,7 +147,7 @@ class DanceScreensTest {
         act { it.open("/dance") }
         pause(2500)
         shot("01_boxes")
-        check(has("Solo Dance: ", true), "Solo box missing")
+        check(has("Solo Dance: ", true), "Solo box missing — on screen: ${onScreen()}")
         check(has("1 vs 1 Battle: ", true), "1 vs 1 box missing")
         check(has("2 Dancer Battle: ", true), "2 Dancer box missing")
         main {
