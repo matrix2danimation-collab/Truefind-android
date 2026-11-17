@@ -173,7 +173,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             all == null -> repeat(4) { listBox.addView(Skeleton(context, 20f), lp(MATCH, dpi(80f))) }
             failed && all.isEmpty() -> {
                 val b = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = card(); setPadding(dpi(18f), dpi(26f), dpi(18f), dpi(26f)); elevation = Ui.dp(3f) }
-                b.addView(sdText(context, "Couldn't load your chats", 18f, K.wine))
+                b.addView(sdText(context, "Couldn't load your chats", 18f, K.wine), lp(WRAP, WRAP))
                 b.addView(sdText(context, "Check your internet and try again.", 14.5f, K.sub, bold = false), lp(WRAP, WRAP, t = 6f, b = 14f))
                 b.addView(sdText(context, "Try again", 15.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(K.pill, 22f); setPadding(dpi(22f), 0, dpi(22f), 0) }
                     .press().onTap { chats = null; failed = false; render(); load() }, lp(WRAP, dpi(44f)))
@@ -227,7 +227,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         t.addView(sdText(context, if (c.text.isNotEmpty()) "${if (c.from.isNotEmpty() && c.from == h.myIdNow) "You: " else ""}${c.text}" else "Say hi 👋", 14.5f, if (c.unread > 0) K.ink2 else K.sub, bold = c.unread > 0).oneLine(), lp(MATCH, WRAP, t = 3f))
         mid.addView(t, lp(0, WRAP, 1f))
         val end = vbox(context, 6f, Gravity.END)
-        end.addView(sdText(context, chatTime(c.time), 12.5f, if (c.unread > 0) K.hot else K.soft, bold = c.unread > 0))
+        end.addView(sdText(context, chatTime(c.time), 12.5f, if (c.unread > 0) K.hot else K.soft, bold = c.unread > 0), lp(WRAP, WRAP))
         when {
             c.unread > 0 -> end.addView(sdText(context, if (c.unread > 99) "99+" else c.unread.toString(), 12.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(K.pill, 11f); setPadding(dpi(7f), 0, dpi(7f), 0); minWidth = dpi(22f) }, lp(WRAP, dpi(22f)))
             locked -> end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, K.soft, 15f)) }, lp(dpi(15f), dpi(15f)))

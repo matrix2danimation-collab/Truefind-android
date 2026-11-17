@@ -22,7 +22,7 @@ settle() {
     sleep 2; t=$((t+2))
     l=$(adb logcat -d -s TFDBG:I | grep -c "frames so far")
     n=$(adb logcat -d -s TFDBG:I | grep -o "frames so far [0-9]*" | tail -1)
-    if [ "$l" -gt "$lastL" ] && [ -n "$n" ] && [ "$n" = "$lastN" ]; then same=$((same+1)); [ $same -ge 3 ] && return 0; else same=0; fi
+    if [ "$l" -gt "$lastL" ] && [ -n "$n" ] && [ "$n" = "$lastN" ] && [ "${n##* }" -ge 2 ]; then same=$((same+1)); [ $same -ge 3 ] && return 0; else same=0; fi
     lastN="$n"; lastL=$l
   done
   echo "  (still drawing after $max s)" >> "$OUT/start.txt"
@@ -49,6 +49,14 @@ shot() {
     *)     sleep 4; settle 60 ;;
   esac
   case "$mode" in quick|story) ;; *) adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 2 ;; esac
+  # the app must be the screen on top; if it is not (it closed, or the phone showed something else), write down why and open it again
+  if ! adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG"; then
+    { echo "== $name: app not on top"; adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity";
+      adb logcat -d -b main,system,crash | grep -iE "truefind|FATAL|Fatal signal|ANR in|lowmemorykiller|Killing|has died|backtrace" | tail -60; } > "$OUT/$name.why.txt"
+    adb shell am start -n $PKG/.MainActivity "$@" > /dev/null 2>&1
+    case "$mode" in open|quick|story|animopen) waitlog "preview open" 45 ;; esac
+    case "$mode" in anim*) sleep 10 ;; quick|story) sleep 1 ;; *) settle 60 ;; esac
+  fi
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
@@ -88,6 +96,7 @@ shot 33-map-everyone open --es tf_preview secret-map --ez tf_premium true --es t
 shot 34-map-online open --es tf_preview secret-map --ez tf_premium true --es tf_open online
 shot 35-map-end open --es tf_preview secret-map --ez tf_premium true --es tf_open scroll
 shot 36-map-moving anim --es tf_preview secret-map --ez tf_premium true
+shot 37-map-strong-phone anim --es tf_preview secret-map --ez tf_premium true --es tf_lite 0
 # Chats (/secret-app?tab=chat)
 shot 40-chats home --es tf_preview secret-chat --ez tf_premium true
 shot 41-chats-free home --es tf_preview secret-chat
@@ -108,6 +117,7 @@ shot 60-room-blocked open --es tf_preview chatroom --ez tf_premium true --es tf_
 shot 61-room-typing open --es tf_preview chatroom --ez tf_premium true --es tf_open typing
 shot 62-room-short home --es tf_preview chatroom --ez tf_premium true --es tf_chat m5
 shot 63-room-gift-sent animopen --es tf_preview chatroom --ez tf_premium true --es tf_chat m2 --es tf_open sendgif
+shot 64-room-strong-phone animopen --es tf_preview chatroom --ez tf_premium true --es tf_lite 0 --es tf_chat m2 --es tf_open gifpremium
 fi
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"

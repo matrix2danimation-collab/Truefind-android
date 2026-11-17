@@ -1150,6 +1150,8 @@ object Lite {
         reducedMotion = try { android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f } catch (e: Exception) { false }
         on = (mem > 0 && mem <= 3) || cores <= 4 || reducedMotion
     }
+    /** test photos only: see the stronger-phone look on the slow emulator (or the budget look on a fast one) */
+    fun forceForTests(lite: Boolean) { on = lite }
     /** navigator.deviceMemory the way Chrome works it out: the phone's RAM rounded to the nearest
      *  2·2ⁿ or 3·2ⁿ MB, in GB, at most 8 (so a "4 GB" phone is 4, a "3 GB" phone is 3) */
     private fun deviceMemory(mb: Long): Double {

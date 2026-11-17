@@ -275,7 +275,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         else Photos.cachedCover(raws, w, w)?.let { img.setImageBitmap(it) } ?: Photos.loadCover(raws, w, w) { b -> if (b != null) img.setImageBitmap(b) }
         photo.addView(img, LayoutParams(-1, -1))
         card.addView(photo, lp(MATCH, w))
-        val dot = View(context).apply { background = oval(if (live) Ui.c("#34C759") else Ui.c("#A79FB8"), 2.5f, Color.WHITE) }
+        val dot = View(context).apply { background = oval(if (live) Ui.c("#34C759") else Ui.c("#A79FB8"), 2.5f, Color.WHITE); elevation = Ui.dp(3f); outlineProvider = null }
         val texts = vbox(context, 1f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(3f), dpi(7f), dpi(3f), dpi(6f)) }
         texts.addView(sdText(context, shortName(SdRules.s(p, "name", "full_name")), 14f, K.wine2).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
         val city = SdRules.cityOf(p)
@@ -332,7 +332,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
             if (i % cols == 0) { row = hbox(context, 10f, Gravity.TOP); panel.addView(row, lp(MATCH, WRAP, t = if (i == 0) 0f else 10f)) }
             row!!.addView(tile(p, tileW, tileH) { close(); h.openProfile(p) }, lp(tileW, tileH))
         }
-        close = h.layer.sheet(panel, z = 85f)
+        close = h.layer.sheet(panel, z = 85f, maxVh = 0.86f)
     }
     private fun tile(p: JSONObject, w: Int, hh: Int, onClick: () -> Unit): View {
         val live = SdRules.liveOf(p)

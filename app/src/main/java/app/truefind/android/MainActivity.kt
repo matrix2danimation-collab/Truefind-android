@@ -335,6 +335,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
         Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
+        intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
         web.loadUrl("about:blank")
         if (intent.getBooleanExtra("tf_noweb", false)) web.visibility = View.GONE
         watchFrames()

@@ -657,7 +657,7 @@ class ChatRoom(
                 val g = gifOf(m.optString("gif_id"))
                 val url = SdRules.s(m, "gif_url")
                 if (url.startsWith("https://")) b.addView(ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_CENTER; clipToOutline = true; outlineProvider = roundOutline(14f); Photos.loadFull(url, 600) { bm -> if (bm != null) setImageBitmap(bm) } }, lp(dpi(170f), dpi(170f)))
-                else if (g == null) b.addView(sdText(context, "GIF", 13f, inkOnBubble, bold = false).apply { alpha = 0.7f })
+                else if (g == null) b.addView(sdText(context, "GIF", 13f, inkOnBubble, bold = false).apply { alpha = 0.7f }, lp(WRAP, WRAP))
                 else {
                     b.addView(gifView(g, big = false, showPrice = mine, onPink = false), lp(WRAP, WRAP, gravity = Gravity.CENTER_HORIZONTAL))
                     if (!mine) b.addView(sdText(context, "You earned ${fmtHalf(g.price)}", 12f, Ui.c("#17803A")).icon(Icon(Lucide.CoinsIcon, Ui.c("#17803A"), 12f), 4f).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 4f, gravity = Gravity.CENTER_HORIZONTAL))
@@ -688,7 +688,7 @@ class ChatRoom(
             background = GradientDrawable().apply { setColor(Ui.c("#FFF1F3")); val r = Ui.dp(18f); val s = Ui.dp(6f); cornerRadii = floatArrayOf(r, r, r, r, s, s, r, r); setStroke(dpi(1f), Ui.c("#F8B4C2")) }
             setPadding(dpi(13f), dpi(9f), dpi(13f), dpi(7f))
         }
-        b.addView(sdText(context, h.optString("text"), 16f, Ui.c("#6B1730"), bold = false).apply { lineHeight(1.15f); maxWidth = (resources.displayMetrics.widthPixels * 0.86f).toInt() - dpi(80f) })
+        b.addView(sdText(context, h.optString("text"), 16f, Ui.c("#6B1730"), bold = false).apply { lineHeight(1.15f); maxWidth = (resources.displayMetrics.widthPixels * 0.86f).toInt() - dpi(80f) }, lp(WRAP, WRAP))
         b.addView(sdText(context, timeOf(h.optLong("at")), 11.5f, Ui.c("#B04A63"), bold = false).icon(Icon(Lucide.X, CK.red, 13f, 3f), 4f, end = true), lp(WRAP, WRAP, t = 3f, gravity = Gravity.END))
         row.addView(b, lp(WRAP, WRAP))
         col.addView(row, lp(WRAP, WRAP))
@@ -762,8 +762,8 @@ class ChatRoom(
         if (!g.vip) {
             val v = vbox(context, 2f, Gravity.CENTER_HORIZONTAL).apply { if (big) setPadding(dpi(8f), dpi(4f), dpi(8f), dpi(4f)) }
             v.addView(emoji, lp(WRAP, WRAP))
-            v.addView(sdText(context, g.label, if (big) 18f else 15f, if (onPink) Color.WHITE else K.wine, italic = true))
-            if (showPrice) v.addView(sdText(context, g.price.toString(), 11.5f, if (onPink) Color.WHITE else K.hot).icon(Icon(Lucide.CoinsIcon, if (onPink) Color.WHITE else K.hot, 12f), 3f).apply { alpha = 0.9f })
+            v.addView(sdText(context, g.label, if (big) 18f else 15f, if (onPink) Color.WHITE else K.wine, italic = true), lp(WRAP, WRAP))
+            if (showPrice) v.addView(sdText(context, g.price.toString(), 11.5f, if (onPink) Color.WHITE else K.hot).icon(Icon(Lucide.CoinsIcon, if (onPink) Color.WHITE else K.hot, 12f), 3f).apply { alpha = 0.9f }, lp(WRAP, WRAP))
             return v
         }
         // premium gift card: gold frame, glow, sparkles, shine
@@ -925,13 +925,13 @@ class ChatRoom(
             setPadding(dpi(2f), dpi(6f), dpi(2f), dpi(6f))
             contentDescription = "${g.label} GIF, ${g.price} ${if (g.price == 1) "coin" else "coins"}"
         }
-        val e = sdText(context, g.e, 30f, Color.BLACK, bold = false); v.addView(e); Emoji.animate(e, g.cls)
+        val e = sdText(context, g.e, 30f, Color.BLACK, bold = false); v.addView(e, lp(WRAP, WRAP)); Emoji.animate(e, g.cls)
         v.addView(sdText(context, g.label, 12f, if (g.vip) Color.WHITE else K.wine).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
         val price = sdText(context, g.price.toString(), 12f, if (g.vip) Ui.c("#5A2A00") else K.hot).icon(Icon(Lucide.CoinsIcon, if (g.vip) Ui.c("#5A2A00") else K.hot, 12f), 3f).apply {
             gravity = Gravity.CENTER_VERTICAL
             if (g.vip) { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FBE7B5"), Ui.c("#E2B04F"))).apply { cornerRadius = Ui.dp(99f) }; setPadding(dpi(7f), dpi(1f), dpi(7f), dpi(1f)) }
         }
-        v.addView(price)
+        v.addView(price, lp(WRAP, WRAP))
         return v.press().onTap { pickGif(g) }
     }
 
@@ -1119,6 +1119,20 @@ class ChatRoom(
             if (tags.isNotEmpty()) sec.addView(SdProfileView.Flow(context, 6f).apply {
                 for (t in tags) addView(sdText(context, t, 14f, K.wine).apply { background = rounded(K.tint2, 99f, 1f, K.line); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) })
             }, lp(MATCH, WRAP, t = 8f))
+            val main1 = SdRules.s(d, "photo"); val main2 = SdRules.s(d, "profile_picture")
+            val pics = photoListOf(d).filter { it != main1 && it != main2 }.take(4)
+            if (pics.isNotEmpty()) {
+                val row = hbox(context, 8f, Gravity.TOP)
+                val side = (resources.displayMetrics.widthPixels - dpi(48f) - dpi(8f) * 3) / 4
+                for (u in pics) {
+                    val f = FrameLayout(context).apply { background = rounded(K.tint, 14f, 1f, K.line2); clipToOutline = true; outlineProvider = roundOutline(14f); contentDescription = "See photo" }
+                    val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+                    f.addView(img, LayoutParams(-1, -1))
+                    Photos.loadFull(u, 600) { b -> if (b != null) img.setImageBitmap(b) }
+                    row.addView(f.press().onTap { Photos.loadFull(u, 1600) { b -> if (b != null) viewPhoto(b) } }, lp(side, side))
+                }
+                sec.addView(row, lp(MATCH, WRAP, t = 14f))
+            }
             col.addView(sec, lp(MATCH, WRAP, t = 18f))
             if (verified) {
                 val v = vbox(context).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
@@ -1192,7 +1206,7 @@ class ChatRoom(
         p.addView(sheetRow(Lucide.Trash2, "Delete chat", "Removes this conversation for you", true) { close(); confirm("delete") }, lp(MATCH, WRAP, t = 8f))
         p.addView(sheetRow(Lucide.Flag, "Report", "Spam, harassment, inappropriate photos…", true) { close(); report() }, lp(MATCH, WRAP, t = 8f))
         p.contentDescription = "Chat options"
-        close = layer.sheet(p, z = 80f)
+        close = layer.sheet(p, z = 80f, maxVh = 0.88f)
     }
     private fun confirm(kind: String) {
         val box = FrameLayout(context).apply { setBackgroundColor(Color.argb(115, 60, 0, 25)); setPadding(dpi(24f), dpi(24f), dpi(24f), dpi(24f)) }
@@ -1287,7 +1301,7 @@ class ChatRoom(
             if (shots.size < 3) {
                 val add = vbox(context, 4f, Gravity.CENTER).apply { background = DashedRect(); contentDescription = "Add screenshot" }
                 add.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Camera, K.rose, 22f)) }, lp(dpi(22f), dpi(22f)))
-                add.addView(sdText(context, "Add", 13f, K.rose))
+                add.addView(sdText(context, "Add", 13f, K.rose), lp(WRAP, WRAP))
                 shotsRow.addView(add.press().onTap {
                     val pick = SdSheets.pickImage ?: return@onTap
                     pick { b, type -> if (b != null && type.startsWith("image/") && shots.size < 3) { shots.add(Shot(b, decodeSmall(b))); paint() } }
@@ -1341,7 +1355,7 @@ class ChatRoom(
         }, lp(MATCH, dpi(54f), t = 16f))
         paint()
         p.contentDescription = "Report"
-        close = layer.sheet(p, z = 82f, locked = { busy })
+        close = layer.sheet(p, z = 82f, locked = { busy }, maxVh = 0.88f)
     }
     private fun decodeSmall(b: ByteArray): Bitmap? = try {
         val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }; BitmapFactory.decodeByteArray(b, 0, b.size, o)
@@ -1359,9 +1373,9 @@ class ChatRoom(
         val p = sheetPanel()
         var close: () -> Unit = {}
         val c = vbox(context, 10f, Gravity.CENTER_HORIZONTAL).apply { setPadding(0, dpi(4f), 0, dpi(6f)) }
-        c.addView(gifView(g, big = true, showPrice = false, onPink = false))
+        c.addView(gifView(g, big = true, showPrice = false, onPink = false), lp(WRAP, WRAP))
         c.addView(sdText(context, android.text.SpannableStringBuilder("Send ").append(android.text.SpannableString(g.label).apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.bold), 0, length, 0) }).append(" to ${firstName.ifEmpty { "them" }}"), 16.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER })
-        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.bold), 0, length, 0) }), 15f, K.sub, bold = false).icon(Icon(Lucide.CoinsIcon, K.hot, 16f), 6f))
+        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.bold), 0, length, 0) }), 15f, K.sub, bold = false).icon(Icon(Lucide.CoinsIcon, K.hot, 16f), 6f), lp(WRAP, WRAP))
         p.addView(c, lp(MATCH, WRAP))
         val bal = balance
         if (bal != null && bal < g.price) {
@@ -1382,7 +1396,7 @@ class ChatRoom(
         }
         p.addView(sdText(context, "Cancel", 16f, K.sub).apply { gravity = Gravity.CENTER }.onTap { close() }, lp(MATCH, dpi(46f), t = 8f))
         p.contentDescription = "Send ${g.label}"
-        close = layer.sheet(p, z = 81f)
+        close = layer.sheet(p, z = 81f, maxVh = 0.88f)
     }
 
     private fun viewPhoto(b: Bitmap) {
@@ -1464,6 +1478,23 @@ class ChatRoom(
             if (same(t, now)) return "Today"
             if (same(t, (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) })) return "Yesterday"
             return java.text.SimpleDateFormat(if (t.get(Calendar.YEAR) == now.get(Calendar.YEAR)) "d MMM" else "d MMM yyyy", Locale.US).format(t.time)
+        }
+        /** the web's photoListOf: images + photos (not the ones still waiting for review) */
+        fun photoListOf(d: JSONObject?): List<String> {
+            val out = ArrayList<String>()
+            for (key in listOf("images", "photos")) {
+                val a = d?.optJSONArray(key) ?: continue
+                for (i in 0 until a.length()) {
+                    val x = a.opt(i)
+                    val u = when (x) {
+                        is String -> x
+                        is JSONObject -> if (Regex("pending|review|submitted", RegexOption.IGNORE_CASE).containsMatchIn(x.optString("status"))) "" else listOf("url", "file_url", "uri", "file_uri", "path").map { x.optString(it) }.firstOrNull { it.isNotEmpty() }.orEmpty()
+                        else -> ""
+                    }
+                    if (u.isNotEmpty()) out.add(u)
+                }
+            }
+            return out
         }
         fun mmss(s: Double): String { val n = max(0, Math.round(s).toInt()); return "${n / 60}:${(n % 60).toString().padStart(2, '0')}" }
         /** online dot: the server's presence fields when it sends them; if none, "Online now" (as before) */

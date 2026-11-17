@@ -11,8 +11,15 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    outputs:
+      sets: ${{ steps.sets.outputs.list }}
     steps:
       - uses: actions/checkout@v5
+
+      # which emulator photo sets to take this time (ci/sets.json, e.g. ["home","chat"])
+      - name: Photo sets
+        id: sets
+        run: echo "list=$(cat ci/sets.json 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
         with:
@@ -69,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        set: [home, chat]   # two emulators side by side: Home screens · Map + Chat screens
+        set: ${{ fromJSON(needs.apk.outputs.sets) }}   # emulators side by side: Home screens · Map + Chat screens
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
