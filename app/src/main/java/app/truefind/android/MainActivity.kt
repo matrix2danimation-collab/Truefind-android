@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var pages: NativePages
     private var path = "/"
     private var search = ""
+    /** an address the web sent while a native tap was leading (applied when the lead ends) */
+    private var heldRoute: String? = null
     private var preview = ""
     private var cover = false
     private var navTopCss = -1f
@@ -142,6 +144,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
         // native Home, Profile and the bottom bar (they follow the web address like Explore)
         pages = NativePages(this, root, web) { update() }
+        pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
+        pages.onLeadEnd = { heldRoute?.let { heldRoute = null; onRoute(it) } }
         pages.attach(scriptAtStart)
         pages.askCamera = { cb ->
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
@@ -271,12 +275,16 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     /** Opens a page of the web app (same as navigate(path, { state }) inside it). */
     private fun openWeb(p: String, state: JSONObject?) {
+        pages.lead(p, state)
         val js = "window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"});"
         web.evaluateJavascript(js, null)
     }
 
     // ── from the page ──
     override fun onRoute(path: String) {
+        // a native tap has already switched the screen: an older address still on its way waits
+        if (pages.leading(path)) { heldRoute = path; return }
+        heldRoute = null
         val q = path.indexOf('?')
         this.path = if (q >= 0) path.substring(0, q) else path
         this.search = if (q >= 0) path.substring(q) else ""

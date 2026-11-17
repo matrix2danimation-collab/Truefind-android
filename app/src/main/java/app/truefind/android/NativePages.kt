@@ -47,7 +47,10 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
   var css = document.createElement('style');
   css.textContent = 'html.tfnn nav.tfnav{display:none!important}'
     + 'html.tfhn .tf-tab[data-tab="home"]{visibility:hidden!important}html.tfhn .tfdc{display:none!important}'
-    + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}';
+    + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}'
+    // In the app a tab switch is instant (as in other Android apps): the web's 0.3 s tab slide
+    // stuttered on phones and showed half-moved pages; the page going out is simply hidden.
+    + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}';
   (document.head || document.documentElement).appendChild(css);
   // The app's own router (React Router's navigator), so a native tap opens a page
   // exactly like a tap in the web app (push / replace, with its state).
@@ -208,7 +211,11 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
 
     private fun onState(json: String) {
         val o = try { JSONObject(json) } catch (e: Exception) { return }
-        path = o.optString("path", "/").ifEmpty { "/" }
+        val rp = o.optString("path", "/").ifEmpty { "/" }
+        // a native tap has already switched the screen: an older address still on its way is held back
+        if (leading(rp)) { heldJson = json; return }
+        if (lead != null) { lead = null; heldJson = null; main.removeCallbacks(leadEnd) }
+        path = rp
         search = o.optString("search", "")
         usr = o.optJSONObject("usr")
         idx = o.optInt("idx", -1)
@@ -224,6 +231,47 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val ht = o.optString("htoast", "")
         if (ht.isNotEmpty() && ht != lastHomeToast && onHome) home.say(ht)
         lastHomeToast = ht
+        onChange()
+    }
+
+    // ═════════════════ a native tap leads ═════════════════
+    // The web reports a new address only after it has done its own work (on a slow phone that took
+    // half a second, and in between the old native screen had gone and the new one wasn't there yet:
+    // a white flash and the web's half-moved page). Now a tap on a native screen's page switches the
+    // native screens at once; the web follows underneath. If the web doesn't confirm within 1.5 s,
+    // what it says wins again.
+    /** MainActivity follows the same address (Explore, Secret Dating) */
+    var onLead: (String, String) -> Unit = { _, _ -> }
+    var onLeadEnd: () -> Unit = {}
+    private var lead: String? = null
+    private var leadUntil = 0L
+    private var heldJson: String? = null
+    private val leadEnd = Runnable {
+        lead = null
+        val j = heldJson; heldJson = null
+        if (j != null) onState(j)
+        onLeadEnd()
+    }
+    private fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }.let { if (it == "/home") "/" else it }
+    /** true while a native tap leads and [p] is another (older) address */
+    fun leading(p: String): Boolean {
+        val l = lead ?: return false
+        return android.os.SystemClock.uptimeMillis() < leadUntil && norm(p) != l
+    }
+    private fun shownNatively(p: String, q: String): Boolean =
+        p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
+            (p == "/secret-app" && !q.contains("tab=chat"))
+    /** Switches the native screens to [target] now (only when a native screen shows it). */
+    fun lead(target: String, state: JSONObject?) {
+        if (preview.isNotEmpty() || !gotState || !signedIn || cover) return
+        val q = target.indexOf('?')
+        val tp = norm(target)
+        val ts = if (q >= 0) target.substring(q) else ""
+        if (!shownNatively(tp, ts) || (norm(path) == tp && search == ts)) return
+        lead = tp; leadUntil = android.os.SystemClock.uptimeMillis() + 1500
+        main.removeCallbacks(leadEnd); main.postDelayed(leadEnd, 1500)
+        path = target.substringBefore('?').ifEmpty { "/" }; search = ts; usr = state
+        onLead(path, search)
         onChange()
     }
 
@@ -294,6 +342,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     /** navigate(path, { state, replace }) of the web app */
     fun go(path: String, state: JSONObject? = null, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast.show("→ $path"); return }
+        if (!replace) lead(path, state)
         web.evaluateJavascript("window.__tfNav && window.__tfNav(${JSONObject.quote(path)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
     }
     /** navigate(-1), or Home when there is nothing before (the ‹ button of Profile) */
