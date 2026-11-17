@@ -250,7 +250,7 @@ object DK {
     // ── buttons ──
     /** btn(): purple pill, white bold text, optional icon */
     fun button(ctx: Context, label: CharSequence, icon: Drawable? = null, heightDp: Float = 50f, sizeDp: Float = 16.5f, colors: IntArray = GRAD): TextView =
-        Ui.text(ctx, label, sizeDp, Color.WHITE).apply {
+        DButton(ctx, label, sizeDp, Color.WHITE).apply {
             gravity = Gravity.CENTER
             background = grad(colors, heightDp / 2f)
             if (icon != null) { setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null); compoundDrawablePadding = Ui.dpi(8f) }
@@ -264,7 +264,7 @@ object DK {
         }
     /** btnLine(): white pill with a purple line */
     fun lineButton(ctx: Context, label: CharSequence, icon: Drawable? = null, heightDp: Float = 50f, color: Int = PURPLE, stroke: Int = PURPLE, sizeDp: Float = 16f): TextView =
-        Ui.text(ctx, label, sizeDp, color).apply {
+        DButton(ctx, label, sizeDp, color).apply {
             gravity = Gravity.CENTER
             background = pill(Color.WHITE, stroke, 1.5f)
             if (icon != null) { setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null); compoundDrawablePadding = Ui.dpi(8f) }
@@ -730,6 +730,35 @@ class DanceSheet(
     /** small centred line under the title */
     fun note(s: String) = body.addView(DK.t(context, s, 13.5f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) },
         DK.llp(b = 10f))
+}
+
+/**
+ * A button whose icon sits right before its text, the two centred together (like the web
+ * buttons), also when the button is wider than its content. No text (busy) = no icon.
+ */
+class DButton(ctx: Context, label: CharSequence, sizeDp: Float, color: Int) : TextView(ctx) {
+    init {
+        text = label
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp))
+        setTextColor(color)
+        typeface = Ui.bold
+        includeFontPadding = false
+    }
+    override fun onDraw(c: Canvas) {
+        val d = compoundDrawablesRelative[0]
+        if (d != null) {
+            val dW = d.intrinsicWidth; val dH = d.intrinsicHeight
+            var textW = 0f
+            val l = layout
+            if (l != null && !text.isNullOrEmpty()) for (i in 0 until l.lineCount) textW = max(textW, l.getLineWidth(i))
+            if (textW <= 0f) d.setBounds(0, 0, 0, 0)
+            else {
+                val dx = ((width - (dW + compoundDrawablePadding + textW)) / 2f - paddingLeft).toInt().coerceAtLeast(0)
+                d.setBounds(dx, 0, dx + dW, dH)
+            }
+        }
+        super.onDraw(c)
+    }
 }
 
 /** helper to keep one sheet at a time on the screen */

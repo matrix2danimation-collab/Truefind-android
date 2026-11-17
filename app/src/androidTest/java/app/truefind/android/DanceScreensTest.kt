@@ -115,7 +115,8 @@ class DanceScreensTest {
     /** the visible views whose contentDescription is [desc] (or starts with it when [prefix]) */
     private fun find(root: View, desc: String, prefix: Boolean, out: MutableList<View>) {
         if (!root.isShown) return
-        val cd = root.contentDescription?.toString()
+        // its description, or (for a tappable text without one) its text
+        val cd = root.contentDescription?.toString() ?: (root as? android.widget.TextView)?.takeIf { it.isClickable }?.text?.toString()
         if (cd != null && (cd == desc || (prefix && cd.startsWith(desc)))) out.add(root)
         if (root is ViewGroup) for (i in 0 until root.childCount) find(root.getChildAt(i), desc, prefix, out)
     }
@@ -263,8 +264,8 @@ class DanceScreensTest {
         tap("Request to dance"); pause(3500)
         shot("28_on_stage")
         check(called("seat_request"), "seat_request not sent")
-        check(has("Leave"), "dancer tools missing")
-        tap("Leave"); pause(600); shot("29_leave_confirm"); back(); pause(400)
+        check(has("Leave stage"), "dancer tools missing")
+        tap("Leave stage"); pause(600); shot("29_leave_confirm"); back(); pause(400)
 
         // ── 2 dancer battle ──
         act { it.open("/dance/duo1") }
@@ -275,6 +276,56 @@ class DanceScreensTest {
         // ── ended / can't open ──
         act { it.open("/dance/ended1") }; pause(2000); shot("32_ended")
         act { it.open("/dance/gone1") }; pause(2000); shot("33_cant_open")
+
+        // ═══════ the host side ═══════
+        // ── Go Live: 1 vs 1 ──
+        act { it.open("/dance") }; pause(1800)
+        tap("Go Live Dance"); pause(900); shot("40_golive_sheet")
+        tap("1 vs 1 Battle"); pause(300); shot("40b_golive_battle")
+        tap("Start 1 vs 1 Battle"); pause(2600)
+        shot("41_host_battle_waiting")
+        check(called("go_live"), "go_live not sent")
+        check(has("Dancers"), "host tools missing")
+        check(has("Dance requests"), "empty seat has no Requests button for the host")
+        // ── accept a dancer ──
+        tap("Dancers"); pause(1300); shot("42_seats_sheet")
+        tap("Accept Kabir"); pause(2200)
+        check(called("seat_answer"), "seat_answer not sent")
+        shot("43_host_with_challenger")
+        // ── start a battle ──
+        tap("Start battle"); pause(900); shot("44_timer_sheet")
+        tap("5 minutes"); pause(200)
+        tap("Start 5 min battle"); pause(2200)
+        check(called("battle_start"), "battle_start not sent")
+        shot("45_host_battle_running")
+        // ── stop it ──
+        tap("Stop battle"); pause(700); shot("46_stop_confirm")
+        tap("Stop battle"); pause(1800)
+        check(called("battle_stop"), "battle_stop not sent")
+        shot("46b_after_stop")
+        // ── mic ──
+        tap("Mic on"); pause(1600)
+        check(called("mute"), "mute not sent")
+        check(has("Mic off"), "mic tool did not turn to Mic off")
+        shot("47_mic_off")
+        // ── the list shows "You are live" ──
+        act { it.open("/dance") }; pause(1800); shot("47b_list_you_are_live")
+        act { it.open("/dance/hb1") }; pause(1800)
+        // ── phone back asks before ending; End live ends ──
+        back(); pause(700); shot("48_back_asks_end")
+        tap("End live"); pause(1800)
+        check(called("end"), "end not sent")
+        shot("49_after_end")
+        // ── Solo host: song requests board ──
+        act { it.open("/dance/hs1") }; pause(2400); shot("50_host_solo")
+        tap("Requests"); pause(1400); shot("51_songs_board")
+        tap("Mark as played"); pause(1600)
+        check(called("song_answer"), "song_answer not sent")
+        shot("51b_songs_after_play")
+        back(); pause(500)
+        tap("Demo"); pause(800); shot("52_demo_in_room"); back(); pause(400)
+        // ── 2 Dancer host ──
+        act { it.open("/dance/hd1") }; pause(2400); shot("53_host_duo_waiting")
 
         // ── back from a room goes back to that list ──
         act { it.open("/dance?m=solo") }; pause(800)

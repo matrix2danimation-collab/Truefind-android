@@ -23,6 +23,100 @@ class FakeDance {
     private var onStage = false
     var balance = 5115L
 
+    // ── the host side: my own lives (hb1 = 1 vs 1, hs1 = Solo, hd1 = 2 Dancer) ──
+    private var liveHost = ""
+    private val hostMuted = HashMap<String, Boolean>()
+    private val hostCamOff = HashMap<String, Boolean>()
+    private val hostDancers = HashMap<String, ArrayList<String>>()
+    private val seatReqs = HashMap<String, ArrayList<String>>()
+    private val songReqs = HashMap<String, ArrayList<JSONObject>>()
+    private val songsDone = HashMap<String, Int>()
+    private val hostBattle = HashMap<String, JSONObject>()
+    private val endedRooms = HashSet<String>()
+    private fun hostModeOf(id: String) = when (id) { "hs1" -> "solo"; "hd1" -> "duo"; else -> "battle" }
+    private fun isHostRoom(id: String) = id == "hb1" || id == "hs1" || id == "hd1"
+    private fun seatsOf(id: String) = seatReqs.getOrPut(id) { if (id == "hs1") ArrayList() else arrayListOf("Kabir", "Arjun") }
+    private fun songsOf(id: String) = songReqs.getOrPut(id) {
+        ArrayList<JSONObject>().apply {
+            listOf(Triple("Rahul", "Punjabi", "Bhangra"), Triple("Arjun", "Bollywood", "Bollywood Thumka"), Triple("Kabir", "Punjabi", ""), Triple("Dev", "Haryanvi", "Folk"))
+                .forEachIndexed { i, (n, g, st) -> add(JSONObject().put("id", "sr$i").put("user_id", "u_$n").put("name", n).put("photo", pic(n)).put("genre", g).put("style", st).put("song", if (i == 0) "Laung Laachi" else "")) }
+        }
+    }
+
+    private fun meHost() = JSONObject().put("user_id", "me").put("profile_id", "").put("name", "Vikas").put("photo", pic("Vikas")).put("gender", "m").put("verified", true)
+
+    private fun hostState(id: String, action: String, now: Long): Api.Result {
+        val mode = hostModeOf(id)
+        val muted = hostMuted[id] == true; val camOff = hostCamOff[id] == true
+        val dancers = JSONArray()
+        hostDancers[id].orEmpty().forEachIndexed { i, n ->
+            dancers.put(JSONObject().put("seat", i + 1).put("user_id", "d_$n").put("profile_id", "").put("name", n).put("photo", pic(n)).put("muted", false).put("host_muted", false)
+                .put("cam_off", false).put("agora_uid", uid("d_$n")).put("demo", false))
+        }
+        val hostO = meHost().put("muted", muted).put("cam_off", camOff).put("agora_uid", uid("me")).put("online", true)
+        val b = hostBattle[id]
+        if (b != null && b.optString("status") == "running" && DK.ms(b.optString("ends_at")) < now) b.put("status", "ended").put("winner", b.getJSONObject("a").getString("user_id"))
+        val room = JSONObject().put("id", id).put("code", "TD-77001${listOf("hb1", "hs1", "hd1").indexOf(id)}").put("title", "Vikas's Dance").put("language", "Hindi").put("mode", mode)
+            .put("live", !endedRooms.contains(id)).put("live_since", iso(now - 4 * 60_000)).put("viewers", 12).put("fee", if (mode == "duo") 25 else 50)
+            .put("host", meHost()).put("battle", b ?: JSONObject.NULL).put("top", top()).put("demo", false).put("demo_fill", false)
+        val me = JSONObject().put("user_id", "me").put("role", "host").put("seat", 0).put("paid", true).put("in_room", true).put("muted", muted).put("host_muted", false)
+            .put("cam_off", camOff).put("agora_uid", uid("me")).put("name", "Vikas").put("photo", pic("Vikas")).put("vote", "").put("request", JSONObject.NULL)
+        val base = JSONObject().put("ok", true).put("now", iso(now)).put("ended", endedRooms.contains(id)).put("fee", room.getInt("fee")).put("room", room).put("host", hostO)
+            .put("dancers", dancers).put("seats", when (mode) { "solo" -> 0; "battle" -> 1; else -> 2 }).put("likes", 0).put("me", me)
+            .put("pending", JSONObject().put("seat", seatsOf(id).size).put("song", songsOf(id).size))
+            .put("messages", if (action == "join") JSONArray().put(JSONObject().put("id", "h_$id").put("kind", "system").put("user_id", "me").put("name", "Vikas").put("photo", "")
+                .put("text", "Vikas started ${DK.mode(mode).label} 💃").put("gift_id", "").put("count", 1).put("to_user_id", "").put("to_name", "").put("at", iso(now - 60_000))) else JSONArray())
+        if (action == "join") base.put("balance", balance).put("blocked", JSONArray()).put("followed", false)
+            .put("genres", JSONArray(DK.GENRES)).put("styles", JSONArray(DK.STYLES)).put("minutes", JSONArray(listOf(3, 5, 10, 15)))
+        return Api.Result(200, base, null)
+    }
+
+    private fun hostAction(id: String, action: String, p: JSONObject, now: Long): Api.Result? {
+        val ok = JSONObject().put("ok", true)
+        return when (action) {
+            "seat_list" -> Api.Result(200, JSONObject().put("ok", true).put("requests", JSONArray().apply {
+                seatsOf(id).forEach { n -> put(JSONObject().put("id", "rq_$n").put("user_id", "u_$n").put("name", n).put("photo", pic(n)).put("at", iso(now))) }
+            }), null)
+            "seat_answer" -> {
+                val n = p.optString("request_id").removePrefix("rq_")
+                seatsOf(id).remove(n)
+                if (p.optBoolean("accept")) hostDancers.getOrPut(id) { ArrayList() }.add(n)
+                Api.Result(200, ok, null)
+            }
+            "battle_start" -> {
+                val m = p.optInt("minutes")
+                val d = hostDancers[id].orEmpty()
+                val a = if (hostModeOf(id) == "battle") meHost() else JSONObject().put("user_id", "d_${d[0]}").put("name", d[0]).put("photo", pic(d[0]))
+                val bb = if (hostModeOf(id) == "battle") d[0] else d[1]
+                hostBattle[id] = JSONObject().put("id", "hbt_$now").put("no", 1).put("status", "running").put("minutes", m).put("started_at", iso(now)).put("ends_at", iso(now + m * 60_000L))
+                    .put("ended_at", JSONObject.NULL).put("a", a).put("b", JSONObject().put("user_id", "d_$bb").put("name", bb).put("photo", pic(bb)))
+                    .put("votes_a", 3).put("votes_b", 5).put("gifts_a", 0).put("gifts_b", 0).put("winner", "")
+                Api.Result(200, ok, null)
+            }
+            "battle_stop" -> { hostBattle[id]?.put("status", "cancelled"); Api.Result(200, ok, null) }
+            "songs" -> {
+                val pend = songsOf(id)
+                fun count(key: String, keys: List<String>) = JSONArray().apply { keys.forEach { k -> put(JSONObject().put("name", k).put("count", pend.count { it.optString(key) == k })) } }
+                Api.Result(200, JSONObject().put("ok", true).put("genres", count("genre", DK.GENRES)).put("styles", count("style", DK.STYLES)).put("total", pend.size)
+                    .put("requests", JSONArray().apply { pend.forEach { put(it) } }).put("done", songsDone[id] ?: 0), null)
+            }
+            "song_answer" -> {
+                val ids = p.optJSONArray("request_ids"); val set = HashSet<String>()
+                if (ids != null) for (i in 0 until ids.length()) set.add(ids.optString(i))
+                val pend = songsOf(id)
+                val before = pend.size
+                pend.removeAll { set.contains(it.optString("id")) }
+                if (p.optString("status") == "done") songsDone[id] = (songsDone[id] ?: 0) + (before - pend.size)
+                Api.Result(200, ok, null)
+            }
+            "mute" -> { if (!p.has("user_id")) hostMuted[id] = p.optBoolean("muted"); Api.Result(200, ok, null) }
+            "camera" -> { hostCamOff[id] = p.optBoolean("off"); Api.Result(200, ok, null) }
+            "end" -> { endedRooms.add(id); if (liveHost == id) liveHost = ""; Api.Result(200, ok, null) }
+            "demo_fill" -> Api.Result(200, ok, null)
+            else -> null
+        }
+    }
+
     fun log(): List<String> = synchronized(calls) { calls.toList() }
     /** "+1234ms state battle3" lines, to explain a timing problem */
     fun timeline(room: String): String = synchronized(calls) { timeline.filter { it.endsWith(" $room") }.joinToString(", ") }
@@ -141,10 +235,20 @@ class FakeDance {
         if (name == "liveDanceToken") return Api.Result(200, JSONObject().put("ok", true).put("enabled", false), null)
         val id = p.optString("room_id")
         val ok = JSONObject().put("ok", true)
+        if (action == "go_live") {
+            liveHost = when (p.optString("mode")) { "solo" -> "hs1"; "duo" -> "hd1"; else -> "hb1" }
+            endedRooms.remove(liveHost)
+            return Api.Result(200, JSONObject().put("ok", true).put("room", JSONObject().put("id", liveHost)), null)
+        }
+        if (isHostRoom(id)) {
+            if (action == "join" || action == "state") return hostState(id, action, now)
+            hostAction(id, action, p, now)?.let { return it }
+        }
         return when (action) {
             "home" -> {
                 val rooms = JSONArray(); ROOMS.forEach { rooms.put(room(it.first, now)) }
-                Api.Result(200, JSONObject().put("ok", true).put("rooms", rooms).put("can_host", true).put("my_room", JSONObject.NULL).put("is_admin", true).put("balance", balance)
+                val mine = if (liveHost.isEmpty()) JSONObject.NULL else JSONObject().put("id", liveHost).put("live", true).put("mode", hostModeOf(liveHost)).put("host", meHost())
+                Api.Result(200, JSONObject().put("ok", true).put("rooms", rooms).put("can_host", true).put("my_room", mine).put("is_admin", true).put("balance", balance)
                     .put("languages", JSONArray(listOf("Hindi", "English", "Hinglish"))).put("genres", JSONArray(DK.GENRES)).put("styles", JSONArray(DK.STYLES)), null)
             }
             "join", "state" -> state(id, action, now, p)

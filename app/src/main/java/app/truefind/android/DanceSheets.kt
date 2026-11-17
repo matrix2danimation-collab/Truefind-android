@@ -451,9 +451,333 @@ object DanceSheets {
         s.body.addView(DK.t(ctx, title, 20f, DK.INK, true, 0).apply { gravity = Gravity.CENTER }, DK.llp(t = 6f, b = 6f))
         s.body.addView(DK.t(ctx, text, 14.5f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }, DK.llp(b = 16f))
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        row.addView(DK.lineButton(ctx, "Cancel").apply { setOnClickListener { s.close() } }, DK.llp(0, Ui.dpi(50f), 1f, r = 5f))
-        row.addView(DK.button(ctx, yes, colors = intArrayOf(Ui.c("#f43f5e"), Ui.c("#be123c"))).apply { setOnClickListener { s.close(); onYes() } }, DK.llp(0, Ui.dpi(50f), 1f, l = 5f))
+        row.addView(DK.lineButton(ctx, "Cancel").apply { contentDescription = "Cancel"; setOnClickListener { s.close() } }, DK.llp(0, Ui.dpi(50f), 1f, r = 5f))
+        row.addView(DK.button(ctx, yes, colors = intArrayOf(Ui.c("#f43f5e"), Ui.c("#be123c"))).apply { contentDescription = yes; setOnClickListener { s.close(); onYes() } }, DK.llp(0, Ui.dpi(50f), 1f, l = 5f))
         s.body.addView(row)
+        screen.sheets.open(s)
+    }
+
+    // ───────── Go Live Dance (hosts) ─────────
+    fun goLive(screen: LiveDanceScreen, languages: List<String>, initialMode: String, onLive: (String) -> Unit) {
+        val s = sheet(screen, "Go Live Dance")
+        val ctx = s.context
+        var mode = if (DK.MODES.contains(initialMode)) initialMode else "solo"
+        var lang = "Hindi"
+        var busy = false
+        val langs = languages.ifEmpty { listOf("Hindi", "English", "Hinglish", "Punjabi", "Bhojpuri", "Haryanvi") }
+        s.note("Choose how you want to dance today")
+        val modeRows = ArrayList<LinearLayout>()
+        lateinit var paint: () -> Unit
+        DK.MODES.forEach { m ->
+            val info = DK.mode(m)
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f))
+                isClickable = true; contentDescription = info.label; tag = m
+                setOnClickListener { mode = m; paint() }
+                Ui.pressable(this, 0.98f)
+            }
+            row.addView(FrameLayout(ctx), DK.llp(Ui.dpi(42f), Ui.dpi(42f)))
+            val tx = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(12f), 0, Ui.dpi(8f), 0) }
+            tx.addView(DK.t(ctx, info.label, 15.5f, DK.INK))
+            tx.addView(DK.t(ctx, info.line, 12.5f, DK.SUB, false, 2))
+            row.addView(tx, DK.llp(0, DK.WRAP, 1f))
+            row.addView(Ui.text(ctx, "${info.fee}", 12f, Ui.c("#92400e")).apply {
+                setCompoundDrawablesRelativeWithIntrinsicBounds(CoinIcon(14f), null, null, null); compoundDrawablePadding = Ui.dpi(3f)
+            })
+            modeRows.add(row)
+            s.body.addView(row, DK.llp(b = 8f))
+        }
+        s.body.addView(DK.t(ctx, "Live title (optional)", 13.5f, DK.INK), DK.llp(t = 6f, b = 6f))
+        val title = EditText(ctx).apply {
+            hint = "e.g. Bollywood Night 💃"; setHintTextColor(Ui.c("#9b93b3")); setTextColor(DK.INK); typeface = Ui.regular
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(15.5f)); isSingleLine = true; filters = arrayOf(InputFilter.LengthFilter(40))
+            background = GradientDrawable().apply { setColor(Ui.c("#fbf9ff")); cornerRadius = Ui.dp(14f); setStroke(Ui.dpi(1f), DK.LINE) }
+            setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), 0)
+            contentDescription = "Live title"
+        }
+        s.body.addView(title, DK.llp(DK.MATCH, Ui.dpi(46f)))
+        s.body.addView(DK.t(ctx, "Language", 13.5f, DK.INK), DK.llp(t = 12f))
+        val langRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, Ui.dpi(6f), 0, Ui.dpi(2f)) }
+        val langChips = ArrayList<TextView>()
+        langs.forEach { l ->
+            val c = DK.chip(ctx, l, l == lang, 34f, 13.5f)
+            c.tag = l
+            c.setOnClickListener { lang = l; langChips.forEach { x -> DK.paintChip(x, x.tag == l) } }
+            langChips.add(c)
+            langRow.addView(c, DK.llp(DK.WRAP, Ui.dpi(34f), r = 6f))
+        }
+        s.body.addView(android.widget.HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; addView(langRow) }, DK.llp())
+        val note = DK.t(ctx, "", 13f, Ui.c("#78350f"), false, 0).apply {
+            background = GradientDrawable().apply { setColor(Ui.c("#fff7e6")); cornerRadius = Ui.dp(14f); setStroke(Ui.dpi(1f), Ui.c("#f7d58a")) }
+            setPadding(Ui.dpi(12f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f)); setLineSpacing(0f, 1.25f)
+        }
+        s.body.addView(note, DK.llp(t = 12f))
+        val err = DK.t(ctx, "", 14f, DK.ERR, true, 0).apply { visibility = View.GONE }
+        s.body.addView(err, DK.llp(t = 10f))
+        val startBox = FrameLayout(ctx)
+        val start = DK.button(ctx, "", DIcon(DIcon.PLAY, Color.WHITE, 19f, Color.WHITE), 54f)
+        val spin = DotsSpinner(ctx, Color.WHITE).apply { visibility = View.GONE; elevation = Ui.dp(8f) }
+        startBox.addView(start, DK.flp(DK.MATCH, Ui.dpi(54f)))
+        startBox.addView(spin, DK.flp(Ui.dpi(22f), Ui.dpi(22f), Gravity.CENTER))
+        s.body.addView(startBox, DK.llp(DK.MATCH, Ui.dpi(54f), t = 14f))
+        paint = {
+            modeRows.forEach { row ->
+                val on = row.tag == mode
+                row.background = GradientDrawable().apply { setColor(if (on) Ui.c("#f6efff") else Color.WHITE); cornerRadius = Ui.dp(16f); setStroke(Ui.dpi(if (on) 2f else 1f), if (on) DK.PURPLE else DK.LINE) }
+                val ic = row.getChildAt(0) as FrameLayout
+                ic.removeAllViews()
+                ic.background = if (on) DK.grad(DK.GRAD, 13f) else GradientDrawable().apply { setColor(DK.SOFT); cornerRadius = Ui.dp(13f) }
+                ic.addView(DK.modeIcon(ctx, row.tag as String, 20f, if (on) Color.WHITE else DK.PURPLE), DK.flp())
+                row.isSelected = on
+            }
+            val info = DK.mode(mode)
+            val sb = SpannableStringBuilder("Viewers pay ")
+            var a = sb.length; sb.append("${info.fee} coins"); sb.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), a, sb.length, 0)
+            sb.append(" entry once per live. You earn "); a = sb.length; sb.append("50%"); sb.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), a, sb.length, 0)
+            sb.append(" of the entry fees and "); a = sb.length; sb.append("70%"); sb.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), a, sb.length, 0)
+            sb.append(" of the gifts you receive${if (mode != "solo") " (dancers earn 70% of their own gifts)" else ""}.")
+            note.text = sb
+            if (!busy) start.text = "Start ${info.label}"
+            start.contentDescription = "Start ${info.label}"
+        }
+        start.setOnClickListener {
+            if (busy) return@setOnClickListener
+            val t = title.text.toString().trim()
+            if (t.isNotEmpty() && t.length < 3) { err.text = "Title needs at least 3 letters."; err.visibility = View.VISIBLE; return@setOnClickListener }
+            busy = true; err.visibility = View.GONE; start.text = ""; spin.visibility = View.VISIBLE
+            DanceApi.call("go_live", JSONObject().put("mode", mode).put("title", t).put("language", lang)) { r ->
+                busy = false; spin.visibility = View.GONE; paint()
+                val id = r.data.optJSONObject("room")?.optString("id").orEmpty()
+                if (r.ok && id.isNotEmpty()) { s.hideKeyboard(); s.close(); onLive(id) }
+                else { err.text = r.text("Could not start the live."); err.visibility = View.VISIBLE }
+            }
+        }
+        paint()
+        screen.sheets.open(s)
+    }
+
+    // ───────── Dance Requests (host, battles) ─────────
+    fun seats(screen: LiveDanceScreen, page: DanceRoomPage) {
+        val s = sheet(screen, "Dance Requests")
+        val ctx = s.context
+        val running = page.isRunning()
+        val free = page.seatsFree()
+        s.note(if (running) "A battle is running — you can add dancers after it ends." else if (free > 0) "$free seat${if (free > 1) "s" else ""} free. Accept who you want to dance with." else "All seats are full. Move a dancer off the stage to add someone new.")
+        val list = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        s.body.addView(list, DK.llp())
+        var busy = ""
+        lateinit var reload: () -> Unit
+        fun render(d: JSONObject) {
+            list.removeAllViews()
+            val reqs = DK.arr(d.optJSONArray("requests"))
+            if (reqs.isEmpty()) {
+                list.addView(DK.t(ctx, "No requests yet. Viewers can tap “Request to dance”.", 15f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER; setPadding(0, Ui.dpi(18f), 0, Ui.dpi(18f)) })
+                return
+            }
+            reqs.forEach { r ->
+                val name = r.optString("name")
+                val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(Ui.dpi(2f), Ui.dpi(9f), Ui.dpi(2f), Ui.dpi(9f)) }
+                row.addView(AvatarView(ctx, 44f).apply { set(r.optString("photo")) })
+                row.addView(DK.t(ctx, name, 15f, DK.INK), DK.llp(0, DK.WRAP, 1f, l = 10f, r = 8f))
+                val no = DK.iconButton(ctx, DIcon(DIcon.X, DK.ERR, 19f), 40f, DK.oval(Ui.c("#fff1f2")), "Decline $name")
+                val canAccept = !running && free > 0
+                val yesBox = FrameLayout(ctx)
+                val yes = DK.button(ctx, "Accept", DIcon(DIcon.CHECK, Color.WHITE, 16f), 40f, 14f).apply {
+                    alpha = if (canAccept) 1f else 0.45f; contentDescription = "Accept $name"; elevation = 0f; setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), 0)
+                }
+                yesBox.addView(yes, DK.flp(DK.WRAP, Ui.dpi(40f)))
+                fun answer(accept: Boolean) {
+                    if (busy.isNotEmpty()) return
+                    if (accept && !canAccept) return
+                    busy = r.optString("id")
+                    val spin = DotsSpinner(ctx, Color.WHITE).apply { elevation = Ui.dp(8f) }
+                    if (accept) { yes.text = ""; yesBox.addView(spin, DK.flp(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER)) }
+                    DanceApi.call("seat_answer", JSONObject().put("room_id", page.roomId).put("request_id", r.optString("id")).put("accept", accept)) { res ->
+                        busy = ""
+                        if (res.ok) {
+                            screen.showToast(if (accept) "$name is on stage 💃" else "Request declined")
+                            page.refreshNow()
+                            if (accept && free <= 1) { s.close(); return@call }
+                        } else screen.showToast(res.text())
+                        reload()
+                    }
+                }
+                no.setOnClickListener { answer(false) }
+                yes.setOnClickListener { answer(true) }
+                row.addView(no, DK.llp(Ui.dpi(40f), Ui.dpi(40f), r = 8f))
+                row.addView(yesBox, DK.llp(DK.WRAP, Ui.dpi(40f)))
+                list.addView(row); list.addView(divider(s), DK.llp(DK.MATCH, Ui.dpi(1f)))
+            }
+        }
+        reload = {
+            DanceApi.call("seat_list", JSONObject().put("room_id", page.roomId)) { r ->
+                if (!s.isOpen) return@call
+                if (r.ok) render(r.data)
+                else if (list.childCount == 0 || list.getChildAt(0) is FrameLayout) {
+                    list.removeAllViews(); list.addView(DK.t(ctx, r.text(), 15f, DK.ERR, true, 0).apply { gravity = Gravity.CENTER; setPadding(0, Ui.dpi(30f), 0, Ui.dpi(30f)) })
+                } else screen.showToast(r.text())
+            }
+        }
+        list.addView(FrameLayout(ctx).apply { addView(DotsSpinner(ctx), DK.flp(Ui.dpi(26f), Ui.dpi(26f), Gravity.CENTER, t = 30f, b = 30f)) }, DK.llp())
+        reload()
+        screen.sheets.open(s)
+    }
+
+    // ───────── Song Requests board (host, Solo Dance) ─────────
+    fun songsBoard(screen: LiveDanceScreen, page: DanceRoomPage) {
+        val s = sheet(screen, "Song Requests")
+        val ctx = s.context
+        val box = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        s.body.addView(box, DK.llp())
+        box.addView(FrameLayout(ctx).apply { addView(DotsSpinner(ctx), DK.flp(Ui.dpi(26f), Ui.dpi(26f), Gravity.CENTER, t = 30f, b = 30f)) }, DK.llp())
+        var busy = ""
+        var loaded = false
+        lateinit var reload: () -> Unit
+        fun answer(ids: List<String>, status: String, key: String) {
+            if (busy.isNotEmpty()) return
+            busy = key
+            val arr = org.json.JSONArray(); ids.forEach { arr.put(it) }
+            DanceApi.call("song_answer", JSONObject().put("room_id", page.roomId).put("request_ids", arr).put("status", status)) { r ->
+                busy = ""
+                if (r.ok) { screen.showToast(if (status == "done") "Marked as played 🎶" else "Removed"); page.refreshNow() } else screen.showToast(r.text())
+                reload()
+            }
+        }
+        fun render(d: JSONObject) {
+            box.removeAllViews()
+            box.addView(DK.t(ctx, "${DK.n(d.optInt("total"))} waiting · ${DK.n(d.optInt("done"))} played", 13.5f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER }, DK.llp(b = 10f))
+            box.addView(DK.t(ctx, "Most wanted song types", 14.5f, DK.INK), DK.llp(b = 6f))
+            val genres = DK.arr(d.optJSONArray("genres")).sortedByDescending { it.optInt("count") }
+            val max = maxOf(1, genres.maxOfOrNull { it.optInt("count") } ?: 1)
+            genres.forEach { g ->
+                val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+                row.addView(DK.t(ctx, "${DK.GENRE_ICON[g.optString("name")] ?: "🎵"} ${g.optString("name")}", 13.5f, DK.INK), DK.llp(Ui.dpi(104f), DK.WRAP))
+                val track = FrameLayout(ctx).apply { background = GradientDrawable().apply { setColor(Ui.c("#f1ebfb")); cornerRadius = Ui.dp(6f) } }
+                val fill = View(ctx).apply { background = DK.grad(DK.GRAD, 6f, GradientDrawable.Orientation.LEFT_RIGHT) }
+                track.addView(fill, FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT))
+                val frac = g.optInt("count").toFloat() / max
+                track.addOnLayoutChangeListener { v, l, _, r2, _, _, _, _, _ ->
+                    val w = ((r2 - l) * frac).toInt()
+                    if (fill.layoutParams.width != w) { fill.layoutParams.width = w; v.post { fill.requestLayout() } }
+                }
+                row.addView(track, DK.llp(0, Ui.dpi(12f), 1f, l = 8f, r = 8f))
+                row.addView(Ui.text(ctx, "${g.optInt("count")}", 14f, DK.INK).apply { gravity = Gravity.END }, DK.llp(Ui.dpi(26f), DK.WRAP))
+                box.addView(row, DK.llp(b = 6f))
+            }
+            box.addView(DK.t(ctx, "Dance styles", 14.5f, DK.INK), DK.llp(t = 12f, b = 6f))
+            val flow = FlowRow(ctx)
+            DK.arr(d.optJSONArray("styles")).forEach { st ->
+                val n = st.optInt("count")
+                val sb = SpannableStringBuilder("${DK.STYLE_ICON[st.optString("name")] ?: "💃"} ${st.optString("name")} ")
+                val a = sb.length; sb.append("$n"); sb.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), a, sb.length, 0)
+                flow.addView(Ui.text(ctx, sb, 13f, if (n > 0) DK.PURPLE else DK.SUB).apply {
+                    gravity = Gravity.CENTER_VERTICAL; background = DK.pill(if (n > 0) DK.SOFT else Ui.c("#fafafa")); setPadding(Ui.dpi(11f), 0, Ui.dpi(11f), 0)
+                }, android.view.ViewGroup.MarginLayoutParams(DK.WRAP, Ui.dpi(32f)))
+            }
+            box.addView(flow, DK.llp())
+            val reqs = DK.arr(d.optJSONArray("requests"))
+            if (page.hostMode() && reqs.isNotEmpty()) {
+                box.addView(DK.t(ctx, "Requests", 14.5f, DK.INK), DK.llp(t = 14f, b = 4f))
+                reqs.forEach { r ->
+                    val id = r.optString("id")
+                    val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, Ui.dpi(8f), 0, Ui.dpi(8f)) }
+                    row.addView(AvatarView(ctx, 38f).apply { set(r.optString("photo")) })
+                    val tx = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(9f), 0, Ui.dpi(8f), 0) }
+                    tx.addView(DK.t(ctx, r.optString("name"), 14f, DK.INK))
+                    val g = r.optString("genre")
+                    tx.addView(DK.t(ctx, "${DK.GENRE_ICON[g] ?: "🎵"} $g${if (r.optString("style").isNotBlank()) " · ${r.optString("style")}" else ""}${if (r.optString("song").isNotBlank()) " · “${r.optString("song")}”" else ""}", 12.5f, DK.SUB, false, 2))
+                    row.addView(tx, DK.llp(0, DK.WRAP, 1f))
+                    row.addView(DK.iconButton(ctx, DIcon(DIcon.X, DK.ERR, 17f), 36f, DK.oval(Ui.c("#fff1f2")), "Remove request").apply { setOnClickListener { answer(listOf(id), "rejected", "x$id") } }, DK.llp(Ui.dpi(36f), Ui.dpi(36f), r = 8f))
+                    val playBox = FrameLayout(ctx)
+                    val play = DK.button(ctx, "Play", DIcon(DIcon.PLAY, Color.WHITE, 13f, Color.WHITE), 36f, 13f).apply {
+                        contentDescription = "Mark as played"; elevation = 0f; setPadding(Ui.dpi(11f), 0, Ui.dpi(11f), 0)
+                        setOnClickListener {
+                            if (busy.isNotEmpty()) return@setOnClickListener
+                            text = ""; playBox.addView(DotsSpinner(ctx, Color.WHITE).apply { elevation = Ui.dp(8f) }, DK.flp(Ui.dpi(15f), Ui.dpi(15f), Gravity.CENTER))
+                            answer(listOf(id), "done", id)
+                        }
+                    }
+                    playBox.addView(play, DK.flp(DK.WRAP, Ui.dpi(36f)))
+                    row.addView(playBox, DK.llp(DK.WRAP, Ui.dpi(36f)))
+                    box.addView(row); box.addView(divider(s), DK.llp(DK.MATCH, Ui.dpi(1f)))
+                }
+            }
+        }
+        reload = {
+            DanceApi.call("songs", JSONObject().put("room_id", page.roomId)) { r ->
+                if (!s.isOpen) return@call
+                if (r.ok) { loaded = true; render(r.data) }
+                else if (!loaded) { box.removeAllViews(); box.addView(DK.t(ctx, r.text(), 15f, DK.ERR, true, 0).apply { gravity = Gravity.CENTER; setPadding(0, Ui.dpi(30f), 0, Ui.dpi(30f)) }) }
+            }
+        }
+        reload()
+        // fresh every 6 s while it is open (like the web board)
+        val tick = object : Runnable {
+            override fun run() { if (!s.isOpen) return; if (busy.isEmpty()) reload(); s.postDelayed(this, 6000) }
+        }
+        s.postDelayed(tick, 6000)
+        screen.sheets.open(s)
+    }
+
+    // ───────── Start a Battle (host) ─────────
+    fun timer(screen: LiveDanceScreen, page: DanceRoomPage) {
+        val s = sheet(screen, "Start a Battle")
+        val ctx = s.context
+        val sides = page.stageSides()
+        val mins = page.minutes.ifEmpty { listOf(3, 5, 10, 15) }
+        var m = if (mins.contains(3)) 3 else mins.first()
+        var busy = false
+        val vs = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(0, Ui.dpi(4f), 0, Ui.dpi(14f)) }
+        listOf(0, 1).forEach { i ->
+            val p = sides.getOrNull(i)
+            if (i == 1) vs.addView(Ui.text(ctx, "VS", 30f, Ui.c("#f59e0b")).apply { typeface = DK.italic() }, DK.llp(DK.WRAP, DK.WRAP, l = 14f, r = 14f))
+            val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+            col.addView(AvatarView(ctx, 60f, Ui.c(if (i == 0) "#b98cff" else "#ff8fc0")).apply { set(p?.optString("photo")) })
+            col.addView(DK.t(ctx, p?.optString("name")?.takeIf { it.isNotBlank() } ?: "—", 14f, DK.INK).apply { gravity = Gravity.CENTER }, DK.llp(DK.MATCH, DK.WRAP, t = 4f))
+            vs.addView(col, DK.llp(Ui.dpi(96f), DK.WRAP))
+        }
+        s.body.addView(vs, DK.llp())
+        s.body.addView(DK.t(ctx, "Battle time", 14.5f, DK.INK).apply { gravity = Gravity.CENTER }, DK.llp(b = 8f))
+        val grid = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+        val cells = ArrayList<LinearLayout>()
+        lateinit var start: TextView
+        fun paint() {
+            cells.forEach { c ->
+                val on = c.tag == m
+                c.background = if (on) DK.grad(DK.GRAD, 16f) else GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = Ui.dp(16f); setStroke(Ui.dpi(1f), DK.LINE) }
+                for (k in 0 until c.childCount) (c.getChildAt(k) as TextView).setTextColor(if (on) Color.WHITE else DK.INK)
+                c.isSelected = on
+            }
+            if (!busy) start.text = "Start $m min battle"
+            start.contentDescription = "Start $m min battle"
+        }
+        mins.forEachIndexed { i, x ->
+            val c = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; tag = x
+                isClickable = true; contentDescription = "$x minutes"
+                setOnClickListener { m = x; paint() }
+                Ui.pressable(this, 0.96f)
+            }
+            c.addView(Ui.text(ctx, "$x", 20f, DK.INK), DK.llp(DK.WRAP, DK.WRAP))
+            c.addView(Ui.text(ctx, "min", 11.5f, DK.INK), DK.llp(DK.WRAP, DK.WRAP))
+            cells.add(c)
+            grid.addView(c, DK.llp(0, Ui.dpi(58f), 1f, l = if (i == 0) 0f else 8f))
+        }
+        s.body.addView(grid, DK.llp())
+        s.body.addView(DK.t(ctx, "Viewers vote for free. The dancer with more votes wins when time ends.", 13f, DK.SUB, false, 0).apply { gravity = Gravity.CENTER }, DK.llp(t = 12f))
+        val box = FrameLayout(ctx)
+        start = DK.button(ctx, "", DIcon(DIcon.SWORDS, Color.WHITE, 19f), 54f)
+        val spin = DotsSpinner(ctx, Color.WHITE).apply { visibility = View.GONE; elevation = Ui.dp(8f) }
+        box.addView(start, DK.flp(DK.MATCH, Ui.dpi(54f)))
+        box.addView(spin, DK.flp(Ui.dpi(22f), Ui.dpi(22f), Gravity.CENTER))
+        s.body.addView(box, DK.llp(DK.MATCH, Ui.dpi(54f), t = 14f))
+        start.setOnClickListener {
+            if (busy) return@setOnClickListener
+            busy = true; start.text = ""; spin.visibility = View.VISIBLE
+            page.startBattle(m) { ok -> busy = false; spin.visibility = View.GONE; paint(); if (ok) s.close() }
+        }
+        paint()
         screen.sheets.open(s)
     }
 

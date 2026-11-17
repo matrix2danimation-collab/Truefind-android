@@ -58,6 +58,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
     private var followed = false
     var genres: List<String> = DK.GENRES
     var styles: List<String> = DK.STYLES
+    var minutes: List<Int> = listOf(3, 5, 10, 15)
     private var blocked: Set<String> = emptySet()
     private var since: String? = null
     private var likeSince: String? = null
@@ -107,11 +108,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             followed = d.optBoolean("followed")
             d.optJSONArray("genres")?.let { a -> genres = (0 until a.length()).map { a.optString(it) } }
             d.optJSONArray("styles")?.let { a -> styles = (0 until a.length()).map { a.optString(it) } }
-            // the host's own live: the web page does the host side for now
-            if (d.optJSONObject("me")?.optString("role") == "host" && !d.optBoolean("ended")) {
-                screen.nav.replace("/dance/$roomId?web=1")
-                return@call
-            }
+            d.optJSONArray("minutes")?.let { a -> minutes = (0 until a.length()).map { a.optInt(it) }.filter { it > 0 }.ifEmpty { minutes } }
             apply(d, true)
             if (d.optBoolean("ended")) return@call
             loopSig = liveSig(d)
@@ -335,13 +332,39 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
     fun meJson(): JSONObject? = me()
     fun openWallet() = screen.nav.go("/wallet")
 
+    // ── for the host's sheets ──
+    fun refreshNow() { quiet = 0; poll() }
+    fun pendingOf(kind: String): Int = st?.optJSONObject("pending")?.optInt(kind) ?: 0
+    fun seatsFree(): Int = (st?.optInt("seats") ?: 0) - dancers().size
+    fun isRunning(): Boolean = running()
+    fun isDemoRoom(): Boolean = room()?.optBoolean("demo") == true
+    /** the two sides of a battle (host + challenger, or dancer 1 + dancer 2) */
+    fun stageSides(): List<JSONObject?> {
+        val d = dancers()
+        return when (mode()) {
+            "battle" -> listOf(hostTile(), d.firstOrNull())
+            "duo" -> listOf(d.firstOrNull { it.optInt("seat") == 1 }, d.firstOrNull { it.optInt("seat") == 2 })
+            else -> emptyList()
+        }
+    }
+    fun startBattle(m: Int, done: (Boolean) -> Unit) =
+        act("battle_start", JSONObject().put("minutes", m), "Battle started ⚔️") { done(it.ok) }
+    private fun confirmStop() =
+        DanceSheets.confirm(screen, "Stop this battle?", "The battle ends now without a winner. You can start a new one any time.", "Stop battle") { act("battle_stop", ok = "Battle stopped") }
+    private fun confirmEnd() =
+        DanceSheets.confirm(screen, "End your live?", "Everyone will leave the room. Gifts and entry fees you earned go to your Wallet.", "End live") {
+            leaving = true
+            // ended anyway if this fails (the server closes a live whose host is gone)
+            DanceApi.call("end", JSONObject().put("room_id", roomId)) { screen.nav.replace("/dance") }
+        }
+
     fun personAct(action: String, u: JSONObject, ok: String) {
         val body = JSONObject().put("user_id", u.optString("user_id"))
         if (action == "mute") body.put("muted", !u.optBoolean("host_muted"))
         act(action, body, ok)
     }
 
-    private fun goBack() { screen.nav.back() }
+    private fun goBack() { if (isHost() && phase == "live") confirmEnd() else screen.nav.back() }
 
     // ───────────────────────── video ─────────────────────────
     private fun syncVideo() {
@@ -379,8 +402,12 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             DanceApi.call("leave", JSONObject().put("room_id", roomId)) { }
     }
 
-    /** phone back inside the room: closes the emoji panel / the winner first */
-    fun onBack(): Boolean = live?.onBack() == true
+    /** phone back inside the room: closes the emoji panel / the winner first; the host is asked before the live ends */
+    fun onBack(): Boolean {
+        if (live?.onBack() == true) return true
+        if (isHost() && phase == "live") { confirmEnd(); return true }
+        return false
+    }
 
     // ───────────────────────── gifts popping up ─────────────────────────
     private fun queueGift(g: JSONObject) {
@@ -841,7 +868,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             if (mode == "solo") { voteBox.visibility = View.GONE; return }
             voteBox.visibility = View.VISIBLE
             val b = battle(); val m = me()
-            val sig = listOf(b?.optString("id"), b?.optString("status"), b?.optInt("votes_a"), b?.optInt("votes_b"), b?.optString("winner"), m?.optString("vote"), m?.optString("role"), dancers().size).joinToString("|")
+            val sig = listOf(b?.optString("id"), b?.optString("status"), b?.optInt("votes_a"), b?.optInt("votes_b"), b?.optString("winner"), m?.optString("vote"), m?.optString("role"), dancers().joinToString(",") { "${it.optString("user_id")}:${it.optInt("seat")}" }).joinToString("|")
             if (sig == voteSig) return
             voteSig = sig
             voteBox.removeAllViews()
@@ -899,6 +926,23 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
                 setPadding(Ui.dpi(14f), Ui.dpi(6f), Ui.dpi(6f), Ui.dpi(6f)); minimumHeight = Ui.dpi(46f)
             }
             card.addView(DK.t(context, line, 13.5f, DK.STEP_TEXT, false, 2), DK.llp(0, DK.WRAP, 1f))
+            if (isHost()) {
+                if (running) card.addView(Ui.text(context, "Stop", 13.5f, DK.ERR).apply {
+                    gravity = Gravity.CENTER; background = DK.pill(Ui.c("#fff1f2"), Ui.c("#fecdd3"), 1.5f); setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), 0)
+                    setCompoundDrawablesRelativeWithIntrinsicBounds(DIcon(DIcon.SQUARE, DK.ERR, 13f, DK.ERR), null, null, null); compoundDrawablePadding = Ui.dpi(5f)
+                    contentDescription = "Stop battle"; isClickable = true; setOnClickListener { confirmStop() }
+                    Ui.pressable(this, 0.96f)
+                }, DK.llp(DK.WRAP, Ui.dpi(36f), l = 8f))
+                else {
+                    val sides = stageSides()
+                    val both = sides.size == 2 && sides[0] != null && sides[1] != null
+                    card.addView(DK.button(context, "Start battle", DIcon(DIcon.SWORDS, Color.WHITE, 15f), 36f, 13.5f).apply {
+                        elevation = 0f; setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), 0); alpha = if (both) 1f else 0.45f
+                        contentDescription = "Start battle"
+                        setOnClickListener { if (both) DanceSheets.timer(screen, this@DanceRoomPage) }
+                    }, DK.llp(DK.WRAP, Ui.dpi(36f), l = 8f))
+                }
+            }
             voteBox.addView(card, DK.flp(DK.MATCH, DK.WRAP, l = 8f, t = 8f, r = 8f))
         }
 
@@ -974,36 +1018,53 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             btn(DIcon.INFO, "Room Info") { DanceSheets.info(screen, this@DanceRoomPage) }
             btn(DIcon.USERS, "People (${DK.c(r.optLong("viewers"))})") { DanceSheets.people(screen, this@DanceRoomPage) }
             if (mode == "solo") btn(DIcon.MUSIC, if (isHost()) "Requests" else "Song Request", if (isHost()) pending?.optInt("song") ?: 0 else 0) {
-                if (isHost()) screen.showToast("Song requests are on the web page for hosts") else DanceSheets.song(screen, this@DanceRoomPage)
+                if (isHost()) DanceSheets.songsBoard(screen, this@DanceRoomPage) else DanceSheets.song(screen, this@DanceRoomPage)
             } else btn(DIcon.BAR_CHART, "Battle Rank") { DanceSheets.rank(screen, roomId, battle()) }
+            if (mode != "solo" && isHost()) btn(DIcon.HAND, "Dance Requests", pending?.optInt("seat") ?: 0) { DanceSheets.seats(screen, this@DanceRoomPage) }
             btn(DIcon.FILE_TEXT, "Rules") { DanceSheets.rules(screen, mode, feeOf()) }
         }
 
         // ── the row under the message box: quick gifts + 🎁, or a dancer's tools ──
         private fun updateTools() {
             val m = me()
-            val sig = "${amDancer()}|${isHost()}|${m?.optBoolean("muted")}|${m?.optBoolean("cam_off")}|${targets().joinToString { it.optString("user_id") }}"
+            val sig = "${amDancer()}|${isHost()}|${m?.optBoolean("muted")}|${m?.optBoolean("cam_off")}|${targets().joinToString { it.optString("user_id") }}|${mode()}|${running()}|${pendingOf("seat")}|${pendingOf("song")}|${isDemoRoom()}"
             if (sig == toolsSig) { quick.refresh(); return }
             toolsSig = sig
             toolRow.removeAllViews()
             if (onStage()) {
-                fun tool(icon: String, label: String, danger: Boolean, click: () -> Unit) {
+                // web HostTools: label = what it does, short = the word under the icon
+                fun tool(icon: String, label: String, danger: Boolean, short: String = label, on: Boolean = false, badge: Int = 0, click: () -> Unit) {
+                    val f = FrameLayout(context).apply { clipChildren = false }
+                    val fg = if (on) Color.WHITE else if (danger) DK.ERR else DK.INK
                     val t = LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                        background = GradientDrawable().apply { setColor(if (danger) Ui.c("#fff1f2") else Color.WHITE); cornerRadius = Ui.dp(16f); setStroke(Ui.dpi(1f), if (danger) Ui.c("#fecdd3") else DK.LINE) }
+                        background = if (on) DK.grad(DK.GRAD, 16f) else GradientDrawable().apply { setColor(if (danger) Ui.c("#fff1f2") else Color.WHITE); cornerRadius = Ui.dp(16f); setStroke(Ui.dpi(1f), if (danger) Ui.c("#fecdd3") else DK.LINE) }
                         isClickable = true; contentDescription = label
                         setOnClickListener { click() }
                         Ui.pressable(this, 0.96f)
                     }
-                    t.addView(ImageView(context).apply { setImageDrawable(DIcon(icon, if (danger) DK.ERR else DK.PURPLE, 20f)) }, DK.llp(DK.WRAP, DK.WRAP))
-                    t.addView(Ui.text(context, label, 11f, if (danger) DK.ERR else DK.INK).apply { setPadding(0, Ui.dpi(2f), 0, 0) }, DK.llp(DK.WRAP, DK.WRAP))
-                    toolRow.addView(t, DK.llp(0, Ui.dpi(58f), 1f, l = if (toolRow.childCount == 0) 0f else 5f))
+                    t.addView(ImageView(context).apply { setImageDrawable(DIcon(icon, if (on) Color.WHITE else if (danger) DK.ERR else DK.PURPLE, 20f)) }, DK.llp(DK.WRAP, DK.WRAP))
+                    t.addView(Ui.text(context, short, 11f, fg).apply { setPadding(0, Ui.dpi(2f), 0, 0); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }, DK.llp(DK.WRAP, DK.WRAP))
+                    f.addView(t, DK.flp())
+                    if (badge > 0) f.addView(Ui.text(context, if (badge > 99) "99+" else "$badge", 11f, Color.WHITE).apply {
+                        gravity = Gravity.CENTER; background = DK.pill(DK.PINK); setPadding(Ui.dpi(5f), 0, Ui.dpi(5f), 0); minWidth = Ui.dpi(18f); elevation = Ui.dp(3f)
+                    }, DK.flp(DK.WRAP, Ui.dpi(18f), Gravity.TOP or Gravity.END, t = 3f, r = 5f))
+                    toolRow.addView(f, DK.llp(0, Ui.dpi(58f), 1f, l = if (toolRow.childCount == 0) 0f else 5f))
                 }
                 val muted = m?.optBoolean("muted") == true
                 val camOff = m?.optBoolean("cam_off") == true
                 tool(if (muted) DIcon.MIC_OFF else DIcon.MIC, if (muted) "Mic off" else "Mic on", muted) { act("mute", JSONObject().put("muted", !muted)) }
                 tool(if (camOff) DIcon.VIDEO_OFF else DIcon.VIDEO, if (camOff) "Camera off" else "Camera", camOff) { act("camera", JSONObject().put("off", !camOff)) }
-                if (amDancer()) tool(DIcon.LOG_OUT, "Leave", true) {
+                if (isHost()) {
+                    if (mode() == "solo") tool(DIcon.MUSIC, "Requests", false, badge = pendingOf("song")) { DanceSheets.songsBoard(screen, this@DanceRoomPage) }
+                    else {
+                        tool(DIcon.HAND, "Dancers", false, badge = pendingOf("seat")) { DanceSheets.seats(screen, this@DanceRoomPage) }
+                        if (running()) tool(DIcon.SQUARE, "Stop battle", true, short = "Stop") { confirmStop() }
+                        else tool(DIcon.SWORDS, "Start battle", false, short = "Battle", on = true) { DanceSheets.timer(screen, this@DanceRoomPage) }
+                    }
+                    if (!isDemoRoom()) tool(DIcon.FLASK, "Demo", false) { DanceSheets.demo(screen, inRoom = true) { refreshNow() } }
+                    tool(DIcon.LOG_OUT, "End live", true, short = "End") { confirmEnd() }
+                } else tool(DIcon.LOG_OUT, "Leave stage", true, short = "Leave") {
                     DanceSheets.confirm(screen, "Leave the stage?", if (running()) "The running battle will stop without a winner." else "You will watch as a viewer again.", "Leave stage") { act("seat_leave", ok = "You left the stage") }
                 }
             } else {
@@ -1143,14 +1204,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             box.addView(burstFx, DK.flp())
         }
 
-        fun sides(): List<JSONObject?> {
-            val d = dancers()
-            return when (mode()) {
-                "battle" -> listOf(hostTile(), d.firstOrNull())
-                "duo" -> listOf(d.firstOrNull { it.optInt("seat") == 1 }, d.firstOrNull { it.optInt("seat") == 2 })
-                else -> emptyList()
-            }
-        }
+        fun sides(): List<JSONObject?> = stageSides()
 
         fun update() {
             val s = st ?: return
@@ -1165,7 +1219,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             val req = myRequest()
             val sig = listOf(mode, h?.optString("user_id"), h?.optBoolean("cam_off"), h?.optBoolean("muted"), h?.optString("photo"),
                 sides.joinToString(",") { "${it?.optString("user_id")}:${it?.optBoolean("cam_off")}:${it?.optBoolean("muted")}" },
-                winnerId, myId(), me()?.optString("role"), req?.optString("status"), req?.optString("kind"), dancers().size, s.optInt("seats")).joinToString("|")
+                winnerId, myId(), me()?.optString("role"), req?.optString("status"), req?.optString("kind"), dancers().size, s.optInt("seats"),
+                if (isHost()) pendingOf("seat") else 0).joinToString("|")
             if (sig != layoutSig) { layoutSig = sig; rebuild(mode, sides, winnerId) }
             bars?.set(DK.pct(b?.optInt("votes_a"), b?.optInt("votes_b")), b != null && (running() || b.optString("status") == "ended"))
             updateTimer()
@@ -1322,7 +1377,16 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             val waiting = req?.optString("kind") == "seat" && req.optString("status") == "pending"
             val seatOpen = mode() != "solo" && dancers().size < (st?.optInt("seats") ?: 0)
             when {
-                isHost() -> col.addView(Ui.text(ctx, "Waiting for a dancer", 12.5f, Ui.ca("#ffffff", 0.9f)).apply { gravity = Gravity.CENTER })
+                isHost() -> {
+                    col.addView(Ui.text(ctx, "Waiting for a dancer", 12.5f, Ui.ca("#ffffff", 0.9f)).apply { gravity = Gravity.CENTER })
+                    val n = pendingOf("seat")
+                    col.addView(Ui.text(ctx, "Requests${if (n > 0) " ($n)" else ""}", 13f, DK.PURPLE).apply {
+                        gravity = Gravity.CENTER; background = DK.pill(Color.WHITE); setPadding(Ui.dpi(12f), 0, Ui.dpi(12f), 0)
+                        setCompoundDrawablesRelativeWithIntrinsicBounds(DIcon(DIcon.HAND, DK.PURPLE, 15f), null, null, null); compoundDrawablePadding = Ui.dpi(5f)
+                        contentDescription = "Dance requests"; isClickable = true; setOnClickListener { DanceSheets.seats(screen, this@DanceRoomPage) }
+                        Ui.pressable(this, 0.96f)
+                    }, DK.llp(DK.WRAP, Ui.dpi(34f), t = 10f))
+                }
                 waiting -> {
                     col.addView(Ui.text(ctx, "Request sent ⏳", 12.5f, Ui.ca("#ffffff", 0.9f)).apply { gravity = Gravity.CENTER })
                     col.addView(Ui.text(ctx, "Cancel", 12.5f, Color.WHITE).apply {

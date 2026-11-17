@@ -78,7 +78,7 @@ class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLa
             setPadding(Ui.dpi(30f), 0, Ui.dpi(30f), 0)
             background = LayerDrawableCompat.goldRing(DK.grad(DK.GRAD, 28f))
             visibility = View.GONE
-            setOnClickListener { screen.nav.go("/dance?web=1&golive=1") } // the host side is the web page for now
+            setOnClickListener { openGoLive() }
         }
         addView(goLive, DK.flp(DK.WRAP, Ui.dpi(56f), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, b = 18f))
         render()
@@ -126,6 +126,13 @@ class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLa
     // ── what the list shows ──
     private fun rooms(): List<JSONObject> = DK.arr(home?.optJSONArray("rooms"))
     private fun mine(): JSONObject? = home?.optJSONObject("my_room")?.takeIf { it.optBoolean("live") }
+
+    /** the "Go Live Dance" sheet; after starting, the host goes into the new live */
+    private fun openGoLive() {
+        val langs = ArrayList<String>()
+        home?.optJSONArray("languages")?.let { a -> for (i in 0 until a.length()) a.optString(i).takeIf { it.isNotBlank() }?.let { langs.add(it) } }
+        DanceSheets.goLive(screen, langs, mode.ifEmpty { "solo" }) { id -> screen.nav.go("/dance/$id") }
+    }
 
     private fun render() {
         val h = home
@@ -199,7 +206,7 @@ class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLa
                     background = DK.grad(DK.GRAD, 18f); elevation = Ui.dp(6f)
                     setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f))
                     contentDescription = "Go back to your live"
-                    setOnClickListener { screen.nav.go("/dance/${r.optString("id")}?web=1") } // the host's own live: web page for now
+                    setOnClickListener { screen.nav.go("/dance/${r.optString("id")}") }
                     Ui.pressable(this, 0.97f)
                 }
                 val av = AvatarView(ctx, 44f, Color.WHITE, 2f).apply { set(r.optJSONObject("host")?.optString("photo")) }

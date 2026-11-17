@@ -14,7 +14,8 @@ import android.widget.FrameLayout
  *   /dance/:roomId  → inside a live (entry fee → watch, chat, gifts, votes …)
  * The web page's address stays the single list of where the person is (so the
  * phone's back button and the web app agree); this screen draws it natively.
- * For now the host's own live and "Go Live" open the web page (?web=1).
+ * Everything is native: watching and dancing, and the host side (Go Live, host tools).
+ * A "?web=1" address would leave the page to the web (not used by these screens).
  */
 @SuppressLint("ViewConstructor")
 class LiveDanceScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
