@@ -1,0 +1,62 @@
+== 01-explore: app not on top
+      topResumedActivity=ActivityRecord{7a6cfaf u0 com.google.android.apps.nexuslauncher/.NexusLauncherActivity t7}
+11-17 18:43:45.906   529  1994 D OomAdjuster: Not killing cached processes
+11-17 18:43:49.247   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{d73990f com.google.android.contacts/10155} BLOCKED
+11-17 18:43:50.907   529  1993 D OomAdjuster: Not killing cached processes
+11-17 18:43:55.069  1668  2249 D MediaProvider: Deleted 0 Android/media items belonging to app.truefind.android on /data/user/0/com.google.android.providers.media.module/databases/external.db
+11-17 18:43:55.070  1668  2249 D MediaGrants: Removed 0 media_grants for 0 user for app.truefind.android. Reason: Package orphaned
+11-17 18:43:55.889   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{d688b7d com.google.android.as/10126} BLOCKED
+11-17 18:43:56.322   529  1464 D OomAdjuster: Not killing cached processes
+11-17 18:43:57.872  4995  5022 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:43:59.365   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{b373bb3 com.google.android.googlequicksearchbox/10132} BLOCKED
+11-17 18:43:59.366   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{a272570 com.google.android.contacts/10155} BLOCKED
+11-17 18:44:01.447   529  2002 D OomAdjuster: Not killing cached processes
+11-17 18:44:06.446   529  1131 D OomAdjuster: Not killing cached processes
+11-17 18:44:07.970  3313  3534 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.023  1528  5694 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.050  5569  5663 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.083  1736  5613 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.271  2606  5697 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.294  4822  4974 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.348  1528  5691 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:08.767  2606  5697 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:09.601  2606  3161 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:10.109  1528  5694 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:10.128  1528  5737 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:10.386  4822  4974 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:11.125  3313  3511 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:11.139  3313  3534 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:11.480  4995  5034 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:11.530   529  2026 D OomAdjuster: Not killing cached processes
+11-17 18:44:15.143   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{c830ae5 com.google.android.googlequicksearchbox/10132} BLOCKED
+11-17 18:44:15.143   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{33b99ba com.google.android.contacts/10155} BLOCKED
+11-17 18:44:16.538   529  1464 D OomAdjuster: Not killing cached processes
+11-17 18:44:16.595  4822  4957 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:18.882  4822  4974 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:19.094  4822  4957 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:19.103  4822  4974 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:19.620   529  1625 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{78308d8 com.google.android.settings.intelligence/10118} BLOCKED
+11-17 18:44:19.643  5569  5592 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:19.722   529   587 I ActivityManager: Killing 4441:com.google.android.settings.intelligence/u0a118 (adj 0): change com.google.android.settings.intelligence
+11-17 18:44:20.037  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:20.395  3313  5792 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:20.456  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:20.666  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:20.970  3313  5792 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:21.559   529   563 D OomAdjuster: Not killing cached processes
+11-17 18:44:22.851  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:22.852  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:22.862  2606  3161 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:22.873  3313  5793 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:23.627  2606  5912 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:23.635  2606  5697 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:23.694  2606  3161 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:23.701  3313  3519 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:24.247  3313  5793 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:24.505  1736  5614 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:24.509  1736  5614 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:24.663   529   587 I AppsFilter: interaction: PackageSetting{e0e67cc app.truefind.android/10192} -> PackageSetting{570194c com.google.android.contacts/10155} BLOCKED
+11-17 18:44:25.211  3313  5796 W TimedProcessReaper: Scheduling killing of process to refresh configuration
+11-17 18:44:26.175   529   545 I ActivityManager: Process com.google.android.gms.persistent (pid 4131) has died: fg  BTOP
+11-17 18:44:26.257   529  1965 I ActivityManager: Process com.google.android.gms (pid 1583) has died: fg  BTOP
+11-17 18:44:26.601   529  2014 D OomAdjuster: Not killing cached processes
