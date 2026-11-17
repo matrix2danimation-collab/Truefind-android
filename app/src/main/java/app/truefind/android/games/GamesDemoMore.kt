@@ -15,7 +15,27 @@ object GamesDemoMore {
 
     fun answer(fn: String, body: JSONObject): Api.Result? = when (fn) {
         "moodChanger" -> mood(body.optString("action"))
+        "dressCodeAction" -> dress()
         else -> null
+    }
+
+    // ───────── Dress Code (dressCodeAction: every action answers with the same game) ─────────
+    private fun iso(msAgo: Long) = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+        .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date(System.currentTimeMillis() - msAgo))
+    private fun dress(): Api.Result {
+        val w = { id: String, c: Int -> JSONObject().put("id", id).put("c", c) }
+        val look = JSONObject().put("saree", w("banarasi-zari", 1)).put("blouse", w("bshort-zari", 1)).put("shoes", w("jutti-jewel", 0))
+            .put("hair", w("bun", 0)).put("earrings", w("chandbali", 0)).put("necklace", w("kundan", 0))
+        val owned = JSONArray(listOf("banarasi-zari", "bshort-zari", "jutti-jewel", "bun", "chandbali", "kundan"))
+        val chat = JSONArray()
+            .put(JSONObject().put("r", "girl").put("t", "Hii! Aaj shaadi hai! Saree ya lehenga pehnao 💍").put("at", iso(60000)))
+            .put(JSONObject().put("r", "boy").put("t", "Ye dekho 😄").put("at", iso(20000)))
+        val s = JSONObject().put("id", "demo-dc").put("code", "4821").put("status", if (scene == "dc-reveal") "reveal" else "playing")
+            .put("me", if (girl) "girl" else "boy").put("names", JSONObject().put("boy", "Rahul").put("girl", "Priya"))
+            .put("look", look).put("owned", owned).put("spent", 16).put("girl_earned", 10.72).put("round", 1).put("rating", if (scene == "dc-reveal") 4 else 0)
+            .put("chat", chat).put("chat_locked", false).put("chat_ms_left", 60000).put("partner_online", true)
+            .put("look_started_at", iso(40000)).put("balance", 1250)
+        return ok(JSONObject().put("session", s))
     }
 
     // ───────── Mood Changer (moodChanger: enter / state / start / secret_info …) ─────────

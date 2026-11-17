@@ -60,6 +60,24 @@ object Svg {
         }
     }
 
+    /** Like [bitmapAsync] for pictures drawn once and kept only as pictures (doll looks, wardrobe thumbnails):
+     *  the parsed SVG is not kept, so hundreds of looks don't fill the memory. */
+    fun bitmapOnce(src: String, w: Int, h: Int, done: (Bitmap?) -> Unit) {
+        if (w <= 0 || h <= 0) { done(null); return }
+        val k = key(src, w, h, emptyList())
+        bitmaps.get(k)?.let { done(it); return }
+        val q = waiting[k]
+        if (q != null) { q.add(done); return }
+        waiting[k] = mutableListOf(done)
+        worker.execute {
+            val bmp = render(src, w, h, 0f, emptyList()) { s -> try { SVG.getFromString(s) } catch (e: Throwable) { null } }
+            main.post {
+                if (bmp != null) bitmaps.put(k, bmp)
+                waiting.remove(k)?.forEach { it(bmp) }
+            }
+        }
+    }
+
     /** One drop shadow like the web's feDropShadow (on the parts in [shadowSrc]). */
     class Shadow(val shadowSrc: String, val dx: Float, val dy: Float, val std: Float, val color: Int, val opacity: Float)
 
