@@ -48,9 +48,9 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
         addView(col, LayoutParams(-1, -1))
         val top = FrameLayout(ctx).apply { setPadding(Ui.dpi(16f), Ui.dpi(14f), Ui.dpi(16f), 0); minimumHeight = Ui.dpi(48f) }
         val mid = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        mid.addView(Tf.t(ctx, "True Find", 23f, PURPLE))
+        mid.addView(Tf.t(ctx, "True Find", 23f, PURPLE), LinearLayout.LayoutParams(-2, -2))
         kind = Tf.t(ctx, "", 11.5f, SUB).apply { setPadding(0, Ui.dpi(2f), 0, 0) }
-        mid.addView(kind)
+        mid.addView(kind, LinearLayout.LayoutParams(-2, -2))
         top.addView(mid, LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL))
         val safe = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = Tf.box(INK, 14f); setPadding(Ui.dpi(7f), Ui.dpi(5f), Ui.dpi(10f), Ui.dpi(5f)) }
         safe.addView(ImageView(ctx).apply { setImageDrawable(PathIcon(PathIcon.SHIELD, Ui.c("#D9C8FF"), 16f)) }, LinearLayout.LayoutParams(Ui.dpi(16f), Ui.dpi(16f)).apply { rightMargin = Ui.dpi(6f) })
@@ -79,7 +79,7 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
         val srow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         srow.addView(LiveBlinkDot(ctx, GREEN, 1200, .35f), LinearLayout.LayoutParams(Ui.dpi(7f), Ui.dpi(7f)).apply { rightMargin = Ui.dpi(7f) })
         srow.addView(status)
-        pc.addView(srow)
+        pc.addView(srow, LinearLayout.LayoutParams(-2, -2))   // centred in the panel (alignItems: center)
         cancelBox.orientation = LinearLayout.VERTICAL; cancelBox.gravity = Gravity.CENTER_HORIZONTAL
         val btn = ImageView(ctx).apply {
             setImageDrawable(PathIcon(PathIcon.PHONE, Color.WHITE, 30f)); rotation = 135f; scaleType = ImageView.ScaleType.CENTER
@@ -89,7 +89,7 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
         }
         Ui.pressable(btn, .94f)
         cancelBox.addView(btn, LinearLayout.LayoutParams(Ui.dpi(72f), Ui.dpi(72f)))
-        cancelBox.addView(Tf.t(ctx, "Cancel", 12.5f, Color.WHITE).apply { setPadding(0, Ui.dpi(5f), 0, 0) })
+        cancelBox.addView(Tf.t(ctx, "Cancel", 12.5f, Color.WHITE).apply { setPadding(0, Ui.dpi(5f), 0, 0) }, LinearLayout.LayoutParams(-2, -2))
         pc.addView(cancelBox, LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(14f) })
         pc.addView(spacer, LinearLayout.LayoutParams(1, Ui.dpi(96f)).apply { topMargin = Ui.dpi(14f) })
         panel.addView(pc, LayoutParams(-1, -2))

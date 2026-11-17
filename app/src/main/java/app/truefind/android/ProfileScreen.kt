@@ -576,7 +576,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         center.visibility = VISIBLE
         val ctx = context
         if (loading) { center.addView(TfLoader(ctx, 30f, PC.wine), LinearLayout.LayoutParams(Ui.dpi(30f), Ui.dpi(30f))); return }
-        center.addView(PUi.wordmark(ctx, 24f))
+        center.addView(PUi.wordmark(ctx, 24f), LinearLayout.LayoutParams(-2, -2))
         center.addView(Tf.t(ctx, loadError.ifEmpty { "Your profile is not set up yet." }, 14f, PC.sub, false).apply { gravity = Gravity.CENTER },
             LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(14f) })
         val b = if (loadError.isNotEmpty()) PUi.btn(ctx, "Try again", "primary", Lu.RefreshCw, 17f) { load() } else PUi.btn(ctx, "Complete my profile") { pages.go("/welcome") }
