@@ -91,3 +91,12 @@ jobs:
         with:
           name: screens
           path: shots
+      # the same pictures on the branch "screens" (easy to read back for checking)
+      - name: Keep the screenshots on branch "screens"
+        if: always()
+        run: |
+          cd shots
+          git init -q && git checkout -q -b screens
+          echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
+          git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens
