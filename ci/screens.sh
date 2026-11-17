@@ -95,6 +95,7 @@ shot 32-map-full open --es tf_preview secret-map --ez tf_premium true --es tf_op
 shot 33-map-everyone open --es tf_preview secret-map --ez tf_premium true --es tf_open all
 shot 34-map-online open --es tf_preview secret-map --ez tf_premium true --es tf_open online
 shot 35-map-end open --es tf_preview secret-map --ez tf_premium true --es tf_open scroll
+shot 38-map-near open --es tf_preview secret-map --ez tf_premium true --es tf_open near
 shot 36-map-moving anim --es tf_preview secret-map --ez tf_premium true
 shot 37-map-strong-phone anim --es tf_preview secret-map --ez tf_premium true --es tf_lite 0
 # Chats (/secret-app?tab=chat)
@@ -118,6 +119,9 @@ shot 61-room-typing open --es tf_preview chatroom --ez tf_premium true --es tf_o
 shot 62-room-short home --es tf_preview chatroom --ez tf_premium true --es tf_chat m5
 shot 63-room-gift-sent animopen --es tf_preview chatroom --ez tf_premium true --es tf_chat m2 --es tf_open sendgif
 shot 64-room-strong-phone animopen --es tf_preview chatroom --ez tf_premium true --es tf_lite 0 --es tf_chat m2 --es tf_open gifpremium
+shot 65-room-toast quick --es tf_preview chatroom --ez tf_premium true --es tf_open toast
+shot 66-room-story story --es tf_preview chatroom --ez tf_premium true --es tf_open story
+shot 67-room-not-found open --es tf_preview chatroom --ez tf_premium true --es tf_chat zz --es tf_open error
 fi
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"

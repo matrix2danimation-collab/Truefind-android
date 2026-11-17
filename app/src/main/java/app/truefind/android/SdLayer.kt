@@ -86,7 +86,7 @@ class SdLayer(private val host: FrameLayout) {
     }
 
     /** A full page sliding in from the right (sd-in). [back] may handle Back itself (e.g. leave the edit form). */
-    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}): () -> Unit {
+    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}, animate: Boolean = true): () -> Unit {
         var closed = false
         val close: () -> Unit = {
             if (!closed) {
@@ -97,8 +97,10 @@ class SdLayer(private val host: FrameLayout) {
         }
         view.isClickable = true
         add(view, back, close, z)
-        view.translationX = host.width.toFloat().coerceAtLeast(1000f)
-        view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()
+        if (animate) {
+            view.translationX = host.width.toFloat().coerceAtLeast(1000f)
+            view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()
+        }
         return close
     }
 

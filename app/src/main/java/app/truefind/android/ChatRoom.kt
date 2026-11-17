@@ -142,7 +142,16 @@ class ChatRoom(
         listWrap.addView(listCol, lp(MATCH, WRAP))
         listWrap.addView(tailCol, lp(MATCH, WRAP))
         scroll.addView(listWrap, LayoutParams(-1, -2))
-        scroll.setOnTouchListener { _, e -> if (e.actionMasked == MotionEvent.ACTION_UP && gifOpen) { gifOpen = false; renderTray() }; false }
+        // a tap on the messages (not a scroll) closes the GIFs — the web's onClick on the list
+        val slop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
+        var downX = 0f; var downY = 0f
+        scroll.setOnTouchListener { _, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { downX = e.x; downY = e.y }
+                MotionEvent.ACTION_UP -> if (gifOpen && abs(e.x - downX) < slop && abs(e.y - downY) < slop) { gifOpen = false; renderTray() }
+            }
+            false
+        }
         colv.addView(scroll, lp(MATCH, 0, 1f))
         failBtn.gravity = Gravity.CENTER; failBtn.background = rounded(Ui.c("#FFF1F3"), 16f, 1f, Ui.c("#F8B4C2")); failBtn.setPadding(dpi(11f), dpi(11f), dpi(11f), dpi(11f))
         failBtn.visibility = GONE; failBtn.onTap { send() }
@@ -215,7 +224,7 @@ class ChatRoom(
 
     /** test shots only (made-up data): open one part of the chat room, then say so in the test log */
     fun preview(what: String, tries: Int = 0) {
-        if ((loading || other == null) && tries < 40) { postDelayed({ preview(what, tries + 1) }, 300); return }
+        if ((loading || (other == null && error.isEmpty())) && tries < 40) { postDelayed({ preview(what, tries + 1) }, 300); return }
         if (tries >= 0) { postDelayed({ preview(what, -1) }, 900); return }
         when (what) {
             "gif" -> { gifOpen = true; renderTray() }
@@ -230,6 +239,9 @@ class ChatRoom(
             "block" -> confirm("block")
             "blocked" -> { blockRow = JSONObject(); renderComposer(); renderList() }
             "sendgif" -> gifOf("bouquet")?.let { sendGifNow(it) }
+            "toast" -> say("Watching stories is for Premium members.", "premium")
+            "story" -> { storyPremium = true; openStory() }
+            "error" -> { }
         }
         android.util.Log.i("TFDBG", "preview open $what")
     }

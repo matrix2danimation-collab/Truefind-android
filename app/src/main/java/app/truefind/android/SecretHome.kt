@@ -100,6 +100,9 @@ class SecretHome(
     init {
         SdRules.load(ctx)
         clipChildren = false
+        // nothing of these pages may be drawn below their bottom edge: the web's Secret Dating bar is there
+        outlineProvider = android.view.ViewOutlineProvider.BOUNDS
+        clipToOutline = true
         addView(PinkBackdrop(ctx), LayoutParams(-1, -1))
         scroll.isVerticalScrollBarEnabled = false
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
@@ -887,11 +890,11 @@ class SecretHome(
         SdSheets.verify(this, st) { layer.closeAll(); go("/profile?open=creator", null) }
     }
 
-    fun openProfile(p: JSONObject) {
+    fun openProfile(p: JSONObject): (JSONObject) -> Unit {
         val withOnline = JSONObject(p.toString()).put("_online", p.optBoolean("_online") || p.optString("id") in onlineIds || SdRules.isOnline(p))
         val id = withOnline.optString("id")
         if (id.isNotEmpty() && viewed.add(id) && !id.startsWith("demo")) Api.invoke("recordProfileView", JSONObject().put("profile_id", id)) { }
-        SdProfileView.open(this, withOnline)
+        return SdProfileView.open(this, withOnline)
     }
     // notifications row: with a plan it opens the profile / the chat; without, Go Premium (girls: verify)
     private fun openActivity(x: JSONObject) {
@@ -956,7 +959,7 @@ class SecretHome(
         val xu = x.optString("user_id"); val xp = x.optString("profile_id")
         (xu.isNotEmpty() && (xu == uid || xu == otherId)) || (xp.isNotEmpty() && (xp == pid || xp == otherId))
     }
-    /** Chat list: tap a photo → that person's profile (story + Open Chat) */
+    /** Chat list: tap a photo → that person's profile (story + Open Chat) — at once, the rest of the profile fills in when it arrives */
     fun openFromChat(c: SdChatsPage.Chat) {
         if (!canUse) { locked("chat"); return }
         val known = ((online ?: emptyList()) + (discover ?: emptyList())).firstOrNull { p ->
@@ -965,22 +968,20 @@ class SecretHome(
         val base = known?.let { JSONObject(it.toString()) } ?: JSONObject().put("id", c.pid.ifEmpty { c.id }).put("user_id", c.uid).put("name", c.name).put("photo", c.photo).put("age", c.age).put("verified", c.verified)
         base.put("_online", c.online || base.optString("id") in onlineIds || SdRules.isOnline(base)).put("_chatId", c.id)
         chatStoryFor(c.uid, c.pid, "")?.let { base.put("_story", it) }
-        if (known != null) { openProfile(base); return }
-        // fill in the rest of the profile (about, city, interests…) first — a moment, or the basics if it is slow
-        var opened = false
-        val openNow = Runnable { if (!opened) { opened = true; openProfile(base) } }
-        main.postDelayed(openNow, 1500)
+        val refresh = openProfile(base)
+        if (known != null) return
+        // the web: { ...profile, ...what we had, name/photo/city/state from the profile when we had none }
         fun merge(p: JSONObject) {
-            if (opened) return
             val m = JSONObject(p.toString())
-            base.keys().forEach { k -> if (!m.has(k) || k.startsWith("_") || k == "name" || k == "photo") m.put(k, base.get(k)) }
-            m.put("name", c.name.ifEmpty { SdRules.s(p, "full_name", "name") }).put("photo", c.photo.ifEmpty { SdRules.s(p, "photo", "profile_picture") })
-            main.removeCallbacks(openNow); opened = true; openProfile(m)
+            base.keys().forEach { k -> m.put(k, base.get(k)) }
+            m.put("name", SdRules.s(base, "name").ifEmpty { SdRules.s(p, "full_name", "name") })
+            m.put("photo", SdRules.s(base, "photo").ifEmpty { SdRules.s(p, "photo", "profile_picture") })
+            m.put("city", SdRules.s(base, "city").ifEmpty { SdRules.s(p, "city") }).put("state", SdRules.s(base, "state").ifEmpty { SdRules.s(p, "state") })
+            refresh(m)
         }
-        if (c.pid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("id", c.pid), null, 1) { r ->
-            val p = r.data.optJSONArray("items")?.optJSONObject(0)
-            if (p != null) merge(p) else if (c.uid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("created_by_id", c.uid), null, 1) { r2 -> r2.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } ?: openNow.run() } else openNow.run()
-        } else if (c.uid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("created_by_id", c.uid), null, 1) { r2 -> r2.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } ?: openNow.run() }
+        fun byUser() { if (c.uid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("created_by_id", c.uid), null, 1) { r -> r.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } } }
+        if (c.pid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("id", c.pid), null, 1) { r -> r.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } ?: byUser() }
+        else byUser()
     }
     /** Chat list: tap the name / message → the chat (a locked chat opens the plans straight away) */
     fun openChatRow(c: SdChatsPage.Chat) {
