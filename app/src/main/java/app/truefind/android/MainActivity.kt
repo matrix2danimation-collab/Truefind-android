@@ -38,6 +38,8 @@ import org.json.JSONObject
  *    calls, games …
  *  - Explore is drawn natively (ExploreScreen) on top of the web page whenever
  *    the address is /explore. The web's own bottom bar stays visible under it.
+ *  - Random Match (Home → Voice Call / Video Call) is native too (RandomMatchLayer):
+ *    price sheet, "Finding someone…", calling; the call page itself is the web's.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -49,10 +51,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var root: FrameLayout
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
+    private lateinit var random: RandomMatchLayer
     private var path = "/"
     private var cover = false
     private var navTopCss = -1f
     private var scriptAtStart = false
+    private var preview = ""   // CI emulator test pictures (tf_preview extra)
     private val updater by lazy { Updater(this) }
 
     // ── permissions asked by the web page (mic / camera for calls, location for the map) ──
@@ -114,16 +118,34 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         explore.visibility = View.GONE
         root.addView(explore, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        // Random Match pop-ups: above the web page and Explore (the web's sheet sat over everything too)
+        random = RandomMatchLayer(this) { p, state -> openWeb(p, state) }
+        random.elevation = Ui.dp(60f)
+        root.addView(random, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (random.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (web.canGoBack()) web.goBack() else finish()
             }
         })
 
+        // test pictures on the CI emulator: made-up data, no login, no web page
+        // (adb … --es tf_preview random --es tf_open sheet); never in a Play Store build
+        preview = if (BuildConfig.SELF_UPDATE) intent?.getStringExtra("tf_preview").orEmpty() else ""
+        if (preview == "random") {
+            val what = intent?.getStringExtra("tf_open") ?: "sheet"
+            root.post { random.preview(what) }
+            return
+        }
+
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
         if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: START_URL)
     }
+
+    /** Opens the native Random Match price sheet (for a native Home: Voice Call / Video Call). */
+    fun openRandomMatch(type: String) = random.open(type)
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWeb() {
@@ -236,8 +258,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     // ── from the page ──
     override fun onRoute(path: String) {
         this.path = path
+        random.onPath(path)
         update()
     }
+
+    override fun onRandom(type: String) = openRandomMatch(type)
 
     override fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean) {
         Api.origin = origin
@@ -245,6 +270,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Api.token = token
         this.navTopCss = navTopCss
         this.cover = cover
+        random.setCovered(cover)
         update()
     }
 
@@ -264,7 +290,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
-        updater.check() // test builds: "Update available" when GitHub has a newer APK
+        if (preview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {

@@ -20,9 +20,13 @@ import android.widget.TextView
  * "Finding someone…" / "Calling Riya…" — the native copy of the web's
  * CallStageScreen (white page, round photo with lilac pulses, purple panel
  * at the bottom with the red Cancel button while searching).
+ *
+ * [webLook] (Random Match): also the web's doodle pattern on the white page and
+ * on the purple panel, the panel sliding up (dcsPanel) and the blinking green
+ * dot (dcsBlink). Explore keeps its own look (webLook = false).
  */
 @SuppressLint("ViewConstructor")
-class CallStageView(ctx: Context) : FrameLayout(ctx) {
+class CallStageView(ctx: Context, private val webLook: Boolean = false) : FrameLayout(ctx) {
     private val INK = Ui.c("#15101E"); private val SUB = Ui.c("#4A4458"); private val PURPLE = Ui.c("#6A1FD0")
     private val LILAC = Ui.c("#B794FF"); private val LILAC_TEXT = Ui.c("#E4D4FF"); private val GREEN = Ui.c("#1B9E4B")
     private val RED = Ui.c("#FF2D3D"); private val PANEL = Ui.c("#4B1396"); private val LAV2 = Ui.c("#EDE2FF")
@@ -35,10 +39,13 @@ class CallStageView(ctx: Context) : FrameLayout(ctx) {
     private val cancelBox: LinearLayout
     private val spacer: View
     private val pulses: PulseView
+    private val panel: LinearLayout
+    private val dot: GradientDrawable
+    private val blink: ValueAnimator?
     var onCancel: (() -> Unit)? = null
 
     init {
-        setBackgroundColor(Color.WHITE)
+        if (webLook) background = Doodles.Page() else setBackgroundColor(Color.WHITE)
         isClickable = true // nothing under it can be tapped
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
         addView(col, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -84,17 +91,29 @@ class CallStageView(ctx: Context) : FrameLayout(ctx) {
         col.addView(center, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
         // bottom panel
-        val panel = LinearLayout(ctx).apply {
+        panel = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
-            background = GradientDrawable().apply {
+            background = if (webLook) Doodles.Panel(PANEL, Ui.dp(34f)) else GradientDrawable().apply {
                 setColor(PANEL)
                 cornerRadii = floatArrayOf(Ui.dp(34f), Ui.dp(34f), Ui.dp(34f), Ui.dp(34f), 0f, 0f, 0f, 0f)
             }
             setPadding(Ui.dpi(22f), Ui.dpi(22f), Ui.dpi(22f), Ui.dpi(26f))
         }
+        dot = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(GREEN); setSize(Ui.dpi(7f), Ui.dpi(7f)) }
         status = Ui.text(ctx, "", 12.5f, LILAC_TEXT, false).apply {
             compoundDrawablePadding = Ui.dpi(7f)
-            setCompoundDrawablesWithIntrinsicBounds(GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(GREEN); setSize(Ui.dpi(7f), Ui.dpi(7f)) }, null, null, null)
+            setCompoundDrawablesWithIntrinsicBounds(dot, null, null, null)
+        }
+        // dcsBlink 1.2 s: the green dot fades to 35 % and back
+        blink = if (!webLook) null else ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1200; repeatCount = ValueAnimator.INFINITE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                val f = it.animatedValue as Float
+                val k = 1f - 0.65f * (if (f < 0.5f) f * 2f else (1f - f) * 2f)
+                dot.alpha = (k * 255).toInt()
+                status.invalidate()
+            }
         }
         panel.addView(status)
         cancelBox = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
@@ -115,39 +134,65 @@ class CallStageView(ctx: Context) : FrameLayout(ctx) {
         col.addView(panel, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
     }
 
-    /** stage: "search" or "calling" */
-    fun show(stage: String, type: String, rate: Int, face: Bitmap?, name: String) {
+    private var curStage = "search"
+    private var curType = "voice"
+
+    /** stage: "search" or "calling". [title] replaces the first line (Random Match: "Finding someone for you…"). */
+    fun show(stage: String, type: String, rate: Int, face: Bitmap?, name: String, title: String? = null) {
         val video = type == "video"
+        curStage = stage; curType = type
         kind.text = "${if (video) "Video" else "Voice"} call · $rate coins/min"
         val who = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
         if (stage == "search") {
-            line.text = if (video) "Finding a video partner…" else "Finding someone to talk…"
+            line.text = title ?: if (video) "Finding a video partner…" else "Finding someone to talk…"
             sub.text = "Only people who are online and free"
             status.text = "Searching"
             cancelBox.visibility = View.VISIBLE; spacer.visibility = View.GONE
         } else {
-            line.text = if (who.isNotEmpty()) "Calling $who…" else "Calling…"
+            line.text = title ?: if (who.isNotEmpty()) "Calling $who…" else "Calling…"
             sub.text = "Please wait a moment"
             status.text = "Connecting"
             cancelBox.visibility = View.GONE; spacer.visibility = View.VISIBLE
         }
-        if (face != null) {
-            photo.scaleType = ImageView.ScaleType.CENTER_CROP
-            photo.setImageBitmap(face)
-        } else {
-            photo.scaleType = ImageView.ScaleType.CENTER
-            photo.setImageDrawable(PathIcon(if (video) PathIcon.VIDEO else PathIcon.PHONE, PURPLE, 52f))
-        }
+        setFace(face)
         pulses.start()
+        blink?.let { if (!it.isStarted) it.start() }
         if (visibility != View.VISIBLE) {
             visibility = View.VISIBLE
             alpha = 0f; scaleX = 0.97f; scaleY = 0.97f
             animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(400).start()
+            if (webLook) {
+                // dcsPanel: the purple panel slides up (.5 s, 50 ms after the page)
+                panel.translationY = Ui.dp(400f)
+                panel.post {
+                    panel.translationY = panel.height.toFloat()
+                    panel.animate().translationY(0f).setStartDelay(50).setDuration(500)
+                        .setInterpolator(android.view.animation.PathInterpolator(0.22f, 1f, 0.36f, 1f)).start()
+                }
+            }
+        }
+    }
+
+    /** The round picture: the photo, else (searching) the call icon, else the plain default avatar. */
+    fun setFace(face: Bitmap?) {
+        if (face != null) {
+            photo.scaleType = ImageView.ScaleType.CENTER_CROP
+            photo.setImageBitmap(face)
+        } else if (curStage != "search") {
+            photo.scaleType = ImageView.ScaleType.CENTER_CROP
+            photo.setImageBitmap(Doodles.defaultAvatar(Ui.dpi(140f)))
+        } else {
+            photo.scaleType = ImageView.ScaleType.CENTER
+            photo.setImageDrawable(PathIcon(if (curType == "video") PathIcon.VIDEO else PathIcon.PHONE, PURPLE, 52f))
         }
     }
 
     fun hide() {
         pulses.stop()
+        blink?.cancel()
+        dot.alpha = 255
+        panel.animate().cancel()
+        panel.translationY = 0f
         visibility = View.GONE
     }
 
