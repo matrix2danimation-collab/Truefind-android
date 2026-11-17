@@ -1,0 +1,24 @@
+// CI only (branch home-native): copies the jars the app's Kotlin code is
+// compiled against into ./cp, so the code can be checked on another computer
+// that cannot download Android libraries. Not part of the app.
+allprojects { p ->
+  p.afterEvaluate {
+    if (p.name == 'app') {
+      p.tasks.register('exportCp') {
+        dependsOn 'compileDebugKotlin'
+        doLast {
+          def dir = new File(p.rootDir, 'cp')
+          dir.mkdirs()
+          def kc = p.tasks.getByName('compileDebugKotlin')
+          kc.libraries.files.each { f ->
+            if (f.isFile() && f.name.endsWith('.jar')) {
+              def up = f.parentFile?.parentFile?.name ?: 'x'
+              def name = (f.name == 'classes.jar' || f.name == 'R.jar') ? (up + '-' + f.name) : f.name
+              java.nio.file.Files.copy(f.toPath(), new File(dir, name).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            }
+          }
+        }
+      }
+    }
+  }
+}

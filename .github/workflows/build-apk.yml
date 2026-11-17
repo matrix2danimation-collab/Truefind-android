@@ -48,6 +48,20 @@ jobs:
           name: TrueFind-test-apk
           path: TrueFind-test.apk
 
+      # branch home-native only: the jars the Kotlin code is compiled against, kept
+      # on the branch "cp-home" so the code can be checked before each push
+      - name: Keep the compile jars on branch "cp-home"
+        if: github.ref_name == 'home-native'
+        continue-on-error: true
+        run: |
+          gradle -I ci/cp.gradle :app:exportCp --no-daemon -q
+          cp "$ANDROID_HOME/platforms/android-36/android.jar" cp/ 2>/dev/null || cp "$(ls -d $ANDROID_HOME/platforms/android-* | sort -V | tail -1)/android.jar" cp/
+          ls -la cp | head -80
+          cd cp
+          git init -q && git checkout -q -b cp-home
+          git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "cp ${{ github.sha }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" cp-home
+
       # only main reaches the phone's Update button; work branches are tested first
       - name: Put the APK on the Releases page
         if: github.ref == 'refs/heads/main'
@@ -91,12 +105,14 @@ jobs:
         with:
           name: screens
           path: shots
-      # the same pictures on the branch "screens" (easy to read back for checking)
+      # the same pictures on the branch "screens" (easy to read back for checking);
+      # the home-native work branch keeps its own pictures on "screens-home"
       - name: Keep the screenshots on branch "screens"
         if: always()
         run: |
           cd shots
-          git init -q && git checkout -q -b screens
+          B=screens; [ "${{ github.ref_name }}" = "home-native" ] && B=screens-home
+          git init -q && git checkout -q -b "$B"
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$B"
