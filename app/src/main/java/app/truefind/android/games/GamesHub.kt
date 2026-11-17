@@ -316,8 +316,13 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         val s = Sheet(this, CssBg(floatArrayOf(26f, 26f, 0f, 0f), emptyList(), fill = Color.WHITE), G.ca("#180834", 0.45f), 18f, 10f, 18f, 20f, 0f)
         sheet = s
         val p = s.panel
-        p.addView(View(ctx).apply { background = G.round(G.c("#ddd2ee"), 2f) }, LinearLayout.LayoutParams(G.dpi(40f), G.dpi(4f)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = G.dpi(14f) })
-        val head = FrameLayout(ctx)
+        // grip + title row, and the round close button 12 px from the sheet's top and right edge (web: absolute,
+        // right 12, top 12 of the sheet). This top part spans the whole sheet, its padding included, so the
+        // button is neither cut off nor out of reach of a tap.
+        p.clipToPadding = false
+        val top = FrameLayout(ctx)
+        val topCol = G.vbox(ctx).apply { pad(18f, 10f, 18f, 0f) }
+        topCol.addView(View(ctx).apply { background = G.round(G.c("#ddd2ee"), 2f) }, LinearLayout.LayoutParams(G.dpi(40f), G.dpi(4f)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = G.dpi(14f) })
         val row = G.hbox(ctx, 14f)
         row.pad(0f, 0f, 40f, 0f)
         val box = FrameLayout(ctx).apply {
@@ -330,15 +335,16 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         tcol.addView(G.text(ctx, "ClueMe", 25f, TG.ink).lineH(1.1f))
         tcol.addView(G.text(ctx, "Clue do, naam bujhao · 1 vs 1", 14.5f, TG.sub, bold = false).lineH(1.3f), G.lp(G.WRAP, G.WRAP).m(t = 4f))
         row.addView(tcol, G.lpw(1f))
-        head.addView(row, FrameLayout.LayoutParams(G.MATCH, G.WRAP))
+        topCol.addView(row, G.lp(G.MATCH, G.WRAP))
+        top.addView(topCol, FrameLayout.LayoutParams(G.MATCH, G.WRAP))
         val close = FrameLayout(ctx).apply {
             background = G.oval(G.c("#f4effc"))
             contentDescription = "Close"
             addView(G.icon(ctx, "X", G.c("#5b4a7a"), 18f, 2.2f), FrameLayout.LayoutParams(G.dpi(18f), G.dpi(18f), Gravity.CENTER))
         }
         G.click(close, 0.97f) { s.close() }
-        head.addView(close, FrameLayout.LayoutParams(G.dpi(34f), G.dpi(34f), Gravity.END or Gravity.TOP).m(t = -16f, r = -6f))
-        p.addView(head, G.lp(G.MATCH, G.WRAP))
+        top.addView(close, FrameLayout.LayoutParams(G.dpi(34f), G.dpi(34f), Gravity.END or Gravity.TOP).m(t = 12f, r = 12f))
+        p.addView(top, G.lp(G.MATCH, G.WRAP).m(l = -18f, t = -10f, r = -18f))
 
         val ex = G.vbox(ctx).apply {
             background = CssBg(16f, listOf(CssBg.Linear(180f, intArrayOf(G.c("#faf7ff"), G.c("#f4eefd")))), border = G.c("#ece4fa"), borderDp = 1.5f)

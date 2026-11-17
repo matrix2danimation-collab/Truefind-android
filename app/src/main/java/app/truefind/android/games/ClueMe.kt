@@ -510,7 +510,8 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
             create.addView(G.text(ctx, "Get a code and share it with your partner.", 13f, G.ca("#ffffff", 0.6f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 2f))
             val cb = button("Create game", "theme") { run("create", fallback = "That didn't work. Try again.") }
             // web: while busy the button shows the white loader instead of its words
-            createSpin = TfSpinner(ctx, 20f, white = true).also { cb.addView(it, LinearLayout.LayoutParams(G.dpi(20f), G.dpi(20f))) }
+            createSpin = TfSpinner(ctx, 20f, white = true).also { it.visibility = if (busy) View.VISIBLE else View.GONE; cb.addView(it, LinearLayout.LayoutParams(G.dpi(20f), G.dpi(20f))) }
+            cb.getChildAt(0)?.visibility = if (busy) View.GONE else View.VISIBLE
             createBtn = cb
             actionBtns.add(cb)
             create.addView(cb, blp(48f, 12f))

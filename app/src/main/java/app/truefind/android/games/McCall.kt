@@ -224,7 +224,12 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
         col.addView(players, G.lp(G.MATCH, G.WRAP))
 
         // the question zone (scrolls)
-        val qzone = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS; clipToPadding = false }
+        val qzone = ScrollView(ctx).apply {
+            isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS; clipToPadding = false
+            // .qzone { overflow-y: auto }: what doesn't fit scrolls inside, never over the buttons below
+            // (the screen's column lets the avatar rings reach outside, so the zone clips itself)
+            outlineProvider = android.view.ViewOutlineProvider.BOUNDS; clipToOutline = true
+        }
         qcol = G.vbox(ctx, if (compact) 10f else 12f)
         qcol.pad(16f, if (compact) 12f else 16f, 16f, 6f)
         qcol.clipChildren = false; qcol.clipToPadding = false

@@ -358,13 +358,15 @@ class TfSpinner(ctx: Context, private val sizeDp: Float, white: Boolean = false)
         addUpdateListener { t = it.animatedValue as Float; invalidate() }
     }
     init { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); if (!anim.isStarted) anim.start() }
+    // runs only while it is on screen: a hidden spinner (e.g. a button's, while not busy) costs nothing
+    override fun onVisibilityAggregated(isVisible: Boolean) { super.onVisibilityAggregated(isVisible); if (!isVisible) anim.cancel() else invalidate() }
     override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val s = G.dpi(sizeDp)
         setMeasuredDimension(resolveSize(s, widthMeasureSpec), resolveSize(s, heightMeasureSpec))
     }
     override fun onDraw(c: android.graphics.Canvas) {
+        if (!anim.isStarted && isAttachedToWindow) anim.start() // drawn = on screen
         val size = kotlin.math.min(width, height).toFloat()
         if (size <= 0f) return
         val cx = width / 2f; val cy = height / 2f
