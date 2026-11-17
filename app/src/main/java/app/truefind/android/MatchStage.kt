@@ -72,7 +72,8 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
         center.addView(sub)
         col.addView(center, LinearLayout.LayoutParams(-1, 0, 1f))
         val panel = FrameLayout(ctx).apply { background = Tf.topRound(PANEL, 34f); clipToOutline = true }
-        panel.addView(View(ctx).apply { background = PatternFill(PANEL_DOODLE, 120f, -8f, "panelDoodle") }, LayoutParams(-1, -1))
+        // the doodles fill the panel; they never make it taller (its height comes from its content)
+        panel.addView(FillView(ctx).apply { background = PatternFill(PANEL_DOODLE, 120f, -8f, "panelDoodle") }, LayoutParams(-1, -1))
         val pc = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(Ui.dpi(22f), Ui.dpi(22f), Ui.dpi(22f), Ui.dpi(26f)) }
         status = Tf.t(ctx, "", 12.5f, LILAC_TEXT, false).apply { gravity = Gravity.CENTER_VERTICAL; compoundDrawablePadding = Ui.dpi(7f) }
         val srow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -133,6 +134,15 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
     companion object {
         const val DOODLE = "<svg viewBox=\"0 0 140 140\"><g fill=\"none\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><g stroke=\"#7B2FF7\" opacity=\"0.28\"><path d=\"M22 34c-6-9-20-3-11 9l11 11 11-11c9-12-5-18-11-9z\"/><path d=\"M98 52l4 9 10 1-8 6 3 10-9-6-9 6 3-10-8-6 10-1z\"/><path d=\"M50 118v-14l10-3v14\"/><circle cx=\"47\" cy=\"119\" r=\"3\"/><circle cx=\"57\" cy=\"116\" r=\"3\"/><path d=\"M118 112l-6 10h8l-6 10\"/></g><g stroke=\"#15101E\" opacity=\"0.16\"><path d=\"M66 18q8-10 16 0t16 0t16 0\"/><circle cx=\"28\" cy=\"88\" r=\"7\"/><path d=\"M66 74a6 6 0 1 1 6 6a10 10 0 1 1-10-10\"/><path d=\"M92 104v14M85 111h14\"/><path d=\"M10 128c6-4 12 4 18 0\"/><path d=\"M124 22l6 6M130 22l-6 6\"/></g></g></svg>"
         const val PANEL_DOODLE = "<svg viewBox=\"0 0 120 120\"><g fill=\"none\" stroke=\"#fff\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.13\"><path d=\"M20 30c-5-8-17-3-9 8l9 9 9-9c8-11-4-16-9-8z\"/><path d=\"M84 44l3 8 9 1-7 5 3 9-8-5-8 5 3-9-7-5 9-1z\"/><path d=\"M56 16q7-9 14 0t14 0\"/><circle cx=\"26\" cy=\"78\" r=\"6\"/><path d=\"M44 102v-12l9-3v12\"/><circle cx=\"41\" cy=\"103\" r=\"3\"/><circle cx=\"50\" cy=\"100\" r=\"3\"/><path d=\"M82 92v12M76 98h12\"/><path d=\"M104 100l-5 9h7l-5 9\"/></g></svg>"
+    }
+}
+
+/** A background-only view: as big as its parent when the parent's size is known, never asking for more. */
+class FillView(ctx: Context) : View(ctx) {
+    override fun onMeasure(w: Int, h: Int) {
+        val ww = if (MeasureSpec.getMode(w) == MeasureSpec.EXACTLY) MeasureSpec.getSize(w) else 0
+        val hh = if (MeasureSpec.getMode(h) == MeasureSpec.EXACTLY) MeasureSpec.getSize(h) else 0
+        setMeasuredDimension(ww, hh)
     }
 }
 

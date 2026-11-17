@@ -253,7 +253,10 @@ object HomeTiles {
             contentDescription = "Open $title, ${HomeRules.cityOf(p).ifEmpty { "India" }}, ${if (free) "online" else if (busy) "on a call" else "offline"}${if (hours.isNotEmpty()) ", $hours" else ""}"
             setOnClickListener { call() }
         }
-        card.addView(View(ctx).apply { background = TileFill(Svg.of(HomeArt.DOODLE_TILE), 60f * m.z, "doodle", Color.WHITE) }, FrameLayout.LayoutParams(-1, m.pi(116f)))
+        // the doodles sit inside the card's border (like the web's absolute span in the padding box)
+        val bw = Math.round(m.px(1.5f))
+        card.addView(View(ctx).apply { background = TileFill(Svg.of(HomeArt.DOODLE_TILE), 60f * m.z, "doodle", Color.WHITE) },
+            FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false }
         val av = FrameLayout(ctx).apply { clipChildren = false }
         val ring = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE).apply { setStroke(m.pi(3f), Ui.c("#E4DAFA")) }; setPadding(m.pi(3f), m.pi(3f), m.pi(3f), m.pi(3f)) }
@@ -265,7 +268,8 @@ object HomeTiles {
             FrameLayout.LayoutParams(m.pi(13f), m.pi(13f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = m.pi(1f); bottomMargin = m.pi(1f) })
         col.addView(av, LinearLayout.LayoutParams(m.pi(64f), m.pi(64f)).apply { topMargin = m.pi(24f) })
         col.addView(View(ctx), LinearLayout.LayoutParams(1, 0, 1f))
-        col.addView(Tf.tpx(ctx, title, m.px(14f), Ui.c("#1F1235")).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = m.pi(101f) })
+        col.addView(Tf.tpx(ctx, title, m.px(14f), Ui.c("#1F1235")).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = m.pi(101f) },
+            LinearLayout.LayoutParams(-2, -2))
         if (hours.isNotEmpty()) col.addView(Tf.tpx(ctx, hours, m.px(11f), Ui.c("#5B21B6")).apply { maxLines = 1 }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(2f) })
         col.addView(View(ctx), LinearLayout.LayoutParams(1, m.pi(52f)))
         card.addView(col, FrameLayout.LayoutParams(-1, -1))

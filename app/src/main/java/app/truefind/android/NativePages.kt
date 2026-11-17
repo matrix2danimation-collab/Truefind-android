@@ -122,7 +122,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
       if (document.documentElement.classList.contains('tfhn')) { var te = document.querySelector('.tf-tab[data-tab="home"] [role="status"]'); if (te) ht = String(te.textContent || '').trim(); }
       var o = { path: location.pathname || '/', search: location.search || '', usr: st.usr == null ? null : st.usr,
         idx: st.idx == null ? -1 : st.idx, cover: covered(), unread: badge ? String(badge.textContent || '') : '',
-        pill: !!(pill && pill.getClientRects().length), htoast: ht };
+        pill: !!(pill && pill.getClientRects().length), htoast: ht, cls: String(document.documentElement.className || '') };
       var s = JSON.stringify(o);
       if (s !== last) { last = s; H.state(location.origin, s); }
     } catch(e){}
@@ -217,6 +217,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val u = o.optString("unread").trim()
         unread = if (u.endsWith("+")) 100 else u.toIntOrNull() ?: 0
         gotState = true
+        // a new page (reload) has none of the classes that hide the web screens: set them again
+        val cls = o.optString("cls", "").split(' ').filter { it.isNotEmpty() }.toSet()
+        if (classes.any { (c, on) -> on != cls.contains(c) }) classes.clear()
         // a message of the (hidden) web Home, e.g. "Invite from … added": shown on the native Home
         val ht = o.optString("htoast", "")
         if (ht.isNotEmpty() && ht != lastHomeToast && onHome) home.say(ht)

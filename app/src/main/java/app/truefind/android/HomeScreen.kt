@@ -153,7 +153,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx
         ping.addView(PingDot(ctx, Ui.c("#22C55E"), m.px(10f), 1800, 3.2f, .55f, .7f), LayoutParams(m.pi(36f), m.pi(36f), Gravity.CENTER))
         ping.clipChildren = false
         val pingWrap = FrameLayout(ctx).apply { clipChildren = false }
-        pingWrap.addView(ping, LayoutParams(m.pi(36f), m.pi(36f), Gravity.CENTER).apply { leftMargin = -m.pi(13f); topMargin = -m.pi(13f) })
+        // the 36 box is centred on the 10 dot by the gravity alone (the ring grows past the dot)
+        pingWrap.addView(ping, LayoutParams(m.pi(36f), m.pi(36f), Gravity.CENTER))
         oh.addView(pingWrap, LinearLayout.LayoutParams(m.pi(10f), m.pi(10f)).apply { rightMargin = m.pi(8f) })
         oh.clipChildren = false
         oh.addView(Tf.tpx(ctx, "Online now", m.px(18f), Ui.c("#1F1235")).apply { letterSpacing = -0.2f / 18f })

@@ -313,6 +313,8 @@ object PUi {
 
     private class HeadDeco(ctx: Context, private val ring: Boolean) : View(ctx) {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        // decoration only: takes the size of the top, never makes it bigger
+        override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(if (MeasureSpec.getMode(w) == MeasureSpec.EXACTLY) MeasureSpec.getSize(w) else 0, if (MeasureSpec.getMode(h) == MeasureSpec.EXACTLY) MeasureSpec.getSize(h) else 0)
         override fun onDraw(c: Canvas) {
             val w = width.toFloat(); val h = height.toFloat()
             p.style = Paint.Style.FILL; p.color = Color.argb(15, 255, 255, 255)

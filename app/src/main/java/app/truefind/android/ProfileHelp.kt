@@ -394,10 +394,11 @@ class PSupport(val ctx: Context, private val ps: ProfileScreen) {
                 }
             }
             val fg = if (mine) Color.WHITE else HC.ink
+            // every line wraps its text: the bubble is as wide as its longest line (at most 84 %)
             if (!mine) b.addView(Tf.t(ctx, "True Find team", 11.5f, HC.purple), LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = Ui.dpi(2f) })
-            b.addView(PUi.para(ctx, PR.s(m, "text"), 13.5f, fg, 19f))
+            b.addView(PUi.para(ctx, PR.s(m, "text"), 13.5f, fg, 19f), LinearLayout.LayoutParams(-2, -2))
             if (PR.truthy(m.opt("attachment"))) b.addView(Tf.t(ctx, "Screenshot attached", 11.5f, fg, false).apply { alpha = 0.8f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
-            b.addView(Tf.t(ctx, Tf.dateTime(PR.s(m, "at"), true), 10.5f, fg, false).apply { alpha = 0.7f; gravity = Gravity.END }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(4f) })
+            b.addView(Tf.t(ctx, Tf.dateTime(PR.s(m, "at"), true), 10.5f, fg, false).apply { alpha = 0.7f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f); gravity = Gravity.END })
             wrap.addView(b, LinearLayout.LayoutParams(-2, -2))
             list.addView(wrap, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = Ui.dpi(8f) })
         }
