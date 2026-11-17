@@ -49,7 +49,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var root: FrameLayout
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
-    private var path = "/"
+    private lateinit var dance: LiveDanceScreen
+    private var danceGate = false   // the published web page leaves Live Dance to this app
+    private var danceOn = false
+    private var path = "/"          // path + ?query
     private var cover = false
     private var navTopCss = -1f
     private var scriptAtStart = false
@@ -86,6 +89,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
+    // camera + mic for dancing live (native Live Dance)
+    private var avCb: ((Boolean) -> Unit)? = null
+    private val askAv = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        val cb = avCb; avCb = null
+        cb?.invoke(has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO))
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,8 +124,44 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         explore.visibility = View.GONE
         root.addView(explore, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        dance = LiveDanceScreen(this, object : LiveDanceScreen.Nav {
+            override fun go(path: String) {
+                // show it at once; the web address follows (a moment later, through onRoute)
+                if (isDance(path)) { this@MainActivity.path = path; update() }
+                openWeb(path, null)
+            }
+            override fun replace(path: String) {
+                if (isDance(path)) { this@MainActivity.path = path; update() }
+                web.evaluateJavascript("window.__tfReplace && window.__tfReplace(${JSONObject.quote(path)});", null)
+            }
+            override fun back() {
+                if (web.canGoBack()) web.goBack()
+                else replace(if (pathOnly(this@MainActivity.path) != "/dance") "/dance" else "/")
+            }
+            override fun askCameraMic(done: (Boolean) -> Unit) {
+                if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) { done(true); return }
+                avCb?.invoke(false)
+                avCb = done
+                askAv.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO))
+            }
+            override fun share(title: String, text: String) {
+                try {
+                    val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, title); putExtra(Intent.EXTRA_TEXT, text) }
+                    startActivity(Intent.createChooser(i, title))
+                } catch (e: Exception) { }
+            }
+        })
+        dance.visibility = View.GONE
+        root.addView(dance, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (dance.visibility == View.VISIBLE) {
+                    if (!dance.onBack()) {
+                        if (web.canGoBack()) web.goBack() else dance.nav.back()
+                    }
+                    return
+                }
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (web.canGoBack()) web.goBack() else finish()
             }
@@ -248,8 +294,31 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         update()
     }
 
+    override fun onCaps(dance: Boolean) {
+        // only when our script ran before the page's own code (else the web page draws Live Dance itself)
+        val on = dance && scriptAtStart
+        if (on == danceGate) return
+        danceGate = on
+        update()
+    }
+
+    private fun pathOnly(p: String) = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }
+    private fun isDance(p: String): Boolean { val o = pathOnly(p); return o == "/dance" || o.startsWith("/dance/") }
+    private fun webMode(p: String) = try { Uri.parse("https://x$p").getQueryParameter("web") == "1" } catch (e: Exception) { false }
+
     private fun update() {
-        val onExplore = path.trimEnd('/') == "/explore"
+        // ── Live Dance: native when the web page hands it over (not for ?web=1 pages) ──
+        val wantDance = isDance(path) && !webMode(path) && danceGate && Api.token.isNotEmpty()
+        if (wantDance) {
+            danceOn = true
+            dance.route(path)
+            dance.setShown(!cover)
+        } else if (danceOn) {
+            danceOn = false
+            dance.leave()
+        }
+
+        val onExplore = pathOnly(path) == "/explore"
         val show = onExplore && !cover && Api.token.isNotEmpty()
         // native Explore ends where the web's bottom bar starts
         val lp = explore.layoutParams as FrameLayout.LayoutParams
@@ -264,11 +333,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
+        dance.onAppVisible(true)
         updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
         explore.onAppVisible(false)
+        dance.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }
@@ -284,6 +355,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onDestroy() {
+        dance.leave()
+        DanceVideo.destroyAll()
         root.removeView(web)
         web.destroy()
         super.onDestroy()

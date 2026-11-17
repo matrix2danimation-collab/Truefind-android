@@ -18,6 +18,12 @@ android {
         // test builds: the app checks this file and offers the newer APK (Update button)
         buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/test-build/version.json\"")
         buildConfigField("boolean", "SELF_UPDATE", "true")
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Live Dance video (Agora) ships for phones (ARM) only; the emulator tests add x86_64
+        ndk {
+            abiFilters += if (project.findProperty("tfAllAbis") == "true") listOf("arm64-v8a", "armeabi-v7a", "x86_64") else listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     // Test builds are always signed with the same key (in this repo), so a new
@@ -50,8 +56,18 @@ android {
     }
 }
 
+val agoraVersion = (project.findProperty("agoraVersion") as String?) ?: "4.5.2"
+
 dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    // Live Dance video: Agora's Android engine, basic part only (no extensions) to keep the app small
+    implementation("io.agora.rtc:full-rtc-basic:$agoraVersion")
+
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.webkit:webkit:1.14.0")
 }

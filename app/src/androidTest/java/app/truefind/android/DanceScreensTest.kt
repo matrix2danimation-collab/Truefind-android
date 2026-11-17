@@ -1,0 +1,233 @@
+package app.truefind.android
+
+import android.graphics.Bitmap
+import android.os.ParcelFileDescriptor
+import android.view.View
+import android.view.ViewGroup
+import android.widget.EditText
+import androidx.recyclerview.widget.RecyclerView
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+import java.io.FileOutputStream
+
+/**
+ * Opens every native Live Dance screen with a pretend server (FakeDance),
+ * taps what a person would tap, checks what happens and saves a picture of
+ * each screen in /data/local/tmp/tf-shots (the GitHub build pulls them).
+ * Problems are collected and reported together at the end, so one run shows everything.
+ */
+@RunWith(AndroidJUnit4::class)
+class DanceScreensTest {
+    private lateinit var scenario: ActivityScenario<DanceTestActivity>
+    private lateinit var fake: FakeDance
+    private val inst = InstrumentationRegistry.getInstrumentation()
+    private val problems = ArrayList<String>()
+    private val dir = "/data/local/tmp/tf-shots"
+
+    @Before fun start() {
+        fake = FakeDance()
+        DanceApi.fake = { n, p -> fake.handle(n, p) }
+        shell("mkdir -p $dir")
+        scenario = ActivityScenario.launch(DanceTestActivity::class.java)
+        wait(500)
+    }
+
+    @After fun end() { DanceApi.fake = null; scenario.close() }
+
+    private fun shell(cmd: String) {
+        try {
+            val pfd = inst.uiAutomation.executeShellCommand(cmd)
+            ParcelFileDescriptor.AutoCloseInputStream(pfd).use { it.readBytes() }
+        } catch (e: Throwable) { }
+    }
+
+    private fun act(f: (DanceTestActivity) -> Unit) { scenario.onActivity { f(it) }; inst.waitForIdleSync() }
+    private fun wait(ms: Long) { Thread.sleep(ms); inst.waitForIdleSync() }
+    private fun check(ok: Boolean, what: String) { if (!ok) problems.add(what) }
+
+    private fun shot(name: String) {
+        wait(300)
+        shell("screencap -p $dir/$name.png")
+        if (!File("$dir/$name.png").exists()) {
+            // fallback: draw the window ourselves (kept inside the app)
+            scenario.onActivity { a ->
+                val v = a.window.decorView
+                val b = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
+                v.draw(android.graphics.Canvas(b))
+                val f = File(a.filesDir, "shots").apply { mkdirs() }
+                FileOutputStream(File(f, "$name.png")).use { b.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
+        }
+    }
+
+    /** the visible views whose contentDescription is [desc] (or starts with it when [prefix]) */
+    private fun find(root: View, desc: String, prefix: Boolean, out: MutableList<View>) {
+        if (!root.isShown) return
+        val cd = root.contentDescription?.toString()
+        if (cd != null && (cd == desc || (prefix && cd.startsWith(desc)))) out.add(root)
+        if (root is ViewGroup) for (i in 0 until root.childCount) find(root.getChildAt(i), desc, prefix, out)
+    }
+
+    private fun views(desc: String, prefix: Boolean = false): List<View> {
+        val list = ArrayList<View>()
+        scenario.onActivity { a -> find(a.window.decorView, desc, prefix, list) }
+        return list
+    }
+
+    private fun tap(desc: String, prefix: Boolean = false) {
+        var done = false
+        scenario.onActivity { a ->
+            val list = ArrayList<View>()
+            find(a.window.decorView, desc, prefix, list)
+            list.lastOrNull()?.let { it.performClick(); done = true }
+        }
+        inst.waitForIdleSync()
+        check(done, "nothing to tap: \"$desc\"")
+    }
+
+    private fun has(desc: String, prefix: Boolean = false) = views(desc, prefix).isNotEmpty()
+
+    private fun back() { act { a -> if (!a.screen.onBack()) a.screen.nav.back() } }
+
+    private fun called(action: String) = fake.log().contains(action)
+
+    @Test fun everyScreen() {
+        // ── the 3 big boxes ──
+        act { it.open("/dance") }
+        wait(2500)
+        shot("01_boxes")
+        check(has("Solo Dance: ", true), "Solo box missing")
+        check(has("1 vs 1 Battle: ", true), "1 vs 1 box missing")
+        check(has("2 Dancer Battle: ", true), "2 Dancer box missing")
+        scenario.onActivity { a ->
+            val l = ArrayList<View>(); find(a.window.decorView, "2 Dancer Battle: ", true, l)
+            var p = l.firstOrNull()?.parent
+            while (p != null && p !is RecyclerView) p = p.parent
+            (p as? RecyclerView)?.smoothScrollBy(0, 2000)
+        }
+        wait(900)
+        shot("02_boxes_scrolled")
+
+        // ── demo mode sheet (admins) ──
+        tap("Demo mode")
+        wait(700)
+        shot("03_demo_sheet")
+        tap("Add demo dance lives")
+        wait(900)
+        check(called("demo_seed"), "demo_seed not sent")
+        back(); wait(500)
+
+        // ── the lives of each mode ──
+        tap("Solo Dance: ", true)
+        wait(1500)
+        shot("04_solo_list")
+        check(has("Bollywood Night", true), "solo live card missing")
+        back(); wait(700)
+        tap("1 vs 1 Battle: ", true)
+        wait(1500)
+        shot("05_battle_list")
+        back(); wait(700)
+        tap("2 Dancer Battle: ", true)
+        wait(1500)
+        shot("06_duo_list")
+
+        // ── entry fee ──
+        act { it.open("/dance/pay1") }
+        wait(2000)
+        shot("07_pay")
+        tap("Join Live Room for 50 coins")
+        wait(2500)
+        shot("08_after_pay_live")
+        check(called("pay"), "pay not sent")
+        check(has("All gifts"), "room did not open after paying")
+
+        // ── solo live ──
+        act { it.open("/dance/solo1") }
+        wait(2500)
+        shot("09_solo_live")
+        tap("Send hearts")
+        wait(400)
+        shot("10_hearts")
+        // quick gift: the first tap asks, the second tap sends
+        tap("Send Rose for 10 coins", true)
+        wait(300)
+        shot("11_quick_armed")
+        tap("Tap again to send Rose", true)
+        wait(1200)
+        shot("12_gift_sent")
+        check(called("gift"), "gift not sent")
+        tap("All gifts"); wait(800); shot("13_gift_sheet")
+        tap("Teddy, 50 coins"); wait(300); shot("13b_gift_sheet_teddy")
+        back(); wait(500)
+        tap("Request a song"); wait(800); shot("14_song_sheet"); back(); wait(500)
+        tap("Rules"); wait(800); shot("15_rules"); back(); wait(500)
+        tap("Room info"); wait(800); shot("16_room_info"); back(); wait(500)
+        tap("View all supporters"); wait(1200); shot("17_supporters"); back(); wait(500)
+        tap("People (", true); wait(1200); shot("18_people")
+        tap("Rahul"); wait(800); shot("19_person"); back(); wait(500)
+        // a chat message
+        act { a ->
+            val l = ArrayList<View>(); find(a.window.decorView, "Message", false, l)
+            (l.firstOrNull() as? EditText)?.setText("Superb dance 🔥")
+        }
+        tap("Send"); wait(1200)
+        check(called("message"), "message not sent")
+        shot("19b_message_sent")
+        tap("Emojis"); wait(400); shot("20_emoji"); back(); wait(300)
+
+        // ── camera-off solo + a song request that is waiting ──
+        act { it.open("/dance/solo2") }; wait(2200); shot("21_solo_camera_off")
+        act { it.open("/dance/solo3") }; wait(2200); tap("Request a song"); wait(800); shot("22_song_waiting"); back(); wait(400)
+
+        // ── 1 vs 1 battle: vote, rank ──
+        act { it.open("/dance/battle1") }
+        wait(2500)
+        shot("23_battle_live")
+        tap("Vote Riya", true); wait(1200); shot("24_voted")
+        check(called("vote"), "vote not sent")
+        tap("Battle Rank"); wait(1200); shot("25_rank"); back(); wait(500)
+
+        // ── a battle ends → the winner ──
+        act { it.open("/dance/battle3") }
+        wait(7000)
+        shot("26_winner")
+
+        // ── empty seat → request to dance → on the stage ──
+        act { it.open("/dance/battle2") }
+        wait(2200)
+        shot("27_empty_seat")
+        tap("Request to dance"); wait(3500)
+        shot("28_on_stage")
+        check(called("seat_request"), "seat_request not sent")
+        check(has("Leave"), "dancer tools missing")
+        tap("Leave"); wait(600); shot("29_leave_confirm"); back(); wait(400)
+
+        // ── 2 dancer battle ──
+        act { it.open("/dance/duo1") }
+        wait(2500)
+        shot("30_duo_live")
+        tap("All gifts"); wait(800); shot("31_duo_gift_sheet"); back(); wait(400)
+
+        // ── ended / can't open ──
+        act { it.open("/dance/ended1") }; wait(2000); shot("32_ended")
+        act { it.open("/dance/gone1") }; wait(2000); shot("33_cant_open")
+
+        // ── back from a room goes back to that list ──
+        act { it.open("/dance?m=solo") }; wait(800)
+        act { it.open("/dance/solo1") }; wait(1500)
+        back(); wait(900)
+        shot("34_back_to_list")
+        var last = ""
+        scenario.onActivity { a -> last = a.history.lastOrNull().orEmpty() }
+        check(last == "/dance?m=solo", "back went to \"$last\" instead of /dance?m=solo")
+
+        assertTrue("Problems:\n" + problems.joinToString("\n"), problems.isEmpty())
+    }
+}

@@ -14,6 +14,8 @@ class WebBridge(private val listener: Listener) {
     interface Listener {
         fun onRoute(path: String)
         fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean)
+        /** what the published web page can hand over to native screens (dance = Live Dance) */
+        fun onCaps(dance: Boolean)
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -32,6 +34,12 @@ class WebBridge(private val listener: Listener) {
         main.post { listener.onInfo(o, token.orEmpty(), appId.orEmpty(), navTop.toFloat(), cover) }
     }
 
+    @JavascriptInterface
+    fun caps(origin: String?, dance: Int) {
+        if (!allowed(origin)) return
+        main.post { listener.onCaps(dance == 1) }
+    }
+
     private fun allowed(origin: String?) = origin != null && MainActivity.ORIGINS.contains(origin)
 
     companion object {
@@ -42,12 +50,15 @@ class WebBridge(private val listener: Listener) {
 (function(){
   if (window.__tfNativeInit) return; window.__tfNativeInit = true;
   window.TFNativeApp = true;
+  // This app draws Live Dance itself (the web page then stays empty under it) — but only when
+  // this script ran before the page's own code; otherwise the web page keeps doing it all.
+  window.TFNativeDance = document.readyState === 'loading';
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
   css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}';
   (document.head || document.documentElement).appendChild(css);
   var lastPath = '';
-  function sendRoute(){ var p = location.pathname || '/'; if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
+  function sendRoute(){ var p = (location.pathname || '/') + (location.search || ''); if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
   ['pushState','replaceState'].forEach(function(k){
     var o = history[k];
     history[k] = function(){ var r = o.apply(this, arguments); setTimeout(sendRoute, 0); setTimeout(info, 0); return r; };
@@ -56,6 +67,11 @@ class WebBridge(private val listener: Listener) {
   window.__tfGo = function(path, state){
     var idx = ((history.state && history.state.idx) || 0) + 1;
     history.pushState({ usr: state || null, key: Math.random().toString(36).slice(2, 10), idx: idx }, '', path);
+    dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  };
+  window.__tfReplace = function(path){
+    var idx = (history.state && history.state.idx) || 0;
+    history.replaceState({ usr: null, key: Math.random().toString(36).slice(2, 10), idx: idx }, '', path);
     dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
   };
   var appId = '';
@@ -80,6 +96,7 @@ class WebBridge(private val listener: Listener) {
       var nav = document.querySelector('nav.tfnav');
       var top = nav && nav.getClientRects().length ? nav.getBoundingClientRect().top : -1;
       B.info(location.origin, String(tok || ''), findAppId(), top, covered());
+      try { B.caps(location.origin, (window.__tfDanceGate && window.TFNativeDance) ? 1 : 0); } catch(e){}
     } catch(e){}
   }
   var t = 0;
