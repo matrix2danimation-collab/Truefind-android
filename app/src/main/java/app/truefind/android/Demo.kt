@@ -60,20 +60,21 @@ object Demo {
         return AvatarArt.forKey(id, SdRules.sexOf(p) != "m", sizePx.coerceAtLeast(48), round = true)
     }
 
-    fun me(): Api.Result = Api.Result(200, JSONObject().put("id", "demo-me").put("full_name", if (girl) "Neha Verma" else "Aman Verma").put("gender", if (girl) "female" else "male"), null)
+    fun me(): Api.Result = DemoHome.me() ?: Api.Result(200, JSONObject().put("id", "demo-me").put("full_name", if (girl) "Neha Verma" else "Aman Verma").put("gender", if (girl) "female" else "male"), null)
 
     private val myProfile get() = JSONObject().put("id", "demo-myprofile").put("full_name", if (girl) "Neha Verma" else "Aman Verma").put("gender", if (girl) "female" else "male")
         .put("date_of_birth", "1999-04-12").put("state", "Haryana").put("city", "Rohtak").put("bio", "Simple person, family first.")
 
-    fun filter(entity: String, q: JSONObject): Api.Result = when (entity) {
+    fun filter(entity: String, q: JSONObject): Api.Result = DemoHome.filter(entity, q) ?: when (entity) {
         "UserProfile" -> Api.Result(200, JSONObject().put("items", JSONArray().put(myProfile)), null)
         "PremiumAccess" -> Api.Result(200, JSONObject().put("items", if (premium) JSONArray().put(JSONObject().put("until", iso(-3 * 24 * 60))) else JSONArray()), null)
         else -> Api.Result(200, JSONObject().put("items", JSONArray()), null)
     }
 
-    fun core(endpoint: String, payload: JSONObject) = Api.Result(200, JSONObject().put("signed_url", ""), null)
+    fun core(endpoint: String, payload: JSONObject) = DemoHome.core(endpoint, payload) ?: Api.Result(200, JSONObject().put("signed_url", ""), null)
 
     fun function(name: String, payload: JSONObject): Api.Result {
+        DemoHome.function(name, payload)?.let { return it }
         val d = when (name) {
             "getOnlineNow" -> JSONObject().put("me", JSONObject().put("gender", if (girl) "female" else "male").put("city", "Rohtak").put("state", "Haryana")).put("profiles", JSONArray()).put("online", 0).put("poll_ms", 15000)
             "getWallet" -> JSONObject().put("wallet", JSONObject().put("coins", 120))

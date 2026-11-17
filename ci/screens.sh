@@ -8,6 +8,8 @@ PKG=app.truefind.android
 mkdir -p "$OUT"
 adb install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
+# the test phone shows no "… isn't responding" boxes over the pictures (they only cover the screen)
+adb shell settings put global hide_error_dialogs 1
 
 # wait until a line with $1 is in the app's test log (max $2 s)
 waitlog() {
@@ -49,6 +51,82 @@ shot() {
   { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
   { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
 }
+if [ "${GITHUB_REF_NAME:-}" = "home-native" ]; then
+# ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
+P="--es tf_preview"
+nshot() {
+  local name="$1"; local wait="$2"; shift 2
+  adb shell am force-stop $PKG
+  adb shell pm clear $PKG > /dev/null
+  sleep 1
+  adb logcat -c
+  echo "== $name" >> "$OUT/start.txt"
+  adb shell am start -W -n $PKG/.MainActivity "$@" >> "$OUT/start.txt" 2>&1
+  case "$*" in
+    *tf_open*) waitlog "preview open" 60; sleep "$wait" ;;
+    *) waitlog "frames so far" 60; sleep "$wait" ;;
+  esac
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  adb exec-out screencap -p > "$OUT/$name.png"
+  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+  { echo "== $name"; adb logcat -d | grep -E "ActivityManager.*(Kill|kill|died|ANR|crash)|Fatal signal|lowmemorykiller|am_kill|DEBUG   :" | tail -15; } >> "$OUT/why.txt"
+  { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
+}
+nshot h01-home 9 $P home
+nshot h02-home-girl 9 $P home --ez tf_girl true
+nshot h03-home-scroll1 10 $P home --es tf_open scroll1
+nshot h04-home-scroll2 10 $P home --es tf_open scroll2
+nshot h05-home-scroll3 10 $P home --es tf_open scroll3
+nshot h06-home-daily 11 $P home --es tf_open daily
+nshot h07-home-confirm 10 $P home --es tf_open confirm
+nshot h08-home-person 10 $P home --es tf_open person
+nshot h09-home-all 10 $P home --es tf_open all
+nshot h10-home-match 10 $P home --es tf_open match
+nshot h11-home-dialog 10 $P home --es tf_open dialog
+nshot h12-home-toast 9 $P home --es tf_open toast
+nshot n01-nav-explore 7 $P nav-explore
+nshot n02-nav-recent 7 $P nav-recent
+nshot p01-profile 9 $P profile
+nshot p02-profile-girl 9 $P profile --ez tf_girl true
+nshot p03-profile-scroll 10 $P profile --es tf_open scroll
+nshot p04-edit 9 $P profile --es tf_open edit=1
+nshot p05-edit-state 10 $P profile --es tf_open edit=1,state
+nshot p06-followers 9 $P profile --es tf_open people=followers
+nshot p07-following 9 $P profile --es tf_open people=following
+nshot p08-unfollow 10 $P profile --es tf_open people=following,unfollow
+nshot p09-settings 9 $P profile --es tf_open settings=1
+nshot p10-notifications 9 $P profile --es tf_open settings=notifications
+nshot p11-apply-host 9 $P profile --es tf_open settings=apply
+nshot p12-apply-form 10 $P profile --es tf_open settings=apply,form
+nshot p13-apply-creator 9 $P profile --ez tf_girl true --es tf_open settings=apply
+nshot p14-verification 9 $P profile --es tf_open settings=verification
+nshot p15-memberships 9 $P profile --es tf_open settings=memberships
+nshot p16-privacy 9 $P profile --es tf_open settings=privacy
+nshot p17-blocked 9 $P profile --es tf_open settings=blocked
+nshot p18-security 9 $P profile --es tf_open settings=security
+nshot p19-refer 9 $P profile --es tf_open settings=refer
+nshot p20-help 9 $P profile --es tf_open settings=help
+nshot p21-help-new 10 $P profile --es tf_open settings=help,new
+nshot p22-help-thread 10 $P profile --es tf_open settings=help,thread
+nshot p23-avatar 10 $P profile --es tf_open avatar
+nshot p24-bio 10 $P profile --es tf_open bio
+nshot p25-interests 10 $P profile --es tf_open interests
+nshot p26-viewer 10 $P profile --es tf_open viewer
+nshot p27-logout 10 $P profile --es tf_open logout
+nshot p28-delete 10 $P profile --es tf_open delete
+nshot p29-toast 9 $P profile --es tf_open toast
+nshot b01-builder 9 $P builder
+nshot b02-builder-error 10 $P builder --es tf_open error
+nshot b03-builder-uploading 10 $P builder --es tf_open uploading
+nshot v01-verify-girl 9 $P verify --ez tf_girl true
+nshot v02-verify-boy 9 $P verify
+nshot v03-verify-pending 10 $P verify --ez tf_girl true --es tf_open pending
+# the screens of the other work still open as before
+shot s01-explore home --es tf_preview explore
+shot s02-secret home --es tf_preview secret --ez tf_premium true
+else
 shot 01-explore home --es tf_preview explore
 shot 02-secret-free home --es tf_preview secret
 shot 03-secret-premium home --es tf_preview secret --ez tf_premium true
@@ -70,5 +148,6 @@ shot 18-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
 shot 19-free-stories open --es tf_preview secret --es tf_open stories
 shot 20-see-all open --es tf_preview secret --ez tf_premium true --es tf_open seeall
 shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
+fi
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"

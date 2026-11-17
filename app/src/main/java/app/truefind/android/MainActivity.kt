@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
     private lateinit var secret: SecretHome
+    private lateinit var pages: NativePages
     private var path = "/"
     private var search = ""
     private var preview = ""
@@ -99,6 +100,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
+    // camera + microphone for the native live selfie videos (Become a Host / Creator, verification)
+    private var camDone: ((Boolean) -> Unit)? = null
+    private val askCam = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        val cb = camDone ?: return@registerForActivityResult
+        camDone = null
+        cb(has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO))
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -131,9 +140,19 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret.onWantsWeb = { update() }
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
+        // native Home, Profile and the bottom bar (they follow the web address like Explore)
+        pages = NativePages(this, root, web) { update() }
+        pages.attach(scriptAtStart)
+        pages.askCamera = { cb ->
+            if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
+            else { camDone = cb; try { askCam.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)) } catch (e: Exception) { camDone = null; cb(false) } }
+        }
+        var lastH = 0
+        root.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ -> val h = bottom - top; if (h != lastH) { lastH = h; root.post { update() } } }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (pages.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty()) { finish(); return }
@@ -197,7 +216,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (!scriptAtStart && isOurs(Uri.parse(url))) view.evaluateJavascript(WebBridge.JS, null)
+                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null) }
                 CookieManager.getInstance().flush()
             }
 
@@ -275,6 +294,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     private fun update() {
         if (preview.isNotEmpty()) return
+        val navTop = pages.update(Api.token.isNotEmpty())
         val p = path.trimEnd('/')
         val onExplore = p == "/explore"
         val onSecret = p == "/secret-app" && !search.contains("tab=chat")
@@ -285,7 +305,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val h = if (navTopCss > 0) (navTopCss * resources.displayMetrics.density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
         for (v in listOf(explore, secret)) {
             val lp = v.layoutParams as FrameLayout.LayoutParams
-            if (lp.height != h) { lp.height = h; v.layoutParams = lp }
+            // the main bottom bar is native now: Explore ends where it starts
+            val want = if (v === explore && pages.navShown && navTop > 0) navTop else h
+            if (lp.height != want) { lp.height = want; v.layoutParams = lp }
         }
         if (show != (explore.visibility == View.VISIBLE)) {
             web.evaluateJavascript("document.documentElement.classList.${if (show) "add" else "remove"}('tfnx')", null)
@@ -297,6 +319,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
     private fun startPreview() {
+        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify")) {
+            Demo.girl = intent.getBooleanExtra("tf_girl", false)
+            web.loadUrl("about:blank")
+            watchFrames()
+            root.post { pages.startPreview(preview, intent.getStringExtra("tf_open").orEmpty()) }
+            return
+        }
         Demo.on = true
         Demo.premium = intent.getBooleanExtra("tf_premium", false)
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
@@ -337,12 +366,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         super.onResume()
         explore.onAppVisible(true)
         secret.onAppVisible(true)
+        pages.onAppVisible(true)
         if (preview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
         explore.onAppVisible(false)
         secret.onAppVisible(false)
+        pages.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }
