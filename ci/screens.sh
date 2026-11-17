@@ -8,10 +8,6 @@ PKG=app.truefind.android
 mkdir -p "$OUT"
 adb install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
-# 720 x 1600 screen at 280 dpi = 411 dp wide, the same layout as the Pixel 6 (1080 x 2400, 420 dpi), with fewer pixels to draw
-adb shell wm size 720x1600
-adb shell wm density 280
-sleep 3
 
 # wait until a line with $1 is in the app's test log (max $2 s)
 waitlog() {
@@ -44,6 +40,9 @@ shot() {
     quick) waitlog "preview open" 45; sleep 2 ;;
     *)     sleep 4; settle 60 ;;
   esac
+  # a slow emulator can show "System UI isn't responding" on top: close such system pop-ups first
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  sleep 2
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
