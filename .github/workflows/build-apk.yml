@@ -1,0 +1,54 @@
+name: Build True Find APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+
+      - name: Calibri look-alike font (Carlito), same as the web app
+        run: |
+          mkdir -p app/src/main/assets/fonts
+          curl -fsSL -o app/src/main/assets/fonts/Carlito-Regular.ttf https://github.com/google/fonts/raw/main/ofl/carlito/Carlito-Regular.ttf || echo "font download failed, the phone's font will be used"
+          curl -fsSL -o app/src/main/assets/fonts/Carlito-Bold.ttf https://github.com/google/fonts/raw/main/ofl/carlito/Carlito-Bold.ttf || true
+
+      - name: Build
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Name the file
+        run: cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TrueFind-test-apk
+          path: TrueFind-test.apk
+
+      # Easy phone download: Releases → "Test build" → TrueFind-test.apk
+      - name: Put the APK on the Releases page
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-build
+          name: Test build
+          prerelease: true
+          make_latest: false
+          body: "Latest test APK, built from commit ${{ github.sha }}. Open on the phone, tap TrueFind-test.apk, install."
+          files: TrueFind-test.apk
