@@ -244,9 +244,17 @@ class DanceScreensTest {
 
         // ── a battle ends → the winner ──
         act { it.open("/dance/battle3") }
-        pause(6500)
+        var winner = false
+        for (i in 0 until 48) {          // up to 12 s: the battle ends on the 2nd check with the server
+            pause(250)
+            var seen = false
+            main { val l = ArrayList<View>(); find(a.window.decorView, "Winner:", true, l); seen = l.any { it.alpha > 0.5f } }
+            if (seen) { winner = true; break }
+        }
+        pause(700)
         shot("26_winner")
-        check(has("Close"), "winner not shown — calls: ${fake.timeline("battle3")}")
+        android.util.Log.i("TFTEST", "battle3 calls: ${fake.timeline("battle3")}")
+        check(winner, "winner not shown — calls: ${fake.timeline("battle3")}")
 
         // ── empty seat → request to dance → on the stage ──
         act { it.open("/dance/battle2") }

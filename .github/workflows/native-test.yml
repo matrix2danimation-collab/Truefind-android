@@ -134,6 +134,8 @@ jobs:
             convert "$f" -resize 540x -quality 72 "/tmp/$n.jpg" 2>/dev/null || cp "$f" "/tmp/$n.jpg"
             echo "==SHOT $n=="; base64 -w 0 "/tmp/$n.jpg"; echo; echo "==END=="
           done
+          echo "---- test notes ----"
+          grep -h "TFTEST" logcat.txt 2>/dev/null | head -40 || true
           echo "---- test problems / crashes ----"
           grep -hE "Problems:|nothing to tap|not sent|missing|FATAL EXCEPTION|AndroidRuntime" -A3 logcat.txt 2>/dev/null | head -80 || true
 

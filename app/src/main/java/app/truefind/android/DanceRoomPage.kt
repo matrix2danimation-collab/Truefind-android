@@ -1180,6 +1180,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             timerText = null; timerSub = null; timerIcon = null; timerBox = null; bars = null
             val ctx = context
             val H = (box.layoutParams?.height ?: Ui.dpi(300f)).toFloat().let { if (it > 0) it else Ui.dp(300f) }
+            // the stage width (before the first layout: the screen width minus the page margins)
+            val W = (if (box.width > 0) box.width else resources.displayMetrics.widthPixels - Ui.dpi(16f)).toFloat()
             if (mode == "solo") {
                 val host = hostTile()
                 val t = VideoTile(host, host.optString("user_id") == myId(), host.optBoolean("cam_off"))
@@ -1199,7 +1201,9 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
                 chip.addView(avBox)
                 val names = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(8f), 0, 0, 0) }
                 // WRAP: in a column that is only as wide as its content, a full-width child gets squeezed to the "Host" tag's width
-                names.addView(nameWithBadge(room()?.optJSONObject("host")?.optString("name").orEmpty(), 16f, 15f), DK.llp(DK.WRAP, DK.WRAP))
+                names.addView(nameWithBadge(room()?.optJSONObject("host")?.optString("name").orEmpty(), 16f, 15f).apply {
+                    maxWidth = (W * 0.62f - Ui.dp(63f)).toInt().coerceAtLeast(Ui.dpi(80f)) // web: the host chip is at most 62 % wide
+                }, DK.llp(DK.WRAP, DK.WRAP))
                 names.addView(Ui.text(ctx, if (host.optBoolean("muted")) "🔇 Host" else "Host", 11.5f, Color.WHITE).apply { background = DK.glass(); setPadding(Ui.dpi(8f), Ui.dpi(1f), Ui.dpi(8f), Ui.dpi(1f)) }, DK.llp(DK.WRAP, DK.WRAP, t = 2f))
                 chip.addView(names)
                 people.addView(chip, DK.flp(DK.WRAP, DK.WRAP, Gravity.BOTTOM or Gravity.START, l = 12f, b = 14f))
@@ -1262,7 +1266,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
                         avBox.addView(crown, DK.flp(DK.WRAP, DK.WRAP, Gravity.TOP or Gravity.CENTER_HORIZONTAL, t = -6f)); crown.bob()
                     }
                     nb.addView(avBox)
-                    nb.addView(nameWithBadge(p.optString("name"), 13.5f, 14f).apply { layoutDirection = View.LAYOUT_DIRECTION_LTR; maxWidth = (box.width * 0.24f).toInt().coerceAtLeast(Ui.dpi(70f)) }, DK.llp(DK.WRAP, DK.WRAP, l = 6f, r = 6f))
+                    // web: photo + name are at most 34 % of the stage wide
+                    nb.addView(nameWithBadge(p.optString("name"), 13.5f, 14f).apply { layoutDirection = View.LAYOUT_DIRECTION_LTR; maxWidth = (W * 0.34f - Ui.dp(46f)).toInt().coerceAtLeast(Ui.dpi(60f)) }, DK.llp(DK.WRAP, DK.WRAP, l = 6f, r = 6f))
                     people.addView(nb, DK.flp(DK.WRAP, DK.WRAP, Gravity.BOTTOM or g, l = 8f, r = 8f, b = 38f))
                 }
                 // host bubble (2 Dancer Battle)
@@ -1399,7 +1404,8 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
             val w = if (tie) null else if (aWon) a else bb
             val pct = if (w != null) DK.pct(if (aWon) b.optInt("votes_a") else b.optInt("votes_b"), if (aWon) b.optInt("votes_b") else b.optInt("votes_a")) else 50
             val f = FrameLayout(context).apply {
-                setBackgroundColor(Ui.ca("#140528", 0.62f)); isClickable = true; contentDescription = "Close"
+                setBackgroundColor(Ui.ca("#140528", 0.62f)); isClickable = true
+                contentDescription = if (tie) "Winner: it's a tie — tap to close" else "Winner: ${w?.optString("name")} — tap to close"
                 setOnClickListener { closeWinner() }
             }
             val conf = ConfettiView(context)
