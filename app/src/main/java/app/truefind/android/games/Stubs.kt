@@ -18,22 +18,7 @@ open class StubScreen(ctx: Context, layer: GamesLayer, title: String) : GameScre
 }
 
 @SuppressLint("ViewConstructor") class MoodChangerScreen(ctx: Context, layer: GamesLayer) : StubScreen(ctx, layer, "Mood Changer")
-@SuppressLint("ViewConstructor") class ClueMePage(ctx: Context, layer: GamesLayer) : StubScreen(ctx, layer, "ClueMe")
-@SuppressLint("ViewConstructor") class NameGuessLocal(ctx: Context, layer: GamesLayer) : StubScreen(ctx, layer, "ClueMe · one phone")
-@SuppressLint("ViewConstructor") class NameGuessOnline(ctx: Context, layer: GamesLayer) : StubScreen(ctx, layer, "ClueMe · two phones")
 @SuppressLint("ViewConstructor") class DressCodeScreen(ctx: Context, layer: GamesLayer) : StubScreen(ctx, layer, "Dress Code")
-
-object NameGuess {
-    const val ROUND_SECONDS = 60
-    val RULES = listOf(
-        "Ek player ko gupt shabd dikhega (jaise पंखा · Fan). Wo bina shabd bole hint dega.",
-        "Doosra player hint sun kar naam bolega ya type karega.",
-        "Hint me shabd, uska hissa, spelling ya doosri bhasha me wahi shabd bolna mana hai.",
-        "Har round 60 second. Hint dene wala 2 baar shabd badal (skip) sakta hai, koi saza nahi.",
-        "Sahi jawab: bujhne wale ko +10, hint dene wale ko +5. Time khatam: koi point nahi.",
-        "6 round, baari-baari se dono hint dete hain. Jiske zyada points, wo jeeta.",
-    )
-}
 
 object DressData { val designsLabel = "100+ designs" }
 

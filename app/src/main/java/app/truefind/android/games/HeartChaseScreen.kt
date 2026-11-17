@@ -589,7 +589,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
         val right = G.hbox(ctx, 8f, Gravity.CENTER_VERTICAL or Gravity.END)
         val rc = G.vbox(ctx, 0f, Gravity.END)
         rc.addView(G.text(ctx, pn, 15f, Color.WHITE).ellipsize1().apply { gravity = Gravity.END })
-        foundPartner = G.text(ctx, "", 12f, C.muted, bold = false).also { rc.addView(it) }
+        foundPartner = G.text(ctx, "", 12f, C.muted, bold = false).also { it.gravity = Gravity.END; rc.addView(it) }
         right.addView(rc, G.lpw(1f))
         prAvatar = AvatarView(ctx, 44f, C.pink).also { it.setPhoto(s.obj("partner").str("photo")); right.addView(it, LinearLayout.LayoutParams(G.dpi(44f), G.dpi(44f))) }
         players.addView(right, G.lpw(1f))

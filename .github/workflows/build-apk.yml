@@ -88,6 +88,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash ci/games-screens.sh TrueFind-test.apk shots
+      - name: What is inside the APK (sizes)
+        if: always()
+        run: |
+          mkdir -p shots
+          unzip -l TrueFind-test.apk | sort -k1 -n -r | head -60 > shots/apk-contents.txt || true
+          ls -la TrueFind-test.apk >> shots/apk-contents.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

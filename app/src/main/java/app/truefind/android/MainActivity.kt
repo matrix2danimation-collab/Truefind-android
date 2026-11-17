@@ -318,7 +318,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
-        updater.check() // test builds: "Update available" when GitHub has a newer APK
+        if (!previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {

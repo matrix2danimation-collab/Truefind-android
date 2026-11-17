@@ -21,13 +21,43 @@ import com.caverock.androidsvg.SVG
  */
 object Svg {
     private val parsed = object : LruCache<String, SVG>(160) {}
+    private val parsedBg = object : LruCache<String, SVG>(60) {}
     private val bitmaps = object : LruCache<String, Bitmap>(36 * 1024 * 1024) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
+    // big pictures are drawn off the main thread (one at a time), so opening a screen never stutters
+    private val worker = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private val waiting = HashMap<String, MutableList<(Bitmap?) -> Unit>>()
 
     fun parse(src: String): SVG? {
         parsed.get(src)?.let { return it }
         return try { SVG.getFromString(src).also { parsed.put(src, it) } } catch (e: Throwable) { null }
+    }
+    private fun parseBg(src: String): SVG? {
+        parsedBg.get(src)?.let { return it }
+        return try { SVG.getFromString(src).also { parsedBg.put(src, it) } } catch (e: Throwable) { null }
+    }
+
+    private fun key(src: String, w: Int, h: Int, shadows: List<Shadow>) = "$w×$h|${src.hashCode()}|${src.length}|${shadows.size}"
+
+    fun cached(src: String, w: Int, h: Int, shadows: List<Shadow> = emptyList()): Bitmap? = bitmaps.get(key(src, w, h, shadows))
+
+    /** Draws the picture on the background thread; [done] runs on the main thread. */
+    fun bitmapAsync(src: String, w: Int, h: Int, vbW: Float, shadows: List<Shadow>, done: (Bitmap?) -> Unit) {
+        if (w <= 0 || h <= 0) { done(null); return }
+        val k = key(src, w, h, shadows)
+        bitmaps.get(k)?.let { done(it); return }
+        val q = waiting[k]
+        if (q != null) { q.add(done); return }
+        waiting[k] = mutableListOf(done)
+        worker.execute {
+            val bmp = render(src, w, h, vbW, shadows, ::parseBg)
+            main.post {
+                if (bmp != null) bitmaps.put(k, bmp)
+                waiting.remove(k)?.forEach { it(bmp) }
+            }
+        }
     }
 
     /** One drop shadow like the web's feDropShadow (on the parts in [shadowSrc]). */
@@ -39,20 +69,25 @@ object Svg {
      */
     fun bitmap(src: String, w: Int, h: Int, vbW: Float = 0f, shadows: List<Shadow> = emptyList()): Bitmap? {
         if (w <= 0 || h <= 0) return null
-        val key = "$w×$h|${src.hashCode()}|${src.length}|${shadows.size}"
-        bitmaps.get(key)?.let { return it }
-        val svg = parse(src) ?: return null
-        val out = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: Throwable) { return null }
-        val c = Canvas(out)
-        val scale = if (vbW > 0f) w / vbW else 1f
-        for (s in shadows) drawShadow(c, s, w, h, scale)
-        try { svg.renderToCanvas(c, RenderOptions.create().viewPort(0f, 0f, w.toFloat(), h.toFloat())) } catch (e: Throwable) { }
-        bitmaps.put(key, out)
+        val k = key(src, w, h, shadows)
+        bitmaps.get(k)?.let { return it }
+        val out = render(src, w, h, vbW, shadows, ::parse) ?: return null
+        bitmaps.put(k, out)
         return out
     }
 
-    private fun drawShadow(c: Canvas, s: Shadow, w: Int, h: Int, scale: Float) {
-        val svg = parse(s.shadowSrc) ?: return
+    private fun render(src: String, w: Int, h: Int, vbW: Float, shadows: List<Shadow>, parser: (String) -> SVG?): Bitmap? {
+        val svg = parser(src) ?: return null
+        val out = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: Throwable) { return null }
+        val c = Canvas(out)
+        val scale = if (vbW > 0f) w / vbW else 1f
+        for (s in shadows) drawShadow(c, s, w, h, scale, parser)
+        try { svg.renderToCanvas(c, RenderOptions.create().viewPort(0f, 0f, w.toFloat(), h.toFloat())) } catch (e: Throwable) { }
+        return out
+    }
+
+    private fun drawShadow(c: Canvas, s: Shadow, w: Int, h: Int, scale: Float, parser: (String) -> SVG?) {
+        val svg = parser(s.shadowSrc) ?: return
         val src = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: Throwable) { return }
         try { svg.renderToCanvas(Canvas(src), RenderOptions.create().viewPort(0f, 0f, w.toFloat(), h.toFloat())) } catch (e: Throwable) { }
         val radius = (s.std * scale * 1.7f).coerceAtLeast(0.5f)
@@ -89,8 +124,10 @@ class SvgDrawable(private var src: String, private val sizeDp: Float = 24f, priv
     override fun getIntrinsicHeight() = G.dpi(sizeDp)
     override fun draw(c: Canvas) {
         val b = bounds
-        val bmp = Svg.bitmap(src, b.width(), b.height(), vbW, shadows) ?: return
-        c.drawBitmap(bmp, b.left.toFloat(), b.top.toFloat(), paint)
+        val w = b.width(); val h = b.height()
+        val bmp = if (w * h <= 160 * 160 && shadows.isEmpty()) Svg.bitmap(src, w, h, vbW, shadows)
+        else Svg.cached(src, w, h, shadows) ?: run { Svg.bitmapAsync(src, w, h, vbW, shadows) { invalidateSelf() }; null }
+        if (bmp != null) c.drawBitmap(bmp, b.left.toFloat(), b.top.toFloat(), paint)
     }
     override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
     override fun setColorFilter(cf: ColorFilter?) { paint.colorFilter = cf }
@@ -113,7 +150,12 @@ class SvgView(ctx: Context, private var src: String, private val vbW: Float, pri
         setMeasuredDimension(w, h)
     }
     override fun onDraw(c: Canvas) {
-        val bmp = Svg.bitmap(src, width, height, vbW, shadows) ?: return
-        c.drawBitmap(bmp, 0f, 0f, paint)
+        val w = width; val h = height
+        val bmp = if (w * h <= 160 * 160 && shadows.isEmpty()) Svg.bitmap(src, w, h, vbW, shadows)
+        else Svg.cached(src, w, h, shadows) ?: run {
+            Svg.bitmapAsync(src, w, h, vbW, shadows) { if (it != null) { alpha = 0f; invalidate(); animate().alpha(1f).setDuration(140).start() } }
+            null
+        }
+        if (bmp != null) c.drawBitmap(bmp, 0f, 0f, paint)
     }
 }
