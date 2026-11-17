@@ -117,9 +117,9 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         toastV.bringToFront()
         toastV.animate().cancel()
         if (toastV.visibility != View.VISIBLE) { toastV.visibility = View.VISIBLE; toastV.alpha = 0.4f; toastV.translationY = G.dp(40f) }
-        toastV.animate().alpha(1f).translationY(0f).setDuration(220).start()
+        toastV.animate().alpha(1f).translationY(0f).setDuration(220).setInterpolator(MC.EASE).start() // .toast { animation: mcUp .22s ease }
         cancel(toastHide)
-        toastHide = later(3800) { toastV.animate().alpha(0f).setDuration(160).withEndAction { toastV.visibility = View.GONE }.start() }
+        toastHide = later(3800) { toastV.animate().cancel(); toastV.visibility = View.GONE } // the web removes it at once
     }
     fun setLang(l: String) { lang = l; prefs.edit().putString("tf_mc_lang", l).apply() }
     private fun fn(body: JSONObject, done: (app.truefind.android.Api.Result) -> Unit) = GameApi.call("moodChanger", body, done)
@@ -1169,8 +1169,8 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         val stats = G.hbox(ctx, 8f)
         for ((v, l) in listOf(McData.fmtShort(s.int("seconds")) to "Call time", "${s.obj("stats").int("rounds")}/7" to "Rounds", "${s.obj("stats").int("answered")}" to "Questions")) {
             val c = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL).apply { background = G.round(Color.WHITE, 14f, MC.line, 1f); pad(12f) }
-            c.addView(G.text(ctx, v, MC.XL, MC.ink, true))
-            c.addView(MC.t(ctx, l, MC.XS, MC.inkSoft))
+            c.addView(G.text(ctx, v, MC.XL, MC.ink, true).apply { gravity = Gravity.CENTER })
+            c.addView(MC.t(ctx, l, MC.XS, MC.inkSoft).apply { gravity = Gravity.CENTER })
             stats.addView(c, G.lpw(1f))
         }
         sc.body.addView(stats, G.lp(G.MATCH, G.WRAP)) // its 16 px top collapses into the lede's 18
@@ -1195,10 +1195,10 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         val cmp = G.hbox(ctx, 6f).apply { background = G.round(Color.WHITE, 18f, MC.line, 1f); pad(12f, 16f, 12f, 16f) }
         fun side(k: String, m: String, n: Int): View {
             val c = G.vbox(ctx, 6f, Gravity.CENTER_HORIZONTAL)
-            c.addView(MC.t(ctx, k, MC.XS, MC.inkSoft))
+            c.addView(MC.t(ctx, k, MC.XS, MC.inkSoft).apply { gravity = Gravity.CENTER })
             c.addView(MC.face(ctx, m, 46f))
-            c.addView(G.text(ctx, McData.moodOf(m).label, MC.MD, MC.ink, true))
-            c.addView(MC.strength(ctx, n))
+            c.addView(G.text(ctx, McData.moodOf(m).label, MC.MD, MC.ink, true).apply { gravity = Gravity.CENTER })
+            c.addView(MC.strength(ctx, n), G.lp(G.WRAP, G.WRAP))
             return c
         }
         cmp.addView(side("At the start", sMood, sInt), G.lpw(1f))

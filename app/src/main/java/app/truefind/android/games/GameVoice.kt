@@ -191,6 +191,34 @@ class GameVoice(
     companion object {
         /** Set by the app: asks Android for the microphone, answers true when allowed. */
         var micAsker: (((Boolean) -> Unit) -> Unit)? = null
+
+        /**
+         * Test builds only (the GitHub test phone): makes Agora's voice engine and sets it up exactly like
+         * a call does, without joining or calling anyone, then drops it again. Answers "ok" or what failed,
+         * so a missing part of the engine shows up in the test run instead of in a player's call.
+         */
+        fun selfCheck(ctx: Context): String {
+            if (Engine.get() != null) return "skipped (an engine is in use)"
+            return try {
+                val cfg = RtcEngineConfig()
+                cfg.mContext = ctx.applicationContext
+                cfg.mAppId = "0123456789abcdef0123456789abcdef" // made up: nothing is joined
+                cfg.mEventHandler = object : IRtcEngineEventHandler() {}
+                val e = RtcEngine.create(cfg)
+                val codes = listOf(
+                    e.setChannelProfile(Constants.CHANNEL_PROFILE_COMMUNICATION),
+                    e.enableAudio(),
+                    e.setDefaultAudioRoutetoSpeakerphone(true),
+                    e.enableAudioVolumeIndication(200, 3, true),
+                    e.muteLocalAudioStream(false),
+                    e.adjustPlaybackSignalVolume(100),
+                )
+                RtcEngine.destroy()
+                if (codes.all { it >= 0 }) "ok (Agora ${RtcEngine.getSdkVersion()})" else "setup codes $codes"
+            } catch (t: Throwable) {
+                "fail ${t.javaClass.simpleName}: ${t.message}"
+            }
+        }
     }
 
     /** One Agora engine for the whole app (making one is slow); each game voice borrows it. */

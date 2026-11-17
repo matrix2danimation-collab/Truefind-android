@@ -313,6 +313,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         games.setRoute(path, true, false)
         val open = intent.getStringExtra("tf_open").orEmpty()
         if (open.isNotEmpty()) root.postDelayed({ games.open(open) }, 2500)
+        // the test phone loads the games' voice engine once (no call), see GameVoice.selfCheck
+        if (scene == "voice-check") root.postDelayed({ android.util.Log.i("TFVOICE", app.truefind.android.games.GameVoice.selfCheck(this)) }, 1500)
     }
 
     override fun onResume() {

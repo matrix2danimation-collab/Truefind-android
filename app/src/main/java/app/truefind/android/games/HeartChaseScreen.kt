@@ -854,19 +854,20 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
             tv.x = overlay.width * (if (mine) 0.22f else 0.70f)
             tv.y = overlay.height * 0.46f
             tv.alpha = 0f; tv.scaleX = 0.6f; tv.scaleY = 0.6f
+            // web hcFloat 1.9s ease-out: 0 → 15 % → 100 %, each step eased on its own (CSS keyframes)
+            val out = android.view.animation.PathInterpolator(0f, 0f, 0.58f, 1f)
             ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 1900
+                duration = 1900; interpolator = android.view.animation.LinearInterpolator()
                 addUpdateListener {
                     val t = it.animatedValue as Float
-                    val e = 1f - (1f - t) * (1f - t) // ease-out
                     if (t < 0.15f) {
-                        val k = t / 0.15f
+                        val k = out.getInterpolation(t / 0.15f)
                         tv.alpha = k; tv.translationY = -G.dp(14f) * k; val sc = 0.6f + 0.55f * k; tv.scaleX = sc; tv.scaleY = sc
                     } else {
-                        val k = (e - 0.2775f) / (1f - 0.2775f)
-                        tv.alpha = 1f - k.coerceIn(0f, 1f)
-                        tv.translationY = -G.dp(14f) - (G.dp(150f) - G.dp(14f)) * k.coerceIn(0f, 1f)
-                        val sc = 1.15f - 0.15f * k.coerceIn(0f, 1f); tv.scaleX = sc; tv.scaleY = sc
+                        val k = out.getInterpolation(((t - 0.15f) / 0.85f).coerceIn(0f, 1f))
+                        tv.alpha = 1f - k
+                        tv.translationY = -G.dp(14f) - (G.dp(150f) - G.dp(14f)) * k
+                        val sc = 1.15f - 0.15f * k; tv.scaleX = sc; tv.scaleY = sc
                     }
                 }
                 addListener(object : android.animation.AnimatorListenerAdapter() {
@@ -925,14 +926,14 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
                 for (id in ids) {
                     val art = giftArt[id]
                     val b = G.vbox(ctx, 3f, Gravity.CENTER_HORIZONTAL).apply { background = G.round(G.ca("#ffffff", 0.05f), 14f, C.line, 1.5f); pad(2f, 8f, 2f, 6f) }
-                    b.addView(G.text(ctx, art?.first ?: "", 26f, Color.WHITE, bold = false))
-                    b.addView(G.text(ctx, art?.second ?: "", 12f, Color.WHITE).ellipsize1())
+                    b.addView(G.text(ctx, art?.first ?: "", 26f, Color.WHITE, bold = false).lineH(1.5f).apply { gravity = Gravity.CENTER })
+                    b.addView(G.text(ctx, art?.second ?: "", 12f, Color.WHITE).lineH(1.5f).apply { gravity = Gravity.CENTER })
                     val pr = G.hbox(ctx, 3f, Gravity.CENTER)
                     pr.addView(G.icon(ctx, "Coins", C.gold, 11f))
-                    pr.addView(G.text(ctx, "${rules.obj("gifts").int(id)}", 12f, C.gold))
+                    pr.addView(G.text(ctx, "${rules.obj("gifts").int(id)}", 9.6f, C.gold).lineH(1.5f)) // <small>: 80 % of 12 px
                     b.addView(pr)
                     G.click(b) { sendGift(id) }
-                    row.addView(b, G.lpw(1f))
+                    row.addView(b, G.lpw(1f, G.MATCH))
                 }
                 p.addView(row, G.lp(G.MATCH, G.WRAP))
                 p.addView(G.text(ctx, "$pn keeps 70% of every gift.", 13f, C.muted, bold = false).apply { gravity = Gravity.CENTER }, G.lp(G.MATCH, G.WRAP))
@@ -1198,6 +1199,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
             if (hurryOn && hurry == null) {
                 hurry = ValueAnimator.ofFloat(0f, 1f).apply {
                     duration = 500; repeatCount = ValueAnimator.INFINITE; repeatMode = ValueAnimator.REVERSE
+                    interpolator = android.view.animation.PathInterpolator(0.42f, 0f, 0.58f, 1f) // web hcHurry .5s ease-in-out alternate
                     addUpdateListener { this@ClockBar.elevation = G.dp(10f) * (it.animatedValue as Float) }
                     start()
                 }

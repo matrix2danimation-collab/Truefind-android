@@ -104,7 +104,7 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
         tickClock()
         silenceLoop()
         alpha = 0.35f; translationY = G.dp(6f)
-        animate().alpha(1f).translationY(0f).setDuration(300).start() // .call { animation: mcEnter .3s }
+        animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(MC.EASE).start() // .call { animation: mcEnter .3s ease }
     }
 
     override fun onSizeChanged(w: Int, hh: Int, ow: Int, oh: Int) {
@@ -244,7 +244,7 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
             c.outlineProvider = android.view.ViewOutlineProvider.BACKGROUND
             c.addView(G.icon(ctx, icon, if (end) Color.WHITE else MC.accentDeep, if (icon == "Flag") 21f else 22f), LayoutParams(G.dpi(if (icon == "Flag") 21f else 22f), G.dpi(if (icon == "Flag") 21f else 22f), Gravity.CENTER))
             b.addView(c, LinearLayout.LayoutParams(G.dpi(cs), G.dpi(cs)))
-            val t = G.text(ctx, label, MC.XS, Color.WHITE, false).lineH(1.5f)
+            val t = G.text(ctx, label, MC.XS, Color.WHITE, false).lineH(1.5f).apply { gravity = Gravity.CENTER }
             b.addView(t)
             G.click(b, 0.97f) { f() }
             controls.addView(b, G.lpw(1f))
@@ -462,7 +462,7 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
             bars.addView(View(ctx).apply { background = G.round(c, 3f) }, LinearLayout.LayoutParams(G.dpi(10f), G.dpi(6f + l.depth * 5f)))
         }
         depth.addView(bars, LinearLayout.LayoutParams(G.WRAP, G.dpi(26f)))
-        depth.addView(G.text(ctx, McData.STAGE[n - 1], MC.XS, MC.inkSoft, false).lineH(1.5f))
+        depth.addView(G.text(ctx, McData.STAGE[n - 1], MC.XS, MC.inkSoft, false).lineH(1.5f).apply { gravity = Gravity.CENTER })
         box.addView(depth, G.lp(G.WRAP, G.WRAP).m(t = 14f))
         if (n == 1) {
             if (plan != null) box.addView(sc.styleChip(ctx, "Today: ${plan.str("title_en")}"), G.lp(G.WRAP, G.WRAP).m(t = 14f))
@@ -578,7 +578,7 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
             val lh = if (hi) (if (compact) 1.55f else 1.62f) else 1.5f
             val t = G.text(ctx, text, size, color, true).lineH(lh).apply { letterSpacing = if (hi) 0f else -0.005f }
             t.alpha = 0.35f; t.translationY = G.dp(6f)
-            t.animate().alpha(1f).translationY(0f).setDuration(300).start()
+            t.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(MC.EASE).start() // .qtext { animation: mcEnter .3s ease }
             return t
         }
         val m = if (compact) 8f else 12f

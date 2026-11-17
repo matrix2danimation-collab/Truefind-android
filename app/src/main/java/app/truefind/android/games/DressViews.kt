@@ -58,7 +58,7 @@ object DC {
     fun coin(ctx: Context, n: Double, iconDp: Float, size: Float, color: Int = ink, bold: Boolean = true): LinearLayout {
         val r = G.hbox(ctx, 2f)
         r.addView(G.icon(ctx, "Coins", gold, iconDp))
-        r.addView(G.text(ctx, DressArt.coinFmt(n), size, color, bold).apply { fontFeatureSettings = "tnum" })
+        r.addView(G.text(ctx, DressArt.coinFmt(n), size, color, bold))
         return r
     }
 
@@ -194,17 +194,18 @@ class DollViewer(ctx: Context, private val controls: Boolean = true) : FrameLayo
     private var panX = 0f; private var panY = 0f
     private val stage = object : FrameLayout(ctx) {
         override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-            // web: flex, centred, items at the bottom with 3% (of the width) below; the doll 94% high, its own width
+            // web: flex, centred, items at the bottom; padding-bottom 3% (of the width); the doll 94% of what is left, its own width
             val w = r - l; val h = b - t
-            val dh = (h * 0.94f).roundToInt(); val dw = (dh * 300f / 545f).roundToInt()
-            val bottom = h - (w * 0.03f).roundToInt()
+            val pb = (w * 0.03f).roundToInt()
+            val dh = ((h - pb) * 0.94f).roundToInt(); val dw = (dh * 300f / 545f).roundToInt()
+            val bottom = h - pb
             val x = (w - dw) / 2
             doll.layout(x, bottom - dh, x + dw, bottom)
         }
         override fun onMeasure(ws: Int, hs: Int) {
             super.onMeasure(ws, hs)
-            val h = MeasureSpec.getSize(hs)
-            val dh = (h * 0.94f).roundToInt(); val dw = (dh * 300f / 545f).roundToInt()
+            val h = MeasureSpec.getSize(hs); val pb = (MeasureSpec.getSize(ws) * 0.03f).roundToInt()
+            val dh = ((h - pb) * 0.94f).roundToInt(); val dw = (dh * 300f / 545f).roundToInt()
             doll.measure(MeasureSpec.makeMeasureSpec(dw, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dh, MeasureSpec.EXACTLY))
         }
     }
@@ -254,7 +255,11 @@ class DollViewer(ctx: Context, private val controls: Boolean = true) : FrameLayo
         pill.addView(label)
         pm("+", "Zoom in") { zoomTo(z + 0.5f, true) }
         reset = G.text(ctx, "Reset", 11f, DC.gold, true).apply { gravity = Gravity.CENTER; pad(8f, 0f, 8f, 0f); contentDescription = "Reset view" }.also { v ->
-            G.click(v, 0.95f) { zoomTo(1f, true); if (view != 0) { view = 0; doll.animate().cancel(); doll.scaleX = 1f; setLook(look) }; paintLabel() }
+            G.click(v, 0.95f) {
+                zoomTo(1f, true)
+                if (view != 0) { view = 0; setLook(look); doll.animate().scaleX(1f).setDuration(150).setInterpolator(EASE_IO).start() } // web: setSx(1), .15 s
+                paintLabel()
+            }
             pill.addView(v, LinearLayout.LayoutParams(G.WRAP, G.dpi(28f)))
         }
         addView(pill, LayoutParams(G.WRAP, G.WRAP, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).m(b = 8f))

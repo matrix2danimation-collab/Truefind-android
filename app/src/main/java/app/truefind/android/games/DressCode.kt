@@ -102,7 +102,14 @@ class DressCodeScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) 
             background = CssBg(28f, listOf(CssBg.Linear(150f, intArrayOf(Color.WHITE, G.c("#fbf3e2"), G.c("#f1dfb6")), floatArrayOf(0f, 0.6f, 1f))), border = DC.line, borderDp = 1f)
             G.shadow(this, 4f, G.c("#3c2814"), 28f)
         }
-        val hr = G.hbox(ctx, 8f, Gravity.BOTTOM).apply { pad(16f) }
+        val show = DollView(ctx).apply { set(DressArt.SHOWCASE, false); contentDescription = "Doll" }
+        val hr = object : LinearLayout(ctx) {
+            // web w-[40%]: the doll is 40 % of the row's inside, the words take the rest
+            override fun onMeasure(ws: Int, hs: Int) {
+                (show.layoutParams as? LinearLayout.LayoutParams)?.width = ((MeasureSpec.getSize(ws) - paddingLeft - paddingRight) * 0.4f).roundToInt()
+                super.onMeasure(ws, hs)
+            }
+        }.apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM; G.gap(this, 8f); pad(16f) }
         val hl = G.vbox(ctx).apply { pad(0f, 0f, 0f, 8f) }
         hl.addView(DC.t(ctx, "Gudiya ko\nstar banao 👑", 22f, DC.ink, true, 1.25f))
         hl.addView(DC.t(ctx, "Har round nayi theme, 3 missions aur timer. Saree, suit, tops, bottoms, gehne — sab alag-alag.", 13.5f, DC.sub), G.lp(G.MATCH, G.WRAP).m(t = 8f))
@@ -111,8 +118,7 @@ class DressCodeScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) 
         chips.addView(DC.tierBadge(ctx, "p")); chips.addView(DC.tierBadge(ctx, "s"))
         hl.addView(chips, G.lp(G.MATCH, G.WRAP).m(t = 12f))
         hr.addView(hl, G.lpw(1f))
-        val show = DollView(ctx).apply { set(DressArt.SHOWCASE, false); contentDescription = "Doll" }
-        hr.addView(show, LinearLayout.LayoutParams(0, G.dpi(230f), 0.6667f)) // w-[40%] of the row (60/40 with the text)
+        hr.addView(show, LinearLayout.LayoutParams(G.dpi(120f), G.dpi(230f)))
         hero.addView(hr, LayoutParams(G.MATCH, G.WRAP))
         col.addView(hero, G.lp(G.MATCH, G.WRAP))
         // the three tiers
@@ -121,7 +127,7 @@ class DressCodeScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) 
             val c = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL).apply { DC.card(this, 16f); pad(10f) }
             c.addView(DC.tierBadge(ctx, k, true))
             c.addView(DC.t(ctx, "${DressArt.items.count { it.tier == k }}", 15f, DC.ink, true), G.lp(G.WRAP, G.WRAP).m(t = 4f))
-            c.addView(DC.t(ctx, p, 11f, DC.sub))
+            c.addView(DC.t(ctx, p, 11f, DC.sub).apply { gravity = Gravity.CENTER }) // grid … text-center
             tiers.addView(c, G.lpw(1f))
         }
         col.addView(tiers, G.lp(G.MATCH, G.WRAP).m(t = 12f))
@@ -143,7 +149,7 @@ class DressCodeScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) 
             "dc-practice", "dc-wardrobe", "dc-sheet" -> {
                 openMode(true)
                 val g = (mode as? DcMode)?.gameView()
-                if (GamesDemo.scene == "dc-wardrobe") g?.demoWardrobe("tops")
+                if (GamesDemo.scene == "dc-wardrobe") g?.demoWardrobe("top")
                 if (GamesDemo.scene == "dc-sheet") DressArt.byId["banarasi-zari"]?.let { g?.demoSheet(it) }
             }
             "dc-online", "dc-reveal" -> openMode(false)
@@ -418,7 +424,7 @@ class DcOnline(ctx: Context, home: DressCodeScreen) : DcMode(ctx, home), DcHandl
         body.pad(20f, 0f, 20f, 0f)
         root.addView(body, G.lp(G.MATCH, G.WRAP))
         val c = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL).apply { DC.card(this, 22f); pad(20f) }
-        c.addView(DC.t(ctx, "Ye code partner ko bhejo", 13f, DC.sub))
+        c.addView(DC.t(ctx, "Ye code partner ko bhejo", 13f, DC.sub).apply { gravity = Gravity.CENTER })
         c.addView(G.text(ctx, s.str("code"), 44f, DC.ink, true).lineH(1.5f).apply { letterSpacing = 0.25f; tag = "code" }, G.lp(G.WRAP, G.WRAP).m(t = 4f))
         val copy = G.hbox(ctx, 6f, Gravity.CENTER).apply { DC.whiteBtn(this, 99f); pad(16f, 0f, 16f, 0f) }
         copy.addView(G.icon(ctx, "Copy", DC.ink, 16f))
@@ -443,9 +449,9 @@ class DcOnline(ctx: Context, home: DressCodeScreen) : DcMode(ctx, home), DcHandl
         body.gravity = Gravity.CENTER_HORIZONTAL
         body.pad(20f, 64f, 20f, 0f)
         root.addView(body, G.lp(G.MATCH, G.WRAP))
-        body.addView(DC.t(ctx, "Game khatam ho gaya", 18f, DC.ink, true))
+        body.addView(DC.t(ctx, "Game khatam ho gaya", 18f, DC.ink, true).apply { gravity = Gravity.CENTER })
         body.addView(DC.t(ctx, "Partner chala gaya.", 13f, DC.sub), G.lp(G.WRAP, G.WRAP).m(t = 4f))
-        val done = G.text(ctx, "Done", 15f, DC.ink, true).apply { gravity = Gravity.CENTER; pad(24f, 0f, 24f, 0f); DC.whiteBtn(this, 16f) }
+        val done = G.text(ctx, "Done", 16f, DC.ink, true).apply { gravity = Gravity.CENTER; pad(24f, 0f, 24f, 0f); DC.whiteBtn(this, 16f) }
         G.click(done, 0.98f) { home.closeMode(this) }
         body.addView(done, LinearLayout.LayoutParams(G.WRAP, G.dpi(44f)).m(t = 20f))
     }
@@ -806,8 +812,9 @@ class DcGame(ctx: Context, private val h: DcHandlers, private val practice: Bool
         timerChip.background = G.round(Color.WHITE, 99f, if (low) G.c("#fca5a5") else DC.line, 1f)
         val blink = low && ms > 0
         if (blink && timerBlink == null) timerBlink = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 1000; repeatCount = ValueAnimator.INFINITE
-            addUpdateListener { a -> val t = a.animatedValue as Float; timerChip.alpha = 1f - 0.55f * G.ease(if (t < 0.5f) t * 2 else (1 - t) * 2) }
+            duration = 1000; repeatCount = ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator()
+            // dcBlink 1 s: 1 → .45 → 1, each half with CSS "ease"
+            addUpdateListener { a -> val t = a.animatedValue as Float; timerChip.alpha = if (t < 0.5f) 1f - 0.55f * MC.EASE.getInterpolation(t * 2) else 0.45f + 0.55f * MC.EASE.getInterpolation((t - 0.5f) * 2) }
             start()
         } else if (!blink && timerBlink != null) { timerBlink?.cancel(); timerBlink = null; timerChip.alpha = 1f }
     }
@@ -869,11 +876,11 @@ class DcGame(ctx: Context, private val h: DcHandlers, private val practice: Bool
             }
             b.addView(G.text(ctx, t.icon, 26f, DC.ink, false).lineH(1f).apply { gravity = Gravity.CENTER })
             b.addView(DC.t(ctx, t.label, 11.5f, DC.ink, true, 1.25f).apply { gravity = Gravity.CENTER; pad(4f, 0f, 4f, 0f) }, G.lp(G.MATCH, G.WRAP))
-            b.addView(DC.t(ctx, "$n", 10f, DC.sub))
+            b.addView(DC.t(ctx, "$n", 10f, DC.sub).apply { gravity = Gravity.CENTER })
             G.click(b, 0.95f) { openWardrobe(t.key) }
-            box.addView(b, LayoutParams(G.dpi(84f), G.WRAP))
+            box.addView(b, LayoutParams(G.dpi(84f), G.MATCH))
             if (isHot) box.addView(G.text(ctx, "🎯", 12f, DC.ink, false), LayoutParams(G.WRAP, G.WRAP, Gravity.TOP or Gravity.END).m(t = -4f, r = -4f))
-            row.addView(box, LinearLayout.LayoutParams(G.dpi(84f), G.WRAP))
+            row.addView(box, LinearLayout.LayoutParams(G.dpi(84f), G.MATCH)) // a flex row stretches: every box as tall as the tallest
         }
         hs.addView(row)
         contentCol.addView(hs, G.lp(G.MATCH, G.WRAP))
@@ -1089,7 +1096,7 @@ class DcGame(ctx: Context, private val h: DcHandlers, private val practice: Bool
         sc.addView(c, LayoutParams(G.MATCH, G.MATCH))
         r.addView(sc, LayoutParams(G.MATCH, G.MATCH))
         c.addView(G.text(ctx, "ROUND ${view.round} · ${theme.icon} ${theme.title.uppercase()}", 12f, DC.gold, true).apply { letterSpacing = 0.1f; gravity = Gravity.CENTER })
-        c.addView(DC.t(ctx, "✨ Final look", 22f, DC.ink, true))
+        c.addView(DC.t(ctx, "✨ Final look", 22f, DC.ink, true).apply { gravity = Gravity.CENTER })
         val stageBox = FrameLayout(ctx)
         val rv = DollViewer(ctx, true)
         rv.setLook(view.look)
@@ -1137,12 +1144,12 @@ class DcGame(ctx: Context, private val h: DcHandlers, private val practice: Bool
         c.addView(rate, G.lp(G.MATCH, G.WRAP).m(t = 12f))
         val btns = G.vbox(ctx, 8f)
         if (!girlSide) {
-            val nb = G.text(ctx, "Next round: ${next.icon} ${next.title} ▶", 15f, Color.WHITE, true).apply { gravity = Gravity.CENTER; DC.goldBtn(this, 16f) }
+            val nb = G.text(ctx, "Next round: ${next.icon} ${next.title} ▶", 16f, Color.WHITE, true).apply { gravity = Gravity.CENTER; DC.goldBtn(this, 16f) }
             if (busy) { nb.isEnabled = false; nb.alpha = 0.6f }
             G.click(nb, 0.98f) { h.newlook() }
             btns.addView(nb, G.lp(G.MATCH, G.dpi(48f)))
         } else btns.addView(DC.t(ctx, "$bName agla round shuru karega…", 12.5f, DC.sub).apply { gravity = Gravity.CENTER }, G.lp(G.MATCH, G.WRAP))
-        val done = G.text(ctx, "Done", 15f, DC.ink, true).apply { gravity = Gravity.CENTER; DC.whiteBtn(this, 16f) }
+        val done = G.text(ctx, "Done", 16f, DC.ink, true).apply { gravity = Gravity.CENTER; DC.whiteBtn(this, 16f) }
         G.click(done, 0.98f) { onExit() }
         btns.addView(done, G.lp(G.MATCH, G.dpi(44f)))
         c.addView(btns, G.lp(G.MATCH, G.WRAP).m(t = 16f))
@@ -1173,7 +1180,7 @@ object PathIx { val EASE_OUT = android.view.animation.PathInterpolator(0f, 0f, 0
 // ═════════════════════ Full-screen wardrobe ═════════════════════
 @SuppressLint("ViewConstructor")
 class DcWardrobe(ctx: Context, private val tabKey: String, private val onClose: () -> Unit, private val onOpenItem: (DressArt.Item) -> Unit) : FrameLayout(ctx) {
-    private val def = DressArt.tabs.first { it.key == tabKey }
+    private val def = DressArt.tabs.firstOrNull { it.key == tabKey } ?: DressArt.tabs.first()
     private val all = DressArt.items.filter { def.slots.contains(it.slot) }
     private var tier = "all"
     private var base = "all"
@@ -1241,7 +1248,6 @@ class DcWardrobe(ctx: Context, private val tabKey: String, private val onClose: 
             }
         }
         tierChips(); baseChips()
-        alpha = 0f; animate().alpha(1f).setDuration(160).start()
     }
 
     fun dispose() { main.removeCallbacksAndMessages(null) }
@@ -1328,7 +1334,8 @@ class DcWardrobe(ctx: Context, private val tabKey: String, private val onClose: 
             item.cols.take(4).forEachIndexed { i, ci ->
                 dots.addView(View(ctx).apply { background = G.oval(G.c(DressArt.colors[ci].second), Color.WHITE, 1f) }, LayoutParams(G.dpi(14f), G.dpi(14f)).m(l = i * 10f))
             }
-            c.foot.addView(dots, LinearLayout.LayoutParams(G.dpi(14f + 3 * 10f), G.dpi(14f)))
+            val n = item.cols.take(4).size
+            c.foot.addView(dots, LinearLayout.LayoutParams(G.dpi(14f + (n - 1).coerceAtLeast(0) * 10f), G.dpi(14f))) // -space-x-1: as wide as the dots
         }
     }
     private fun tierName(t: String) = when (t) { "s" -> "Super Premium"; "p" -> "Premium"; else -> "Normal" }
@@ -1378,10 +1385,16 @@ class DcItemSheet(ctx: Context, private val item: DressArt.Item, start: DcView, 
         panel.addView(View(ctx).apply { background = G.round(DC.line, 3f) }, LinearLayout.LayoutParams(G.dpi(40f), G.dpi(6f)).apply { gravity = Gravity.CENTER_HORIZONTAL })
         wrap.addView(DC.roundBtn(ctx, "X", 36f, 16f, "Close") { onClose() }, LayoutParams(G.dpi(36f), G.dpi(36f), Gravity.TOP or Gravity.END).m(t = 12f, r = 12f))
         // preview + details
-        val top = G.hbox(ctx, 12f, Gravity.TOP).apply { pad(16f, 12f, 16f, 0f) }
         val pv = FrameLayout(ctx).apply { background = CssBg(16f, listOf(CssBg.Radial(0.5f, 0.4f, 0.8f, 0.7f, intArrayOf(Color.WHITE, G.c("#f3ece1"))))); clipToOutline = true }
+        val top = object : LinearLayout(ctx) {
+            // web w-[44%]: 44 % of the row's inside; the details take what is left after the 12 px gap
+            override fun onMeasure(ws: Int, hs: Int) {
+                (pv.layoutParams as? LinearLayout.LayoutParams)?.width = ((MeasureSpec.getSize(ws) - paddingLeft - paddingRight) * 0.44f).roundToInt()
+                super.onMeasure(ws, hs)
+            }
+        }.apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; G.gap(this, 12f); pad(16f, 12f, 16f, 0f) }
         pv.addView(preview, LayoutParams(G.MATCH, G.MATCH))
-        top.addView(pv, LinearLayout.LayoutParams(0, G.dpi(260f), 44f))
+        top.addView(pv, LinearLayout.LayoutParams(G.dpi(150f), G.dpi(260f)))
         val det = G.vbox(ctx).apply { pad(0f, 4f, 0f, 0f) }
         det.addView(DC.tierBadge(ctx, item.tier))
         det.addView(DC.t(ctx, item.name, 19f, DC.ink, true, 1.25f), G.lp(G.MATCH, G.WRAP).m(t = 6f))
@@ -1391,7 +1404,7 @@ class DcItemSheet(ctx: Context, private val item: DressArt.Item, start: DcView, 
         det.addView(colorName, G.lp(G.MATCH, G.WRAP).m(t = 2f))
         priceBox.background = G.round(DC.soft, 16f); priceBox.pad(12f, 8f, 12f, 8f)
         det.addView(priceBox, G.lp(G.MATCH, G.WRAP).m(t = 12f))
-        top.addView(det, LinearLayout.LayoutParams(0, G.WRAP, 56f))
+        top.addView(det, LinearLayout.LayoutParams(0, G.WRAP, 1f))
         panel.addView(top, G.lp(G.MATCH, G.WRAP))
         // colours
         val cs = G.vbox(ctx).apply { pad(16f, 12f, 16f, 0f) }
@@ -1399,6 +1412,7 @@ class DcItemSheet(ctx: Context, private val item: DressArt.Item, start: DcView, 
         val sw = G.hbox(ctx, 10f)
         sw.contentDescription = "Colours"
         sw.clipChildren = false; cs.clipChildren = false; cs.clipToPadding = false
+        panel.clipChildren = false // the chosen colour's gold ring (a box-shadow) reaches 2.5 px past the swatch row
         item.cols.forEachIndexed { k, ci ->
             val s = View(ctx).apply { contentDescription = DressArt.colors[ci].first }
             G.click(s, 0.9f) { c = k; paint() }
@@ -1455,12 +1469,12 @@ class DcItemSheet(ctx: Context, private val item: DressArt.Item, start: DcView, 
         if (short) actions.addView(DC.t(ctx, "Coins kam hain. Recharge karke aao!", 13f, DC.red, true).apply { gravity = Gravity.CENTER; background = G.round(G.c("#fef2f2"), 12f); pad(0f, 8f, 0f, 8f) }, G.lp(G.MATCH, G.WRAP))
         if (owned) {
             if (sameAsWorn) {
-                val b = G.text(ctx, "Utaro (free)", 15f, DC.ink, true).apply { gravity = Gravity.CENTER; DC.whiteBtn(this, 16f) }
+                val b = G.text(ctx, "Utaro (free)", 16f, DC.ink, true).apply { gravity = Gravity.CENTER; DC.whiteBtn(this, 16f) }
                 if (busy) { b.isEnabled = false; b.alpha = 0.6f }
                 G.click(b, 0.98f) { onRemove(item.slot) }
                 actions.addView(b, G.lp(G.MATCH, G.dpi(48f)))
             } else {
-                val b = G.text(ctx, if (worn) "Rang badlo (free)" else "Pehnao (free)", 15f, Color.WHITE, true).apply { gravity = Gravity.CENTER; DC.goldBtn(this, 16f) }
+                val b = G.text(ctx, if (worn) "Rang badlo (free)" else "Pehnao (free)", 16f, Color.WHITE, true).apply { gravity = Gravity.CENTER; DC.goldBtn(this, 16f) }
                 if (busy) { b.isEnabled = false; b.alpha = 0.6f }
                 G.click(b, 0.98f) { onWear(item.id, c) }
                 actions.addView(b, G.lp(G.MATCH, G.dpi(48f)))
@@ -1478,7 +1492,7 @@ class DcItemSheet(ctx: Context, private val item: DressArt.Item, start: DcView, 
             G.click(b, 0.98f) { onWear(item.id, c) }
             actions.addView(b, G.lp(G.MATCH, G.WRAP))
         }
-        val cancel = G.text(ctx, "Cancel", 15f, DC.sub, true).apply { gravity = Gravity.CENTER }
+        val cancel = G.text(ctx, "Cancel", 16f, DC.sub, true).apply { gravity = Gravity.CENTER }
         G.click(cancel, 0.98f) { onClose() }
         actions.addView(cancel, G.lp(G.MATCH, G.dpi(44f)))
     }

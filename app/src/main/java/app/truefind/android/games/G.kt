@@ -63,7 +63,7 @@ object G {
 
     // ── text ──
     fun text(ctx: Context, s: CharSequence, size: Float, color: Int, bold: Boolean = true, italic: Boolean = false): TextView =
-        TextView(ctx).apply {
+        CssText(ctx).apply {
             text = s
             setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(size))
             setTextColor(color)
@@ -186,10 +186,31 @@ object G {
 }
 
 
+/**
+ * A TextView that lays its lines out like CSS line-height: the browser makes every line exactly
+ * line-height tall and puts half of the spare room above the text and half below it ("half-leading").
+ * Android puts the spare room only between lines, so a paragraph's first and last line get it here
+ * as extra room at the top and the bottom (see [lineH]); the view's own padding is not touched.
+ */
+class CssText(ctx: Context) : android.widget.TextView(ctx) {
+    var halfLeading = 0
+        set(v) { if (field != v) { field = v; requestLayout(); invalidate() } }
+    override fun getCompoundPaddingTop(): Int = super.getCompoundPaddingTop() + halfLeading
+    override fun getCompoundPaddingBottom(): Int = super.getCompoundPaddingBottom() + halfLeading
+}
+
 // ── extensions (top level so every games file can use them) ──
-/** CSS line-height (× font size) */
+/**
+ * CSS line-height (× font size): lines are exactly that far apart, and (for a [CssText]) the text's box
+ * is that tall per line, with the spare room split above and below as in the browser. A line-height
+ * smaller than the font itself only pulls the lines closer (no box is made smaller than the letters).
+ */
 fun TextView.lineH(lineHeight: Float): TextView {
-    setLineSpacing(textSize * (lineHeight - 1f), 1f)
+    val fm = paint.fontMetricsInt
+    val font = if (includeFontPadding) fm.bottom - fm.top else fm.descent - fm.ascent
+    val extra = textSize * lineHeight - font
+    setLineSpacing(extra, 1f)
+    if (this is CssText) halfLeading = if (extra > 0f) Math.round(extra / 2f) else 0
     return this
 }
 fun TextView.ellipsize1(): TextView { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; return this }

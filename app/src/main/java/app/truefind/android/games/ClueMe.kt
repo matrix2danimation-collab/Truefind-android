@@ -549,7 +549,7 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
         when (st) {
             "waiting" -> {
                 val box = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL).apply { background = G.round(G.ca("#ffffff", 0.05f), 22f, G.ca("#ffffff", 0.12f), 1f); pad(20f) }
-                box.addView(G.text(ctx, "Share this code with your partner", 13f, G.ca("#ffffff", 0.7f), bold = false))
+                box.addView(G.text(ctx, "Share this code with your partner", 13f, G.ca("#ffffff", 0.7f), bold = false).apply { gravity = Gravity.CENTER })
                 box.addView(G.text(ctx, g.str("code"), 44f, Color.WHITE).apply { letterSpacing = 0.25f }, G.lp(G.WRAP, G.WRAP).m(t = 4f))
                 val copy = G.hbox(ctx, 6f, Gravity.CENTER).apply { background = ghostBg(99f); pad(16f, 0f, 16f, 0f) }
                 copy.addView(G.icon(ctx, "Copy", Color.WHITE, 16f))
@@ -624,7 +624,7 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
             "finished" -> body.addView(summary(listOf(display(0), display(1)), sc, null), G.lp(G.MATCH, G.WRAP).m(t = 20f))
             "cancelled" -> {
                 val c = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL)
-                c.addView(G.text(ctx, "The game ended", 17f, Color.WHITE))
+                c.addView(G.text(ctx, "The game ended", 17f, Color.WHITE).apply { gravity = Gravity.CENTER })
                 c.addView(G.text(ctx, NameGuess.END_TEXT[g.str("end_reason")] ?: NameGuess.END_TEXT["left"]!!, 13f, G.ca("#ffffff", 0.6f), bold = false).apply { gravity = Gravity.CENTER }, G.lp(G.WRAP, G.WRAP).m(t = 4f))
                 val d = button("Done", "ghost", h = 44f, semibold = true) { layer.close(this) }.apply { pad(24f, 0f, 24f, 0f) }
                 c.addView(d, LinearLayout.LayoutParams(G.WRAP, G.dpi(44f)).m(t = 16f))
@@ -903,12 +903,14 @@ class ClueMePage(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
                 wrong = "Not that one, try again"
                 wrongT.text = wrong; wrongT.visibility = View.VISIBLE
                 wrongT.animate().cancel(); wrongT.translationX = 0f
+                // web tfShake .4s ease-in-out: 0 → -6 → 6 → -4 → 4 → 0 px, each fifth eased on its own
+                val inOut = android.view.animation.PathInterpolator(0.42f, 0f, 0.58f, 1f)
                 ValueAnimator.ofFloat(0f, 1f).apply {
-                    duration = 400
+                    duration = 400; interpolator = android.view.animation.LinearInterpolator()
                     addUpdateListener {
                         val t = it.animatedValue as Float
                         val k = floatArrayOf(0f, -6f, 6f, -4f, 4f, 0f)
-                        val pos = t * 5f; val i = pos.toInt().coerceAtMost(4); val f = pos - i
+                        val pos = t * 5f; val i = pos.toInt().coerceAtMost(4); val f = inOut.getInterpolation((pos - i).coerceIn(0f, 1f))
                         wrongT.translationX = G.dp(k[i] + (k[i + 1] - k[i]) * f)
                     }
                     start()

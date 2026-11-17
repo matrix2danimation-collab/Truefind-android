@@ -44,6 +44,22 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    // The games' voice uses only Agora's basic voice call (the engine's own echo and noise filters, as the
+    // website's AEC/ANS). Agora's optional add-ons — AI noise and echo filters, 3D sound, voice beauty,
+    // lip sync — are never switched on, so they stay out of the APK (Agora: "Remove unnecessary extensions").
+    packaging {
+        jniLibs {
+            excludes += listOf(
+                "**/libagora_ai_echo_cancellation_extension.so",
+                "**/libagora_ai_echo_cancellation_ll_extension.so",
+                "**/libagora_ai_noise_suppression_extension.so",
+                "**/libagora_ai_noise_suppression_ll_extension.so",
+                "**/libagora_audio_beauty_extension.so",
+                "**/libagora_spatial_audio_extension.so",
+                "**/libagora_lip_sync_extension.so",
+            )
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

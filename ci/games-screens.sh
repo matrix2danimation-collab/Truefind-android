@@ -23,6 +23,13 @@ shot() {
   adb logcat -d -s AndroidRuntime:E > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
 }
+# the games' voice engine (Agora) has to load on a phone: made and set up once in test mode, nobody is called
+adb shell am force-stop app.truefind.android
+adb logcat -c
+adb shell am start -W -n app.truefind.android/.MainActivity --es tf_games voice-check > /dev/null
+sleep 12
+{ adb logcat -d -s TFVOICE:I; adb logcat -d -s AndroidRuntime:E; } > "$OUT/voice-check.txt"
+cat "$OUT/voice-check.txt"
 # (the emulator draws slowly — first frames can take 5–9 s — so each picture waits 10 s)
 shot 01-hub 10 --es tf_games hub
 shot 02-hub-clue-sheet 11 --es tf_games hub --es tf_open clue-sheet

@@ -210,7 +210,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
                 pad(4f, 0f, 4f, 0f)
             }
             chip.addView(G.icon(ctx, ic, G.c("#ffd877"), 17f, 2.2f))
-            chip.addView(G.text(ctx, t, 12.5f, Color.WHITE).ellipsize1())
+            chip.addView(G.text(ctx, t, 12.5f, Color.WHITE).ellipsize1().apply { gravity = Gravity.CENTER })
             chips.addView(chip, G.lpw(1f, G.dpi(56f)))
         }
         // chips sit under the text: an invisible spacer column holds the height
