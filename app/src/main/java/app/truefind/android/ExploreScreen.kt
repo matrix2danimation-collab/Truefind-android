@@ -87,6 +87,7 @@ class ExploreScreen(
     private val emptyBtn: TextView
     private val toast: TextView
     private val stage = CallStageView(ctx).apply { visibility = View.GONE }
+    private val spinner = PullSpinner(ctx)
     private var sheetLayer: View? = null
     private var dialogLayer: View? = null
 
@@ -104,6 +105,7 @@ class ExploreScreen(
             setStroke(Ui.dpi(1f), Ui.c("#E6D9FA"))
         }
         header.elevation = Ui.dp(10f)
+        header.isClickable = true // touches on the bar stay on the bar (pull to refresh)
         header.outlineSpotShadowColorCompat(Ui.c("#18043C"))
         header.setPadding(Ui.dpi(14f), Ui.dpi(32f), Ui.dpi(14f), Ui.dpi(13f))
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -150,6 +152,7 @@ class ExploreScreen(
             setStroke(Ui.dpi(1f), Ui.c("#E6D9FA"))
         }
         actions.elevation = Ui.dp(10f)
+        actions.isClickable = true
         actions.setPadding(Ui.dpi(12f), Ui.dpi(13f), Ui.dpi(12f), Ui.dpi(11f))
         val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Ui.c("#16a34a"), 15f), INK, Ui.c("#674A96"), Ui.round(Color.WHITE, 14f, Ui.c("#E3D3FB"))) { startRandom("voice") }
         val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Color.WHITE, 16f), Color.WHITE, Ui.c("#E9D5FF"),
@@ -183,6 +186,10 @@ class ExploreScreen(
             elevation = Ui.dp(12f)
         }
         addView(toast, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL or Gravity.TOP))
+
+        // pull down on the top bar (or the buttons) to refresh, same as the web
+        addView(spinner, LayoutParams(Ui.dpi(42f), Ui.dpi(42f), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(4f) })
+        spinner.elevation = Ui.dp(20f)
 
         host.addView(stage, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         stage.elevation = Ui.dp(40f)
@@ -249,6 +256,81 @@ class ExploreScreen(
         pushToFeed()
     }
 
+    // ═════════════════ pull down to refresh ═════════════════
+    private val SLOP = Ui.dp(10f)
+    private var ptrTrack = false
+    private var ptrPull = false
+    private var ptrX = 0f
+    private var ptrY = 0f
+    private var ptrD = 0f
+
+    // finger travel → spinner travel (easy at first, harder near the end), in dp
+    private fun travel(dyPx: Float): Float {
+        val d = ((dyPx - SLOP) / Ui.density).coerceAtLeast(0f) * 0.55f
+        return if (d <= 60f) d else minOf(112f, 60f + (d - 60f) * 0.4f)
+    }
+
+    private fun inFeed(y: Float) = y > feed.top && y < feed.bottom && y > header.bottom && y < actions.top
+
+    // a clear pull straight down (not a sideways swipe on the chips)
+    private fun detect(e: android.view.MotionEvent): Boolean {
+        if (!ptrTrack || ptrPull) return ptrPull
+        val dx = e.x - ptrX; val dy = e.y - ptrY
+        if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return false
+        if (dy > 0 && dy > Math.abs(dx) * 1.4f) ptrPull = true else ptrTrack = false
+        return ptrPull
+    }
+
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean {
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                ptrPull = false
+                ptrTrack = !spinner.spinning && sheetLayer == null && dialogLayer == null && stage.visibility != View.VISIBLE && !inFeed(e.y)
+                ptrX = e.x; ptrY = e.y; ptrD = 0f
+            }
+            android.view.MotionEvent.ACTION_MOVE -> return detect(e)
+        }
+        return false
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (!ptrPull) {
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> return ptrTrack
+                android.view.MotionEvent.ACTION_MOVE -> if (!detect(e)) return ptrTrack
+                else -> return false
+            }
+        }
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_MOVE -> { ptrD = travel(e.y - ptrY); spinner.pull(ptrD, 64f) }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                ptrPull = false; ptrTrack = false
+                if (ptrD >= 64f && e.actionMasked == android.view.MotionEvent.ACTION_UP) refreshNow() else spinner.hide()
+                ptrD = 0f
+            }
+        }
+        return true
+    }
+
+    private fun refreshNow() {
+        spinner.spin(22f)
+        performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        val t0 = System.currentTimeMillis()
+        var left = 2
+        val doneOne = {
+            left -= 1
+            if (left == 0) {
+                val wait = (650 - (System.currentTimeMillis() - t0)).coerceAtLeast(0)
+                main.postDelayed({ spinner.hide() }, wait)
+            }
+        }
+        // at most 8 s, like the web
+        main.postDelayed({ if (spinner.spinning) spinner.hide() }, 8000)
+        load { doneOne() }
+        loadWallet(true) { doneOne() }
+    }
+
     // ═════════════════ shown / hidden (follows the web address) ═════════════════
     fun setShown(on: Boolean) {
         if (on == shown) return
@@ -294,18 +376,19 @@ class ExploreScreen(
     }
 
     // ═════════════════ data ═════════════════
-    fun load() {
-        if (loading) return
-        if (!Api.ready) { main.postDelayed({ if (shown) load() }, 700); return }
+    fun load(done: (() -> Unit)? = null) {
+        if (loading) { done?.invoke(); return }
+        if (!Api.ready) { main.postDelayed({ if (shown) load() }, 700); done?.invoke(); return }
         loading = true
         lastLoadAt = System.currentTimeMillis()
         val fn = if (oldFeed) "getDiscoverProfiles" else "getOnlineNow"
         Api.invoke(fn) { r ->
             loading = false
-            if (!oldFeed && r.status == 404) { oldFeed = true; load(); return@invoke }
+            if (!oldFeed && r.status == 404) { oldFeed = true; load(done); return@invoke }
             if (!r.ok) {
                 error = r.error ?: "Could not load who is online."
                 refreshEmpty()
+                done?.invoke()
                 return@invoke
             }
             val d = r.data
@@ -327,6 +410,7 @@ class ExploreScreen(
             gotList = true
             error = ""
             pushToFeed()
+            done?.invoke()
         }
     }
 
@@ -377,10 +461,11 @@ class ExploreScreen(
         emptyBtn.setOnClickListener { if (showAll) setFilter("all") else load() }
     }
 
-    private fun loadWallet(force: Boolean) {
-        if (!force && System.currentTimeMillis() - coinsAt < 30000 && coins != null) return
-        if (!Api.ready) { main.postDelayed({ if (shown) loadWallet(force) }, 900); return }
+    private fun loadWallet(force: Boolean, done: (() -> Unit)? = null) {
+        if (!force && System.currentTimeMillis() - coinsAt < 30000 && coins != null) { done?.invoke(); return }
+        if (!Api.ready) { main.postDelayed({ if (shown) loadWallet(force) }, 900); done?.invoke(); return }
         Api.invoke("getWallet", JSONObject().put("app", "truefind")) { r ->
+            done?.invoke()
             val w = r.data.optJSONObject("wallet")
             if (r.ok && w != null && w.has("coins")) {
                 coins = w.optDouble("coins", 0.0).toLong()
