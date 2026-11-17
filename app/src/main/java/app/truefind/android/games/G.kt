@@ -323,19 +323,45 @@ fun scrollPage(ctx: Context): ScrollView = ScrollView(ctx).apply {
     clipToPadding = false
 }
 
-/** Rotating "Loader2" ring (web: animate-spin). */
-class Spinner(ctx: Context, color: Int, sizeDp: Float) : FrameLayout(ctx) {
-    private val anim: ValueAnimator
-    init {
-        val ic = G.icon(ctx, "Loader2", color, sizeDp)
-        addView(ic, FrameLayout.LayoutParams(G.dpi(sizeDp), G.dpi(sizeDp), Gravity.CENTER))
-        anim = ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 1000; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
-            addUpdateListener { ic.rotation = it.animatedValue as Float }
+/**
+ * True Find's loader (web TfSpinner, "long train", chosen Nov 16): five dots, big to small, running round
+ * a circle one behind the other, fast then slow (1.3 s). Blue #5664EF on light backgrounds, white on dark
+ * or coloured ones (the web picks white the same way). The web's games use it wherever lucide's Loader2 was.
+ */
+class TfSpinner(ctx: Context, private val sizeDp: Float, white: Boolean = false) : View(ctx) {
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = if (white) Color.WHITE else G.c("#5664EF") }
+    private val ease = android.view.animation.PathInterpolator(0.5f, 0f, 0.5f, 1f)
+    private var t = 0f
+    private val anim = ValueAnimator.ofFloat(0f, 1f).apply {
+        duration = 1300; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+        addUpdateListener { t = it.animatedValue as Float; invalidate() }
+    }
+    init { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); if (!anim.isStarted) anim.start() }
+    override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val s = G.dpi(sizeDp)
+        setMeasuredDimension(resolveSize(s, widthMeasureSpec), resolveSize(s, heightMeasureSpec))
+    }
+    override fun onDraw(c: android.graphics.Canvas) {
+        val size = kotlin.math.min(width, height).toFloat()
+        if (size <= 0f) return
+        val cx = width / 2f; val cy = height / 2f
+        for (i in 0 until 5) {
+            // CSS: animation-delay -0.08 s × i (each smaller dot a little ahead)
+            val f = ((t + 0.08f * i / 1.3f) % 1f + 1f) % 1f
+            c.save()
+            c.translate(cx, cy)
+            c.rotate(360f * ease.getInterpolation(f))
+            p.alpha = (255 * DOT_OPACITY[i]).toInt()
+            c.drawCircle(0f, -size / 2f + size * 0.12f, size * DOT_SIZE[i] / 2f, p)
+            c.restore()
         }
     }
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); anim.start() }
-    override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
+    private companion object {
+        val DOT_SIZE = floatArrayOf(0.22f, 0.192f, 0.164f, 0.136f, 0.108f)
+        val DOT_OPACITY = floatArrayOf(1f, 0.8f, 0.62f, 0.45f, 0.3f)
+    }
 }
 
 /** Fade helper used by toasts and banners. */

@@ -400,6 +400,8 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
     private var guessInput: EditText? = null
     private var codeInput: EditText? = null
     private val actionBtns = ArrayList<View>()
+    private var createBtn: LinearLayout? = null
+    private var createSpin: View? = null
     private var pollKey = ""
 
     init { render() }
@@ -498,7 +500,7 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
         renderKey = key
         val keepGuess = guessInput?.text?.toString().orEmpty()
         val keepCode = codeInput?.text?.toString().orEmpty()
-        body.removeAllViews(); actionBtns.clear()
+        body.removeAllViews(); actionBtns.clear(); createBtn = null; createSpin = null
         tick?.cancel(); tick = null; timer = null; guessInput = null; codeInput = null
         val ctx = context
         if (g == null) {
@@ -506,7 +508,10 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
             val create = G.vbox(ctx).apply { background = G.round(G.ca("#ffffff", 0.05f), 22f, G.ca("#ffffff", 0.12f), 1f); pad(16f) }
             create.addView(G.text(ctx, "New game", 15f, Color.WHITE))
             create.addView(G.text(ctx, "Get a code and share it with your partner.", 13f, G.ca("#ffffff", 0.6f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 2f))
-            val cb = button(if (busy) "…" else "Create game", "theme") { run("create", fallback = "That didn't work. Try again.") }
+            val cb = button("Create game", "theme") { run("create", fallback = "That didn't work. Try again.") }
+            // web: while busy the button shows the white loader instead of its words
+            createSpin = TfSpinner(ctx, 20f, white = true).also { cb.addView(it, LinearLayout.LayoutParams(G.dpi(20f), G.dpi(20f))) }
+            createBtn = cb
             actionBtns.add(cb)
             create.addView(cb, blp(48f, 12f))
             body.addView(create, G.lp(G.MATCH, G.WRAP).m(t = 20f))
@@ -557,7 +562,7 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
                 }
                 box.addView(copy, LinearLayout.LayoutParams(G.WRAP, G.dpi(36f)).m(t = 4f))
                 val w = G.hbox(ctx, 8f, Gravity.CENTER)
-                w.addView(Spinner(ctx, G.ca("#ffffff", 0.6f), 16f), LinearLayout.LayoutParams(G.dpi(16f), G.dpi(16f)))
+                w.addView(TfSpinner(ctx, 16f, white = true), LinearLayout.LayoutParams(G.dpi(16f), G.dpi(16f)))
                 w.addView(G.text(ctx, "Waiting for partner to join…", 13f, G.ca("#ffffff", 0.6f), bold = false))
                 box.addView(w, G.lp(G.WRAP, G.WRAP).m(t = 16f))
                 body.addView(box, G.lp(G.MATCH, G.WRAP).m(t = 20f))
@@ -642,7 +647,15 @@ class NameGuessOnline(ctx: Context, layer: GamesLayer) : NgScreen(ctx, layer) {
         v.setTextColor(if (error.isNotEmpty()) G.c("#fecaca") else Color.WHITE)
         v.visibility = if (t.isEmpty()) View.GONE else View.VISIBLE
     }
-    private fun paintBusy() { for (b in actionBtns) enable(b, !busy && (b !== actionBtns.getOrNull(1) || game != null || (codeInput?.text?.length ?: 0) == 4)); paintNote() }
+    private fun paintBusy() {
+        for (b in actionBtns) enable(b, !busy && (b !== actionBtns.getOrNull(1) || game != null || (codeInput?.text?.length ?: 0) == 4))
+        createBtn?.let { cb ->
+            if (!cb.isEnabled) cb.alpha = 0.6f // web: disabled:opacity-60 (Join: 40)
+            cb.getChildAt(0)?.visibility = if (busy) View.GONE else View.VISIBLE
+            createSpin?.visibility = if (busy) View.VISIBLE else View.GONE
+        }
+        paintNote()
+    }
 
     private fun sendGuess() {
         val g = game ?: return
