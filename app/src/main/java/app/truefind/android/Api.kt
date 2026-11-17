@@ -2,6 +2,8 @@ package app.truefind.android
 
 import android.os.Handler
 import android.os.Looper
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -90,6 +92,43 @@ object Api {
         if (sort != null) q.append("&sort=").append(java.net.URLEncoder.encode(sort, "UTF-8"))
         if (limit > 0) q.append("&limit=").append(limit)
         async({ request("GET", "/entities/$entity$q", null, null) }, done)
+    }
+
+    /** entities.X.get(id) */
+    fun get(entity: String, id: String, done: (Result) -> Unit) {
+        if (Demo.on) { main.post { done(Demo.filter(entity, JSONObject().put("id", id)).let { r -> Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error) }) }; return }
+        async({ request("GET", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
+    }
+
+    /** entities.X.delete(id) */
+    fun delete(entity: String, id: String, done: (Result) -> Unit) {
+        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        async({ request("DELETE", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
+    }
+
+    /** entities.X.updateMany(query, data) — PATCH …/update-many (HttpURLConnection can't send PATCH: OkHttp does) */
+    fun updateMany(entity: String, query: JSONObject, data: JSONObject, done: (Result) -> Unit = {}) {
+        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        async({ requestOk("PATCH", "/entities/$entity/update-many", JSONObject().put("query", query).put("data", data)) }, done)
+    }
+
+    val http: okhttp3.OkHttpClient by lazy {
+        okhttp3.OkHttpClient.Builder().connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS).readTimeout(30, java.util.concurrent.TimeUnit.SECONDS).build()
+    }
+
+    private fun requestOk(method: String, path: String, body: JSONObject?): Result {
+        if (!ready) return Result(0, JSONObject(), "Not signed in yet")
+        return try {
+            val rb = body?.toString()?.toRequestBody("application/json".toMediaType())
+            val req = okhttp3.Request.Builder().url("$origin/api/apps/$appId$path").method(method, rb)
+                .header("Accept", "application/json").header("X-App-Id", appId).header("Authorization", "Bearer $token").build()
+            http.newCall(req).execute().use { res ->
+                val text = res.body?.string() ?: ""
+                val json = try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }
+                val err = if (res.isSuccessful) null else (json.optString("error").ifBlank { json.optString("message") }.ifBlank { "Something went wrong. Please try again." })
+                Result(res.code, json, err)
+            }
+        } catch (e: Exception) { Result(0, JSONObject(), "Please check your internet and try again.") }
     }
 
     /** auth.me() — the signed-in user. */

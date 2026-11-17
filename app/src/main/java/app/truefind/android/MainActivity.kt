@@ -38,6 +38,9 @@ import org.json.JSONObject
  *    calls, games …
  *  - Explore is drawn natively (ExploreScreen) on top of the web page whenever
  *    the address is /explore. The web's own bottom bar stays visible under it.
+ *  - Secret Dating is drawn natively too: Home (/secret-app), Online Map (/dating)
+ *    and Chats (/secret-app?tab=chat) in SecretHome, above the web's own Secret
+ *    Dating bar; one chat (/chat/:id) in ChatRoom, over the whole screen.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -50,6 +53,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
     private lateinit var secret: SecretHome
+    private var chatRoom: ChatRoom? = null
     private var path = "/"
     private var search = ""
     private var preview = ""
@@ -103,6 +107,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Ui.init(this)
+        Lite.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
@@ -134,6 +139,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                chatRoom?.let { r -> if (r.visibility == View.VISIBLE) { if (!r.back()) chatBack(); return } }
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty()) { finish(); return }
@@ -255,6 +261,19 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val js = "window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"});"
         web.evaluateJavascript(js, null)
     }
+    /** the same, in place of this page (navigate(path, { replace: true })) */
+    private fun replaceWeb(p: String) {
+        web.evaluateJavascript("window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, null, true);", null)
+    }
+    /** a chat's Back: the page you came from, or the Secret Dating chats (the web's goBack in ChatRoom.jsx) */
+    private fun chatBack() {
+        web.evaluateJavascript("window.__tfBack && window.__tfBack('/secret-app?tab=chat');", null)
+    }
+    private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> openWeb(p, st) }, goBack = { chatBack() }, replace = { replaceWeb(it) }).also {
+        it.visibility = View.GONE
+        root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        chatRoom = it
+    }
 
     // ── from the page ──
     override fun onRoute(path: String) {
@@ -267,7 +286,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean) {
         Api.origin = origin
         if (appId.isNotEmpty()) Api.appId = appId
+        val newLogin = token != Api.token
         Api.token = token
+        if (newLogin) Realtime.tokenChanged()
         this.navTopCss = navTopCss
         this.cover = cover
         update()
@@ -277,10 +298,22 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (preview.isNotEmpty()) return
         val p = path.trimEnd('/')
         val onExplore = p == "/explore"
-        val onSecret = p == "/secret-app" && !search.contains("tab=chat")
+        // Secret Dating: which page (the web's SecretApp view)
+        val tab = try { Uri.parse("x://x$search").getQueryParameter("tab") } catch (e: Exception) { null }
+        val secretView = when (p) { "/secret-app" -> if (tab == "chat") "chat" else "home"; "/dating" -> "map"; else -> "" }
+        val chatId = Regex("^/chat/([^/]+)$").find(p)?.groupValues?.get(1).orEmpty()
         val signedIn = Api.token.isNotEmpty()
         val show = onExplore && !cover && signedIn
-        val showSecret = onSecret && !cover && signedIn && !secret.wantsWeb
+        val showSecret = secretView.isNotEmpty() && !cover && signedIn && !secret.wantsWeb
+        // one chat: over the whole screen (no bar on that page); a call on top (cover) hides it for a while, typing kept
+        val showRoom = chatId.isNotEmpty() && !cover && signedIn
+        if (chatId.isNotEmpty() && signedIn) room().open(chatId) else chatRoom?.close()
+        chatRoom?.let { r ->
+            if (showRoom != (r.visibility == View.VISIBLE)) {
+                web.evaluateJavascript("document.documentElement.classList.${if (showRoom) "add" else "remove"}('tfcr')", null)
+                r.visibility = if (showRoom) View.VISIBLE else View.GONE
+            }
+        }
         // the native page ends where the web's bottom bar starts
         val h = if (navTopCss > 0) (navTopCss * resources.displayMetrics.density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
         for (v in listOf(explore, secret)) {
@@ -292,7 +325,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             explore.setShown(show)
         }
         if (showSecret != (secret.visibility == View.VISIBLE)) web.evaluateJavascript("document.documentElement.classList.${if (showSecret) "add" else "remove"}('tfsd')", null)
-        secret.setShown(showSecret, search)
+        secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
     }
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
@@ -301,15 +334,25 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.premium = intent.getBooleanExtra("tf_premium", false)
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
         Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
+        Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
         web.loadUrl("about:blank")
         if (intent.getBooleanExtra("tf_noweb", false)) web.visibility = View.GONE
         watchFrames()
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        // one chat (/chat/:id): the whole screen
+        if (preview == "chatroom") {
+            val r = room()
+            r.visibility = View.VISIBLE
+            r.open(intent.getStringExtra("tf_chat") ?: "m1")
+            if (open.isNotEmpty()) root.postDelayed({ r.preview(open) }, 1500)
+            return
+        }
         val screen = if (preview.startsWith("secret")) secret else explore
         val lp = screen.layoutParams as FrameLayout.LayoutParams
         lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
         screen.layoutParams = lp
-        if (screen === explore) explore.setShown(true) else secret.setShown(true, "")
-        val open = intent.getStringExtra("tf_open").orEmpty()
+        val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; else -> "home" }
+        if (screen === explore) explore.setShown(true) else secret.setShown(true, view, "")
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }
 
@@ -337,12 +380,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         super.onResume()
         explore.onAppVisible(true)
         secret.onAppVisible(true)
+        chatRoom?.onAppVisible(true)
         if (preview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
         explore.onAppVisible(false)
         secret.onAppVisible(false)
+        chatRoom?.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }

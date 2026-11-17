@@ -66,6 +66,10 @@ jobs:
     needs: apk
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        set: [home, chat]   # two emulators side by side: Home screens · Map + Chat screens
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
@@ -85,18 +89,18 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash ci/screens.sh TrueFind-test.apk shots
+          script: bash ci/screens.sh TrueFind-test.apk shots ${{ matrix.set }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screens
+          name: screens-${{ matrix.set }}
           path: shots
-      # the same pictures on the branch "screens" (easy to read back for checking)
-      - name: Keep the screenshots on branch "screens"
+      # the same pictures on the branch "screens-home" / "screens-chat" (easy to read back for checking)
+      - name: Keep the screenshots on a "screens-…" branch
         if: always()
         run: |
           cd shots
-          git init -q && git checkout -q -b screens
+          git init -q && git checkout -q -b screens-${{ matrix.set }}
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-${{ matrix.set }}

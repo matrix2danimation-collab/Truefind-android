@@ -54,4 +54,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.webkit:webkit:1.14.0")
+    // live chat updates (the same socket the web SDK uses) and PATCH requests
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

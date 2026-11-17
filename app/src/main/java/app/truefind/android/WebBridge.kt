@@ -44,7 +44,7 @@ class WebBridge(private val listener: Listener) {
   window.TFNativeApp = true;
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
-  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}';
+  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}html.tfcr .cr{visibility:hidden!important}';
   (document.head || document.documentElement).appendChild(css);
   var lastPath = '';
   function sendRoute(){ var p = (location.pathname || '/') + (location.search || ''); if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
@@ -53,10 +53,19 @@ class WebBridge(private val listener: Listener) {
     history[k] = function(){ var r = o.apply(this, arguments); setTimeout(sendRoute, 0); setTimeout(info, 0); return r; };
   });
   addEventListener('popstate', function(){ setTimeout(sendRoute, 0); });
-  window.__tfGo = function(path, state){
-    var idx = ((history.state && history.state.idx) || 0) + 1;
-    history.pushState({ usr: state || null, key: Math.random().toString(36).slice(2, 10), idx: idx }, '', path);
+  window.__tfGo = function(path, state, replace){
+    var cur = (history.state && history.state.idx) || 0;
+    var st = { usr: state || null, key: Math.random().toString(36).slice(2, 10), idx: replace ? cur : cur + 1 };
+    if (replace) history.replaceState(st, '', path); else history.pushState(st, '', path);
     dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  };
+  // a chat's Back (ChatRoom.jsx goBack): the page before it, or [fallback] in its place
+  window.__tfBack = function(fallback){
+    var idx = history.state && history.state.idx, here = location.pathname;
+    if (typeof idx === 'number' && idx > 0) {
+      history.back();
+      setTimeout(function(){ if (location.pathname === here) window.__tfGo(fallback, null, true); }, 400);
+    } else window.__tfGo(fallback, null, true);
   };
   var appId = '';
   function findAppId(){
@@ -67,7 +76,11 @@ class WebBridge(private val listener: Listener) {
     } catch(e){}
     return appId;
   }
-  function visible(el){ return !!(el && el.getClientRects().length) && !(el.closest && el.closest('.tfc')) && !(document.documentElement.classList.contains('tfsd') && el.closest && el.closest('#root .sd')); }
+  function visible(el){
+    var h = document.documentElement.classList;
+    return !!(el && el.getClientRects().length) && !(el.closest && el.closest('.tfc')) &&
+      !(h.contains('tfsd') && el.closest && el.closest('#root .sd')) && !(h.contains('tfcr') && el.closest && el.closest('.cr'));
+  }
   function covered(){
     var list = document.querySelectorAll('.tfic,[role="alertdialog"],[aria-modal="true"]');
     for (var i = 0; i < list.length; i++) if (visible(list[i])) return true;
