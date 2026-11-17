@@ -100,14 +100,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screens-${{ matrix.set }}
+          name: screens-sd-${{ matrix.set }}
           path: shots
-      # the same pictures on the branch "screens-home" / "screens-chat" (easy to read back for checking)
+      # the same pictures on the branch "screens-sd-home" / "screens-sd-chat" (easy to read back for checking;
+      # not "screens-home": the native Home work uses that branch for its own pictures)
       - name: Keep the screenshots on a "screens-…" branch
         if: always()
         run: |
           cd shots
-          git init -q && git checkout -q -b screens-${{ matrix.set }}
+          git init -q && git checkout -q -b screens-sd-${{ matrix.set }}
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-${{ matrix.set }}
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-sd-${{ matrix.set }}
