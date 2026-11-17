@@ -154,7 +154,7 @@ object SdSheets {
         val row = hbox(ctx, 14f)
         val ring = FrameLayout(ctx).apply { background = grad(GradientDrawable.Orientation.TL_BR, intArrayOf(K.rose, Ui.c("#FF84BD"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f)) }
         val wb = FrameLayout(ctx).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-        wb.addView(RoundPhoto(ctx, 62f).also { it.set(SdRules.thumbs(person), Demo.face(person)?.let { b -> Photos.circle(b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)) }) }, FrameLayout.LayoutParams(-1, -1))
+        wb.addView(RoundPhoto(ctx, 62f).also { it.set(SdRules.thumbs(person), Demo.round(person, dpi(62f))) }, FrameLayout.LayoutParams(-1, -1))
         ring.addView(wb, FrameLayout.LayoutParams(-1, -1))
         row.addView(ring, lp(dpi(62f), dpi(62f)))
         val t = vbox(ctx)

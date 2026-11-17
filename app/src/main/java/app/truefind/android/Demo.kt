@@ -36,6 +36,13 @@ object Demo {
         return AvatarArt.forKey(id, SdRules.sexOf(p) != "m", Ui.dpi(360f), round = false)
     }
 
+    /** a demo face, already round, at the size it is shown (cached) */
+    fun round(p: JSONObject?, sizePx: Int): Bitmap? {
+        val id = p?.optString("id").orEmpty().ifEmpty { p?.optString("profile_id").orEmpty() }
+        if (!on || !id.startsWith("demo")) return null
+        return AvatarArt.forKey(id, SdRules.sexOf(p) != "m", sizePx.coerceAtLeast(48), round = true)
+    }
+
     fun me(): Api.Result = Api.Result(200, JSONObject().put("id", "demo-me").put("full_name", if (girl) "Neha Verma" else "Aman Verma").put("gender", if (girl) "female" else "male"), null)
 
     private val myProfile get() = JSONObject().put("id", "demo-myprofile").put("full_name", if (girl) "Neha Verma" else "Aman Verma").put("gender", if (girl) "female" else "male")

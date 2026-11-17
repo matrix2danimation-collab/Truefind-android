@@ -14,6 +14,7 @@ shot() {
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  adb logcat -d -s TFDBG:I >> "$OUT/debug.txt"
 }
 shot 01-explore 8 --es tf_preview explore
 shot 02-secret-free 8 --es tf_preview secret

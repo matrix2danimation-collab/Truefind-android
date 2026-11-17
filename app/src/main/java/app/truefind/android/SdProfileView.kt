@@ -46,7 +46,7 @@ object SdProfileView {
         }
         val gap = FrameLayout(ctx).apply { background = oval(white); setPadding(dpi(5f), dpi(5f), dpi(5f), dpi(5f)) }
         val ph = RoundPhoto(ctx, 186f)
-        ph.set(SdRules.thumbs(p).reversed(), Demo.face(p)?.let { b -> Photos.circle(b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)) })
+        ph.set(SdRules.thumbs(p).reversed(), Demo.round(p, dpi(186f)))
         gap.addView(ph, FrameLayout.LayoutParams(-1, -1)); ring.addView(gap, FrameLayout.LayoutParams(-1, -1))
         photoBox.addView(ring, FrameLayout.LayoutParams(dpi(204f), dpi(204f)))
         val verified = p.opt("verified") != false

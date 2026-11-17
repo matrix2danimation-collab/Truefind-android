@@ -464,8 +464,15 @@ class SecretHome(
     }
 
     // ═════════════════ render ═════════════════
+    // many answers arrive at once: draw once per frame, not once per answer
+    private var renderQueued = false
     private fun render() {
-        if (!shown && myProfile == null && online == null) { /* first build */ }
+        if (renderQueued) return
+        renderQueued = true
+        post { renderQueued = false; renderNow() }
+    }
+    private fun renderNow() {
+        if (Demo.on) android.util.Log.i("TFDBG", "secret render premium=$premium access=$access map=$mapPremium profile=${myProfile != null} missing=$missing deck=${liveDeck.size} act=${activity != null}")
         // my photo + its badge
         val pid = mine.optString("photo")
         myPhoto.set(listOf(pid))
@@ -633,7 +640,7 @@ class SecretHome(
         val face = FrameLayout(context).apply { clipChildren = false }
         if (show) {
             val ph = RoundPhoto(context, 48f)
-            ph.set(SdRules.thumbs(p), Demo.face(p)?.let { Photos.circle(it.copy(it.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)) })
+            ph.set(SdRules.thumbs(p), Demo.round(p, dpi(48f)))
             val ringB = FrameLayout(context).apply { background = oval(Color.WHITE, 1.5f, Ui.c("#F6C2DA")); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             ringB.addView(ph, LayoutParams(-1, -1))
             face.addView(ringB, LayoutParams(dpi(50f), dpi(50f), Gravity.CENTER))
@@ -784,7 +791,7 @@ class SecretHome(
             }
             val wb = FrameLayout(context).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             val ph = RoundPhoto(context, size)
-            ph.set(photos, story?.let { Demo.face(JSONObject().put("id", it.optString("profile_id")).put("gender", it.optString("gender")))?.let { b -> Photos.circle(b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)) } })
+            ph.set(photos, story?.let { Demo.round(JSONObject().put("id", it.optString("profile_id")).put("gender", it.optString("gender")), dpi(54f)) })
             wb.addView(ph, FrameLayout.LayoutParams(-1, -1)); ring.addView(wb, FrameLayout.LayoutParams(-1, -1))
             ringBox.addView(ring, FrameLayout.LayoutParams(dpi(size), dpi(size)))
         }
@@ -950,7 +957,9 @@ class SecretHome(
     fun showWallet() { layer.closeAll(); wallet() }
 
     /** test mode only: open one pop-up so the emulator can photograph it */
-    fun previewOpen(what: String) {
+    fun previewOpen(what: String, tries: Int = 0) {
+        // wait until the made-up data is there (and drawn)
+        if ((liveDeck.isEmpty() || myProfile == null || activity == null || renderQueued) && tries < 20) { postDelayed({ previewOpen(what, tries + 1) }, 300); return }
         val first = liveDeck.firstOrNull() ?: online?.firstOrNull() ?: return
         when (what) {
             "profile" -> openProfile(first)

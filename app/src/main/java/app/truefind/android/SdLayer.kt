@@ -77,11 +77,9 @@ class SdLayer(private val host: FrameLayout) {
         box.isClickable = true
         add(box, { locked() }, close, z)
         dim.animate().alpha(1f).setDuration(250).start()
-        scroll.translationY = 3000f
-        scroll.post {
-            scroll.translationY = scroll.height.toFloat()
-            scroll.animate().translationY(0f).setStartDelay(70).setDuration(380).setInterpolator(EASE_UP).start()
-        }
+        // from just below the screen (its own height is not known yet; the screen's is)
+        scroll.translationY = host.height.toFloat().coerceAtLeast(Ui.dp(400f))
+        scroll.animate().translationY(0f).setStartDelay(70).setDuration(380).setInterpolator(EASE_UP).start()
         return close
     }
 

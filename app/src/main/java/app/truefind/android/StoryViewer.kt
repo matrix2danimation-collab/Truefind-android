@@ -75,10 +75,11 @@ object StoryViewer {
             .onTap { close() }, lp(dpi(44f), dpi(44f)))
         root.addView(who, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(14f), dpi(24f), dpi(10f), 0) })
         // caption + owner tools
-        val bottom = vbox(ctx, 12f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(18f), dpi(48f), dpi(18f), dpi(20f)); background = null }
-        val bottomWrap = FrameLayout(ctx)
-        bottomWrap.addView(shade(ctx, false), FrameLayout.LayoutParams(-1, -1))
-        bottomWrap.addView(bottom, FrameLayout.LayoutParams(-1, -2))
+        val bottom = vbox(ctx, 12f, Gravity.CENTER_HORIZONTAL).apply {
+            setPadding(dpi(18f), dpi(48f), dpi(18f), dpi(20f))
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 30, 0, 14), Color.argb(219, 30, 0, 14)))
+        }
+        val bottomWrap = bottom
         val caption = sdText(ctx, "", 19f, Color.WHITE).apply { gravity = Gravity.CENTER; lineHeight(1.2f); shadow(6f, 1f, Color.argb(153, 0, 0, 0)) }
         bottom.addView(caption, lp(MATCH, WRAP))
         val tools = hbox(ctx, 10f, Gravity.CENTER)

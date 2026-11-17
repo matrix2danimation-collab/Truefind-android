@@ -64,7 +64,10 @@ class SdDeck(
     private var anim: ValueAnimator? = null
     private val S get() = Ui.dp(100f)
     private val D get() = Ui.dp(260f)
-    private var W = 0; private var H = 0; private var cw = 0
+    // the deck always spans the whole screen width (margin -16 around a 16 padding)
+    private var cw = ctx.resources.displayMetrics.widthPixels
+    private var W = max(Ui.dp(220f), min(cw - Ui.dp(74f), Ui.dp(360f))).roundToInt()
+    private var H = (W * 1.48f).roundToInt()
 
     init {
         orientation = VERTICAL
@@ -87,12 +90,18 @@ class SdDeck(
     private fun mod(k: Int) = if (n == 0) 0 else ((k % n) + n) % n
 
     override fun onMeasure(wSpec: Int, hSpec: Int) {
-        cw = MeasureSpec.getSize(wSpec)
-        val w = max(Ui.dp(220f), min(cw - Ui.dp(74f), Ui.dp(360f))).roundToInt()
-        val h = (w * 1.48f).roundToInt()
-        if (w != W || h != H) { W = w; H = h; for (c in cards.values) box.removeView(c); cards.clear(); post { layoutCards() } }
         (box.layoutParams as LayoutParams).height = H + dpi(30f)
         super.onMeasure(wSpec, hSpec)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        super.onSizeChanged(w, h, ow, oh)
+        if (w > 0 && w != cw) {
+            cw = w
+            W = max(Ui.dp(220f), min(cw - Ui.dp(74f), Ui.dp(360f))).roundToInt(); H = (W * 1.48f).roundToInt()
+            post { for (c in cards.values) box.removeView(c); cards.clear(); layoutCards(); requestLayout() }
+        }
+        if (Demo.on) android.util.Log.i("TFDBG", "deck size w=$w h=$h cw=$cw W=$W H=$H cards=${cards.size} n=$n")
     }
 
     // ── the cards ──
