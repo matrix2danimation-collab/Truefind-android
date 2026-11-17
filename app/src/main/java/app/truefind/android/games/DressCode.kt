@@ -146,13 +146,14 @@ class DressCodeScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) 
         col.addView(dcRules(ctx), G.lp(G.MATCH, G.WRAP))
         // test pictures only (GamesDemo): open the scene's screen without taps
         if (GameApi.demo) when (GamesDemo.scene) {
-            "dc-practice", "dc-wardrobe", "dc-sheet" -> {
+            "dc-practice", "dc-wardrobe", "dc-sheet", "dc-full" -> {
                 openMode(true)
                 val g = (mode as? DcMode)?.gameView()
                 if (GamesDemo.scene == "dc-wardrobe") g?.demoWardrobe("top")
                 if (GamesDemo.scene == "dc-sheet") DressArt.byId["banarasi-zari"]?.let { g?.demoSheet(it) }
+                if (GamesDemo.scene == "dc-full") g?.demoFull()
             }
-            "dc-online", "dc-reveal" -> openMode(false)
+            "dc-online", "dc-reveal", "dc-start", "dc-waiting" -> openMode(false)
         }
     }
 
@@ -260,7 +261,7 @@ class DcOnline(ctx: Context, home: DressCodeScreen) : DcMode(ctx, home), DcHandl
 
     init {
         addView(page, LayoutParams(G.MATCH, G.MATCH)); render()
-        if (GameApi.demo && GamesDemo.scene in listOf("dc-online", "dc-reveal")) call("state") { } // test pictures only
+        if (GameApi.demo && GamesDemo.scene in listOf("dc-online", "dc-reveal", "dc-waiting")) call("state") { } // test pictures only
     }
 
     private fun dcErr(r: app.truefind.android.Api.Result, f: String): String {
@@ -1163,6 +1164,7 @@ class DcGame(ctx: Context, private val h: DcHandlers, private val practice: Bool
     }
 
     fun demoWardrobe(key: String) = openWardrobe(key)
+    fun demoFull() = openFull()
     fun demoSheet(item: DressArt.Item) = openSheet(item)
 
     /** phone back: the top layer closes first */

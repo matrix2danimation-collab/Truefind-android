@@ -732,6 +732,9 @@ class McCallView(ctx: Context, private val sc: MoodChangerScreen) : FrameLayout(
     private fun opt(ctx: Context, icon: String, text: String, small: String? = null, danger: Boolean = false, f: () -> Unit): View =
         MC.opt(ctx, text, icon, small = small, danger = danger) { f() }
 
+    /** test pictures only (GamesDemo) */
+    fun demoSheet(type: String) = openSheet(type)
+
     private fun openSheet(type: String) {
         closeSheet()
         val ctx = context

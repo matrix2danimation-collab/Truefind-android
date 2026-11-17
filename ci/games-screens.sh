@@ -57,5 +57,16 @@ shot 23-dc-sheet 12 --es tf_games dc-sheet --es tf_open dress-code
 shot 24-dc-online-boy 12 --es tf_games dc-online --es tf_open dress-code
 shot 25-dc-online-girl 12 --es tf_games dc-online --ez tf_girl true --es tf_open dress-code
 shot 26-dc-reveal 12 --es tf_games dc-reveal --es tf_open dress-code
+shot 27-hc-search 10 --es tf_games hc-search
+shot 28-mc-rules 10 --es tf_games mc-rules
+shot 29-mc-guidelines 10 --es tf_games mc-guidelines
+shot 30-mc-pick 10 --es tf_games mc-pick
+shot 31-mc-reason 10 --es tf_games mc-reason
+shot 32-mc-call-report 12 --es tf_games mc-call-sheet-report
+shot 33-mc-call-end 12 --es tf_games mc-call-sheet-end
+shot 34-mc-call-safety 12 --es tf_games mc-call-sheet-safety
+shot 35-dc-full 12 --es tf_games dc-full --es tf_open dress-code
+shot 36-dc-start 11 --es tf_games dc-start --es tf_open dress-code
+shot 37-dc-waiting 12 --es tf_games dc-waiting --es tf_open dress-code
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"

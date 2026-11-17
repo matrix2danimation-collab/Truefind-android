@@ -166,7 +166,13 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
                 boot = "ready"
                 if (s != null) { session = s; if (s.str("status") == "waiting") screen = "search"; afterSession() } else render()
                 // test pictures only (GamesDemo): open the 2nd mood question with answers filled in
-                if (GameApi.demo && GamesDemo.scene == "mc-detail") { moodStep = "detail"; myMood = "stressed"; myInt = 4; myPrefs.add("listen"); render() }
+                if (GameApi.demo) when (GamesDemo.scene) {
+                    "mc-pick" -> { moodStep = "pick"; myMood = "stressed"; render() }
+                    "mc-detail" -> { moodStep = "detail"; myMood = "stressed"; myInt = 4; myPrefs.add("listen"); render() }
+                    "mc-reason" -> { moodStep = "reason"; myMood = "stressed"; myInt = 4; myPrefs.add("listen"); render() }
+                    "mc-rules" -> { screen = "rules"; render() }
+                    "mc-guidelines" -> { screen = "guidelines"; render() }
+                }
                 searchLoop()
             } else {
                 val d = r.data
@@ -475,6 +481,8 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             if (callView == null) {
                 host.removeAllViews(); miniCall = null
                 callView = McCallView(context, this).also { host.addView(it, LayoutParams(G.MATCH, G.MATCH)) }
+                // test pictures only: one of the call's sheets open (mc-call-sheet-report, …)
+                if (GameApi.demo && GamesDemo.scene.startsWith("mc-call-sheet-")) postDelayed({ callView?.demoSheet(GamesDemo.scene.removePrefix("mc-call-sheet-")) }, 800)
             }
             callView?.bind()
             curScreen = null; curId = "call"

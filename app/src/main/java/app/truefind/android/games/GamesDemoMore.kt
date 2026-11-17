@@ -30,7 +30,7 @@ object GamesDemoMore {
         val chat = JSONArray()
             .put(JSONObject().put("r", "girl").put("t", "Hii! Aaj shaadi hai! Saree ya lehenga pehnao 💍").put("at", iso(60000)))
             .put(JSONObject().put("r", "boy").put("t", "Ye dekho 😄").put("at", iso(20000)))
-        val s = JSONObject().put("id", "demo-dc").put("code", "4821").put("status", if (scene == "dc-reveal") "reveal" else "playing")
+        val s = JSONObject().put("id", "demo-dc").put("code", "4821").put("status", when (scene) { "dc-reveal" -> "reveal"; "dc-waiting" -> "waiting"; else -> "playing" })
             .put("me", if (girl) "girl" else "boy").put("names", JSONObject().put("boy", "Rahul").put("girl", "Priya"))
             .put("look", look).put("owned", owned).put("spent", 16).put("girl_earned", 10.72).put("round", 1).put("rating", if (scene == "dc-reveal") 4 else 0)
             .put("chat", chat).put("chat_locked", false).put("chat_ms_left", 60000).put("partner_online", true)
@@ -43,11 +43,12 @@ object GamesDemoMore {
         JSONObject().put("mood", m).put("intensity", n).put("prefs", JSONArray(prefs))
 
     private fun mcSession(): JSONObject? {
-        if (scene == "mc-intro") return null
+        if (scene in listOf("mc-intro", "mc-rules", "mc-guidelines")) return null
+        val call = scene.startsWith("mc-call")
         val myMood = moodOf("stressed", 4, listOf("listen"))
         val herMood = moodOf("tired", 3, listOf("laugh", "light"))
-        val started = scene in listOf("mc-call", "mc-call-girl", "mc-final", "mc-summary")
-        val revealed = scene != "mc-matched" && scene != "mc-detail" && scene != "mc-wait"
+        val started = call || scene in listOf("mc-final", "mc-summary")
+        val revealed = scene !in listOf("mc-matched", "mc-pick", "mc-detail", "mc-reason", "mc-wait")
         val partner = JSONObject().put("name", if (girl) "Rahul" else "Priya").put("photo", "").put("age", if (girl) 25 else 23)
             .put("profile_id", "p1").put("online", true).put("mood_done", revealed)
             .put("mood", if (revealed) herMood else JSONObject.NULL).put("final_done", false)
@@ -65,15 +66,15 @@ object GamesDemoMore {
             .put("lighten", false).put("lighter_by", "").put("paused_ms", 0).put("pause_by", "").put("reaction", "")
             .put("seconds", if (started) 214 else 0).put("secret", JSONObject.NULL).put("ended", JSONObject.NULL)
             .put("stats", JSONObject().put("rounds", 2).put("answered", 2).put("skipped", 0).put("topic_changes", 0))
-        s.put("status", when (scene) {
-            "mc-wait" -> "waiting"
-            "mc-matched", "mc-detail" -> "mood"
-            "mc-reveal" -> "reveal"
-            "mc-call", "mc-call-girl" -> "call"
+        s.put("status", when {
+            scene == "mc-wait" -> "waiting"
+            scene in listOf("mc-matched", "mc-pick", "mc-detail", "mc-reason") -> "mood"
+            scene == "mc-reveal" -> "reveal"
+            call -> "call"
             else -> "final"
         })
-        if (scene == "mc-call" || scene == "mc-call-girl") {
-            val asking = scene == "mc-call"
+        if (call) {
+            val asking = scene != "mc-call-girl"
             val q = JSONObject().put("id", "demo-q3").put("n", 3).put("level", 2).put("cat", "Daily life")
                 .put("ask", if (asking) "me" else "partner").put("ans", if (asking) "partner" else "me")
             if (asking) q.put("text", JSONObject().put("en", "What was the best part of your day so far?").put("hi", "आज अब तक आपके दिन का सबसे अच्छा पल कौन-सा रहा?"))
