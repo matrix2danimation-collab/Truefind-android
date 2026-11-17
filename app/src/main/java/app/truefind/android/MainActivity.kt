@@ -53,6 +53,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var cover = false
     private var navTopCss = -1f
     private var scriptAtStart = false
+    private val updater by lazy { Updater(this) }
 
     // ── permissions asked by the web page (mic / camera for calls, location for the map) ──
     private var pendingWebPermission: PermissionRequest? = null
@@ -263,6 +264,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
+        updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {

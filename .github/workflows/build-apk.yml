@@ -36,8 +36,11 @@ jobs:
       - name: Build
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Name the file
-        run: cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk
+      - name: Name the file (+ version.json for the app's Update button)
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk
+          echo "{\"versionCode\": ${{ github.run_number }}, \"apk\": \"https://github.com/${{ github.repository }}/releases/download/test-build/TrueFind-test.apk\"}" > version.json
+          cat version.json
 
       - uses: actions/upload-artifact@v4
         with:
@@ -53,4 +56,6 @@ jobs:
           prerelease: true
           make_latest: false
           body: "Latest test APK, built from commit ${{ github.sha }}. Open on the phone, tap TrueFind-test.apk, install."
-          files: TrueFind-test.apk
+          files: |
+            TrueFind-test.apk
+            version.json
