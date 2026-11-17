@@ -156,6 +156,7 @@ object Photos {
     /** A photo as it is (not cropped, not round), for the story viewer. */
     fun loadFull(raw: String, maxSide: Int, done: (Bitmap?) -> Unit) {
         url(raw) { u ->
+            if (u.startsWith("demo:story:") && Demo.on) { val k = u.split(":"); done(Demo.portrait(k.getOrElse(2) { "demo" }, k.getOrElse(3) { "" } != "male", 900, 1600)); return@url }
             if (u.isBlank() || u.startsWith("demo:")) { done(null); return@url }
             pool.execute {
                 val b = try {

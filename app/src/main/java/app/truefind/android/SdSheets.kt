@@ -208,7 +208,7 @@ object SdSheets {
         val preview = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         val empty = vbox(ctx, 8f, Gravity.CENTER_HORIZONTAL)
         empty.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, K.rose, 34f, 1.6f)) }, lp(dpi(34f), dpi(34f)))
-        empty.addView(sdText(ctx, "Choose a photo", 17f, K.ink2))
+        empty.addView(sdText(ctx, "Choose a photo", 17f, K.ink2), lp(WRAP, WRAP))
         val change = sdText(ctx, "Change", 13f, K.wine).apply { background = rounded(Color.argb(230, 255, 255, 255), 12f); setPadding(dpi(10f), dpi(4f), dpi(10f), dpi(4f)); visibility = View.GONE }
         pic.addView(preview, FrameLayout.LayoutParams(-1, -1))
         pic.addView(empty, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))

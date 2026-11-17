@@ -65,7 +65,7 @@ jobs:
   screens:
     needs: apk
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
@@ -83,6 +83,8 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_6
+          cores: 4
+          ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash ci/screens.sh TrueFind-test.apk shots

@@ -1,6 +1,5 @@
 package app.truefind.android
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.graphics.Canvas
 import android.graphics.Color
@@ -11,7 +10,6 @@ import android.graphics.Shader
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -91,9 +89,23 @@ object StoryViewer {
         if (mine) bottom.addView(tools, lp(MATCH, WRAP))
         root.addView(bottomWrap, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
 
-        var anim: ValueAnimator? = null
+        // 6 s per story, counted on the clock (not with an animator): the same when the phone's animations are turned off
+        var startedAt = 0L; var spent = 0L; var running = false
+        var onEnd: () -> Unit = {}
+        val tick = object : Runnable {
+            override fun run() {
+                if (!running) return
+                val t = spent + (android.os.SystemClock.uptimeMillis() - startedAt)
+                fills[i].scaleX = (t / DUR.toFloat()).coerceAtMost(1f)
+                if (t >= DUR) { running = false; onEnd() } else root.postOnAnimation(this)
+            }
+        }
+        fun pause() { if (!running) return; spent += android.os.SystemClock.uptimeMillis() - startedAt; running = false; root.removeCallbacks(tick) }
+        fun resume() { if (running) return; running = true; startedAt = android.os.SystemClock.uptimeMillis(); root.postOnAnimation(tick) }
+        fun stop() { running = false; root.removeCallbacks(tick) }
         fun show() {
             val s = list[i]
+            stop(); spent = 0L
             for ((k, f) in fills.withIndex()) f.scaleX = if (k < i) 1f else 0f
             name.text = if (mine) "Your story" else "${SdRules.firstName(SdRules.s(s, "name"))}${SdRules.s(s, "age").let { if (it.isNotEmpty()) ", $it" else "" }}"
             sub.text = listOf(if (!mine) SdRules.s(s, "city") else "", SdRules.timeAgo(SdRules.s(s, "created_date"))).filter { it.isNotEmpty() }.joinToString(" · ")
@@ -105,39 +117,28 @@ object StoryViewer {
             val id = s.optString("id")
             Photos.loadFull(SdRules.s(s, "media_url", "media_uri"), 1600) { b -> if (list.getOrNull(i)?.optString("id") == id && b != null) { photo.setImageBitmap(b); spin.visibility = View.GONE } }
             if (!mine) h.seeStory(s)
-            anim?.cancel()
-            anim = ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = DUR; interpolator = LinearInterpolator()
-                val f = fills[i]
-                addUpdateListener { f.scaleX = it.animatedValue as Float }
-                addListener(object : android.animation.AnimatorListenerAdapter() {
-                    var cancelled = false
-                    override fun onAnimationCancel(a: android.animation.Animator) { cancelled = true }
-                    override fun onAnimationEnd(a: android.animation.Animator) { if (!cancelled) { if (i + 1 < list.size) { i++; show() } else close() } }
-                })
-                start()
-                if (paused || confirm) pause()
-            }
+            if (!paused && !confirm && !holding) resume()
         }
-        fun setPaused(p: Boolean) { paused = p; if (p) anim?.pause() else if (!confirm && !holding) anim?.resume() }
+        onEnd = { if (i + 1 < list.size) { i++; show() } else close() }
+        fun setPaused(p: Boolean) { paused = p; if (p) pause() else if (!confirm && !holding) resume() }
 
         // tap: left third = back, else on; press and hold = pause
         root.setOnTouchListener { _, e ->
             when (e.actionMasked) {
-                MotionEvent.ACTION_DOWN -> { holding = true; anim?.pause() }
+                MotionEvent.ACTION_DOWN -> { holding = true; pause() }
                 MotionEvent.ACTION_UP -> {
                     holding = false
                     val held = e.eventTime - e.downTime > 300
                     if (!held) { if (e.x < root.width * 0.33f) { if (i > 0) { i--; show() } else show() } else { if (i + 1 < list.size) { i++; show() } else close() } }
-                    else if (!paused && !confirm) anim?.resume()
+                    else if (!paused && !confirm) resume()
                 }
-                MotionEvent.ACTION_CANCEL -> { holding = false; if (!paused && !confirm) anim?.resume() }
+                MotionEvent.ACTION_CANCEL -> { holding = false; if (!paused && !confirm) resume() }
             }
             true
         }
         delBtn.onTap {
             if (!confirm) {
-                confirm = true; anim?.pause()
+                confirm = true; pause()
                 delBtn.text = "Tap to delete"; delBtn.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
                 delBtn.setTextColor(Color.WHITE); delBtn.typeface = Ui.bold; delBtn.background = rounded(Ui.c("#c0153d"), 22f)
             } else h.deleteStory { close() }
@@ -162,7 +163,7 @@ object StoryViewer {
                 }
             }
         }
-        close = h.layer.fade(root, z = 36f, onClose = { anim?.cancel() })
+        close = h.layer.fade(root, z = 36f, onClose = { stop() })
         show()
     }
 

@@ -363,7 +363,7 @@ class SdDeck(
             online.visibility = if (SdRules.liveOf(p)) VISIBLE else GONE
             photo.setImageBitmap(null)
             val raws = listOf(SdRules.s(p, "photo", "profile_picture"))
-            val demo = Demo.face(p)
+            val demo = Demo.cover(p, W - dpi(8f), H - dpi(8f))
             if (demo != null) photo.setImageBitmap(demo)
             else if (W > 0) {
                 val bw = W - dpi(8f); val bh = H - dpi(8f)

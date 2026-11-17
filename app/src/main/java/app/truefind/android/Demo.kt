@@ -37,6 +37,22 @@ object Demo {
         return AvatarArt.forKey(id, SdRules.sexOf(p) != "m", Ui.dpi(360f), round = false)
     }
 
+    /** a demo "photo" shaped like the place it is shown in (portrait cards, stories): the face in the middle, its background around it */
+    private val portraits = HashMap<String, Bitmap>()
+    fun portrait(key: String, girl: Boolean, w: Int, h: Int): Bitmap = portraits.getOrPut("$key|$girl|$w|$h") {
+        val sq = AvatarArt.forKey(key, girl, w, round = false)
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(out)
+        c.drawColor(sq.getPixel(2, 2))
+        c.drawBitmap(sq, 0f, (h - w) * 0.55f, null)
+        out
+    }
+    fun cover(p: JSONObject?, w: Int, h: Int): Bitmap? {
+        val id = p?.optString("id").orEmpty()
+        if (!on || !id.startsWith("demo") || w <= 0 || h <= 0) return null
+        return portrait(id, SdRules.sexOf(p) != "m", w, h)
+    }
+
     /** a demo face, already round, at the size it is shown (cached) */
     fun round(p: JSONObject?, sizePx: Int): Bitmap? {
         val id = p?.optString("id").orEmpty().ifEmpty { p?.optString("profile_id").orEmpty() }
@@ -71,7 +87,8 @@ object Demo {
                 val st = JSONArray()
                 for (i in 0 until 5) { val p = person(i, !girl); st.put(JSONObject().put("id", "st$i").put("profile_id", p.optString("id")).put("user_id", p.optString("user_id"))
                     .put("name", p.optString("name")).put("age", p.optInt("age")).put("city", p.optString("city")).put("state", p.optString("state")).put("gender", p.optString("gender"))
-                    .put("seen", i == 3).put("created_date", iso((i * 50).toLong())).put("caption", "Good morning ☀️")) }
+                    .put("seen", i == 3).put("created_date", iso((i * 50).toLong())).put("caption", "Good morning ☀️")
+                    .put("media_url", "demo:story:${p.optString("id")}:${p.optString("gender")}")) }
                 JSONObject().put("premium", premium).put("mine", JSONObject.NULL).put("stories", st)
             }
             "getSecretActivity" -> {

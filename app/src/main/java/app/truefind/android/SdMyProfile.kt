@@ -36,9 +36,14 @@ object SdMyProfile {
         // the edit form's values
         var fName = ""; var fBio = ""; var fState = ""; var fCity = ""; var fDob = ""
         var err = ""
-        fun startEditing() {
+        // the form starts with what the profile has (also when the page opens straight into editing)
+        fun fill() {
             val p = h.myProfileNow
             fName = SdRules.s(p, "full_name", "name").trim(); fBio = SdRules.s(p, "bio", "about"); fState = SdRules.s(p, "state").trim(); fCity = SdRules.s(p, "city").trim(); fDob = ""
+        }
+        fill()
+        fun startEditing() {
+            fill()
             err = ""; savedNote = ""; editing = true; draw()
         }
 
