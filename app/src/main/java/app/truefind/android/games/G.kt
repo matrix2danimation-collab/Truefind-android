@@ -70,6 +70,7 @@ object G {
             typeface = if (italic) (try { Ui.bold } catch (e: Throwable) { null }).let { android.graphics.Typeface.create(it, if (bold) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.ITALIC) }
             else if (bold) Ui.bold else Ui.regular
             includeFontPadding = false
+            lineH(1.5f) // the web's default line-height (Tailwind base: html { line-height: 1.5 }); a text the web sets otherwise calls lineH again
         }
 
 
@@ -195,8 +196,22 @@ object G {
 class CssText(ctx: Context) : android.widget.TextView(ctx) {
     var halfLeading = 0
         set(v) { if (field != v) { field = v; requestLayout(); invalidate() } }
-    override fun getCompoundPaddingTop(): Int = super.getCompoundPaddingTop() + halfLeading
-    override fun getCompoundPaddingBottom(): Int = super.getCompoundPaddingBottom() + halfLeading
+    /** the letters' own height (font ascent + descent), set by [lineH] */
+    var fontHeight = 0
+    /** the half-leading in use: none when the box has a fixed height (the text is placed by its gravity
+     *  then), and only what fits when the room is tight, so letters are never pushed out of the box */
+    private var used = 0
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val room = MeasureSpec.getSize(heightMeasureSpec) - super.getCompoundPaddingTop() - super.getCompoundPaddingBottom()
+        used = when (MeasureSpec.getMode(heightMeasureSpec)) {
+            MeasureSpec.EXACTLY -> 0
+            MeasureSpec.AT_MOST -> halfLeading.coerceAtMost(((room - fontHeight) / 2).coerceAtLeast(0))
+            else -> halfLeading
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+    override fun getCompoundPaddingTop(): Int = super.getCompoundPaddingTop() + used
+    override fun getCompoundPaddingBottom(): Int = super.getCompoundPaddingBottom() + used
 }
 
 // ── extensions (top level so every games file can use them) ──
@@ -210,7 +225,7 @@ fun TextView.lineH(lineHeight: Float): TextView {
     val font = if (includeFontPadding) fm.bottom - fm.top else fm.descent - fm.ascent
     val extra = textSize * lineHeight - font
     setLineSpacing(extra, 1f)
-    if (this is CssText) halfLeading = if (extra > 0f) Math.round(extra / 2f) else 0
+    if (this is CssText) { fontHeight = font; halfLeading = if (extra > 0f) Math.round(extra / 2f) else 0 }
     return this
 }
 fun TextView.ellipsize1(): TextView { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; return this }

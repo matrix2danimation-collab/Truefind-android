@@ -119,7 +119,7 @@ abstract class NgScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             sc.append(" pts")
             sc.setSpan(android.text.style.AbsoluteSizeSpan(G.dpi(12f)), a, sc.length, 0)
             sc.setSpan(android.text.style.ForegroundColorSpan(G.ca("#ffffff", 0.7f)), a, sc.length, 0)
-            c.addView(G.text(ctx, sc, 24f, Color.WHITE), G.lp(G.WRAP, G.WRAP).m(t = 2f))
+            c.addView(G.text(ctx, sc, 24f, Color.WHITE).lineH(1f), G.lp(G.WRAP, G.WRAP).m(t = 2f))
             if (active == i) c.addView(G.text(ctx, "🕵️ Giving hints", 11f, G.ca("#ffffff", 0.9f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 2f))
             row.addView(c, G.lpw(1f))
         }
@@ -217,7 +217,7 @@ abstract class NgScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         val ctx = context
         val l = G.vbox(ctx, 4f)
         NameGuess.RULES.forEachIndexed { i, r ->
-            l.addView(G.text(ctx, "${i + 1}. $r", 13f, G.ca("#ffffff", 0.8f), bold = false).lineH(1.6f), G.lp(G.MATCH, G.WRAP))
+            l.addView(G.text(ctx, "${i + 1}. $r", 13f, G.ca("#ffffff", 0.8f), bold = false).lineH(1.625f), G.lp(G.MATCH, G.WRAP))
         }
         return l
     }
@@ -780,7 +780,7 @@ class ClueMePage(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         listOf(Triple("Target", "${ClueMeData.ROUNDS}", "Rounds"), Triple("Flame", "${ClueMeData.SECONDS_PER_ROUND}s", "Per round"), Triple("Trophy", "$best", "Best score")).forEach { (ic, v, l) ->
             val s = G.vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL).apply { background = G.round(G.ca("#000000", 0.28f), 16f, G.ca("#ffffff", 0.1f), 1f); pad(8f, 10f, 8f, 10f) }
             s.addView(G.icon(ctx, ic, pinkSoft, 16f))
-            s.addView(G.text(ctx, v, 16f, Color.WHITE), G.lp(G.WRAP, G.WRAP).m(t = 6f))
+            s.addView(G.text(ctx, v, 16f, Color.WHITE).lineH(1f), G.lp(G.WRAP, G.WRAP).m(t = 6f))
             s.addView(G.text(ctx, l, 11f, G.ca("#ffffff", 0.5f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 4f))
             stats.addView(s, G.lpw(1f))
         }
@@ -794,7 +794,7 @@ class ClueMePage(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
                 background = G.round(G.ca("#141230", 0.85f), 16f, G.ca("#ffffff", 0.12f), 1f); pad(14f)
                 G.shadow(this, 4f, G.c("#ff4d8d"), 16f)
             }
-            b.addView(G.text(ctx, c.emoji, 24f, Color.WHITE, bold = false))
+            b.addView(G.text(ctx, c.emoji, 24f, Color.WHITE, bold = false).lineH(1f))
             b.addView(G.text(ctx, c.label, 15f, Color.WHITE), G.lp(G.WRAP, G.WRAP).m(t = 8f))
             b.addView(G.text(ctx, c.blurb, 11.5f, G.ca("#ffffff", 0.5f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 2f))
             G.click(b, 0.97f) { start(c.key) }
@@ -962,7 +962,7 @@ class ClueMePage(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         card.addView(G.icon(ctx, "Trophy", G.c("#fcd34d"), 40f))
         val catLabel = ClueMeData.CATEGORIES.firstOrNull { it.key == category }?.label ?: "Mixed"
         card.addView(G.text(ctx, "GAME OVER · ${catLabel.uppercase()}", 12f, G.ca("#ffffff", 0.6f)).apply { letterSpacing = 0.025f }, G.lp(G.WRAP, G.WRAP).m(t = 12f))
-        card.addView(G.text(ctx, "$score", 46f, Color.WHITE), G.lp(G.WRAP, G.WRAP).m(t = 4f))
+        card.addView(G.text(ctx, "$score", 46f, Color.WHITE).lineH(1f), G.lp(G.WRAP, G.WRAP).m(t = 4f))
         card.addView(G.text(ctx, "points", 13f, G.ca("#ffffff", 0.7f), bold = false), G.lp(G.WRAP, G.WRAP).m(t = 4f))
         card.addView(G.text(ctx, msg, 14f, Color.WHITE).apply { gravity = Gravity.CENTER }, G.lp(G.WRAP, G.WRAP).m(t = 12f))
         content.addView(card, G.lp(G.MATCH, G.WRAP))
@@ -970,7 +970,7 @@ class ClueMePage(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         for ((l, v, c) in listOf(Triple("Solved", "$solved/${ClueMeData.ROUNDS}", Color.WHITE), Triple("Best score", "$best", G.c("#fcd34d")))) {
             val s = G.vbox(ctx).apply { background = G.round(G.ca("#141230", 0.85f), 16f, G.ca("#ffffff", 0.1f), 1f); pad(16f, 12f, 16f, 12f) }
             s.addView(G.text(ctx, l, 11.5f, G.ca("#ffffff", 0.5f), bold = false))
-            s.addView(G.text(ctx, v, 20f, c), G.lp(G.WRAP, G.WRAP).m(t = 4f))
+            s.addView(G.text(ctx, v, 20f, c).lineH(1f), G.lp(G.WRAP, G.WRAP).m(t = 4f))
             stats.addView(s, G.lpw(1f))
         }
         content.addView(stats, G.lp(G.MATCH, G.WRAP).m(t = 16f))

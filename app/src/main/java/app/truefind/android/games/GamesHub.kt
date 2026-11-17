@@ -80,7 +80,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
             setSpan(ForegroundColorSpan(G.c("#1d0838")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             setSpan(ForegroundColorSpan(TG.purple), 5, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        logo.addView(G.text(ctx, brand, 23f, TG.ink), G.lp(G.WRAP, G.WRAP).m(t = 4f))
+        logo.addView(G.text(ctx, brand, 23f, TG.ink).lineH(1f), G.lp(G.WRAP, G.WRAP).m(t = 4f))
         header.addView(logo, FrameLayout.LayoutParams(G.WRAP, G.WRAP, Gravity.CENTER))
 
         walletBtn = G.hbox(ctx, 7f, Gravity.CENTER).apply {
@@ -90,7 +90,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
             contentDescription = "Wallet"
         }
         walletBtn.addView(G.coin(ctx, 17f))
-        coinsText = G.text(ctx, "–", 15f, G.c("#5b4a7a"), bold = true)
+        coinsText = G.text(ctx, "–", 15f, G.c("#5b4a7a"), bold = true).lineH(1f)
         walletBtn.addView(coinsText)
         walletBtn.addView(G.icon(ctx, "ChevronRight", G.c("#5b4a7a"), 12f, 2.6f))
         G.click(walletBtn, 0.97f) { layer.openWeb("/wallet") }
@@ -148,7 +148,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
     private fun sectionTitle(ctx: Context, icon: View, w: Float, h: Float, label: String): View {
         val row = G.hbox(ctx, 9f)
         row.addView(icon, LinearLayout.LayoutParams(G.dpi(w), G.dpi(h)))
-        row.addView(G.text(ctx, label, 18f, TG.dark))
+        row.addView(G.text(ctx, label, 18f, TG.dark).lineH(1.1f))
         return row
     }
 
@@ -186,10 +186,10 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
             addView(SvgView(ctx, HubArt.miniPad("#fff", "#be123c"), 30f, 20f), FrameLayout.LayoutParams(G.dpi(12f), G.dpi(8f), Gravity.CENTER))
         }
         pill.addView(red, LinearLayout.LayoutParams(G.dpi(19f), G.dpi(19f)))
-        pill.addView(G.text(ctx, "GAME ZONE", 10.5f, Color.WHITE).apply { letterSpacing = 0.16f })
+        pill.addView(G.text(ctx, "GAME ZONE", 10.5f, Color.WHITE).lineH(1f).apply { letterSpacing = 0.16f })
         col.addView(pill, LinearLayout.LayoutParams(G.WRAP, G.dpi(26f)))
 
-        val title = G.text(ctx, "Top Games", 31f, Color.WHITE, bold = true, italic = true).apply {
+        val title = G.text(ctx, "Top Games", 31f, Color.WHITE, bold = true, italic = true).lineH(1.05f).apply {
             letterSpacing = -0.01f
             setPadding(0, 0, G.dpi(4f), G.dpi(2f))
             setShadowLayer(G.dp(10f), 0f, 0f, G.ca("#f0abfc", 0.35f))
@@ -210,7 +210,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
                 pad(4f, 0f, 4f, 0f)
             }
             chip.addView(G.icon(ctx, ic, G.c("#ffd877"), 17f, 2.2f))
-            chip.addView(G.text(ctx, t, 12.5f, Color.WHITE).ellipsize1().apply { gravity = Gravity.CENTER })
+            chip.addView(G.text(ctx, t, 12.5f, Color.WHITE).lineH(1f).ellipsize1().apply { gravity = Gravity.CENTER })
             chips.addView(chip, G.lpw(1f, G.dpi(56f)))
         }
         // chips sit under the text: an invisible spacer column holds the height
@@ -288,12 +288,12 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         col.addView(FrameLayout(ctx).apply {
             addView(SvgView(ctx, art, vbW, vbH), FrameLayout.LayoutParams((G.dp(h) * vbW / vbH).toInt(), G.dpi(h), Gravity.CENTER))
         }, G.lp(G.MATCH, G.dpi(34f)).m(t = 6f))
-        col.addView(G.text(ctx, title, 15f, TG.ink).apply { gravity = Gravity.CENTER }, G.lp(G.WRAP, G.WRAP).m(t = 8f))
+        col.addView(G.text(ctx, title, 15f, TG.ink).lineH(1.1f).apply { gravity = Gravity.CENTER }, G.lp(G.WRAP, G.WRAP).m(t = 8f))
         col.addView(G.text(ctx, sub, 11.5f, TG.soft, bold = false).lineH(1.3f).apply { gravity = Gravity.CENTER }, G.lp(G.WRAP, G.WRAP).m(t = 4f))
         tile.addView(col, FrameLayout.LayoutParams(G.MATCH, G.WRAP))
         val badge = G.hbox(ctx, 3f)
         badge.addView(G.icon(ctx, "Lock", G.c("#a996cc"), 9f, 2.8f))
-        badge.addView(G.text(ctx, "SOON", 9.5f, G.c("#a996cc")).apply { letterSpacing = 0.06f })
+        badge.addView(G.text(ctx, "SOON", 9.5f, G.c("#a996cc")).lineH(1f).apply { letterSpacing = 0.06f })
         tile.addView(badge, FrameLayout.LayoutParams(G.WRAP, G.WRAP, Gravity.TOP or Gravity.END).m(t = 7f, r = 8f))
         G.click(tile, 0.97f) { toast.show("$title is coming soon!", 2400) }
         rise(tile, 300L + i * 60L, 12f, 450)
