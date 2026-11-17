@@ -112,6 +112,8 @@ jobs:
         run: |
           cd shots
           B=screens; [ "${{ github.ref_name }}" = "home-native" ] && B=screens-home
+          # the work branch keeps its APK next to its screenshots (easy to hand over)
+          if [ "${{ github.ref_name }}" = "home-native" ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-home-native.apk; fi
           git init -q && git checkout -q -b "$B"
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
