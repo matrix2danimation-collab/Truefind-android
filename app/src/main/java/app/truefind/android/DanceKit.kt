@@ -561,13 +561,16 @@ class BlinkDot(ctx: Context, private val color: Int) : View(ctx) {
         duration = 600; repeatMode = ValueAnimator.REVERSE; repeatCount = ValueAnimator.INFINITE
         addUpdateListener { alpha = it.animatedValue as Float }
     }
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); anim.start() }
-    override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
+    init { ShownRunner(this, anim) } // blinks only while it can be seen
     override fun onDraw(c: Canvas) { c.drawCircle(width / 2f, height / 2f, min(width, height) / 2f, p) }
 }
 
 /** The five-dot "long train" loader (TfSpinner), blue or white. */
 class DotsSpinner(ctx: Context, private val color: Int = Ui.c("#5664EF")) : View(ctx) {
+    private companion object {
+        val SIZES = floatArrayOf(0.22f, 0.192f, 0.164f, 0.136f, 0.108f)
+        val OP = floatArrayOf(1f, 0.8f, 0.62f, 0.45f, 0.3f)
+    }
     private val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = this@DotsSpinner.color }
     private val ease = PathInterpolator(0.5f, 0f, 0.5f, 1f)
     private var start = 0L
@@ -577,14 +580,12 @@ class DotsSpinner(ctx: Context, private val color: Int = Ui.c("#5664EF")) : View
         val size = min(width, height).toFloat()
         val cx = width / 2f; val cy = height / 2f
         val t = ((SystemClock.uptimeMillis() - start) % 1300L) / 1300f
-        val sizes = floatArrayOf(0.22f, 0.192f, 0.164f, 0.136f, 0.108f)
-        val op = floatArrayOf(1f, 0.8f, 0.62f, 0.45f, 0.3f)
         for (i in 0 until 5) {
             val f = ((t + 0.08f * i / 1.3f) % 1f + 1f) % 1f
             val ang = 360f * ease.getInterpolation(f)
             c.save(); c.translate(cx, cy); c.rotate(ang)
-            p.alpha = (255 * op[i]).toInt()
-            c.drawCircle(0f, -size / 2f + size * 0.12f, size * sizes[i] / 2f, p)
+            p.alpha = (255 * OP[i]).toInt()
+            c.drawCircle(0f, -size / 2f + size * 0.12f, size * SIZES[i] / 2f, p)
             c.restore()
         }
         postInvalidateOnAnimation()

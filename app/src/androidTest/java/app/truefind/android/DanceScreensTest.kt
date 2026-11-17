@@ -1,12 +1,12 @@
 package app.truefind.android
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
@@ -16,16 +16,19 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Opens every native Live Dance screen with a pretend server (FakeDance),
  * taps what a person would tap, checks what happens and saves a picture of
  * each screen in /data/local/tmp/tf-shots (the GitHub build pulls them).
  * Problems are collected and reported together at the end, so one run shows everything.
+ * (No "wait until the app is idle": the screens have endless animations, like the web page.)
  */
 @RunWith(AndroidJUnit4::class)
 class DanceScreensTest {
-    private lateinit var scenario: ActivityScenario<DanceTestActivity>
+    private lateinit var a: DanceTestActivity
     private lateinit var fake: FakeDance
     private val inst = InstrumentationRegistry.getInstrumentation()
     private val problems = ArrayList<String>()
@@ -35,11 +38,22 @@ class DanceScreensTest {
         fake = FakeDance()
         DanceApi.fake = { n, p -> fake.handle(n, p) }
         shell("mkdir -p $dir")
-        scenario = ActivityScenario.launch(DanceTestActivity::class.java)
-        pause(500)
+        val ready = CountDownLatch(1)
+        DanceTestActivity.resumed = ready
+        inst.targetContext.startActivity(Intent(inst.targetContext, DanceTestActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        assertTrue("the test screen did not open", ready.await(60, TimeUnit.SECONDS))
+        a = DanceTestActivity.last!!
+        pause(800)
     }
 
-    @After fun end() { DanceApi.fake = null; scenario.close() }
+    @After fun end() {
+        DanceApi.fake = null
+        main { a.finish() }
+        Thread.sleep(600)
+    }
+
+    /** run on the app's main thread and wait for it (does not wait for animations to stop) */
+    private fun main(f: () -> Unit) = inst.runOnMainSync { f() }
 
     private fun shell(cmd: String) {
         try {
@@ -48,8 +62,8 @@ class DanceScreensTest {
         } catch (e: Throwable) { }
     }
 
-    private fun act(f: (DanceTestActivity) -> Unit) { scenario.onActivity { f(it) }; inst.waitForIdleSync() }
-    private fun pause(ms: Long) { Thread.sleep(ms); inst.waitForIdleSync() }
+    private fun act(f: (DanceTestActivity) -> Unit) { main { f(a) } }
+    private fun pause(ms: Long) { Thread.sleep(ms); main { } }
     private fun check(ok: Boolean, what: String) { if (!ok) problems.add(what) }
 
     private fun shot(name: String) {
@@ -57,7 +71,7 @@ class DanceScreensTest {
         shell("screencap -p $dir/$name.png")
         if (!File("$dir/$name.png").exists()) {
             // fallback: draw the window ourselves (kept inside the app)
-            scenario.onActivity { a ->
+            main {
                 val v = a.window.decorView
                 val b = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
                 v.draw(android.graphics.Canvas(b))
@@ -77,24 +91,23 @@ class DanceScreensTest {
 
     private fun views(desc: String, prefix: Boolean = false): List<View> {
         val list = ArrayList<View>()
-        scenario.onActivity { a -> find(a.window.decorView, desc, prefix, list) }
+        main { find(a.window.decorView, desc, prefix, list) }
         return list
     }
 
     private fun tap(desc: String, prefix: Boolean = false) {
         var done = false
-        scenario.onActivity { a ->
+        main {
             val list = ArrayList<View>()
             find(a.window.decorView, desc, prefix, list)
             list.lastOrNull()?.let { it.performClick(); done = true }
         }
-        inst.waitForIdleSync()
         check(done, "nothing to tap: \"$desc\"")
     }
 
     private fun has(desc: String, prefix: Boolean = false) = views(desc, prefix).isNotEmpty()
 
-    private fun back() { act { a -> if (!a.screen.onBack()) a.screen.nav.back() } }
+    private fun back() { act { x -> if (!x.screen.onBack()) x.screen.nav.back() } }
 
     private fun called(action: String) = fake.log().contains(action)
 
@@ -106,7 +119,7 @@ class DanceScreensTest {
         check(has("Solo Dance: ", true), "Solo box missing")
         check(has("1 vs 1 Battle: ", true), "1 vs 1 box missing")
         check(has("2 Dancer Battle: ", true), "2 Dancer box missing")
-        scenario.onActivity { a ->
+        main {
             val l = ArrayList<View>(); find(a.window.decorView, "2 Dancer Battle: ", true, l)
             var p = l.firstOrNull()?.parent
             while (p != null && p !is RecyclerView) p = p.parent
@@ -173,7 +186,7 @@ class DanceScreensTest {
         tap("People (", true); pause(1200); shot("18_people")
         tap("Rahul"); pause(800); shot("19_person"); back(); pause(500)
         // a chat message
-        act { a ->
+        main {
             val l = ArrayList<View>(); find(a.window.decorView, "Message", false, l)
             (l.firstOrNull() as? EditText)?.setText("Superb dance 🔥")
         }
@@ -225,7 +238,7 @@ class DanceScreensTest {
         back(); pause(900)
         shot("34_back_to_list")
         var last = ""
-        scenario.onActivity { a -> last = a.history.lastOrNull().orEmpty() }
+        main { last = a.history.lastOrNull().orEmpty() }
         check(last == "/dance?m=solo", "back went to \"$last\" instead of /dance?m=solo")
 
         assertTrue("Problems:\n" + problems.joinToString("\n"), problems.isEmpty())

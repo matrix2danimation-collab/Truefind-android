@@ -14,6 +14,10 @@ import androidx.core.view.WindowInsetsCompat
  * The "web address" here is just a list kept by this activity.
  */
 class DanceTestActivity : ComponentActivity() {
+    companion object {
+        @Volatile var last: DanceTestActivity? = null
+        @Volatile var resumed: java.util.concurrent.CountDownLatch? = null
+    }
     lateinit var screen: LiveDanceScreen
     val history = ArrayList<String>()
     val shared = ArrayList<String>()
@@ -49,7 +53,12 @@ class DanceTestActivity : ComponentActivity() {
     /** open a page as if the web app went there */
     fun open(path: String) { history.add(path); show(path) }
 
-    override fun onResume() { super.onResume(); if (::screen.isInitialized) screen.onAppVisible(true) }
+    override fun onResume() {
+        super.onResume()
+        if (::screen.isInitialized) screen.onAppVisible(true)
+        last = this
+        resumed?.countDown()
+    }
     override fun onPause() { if (::screen.isInitialized) screen.onAppVisible(false); super.onPause() }
     override fun onDestroy() { if (::screen.isInitialized) screen.leave(); super.onDestroy() }
 }

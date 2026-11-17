@@ -55,6 +55,14 @@ jobs:
           unzip -l TrueFind-native-test.apk | grep -E "\.so$" || true
           unzip -l TrueFind-native-test.apk | tail -1
 
+      - name: APK size with other packing choices (measured, for the report)
+        run: |
+          size() { if gradle assembleDebug --no-daemon -q "$@" > /dev/null; then echo "$(stat -c %s app/build/outputs/apk/debug/app-debug.apk) bytes  ($*)"; else echo "build failed ($*)"; fi; }
+          size -PtfPackedLibs=true
+          size -PtfAbis=arm64-v8a
+          size -PtfAbis=arm64-v8a -PtfPackedLibs=true
+          size -PtfAbis=armeabi-v7a -PtfPackedLibs=true
+
       - uses: actions/upload-artifact@v4
         with:
           name: TrueFind-native-test-apk
@@ -104,9 +112,25 @@ jobs:
           disable-animations: false
           script: |
             adb logcat -c || true
+            adb shell svc power stayon true || true
+            adb shell input keyevent 82 || true
+            adb shell wm dismiss-keyguard || true
             gradle connectedDebugAndroidTest -PtfAllAbis=true --no-daemon || echo failed > tests-failed.txt
             mkdir -p shots && adb pull /data/local/tmp/tf-shots shots/ || true
             adb logcat -d > logcat.txt || true
+
+      # the pictures also go into the log (small JPEGs as text), so they can be looked at without downloading
+      - name: Pictures into the log
+        if: always()
+        run: |
+          which convert || sudo apt-get install -y -qq imagemagick > /dev/null 2>&1 || true
+          for f in $(find shots -name '*.png' | sort); do
+            n=$(basename "$f" .png)
+            convert "$f" -resize 540x -quality 72 "/tmp/$n.jpg" 2>/dev/null || cp "$f" "/tmp/$n.jpg"
+            echo "==SHOT $n=="; base64 -w 0 "/tmp/$n.jpg"; echo; echo "==END=="
+          done
+          echo "---- test problems / crashes ----"
+          grep -hE "Problems:|nothing to tap|not sent|missing|FATAL EXCEPTION|AndroidRuntime" -A3 logcat.txt 2>/dev/null | head -80 || true
 
       - uses: actions/upload-artifact@v4
         if: always()

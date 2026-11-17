@@ -22,7 +22,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live Dance video (Agora) ships for phones (ARM) only; the emulator tests add x86_64
         ndk {
-            abiFilters += if (project.findProperty("tfAllAbis") == "true") listOf("arm64-v8a", "armeabi-v7a", "x86_64") else listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += (project.findProperty("tfAbis") as String?)?.split(",")?.map { it.trim() }
+                ?: if (project.findProperty("tfAllAbis") == "true") listOf("arm64-v8a", "armeabi-v7a", "x86_64") else listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+
+    // size test only (-PtfPackedLibs=true): native libraries stored compressed inside the APK
+    packaging {
+        jniLibs {
+            useLegacyPackaging = project.findProperty("tfPackedLibs") == "true"
         }
     }
 

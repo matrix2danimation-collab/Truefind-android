@@ -16,6 +16,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.os.SystemClock
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
 import kotlin.math.max
@@ -106,7 +107,7 @@ class CoverView(ctx: Context) : View(ctx) {
     private fun reload() {
         val s = src
         if (s.isEmpty()) { bmp = null; invalidate(); return }
-        if (width == 0 && height == 0) { post { if (src == s) reload() }; return }
+        if (width == 0 && height == 0) return // not laid out yet: onSizeChanged loads it
         val px = wantPx()
         bmp = DanceImages.cached(s, px, false)
         invalidate()
@@ -163,11 +164,9 @@ class BeamView(ctx: Context, private val color: Int, delay: Long) : View(ctx) {
         duration = 1300; repeatMode = ValueAnimator.REVERSE; repeatCount = ValueAnimator.INFINITE; startDelay = delay
         addUpdateListener { alpha = it.animatedValue as Float }
     }
-    init { alpha = 0.35f }
+    init { alpha = 0.35f; ShownRunner(this, anim) }
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) { p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), color, Color.TRANSPARENT, Shader.TileMode.CLAMP) }
     override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); anim.start() }
-    override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
 }
 
 /**
@@ -338,32 +337,68 @@ class VoteBarsView(ctx: Context) : View(ctx) {
 /** the soft purple/gold glow ring around the big gift button (ld-glow), pulsing */
 class GlowRing(ctx: Context) : View(ctx) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val gold = Ui.c("#ffd666")
     private var start = 0L
+    private var glow: android.graphics.RadialGradient? = null   // made once per size (no new objects while it pulses)
     override fun onAttachedToWindow() { super.onAttachedToWindow(); start = SystemClock.uptimeMillis(); postInvalidateOnAnimation() }
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        val r = min(w, h) / 2f - Ui.dp(10f); val big = r + Ui.dp(16f)
+        glow = if (r > 0f) android.graphics.RadialGradient(w / 2f, h / 2f, big, intArrayOf(Ui.ca("#aa46ff", 0.8f), Color.TRANSPARENT), floatArrayOf(r / big, 1f), Shader.TileMode.CLAMP) else null
+        p.shader = glow
+    }
     override fun onDraw(c: Canvas) {
+        if (glow == null) return
         val t = ((SystemClock.uptimeMillis() - start) % 2000L) / 2000f
         val k = (1f - kotlin.math.cos(t * 2 * Math.PI).toFloat()) / 2f // 0 → 1 → 0
         val cx = width / 2f; val cy = height / 2f
         val r = min(width, height) / 2f - Ui.dp(10f)
-        p.style = Paint.Style.FILL
-        p.shader = android.graphics.RadialGradient(cx, cy, r + Ui.dp(10f + 6f * k), intArrayOf(Ui.ca("#aa46ff", 0.55f + 0.25f * k), Color.TRANSPARENT), floatArrayOf(r / (r + Ui.dp(10f + 6f * k)), 1f), Shader.TileMode.CLAMP)
-        c.drawCircle(cx, cy, r + Ui.dp(10f + 6f * k), p)
-        p.shader = null
-        p.style = Paint.Style.STROKE; p.strokeWidth = Ui.dp(3f + 2f * k); p.color = Ui.ca("#ffd666", 0.55f + 0.25f * k)
-        c.drawCircle(cx, cy, r + p.strokeWidth / 2f, p)
+        val big = r + Ui.dp(16f)
+        val sc = (r + Ui.dp(10f + 6f * k)) / big
+        p.alpha = (255 * (0.55f + 0.25f * k) / 0.8f).toInt().coerceIn(0, 255)
+        c.save(); c.scale(sc, sc, cx, cy); c.drawCircle(cx, cy, big, p); c.restore()
+        line.strokeWidth = Ui.dp(3f + 2f * k); line.color = gold; line.alpha = (255 * (0.55f + 0.25f * k)).toInt()
+        c.drawCircle(cx, cy, r + line.strokeWidth / 2f, line)
         if (isShown) postInvalidateOnAnimation()
     }
 }
 
-/** runs [a] while the view is on screen (stops when it leaves, starts again when it comes back) */
-private fun View.whileAttached(a: ValueAnimator): ValueAnimator {
-    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { if (!a.isStarted) a.start() }
-        override fun onViewDetachedFromWindow(v: View) { a.cancel() }
-    })
-    if (isAttachedToWindow) a.start()
-    return a
+/**
+ * Runs an endless animation only while its view can be seen: it stops when the
+ * view (or a page above it) is hidden or leaves the screen, and starts again
+ * when it shows — so hidden pages cost nothing (no lag, no battery use).
+ */
+class ShownRunner(private val v: View, private val a: ValueAnimator) : View.OnAttachStateChangeListener, ViewTreeObserver.OnPreDrawListener {
+    private var waiting = false
+    private var observer: ViewTreeObserver? = null
+    init {
+        a.addUpdateListener { if (!v.isShown) sleep() }
+        v.addOnAttachStateChangeListener(this)
+        if (v.isAttachedToWindow) wake()
+    }
+    private fun wake() { if (v.isShown) { if (!a.isStarted) a.start() } else sleep() }
+    private fun sleep() {
+        if (a.isStarted) a.cancel()
+        if (!waiting && v.isAttachedToWindow) {
+            waiting = true
+            observer = v.viewTreeObserver.also { it.addOnPreDrawListener(this) }
+        }
+    }
+    private fun stopWaiting() {
+        if (!waiting) return
+        waiting = false
+        observer?.let { if (it.isAlive) it.removeOnPreDrawListener(this) }
+        observer = null
+    }
+    override fun onPreDraw(): Boolean {
+        if (v.isShown) { stopWaiting(); if (!a.isStarted) a.start() }
+        return true
+    }
+    override fun onViewAttachedToWindow(x: View) { wake() }
+    override fun onViewDetachedFromWindow(x: View) { a.cancel(); stopWaiting() }
 }
+
+private fun View.whileAttached(a: ValueAnimator): ValueAnimator { ShownRunner(this, a); return a }
 
 /** wobble of the VS letters (ld-vs) */
 @SuppressLint("ObjectAnimatorBinding")
