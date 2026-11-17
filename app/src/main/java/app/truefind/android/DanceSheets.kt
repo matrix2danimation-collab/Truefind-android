@@ -243,13 +243,7 @@ object DanceSheets {
             sb.setSpan(CoinSpan(), at - 1, at, 0)
             line.addView(DK.t(ctx, sb, 12f, DK.SUB, false))
             mid.addView(line)
-            val bar = FrameLayout(ctx).apply { background = GradientDrawable().apply { setColor(Ui.c("#f1ebfb")); cornerRadius = Ui.dp(4f) } }
-            val fill = View(ctx).apply { background = DK.grad(if (i == 0) DK.BAR_A else DK.BAR_B, 4f, GradientDrawable.Orientation.LEFT_RIGHT) }
-            bar.addView(fill, FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT))
-            bar.addOnLayoutChangeListener { v, l, _, r2, _, _, _, _, _ ->
-                val w = ((r2 - l) * pc / 100f).toInt()
-                if (fill.layoutParams.width != w) { fill.layoutParams.width = w; v.post { fill.requestLayout() } }
-            }
+            val bar = FracBar(ctx, Ui.c("#f1ebfb"), if (i == 0) DK.BAR_A else DK.BAR_B, 4f).apply { frac = pc / 100f }
             mid.addView(bar, DK.llp(DK.MATCH, Ui.dpi(8f), t = 4f))
             row.addView(mid, DK.llp(0, DK.WRAP, 1f))
             row.addView(Ui.text(ctx, "$pc%", 14f, DK.INK).apply { gravity = Gravity.END }, DK.llp(Ui.dpi(40f), DK.WRAP))
@@ -653,14 +647,7 @@ object DanceSheets {
             genres.forEach { g ->
                 val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
                 row.addView(DK.t(ctx, "${DK.GENRE_ICON[g.optString("name")] ?: "🎵"} ${g.optString("name")}", 13.5f, DK.INK), DK.llp(Ui.dpi(104f), DK.WRAP))
-                val track = FrameLayout(ctx).apply { background = GradientDrawable().apply { setColor(Ui.c("#f1ebfb")); cornerRadius = Ui.dp(6f) } }
-                val fill = View(ctx).apply { background = DK.grad(DK.GRAD, 6f, GradientDrawable.Orientation.LEFT_RIGHT) }
-                track.addView(fill, FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT))
-                val frac = g.optInt("count").toFloat() / max
-                track.addOnLayoutChangeListener { v, l, _, r2, _, _, _, _, _ ->
-                    val w = ((r2 - l) * frac).toInt()
-                    if (fill.layoutParams.width != w) { fill.layoutParams.width = w; v.post { fill.requestLayout() } }
-                }
+                val track = FracBar(ctx, Ui.c("#f1ebfb"), DK.GRAD, 6f).apply { frac = g.optInt("count").toFloat() / max }
                 row.addView(track, DK.llp(0, Ui.dpi(12f), 1f, l = 8f, r = 8f))
                 row.addView(Ui.text(ctx, "${g.optInt("count")}", 14f, DK.INK).apply { gravity = Gravity.END }, DK.llp(Ui.dpi(26f), DK.WRAP))
                 box.addView(row, DK.llp(b = 6f))

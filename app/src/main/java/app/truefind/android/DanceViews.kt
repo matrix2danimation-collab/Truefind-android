@@ -417,3 +417,23 @@ fun View.bob(): ValueAnimator = whileAttached(ValueAnimator.ofFloat(0f, -Ui.dp(4
     duration = 800; repeatMode = ValueAnimator.REVERSE; repeatCount = ValueAnimator.INFINITE
     addUpdateListener { translationY = it.animatedValue as Float }
 })
+
+/** a rounded bar filled to [frac] (0…1) with a gradient — drawn, so it is right on the first frame */
+class FracBar(ctx: Context, track: Int, private val colors: IntArray, private val radiusDp: Float) : View(ctx) {
+    var frac = 0f
+        set(v) { field = v.coerceIn(0f, 1f); invalidate() }
+    private val pt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = track }
+    private val pf = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val r = RectF()
+    private var shaderW = -1f
+    override fun onDraw(c: Canvas) {
+        val w = width.toFloat(); val h = height.toFloat()
+        if (w <= 0f) return
+        val rad = Ui.dp(radiusDp)
+        r.set(0f, 0f, w, h); c.drawRoundRect(r, rad, rad, pt)
+        val fw = w * frac
+        if (fw <= 0f) return
+        if (shaderW != fw) { pf.shader = LinearGradient(0f, 0f, fw, 0f, colors, null, Shader.TileMode.CLAMP); shaderW = fw }
+        r.set(0f, 0f, fw, h); c.drawRoundRect(r, rad, rad, pf)
+    }
+}
