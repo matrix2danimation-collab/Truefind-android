@@ -249,7 +249,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     private val leadEnd = Runnable {
         lead = null
         val j = heldJson; heldJson = null
-        if (j != null) onState(j)
+        // the web never confirmed: go by what it says now (it may not have sent anything new)
+        if (j != null) onState(j) else web.evaluateJavascript("window.__tfReport && window.__tfReport()", null)
         onLeadEnd()
     }
     private fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }.let { if (it == "/home") "/" else it }

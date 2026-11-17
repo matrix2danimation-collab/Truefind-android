@@ -145,7 +145,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // native Home, Profile and the bottom bar (they follow the web address like Explore)
         pages = NativePages(this, root, web) { update() }
         pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
-        pages.onLeadEnd = { heldRoute?.let { heldRoute = null; onRoute(it) } }
+        pages.onLeadEnd = {
+            val h = heldRoute; heldRoute = null
+            if (h != null) onRoute(h)
+            else web.evaluateJavascript("location.pathname + location.search") { v ->
+                val now = try { org.json.JSONArray("[$v]").optString(0) } catch (e: Exception) { "" }
+                if (now.startsWith("/")) onRoute(now)
+            }
+        }
         pages.attach(scriptAtStart)
         pages.askCamera = { cb ->
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
