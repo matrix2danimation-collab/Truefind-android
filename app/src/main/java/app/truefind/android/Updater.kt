@@ -8,6 +8,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.core.content.FileProvider
 import org.json.JSONObject
 import java.io.File
@@ -29,14 +33,15 @@ class Updater(private val activity: Activity) {
     private var pendingApk: File? = null
 
     private val dir get() = File(activity.cacheDir, "updates")
-    private val prefs get() = activity.getSharedPreferences("tf_updater", 0)
-    private val token: String get() = prefs.getString("gh_token", "") ?: ""
+    private var askedLogin = false
 
-    companion object {
-        // the code repo is private: the app reads it with a read-only GitHub key
-        // that the owner pastes once (kept only on this phone)
-        const val API = "https://api.github.com/repos/matrix2danimation-collab/Truefind-android/releases/tags/test-build"
-    }
+    // The code repo is private: GitHub gives the update files only to someone
+    // logged in. The owner logs in to GitHub once, inside the app (GitHub's
+    // own login page); the phone remembers it like a browser does.
+    private fun githubCookie(host: String?): String? =
+        if (host == "github.com") CookieManager.getInstance().getCookie("https://github.com") else null
+
+    private fun loggedIn() = githubCookie("github.com")?.contains("logged_in=yes") == true
 
     /** Called when the app comes to the screen; asks GitHub at most every 10 minutes. */
     fun check() {
@@ -47,45 +52,57 @@ class Updater(private val activity: Activity) {
         if (now - lastCheck < 10 * 60 * 1000) return
         lastCheck = now
         if (pendingApk == null) dir.listFiles()?.forEach { it.delete() } // old downloads
-        if (token.isEmpty()) { askToken(); return }
         thread {
-            val rel = fetchJson(API, token)
-            if (rel == null) { if (lastStatus == 401) main.post { prefs.edit().remove("gh_token").apply(); askToken("That key didn't work. Please paste it again.") }; return@thread }
-            val assets = rel.optJSONArray("assets") ?: return@thread
-            var infoUrl = ""; var apkUrl = ""
-            for (i in 0 until assets.length()) {
-                val a = assets.optJSONObject(i) ?: continue
-                if (a.optString("name") == "version.json") infoUrl = a.optString("url")
-                if (a.optString("name") == "TrueFind-test.apk") apkUrl = a.optString("url")
+            val (status, info) = fetchJson(BuildConfig.UPDATE_INFO_URL)
+            if (info == null) {
+                // not logged in yet: GitHub answers "not found" for a private repo
+                if (status in listOf(401, 403, 404) && !askedLogin) main.post { askLogin() }
+                return@thread
             }
-            if (infoUrl.isEmpty() || apkUrl.isEmpty()) return@thread
-            val info = fetchJson(infoUrl, token, asset = true) ?: return@thread
-            if (info.optInt("versionCode", 0) > BuildConfig.VERSION_CODE) main.post { offer(apkUrl) }
+            val code = info.optInt("versionCode", 0)
+            val url = info.optString("apk", "")
+            if (code > BuildConfig.VERSION_CODE && url.startsWith("https://")) main.post { offer(url) }
         }
     }
 
-    /** One time only: paste the read-only GitHub key. */
-    private fun askToken(note: String? = null) {
+    private fun askLogin() {
         if (activity.isFinishing || showing) return
+        askedLogin = true
         showing = true
-        val input = android.widget.EditText(activity).apply {
-            hint = "github_pat_…"
-            setSingleLine(true)
-        }
-        val pad = Ui.dpi(20f)
-        val box = android.widget.FrameLayout(activity).apply { setPadding(pad, Ui.dpi(8f), pad, 0); addView(input) }
         AlertDialog.Builder(activity)
             .setTitle("Turn on app updates")
-            .setMessage((note?.let { "$it\n\n" } ?: "") + "Paste your read-only GitHub key once. After that, new versions come with one tap on Update.")
-            .setView(box)
-            .setPositiveButton("Save") { _, _ ->
-                showing = false
-                val t = input.text.toString().trim()
-                if (t.isNotEmpty()) { prefs.edit().putString("gh_token", t).apply(); lastCheck = 0L; check() }
-            }
+            .setMessage("Updates come from your private GitHub. Log in to GitHub once, and the Update button works from then on.")
+            .setPositiveButton("Log in") { _, _ -> showing = false; openLogin() }
             .setNegativeButton("Later") { _, _ -> showing = false }
             .setOnCancelListener { showing = false }
             .show()
+    }
+
+    /** GitHub's own login page, inside the app. */
+    private fun openLogin() {
+        showing = true
+        CookieManager.getInstance().setAcceptCookie(true)
+        val web = WebView(activity)
+        web.settings.javaScriptEnabled = true
+        web.settings.domStorageEnabled = true
+        val box = AlertDialog.Builder(activity)
+            .setView(web)
+            .setNegativeButton("Close", null)
+            .setOnDismissListener { showing = false; web.destroy() }
+            .create()
+        web.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                if (loggedIn() && !url.contains("/login") && !url.contains("/session") && !url.contains("two-factor")) {
+                    CookieManager.getInstance().flush()
+                    box.dismiss()
+                    lastCheck = 0L
+                    main.postDelayed({ check() }, 300)
+                }
+            }
+        }
+        box.show()
+        box.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        web.loadUrl("https://github.com/login?return_to=%2Fmatrix2danimation-collab%2FTruefind-android%2Freleases")
     }
 
     private fun offer(url: String) {
@@ -113,16 +130,16 @@ class Updater(private val activity: Activity) {
                 dir.mkdirs()
                 var conn = URL(url).openConnection() as HttpURLConnection
                 conn.instanceFollowRedirects = false
-                conn.setRequestProperty("Authorization", "Bearer $token")
-                conn.setRequestProperty("Accept", "application/octet-stream")
+                githubCookie(conn.url.host)?.let { conn.setRequestProperty("Cookie", it) }
                 conn.connectTimeout = 20000; conn.readTimeout = 60000
                 // GitHub sends the file from another address: follow it
                 var hops = 0
                 while (conn.responseCode in 300..399 && hops < 5) {
                     val next = conn.getHeaderField("Location") ?: break
                     conn.disconnect()
-                    conn = URL(next).openConnection() as HttpURLConnection // the file address: no key sent there
+                    conn = URL(conn.url, next).openConnection() as HttpURLConnection
                     conn.instanceFollowRedirects = false
+                    githubCookie(conn.url.host)?.let { conn.setRequestProperty("Cookie", it) }
                     conn.connectTimeout = 20000; conn.readTimeout = 60000
                     hops++
                 }
@@ -185,30 +202,33 @@ class Updater(private val activity: Activity) {
         try { activity.startActivity(i) } catch (e: Exception) { }
     }
 
-    @Volatile private var lastStatus = 0
-
-    private fun fetchJson(url: String, key: String, asset: Boolean = false): JSONObject? {
-        var conn: HttpURLConnection? = null
-        return try {
-            conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                instanceFollowRedirects = false
-                connectTimeout = 15000; readTimeout = 15000; useCaches = false
-                setRequestProperty("Authorization", "Bearer $key")
-                setRequestProperty("Accept", if (asset) "application/octet-stream" else "application/vnd.github+json")
+    /** Reads a small JSON file from GitHub (follows its redirects). Returns (status, json). */
+    private fun fetchJson(url: String): Pair<Int, JSONObject?> {
+        var target = URL("$url?t=${System.currentTimeMillis()}")
+        repeat(6) {
+            var conn: HttpURLConnection? = null
+            try {
+                val c = (target.openConnection() as HttpURLConnection).apply {
+                    instanceFollowRedirects = false
+                    connectTimeout = 15000; readTimeout = 15000; useCaches = false
+                }
+                conn = c
+                githubCookie(target.host)?.let { c.setRequestProperty("Cookie", it) }
+                val code = c.responseCode
+                if (code in 300..399) {
+                    val next = c.getHeaderField("Location") ?: return code to null
+                    target = URL(target, next)
+                } else if (code in 200..299) {
+                    return code to JSONObject(c.inputStream.bufferedReader().use { it.readText() })
+                } else {
+                    return code to null
+                }
+            } catch (e: Exception) {
+                return 0 to null
+            } finally {
+                conn?.disconnect()
             }
-            lastStatus = conn.responseCode
-            if (conn.responseCode in 300..399) {
-                val next = conn.getHeaderField("Location") ?: return null
-                conn.disconnect()
-                conn = (URL(next).openConnection() as HttpURLConnection).apply { connectTimeout = 15000; readTimeout = 15000; useCaches = false }
-                lastStatus = conn.responseCode
-            }
-            if (conn.responseCode !in 200..299) null
-            else JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
-        } catch (e: Exception) {
-            null
-        } finally {
-            conn?.disconnect()
         }
+        return 0 to null
     }
 }
