@@ -29,6 +29,14 @@ class Updater(private val activity: Activity) {
     private var pendingApk: File? = null
 
     private val dir get() = File(activity.cacheDir, "updates")
+    private val prefs get() = activity.getSharedPreferences("tf_updater", 0)
+    private val token: String get() = prefs.getString("gh_token", "") ?: ""
+
+    companion object {
+        // the code repo is private: the app reads it with a read-only GitHub key
+        // that the owner pastes once (kept only on this phone)
+        const val API = "https://api.github.com/repos/matrix2danimation-collab/Truefind-android/releases/tags/test-build"
+    }
 
     /** Called when the app comes to the screen; asks GitHub at most every 10 minutes. */
     fun check() {
@@ -39,12 +47,45 @@ class Updater(private val activity: Activity) {
         if (now - lastCheck < 10 * 60 * 1000) return
         lastCheck = now
         if (pendingApk == null) dir.listFiles()?.forEach { it.delete() } // old downloads
+        if (token.isEmpty()) { askToken(); return }
         thread {
-            val info = fetchJson(BuildConfig.UPDATE_INFO_URL) ?: return@thread
-            val code = info.optInt("versionCode", 0)
-            val url = info.optString("apk", "")
-            if (code > BuildConfig.VERSION_CODE && url.startsWith("https://")) main.post { offer(url) }
+            val rel = fetchJson(API, token)
+            if (rel == null) { if (lastStatus == 401) main.post { prefs.edit().remove("gh_token").apply(); askToken("That key didn't work. Please paste it again.") }; return@thread }
+            val assets = rel.optJSONArray("assets") ?: return@thread
+            var infoUrl = ""; var apkUrl = ""
+            for (i in 0 until assets.length()) {
+                val a = assets.optJSONObject(i) ?: continue
+                if (a.optString("name") == "version.json") infoUrl = a.optString("url")
+                if (a.optString("name") == "TrueFind-test.apk") apkUrl = a.optString("url")
+            }
+            if (infoUrl.isEmpty() || apkUrl.isEmpty()) return@thread
+            val info = fetchJson(infoUrl, token, asset = true) ?: return@thread
+            if (info.optInt("versionCode", 0) > BuildConfig.VERSION_CODE) main.post { offer(apkUrl) }
         }
+    }
+
+    /** One time only: paste the read-only GitHub key. */
+    private fun askToken(note: String? = null) {
+        if (activity.isFinishing || showing) return
+        showing = true
+        val input = android.widget.EditText(activity).apply {
+            hint = "github_pat_…"
+            setSingleLine(true)
+        }
+        val pad = Ui.dpi(20f)
+        val box = android.widget.FrameLayout(activity).apply { setPadding(pad, Ui.dpi(8f), pad, 0); addView(input) }
+        AlertDialog.Builder(activity)
+            .setTitle("Turn on app updates")
+            .setMessage((note?.let { "$it\n\n" } ?: "") + "Paste your read-only GitHub key once. After that, new versions come with one tap on Update.")
+            .setView(box)
+            .setPositiveButton("Save") { _, _ ->
+                showing = false
+                val t = input.text.toString().trim()
+                if (t.isNotEmpty()) { prefs.edit().putString("gh_token", t).apply(); lastCheck = 0L; check() }
+            }
+            .setNegativeButton("Later") { _, _ -> showing = false }
+            .setOnCancelListener { showing = false }
+            .show()
     }
 
     private fun offer(url: String) {
@@ -71,14 +112,17 @@ class Updater(private val activity: Activity) {
             val ok = try {
                 dir.mkdirs()
                 var conn = URL(url).openConnection() as HttpURLConnection
-                conn.instanceFollowRedirects = true
+                conn.instanceFollowRedirects = false
+                conn.setRequestProperty("Authorization", "Bearer $token")
+                conn.setRequestProperty("Accept", "application/octet-stream")
                 conn.connectTimeout = 20000; conn.readTimeout = 60000
                 // GitHub sends the file from another address: follow it
                 var hops = 0
                 while (conn.responseCode in 300..399 && hops < 5) {
                     val next = conn.getHeaderField("Location") ?: break
                     conn.disconnect()
-                    conn = URL(next).openConnection() as HttpURLConnection
+                    conn = URL(next).openConnection() as HttpURLConnection // the file address: no key sent there
+                    conn.instanceFollowRedirects = false
                     conn.connectTimeout = 20000; conn.readTimeout = 60000
                     hops++
                 }
@@ -141,13 +185,23 @@ class Updater(private val activity: Activity) {
         try { activity.startActivity(i) } catch (e: Exception) { }
     }
 
-    private fun fetchJson(url: String): JSONObject? {
+    @Volatile private var lastStatus = 0
+
+    private fun fetchJson(url: String, key: String, asset: Boolean = false): JSONObject? {
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL("$url?t=${System.currentTimeMillis()}").openConnection() as HttpURLConnection).apply {
-                instanceFollowRedirects = true
-                connectTimeout = 15000; readTimeout = 15000
-                useCaches = false
+            conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                instanceFollowRedirects = false
+                connectTimeout = 15000; readTimeout = 15000; useCaches = false
+                setRequestProperty("Authorization", "Bearer $key")
+                setRequestProperty("Accept", if (asset) "application/octet-stream" else "application/vnd.github+json")
+            }
+            lastStatus = conn.responseCode
+            if (conn.responseCode in 300..399) {
+                val next = conn.getHeaderField("Location") ?: return null
+                conn.disconnect()
+                conn = (URL(next).openConnection() as HttpURLConnection).apply { connectTimeout = 15000; readTimeout = 15000; useCaches = false }
+                lastStatus = conn.responseCode
             }
             if (conn.responseCode !in 200..299) null
             else JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
