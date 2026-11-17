@@ -85,7 +85,7 @@ nshot h08-home-person 10 $P home --es tf_open person
 nshot h09-home-all 10 $P home --es tf_open all
 nshot h10-home-match 10 $P home --es tf_open match
 nshot h11-home-dialog 10 $P home --es tf_open dialog
-nshot h12-home-toast 9 $P home --es tf_open toast
+nshot h12-home-toast 2 $P home --es tf_open toast
 nshot n01-nav-explore 7 $P nav-explore
 nshot n02-nav-recent 7 $P nav-recent
 nshot p01-profile 9 $P profile
@@ -116,7 +116,7 @@ nshot p25-interests 10 $P profile --es tf_open interests
 nshot p26-viewer 10 $P profile --es tf_open viewer
 nshot p27-logout 10 $P profile --es tf_open logout
 nshot p28-delete 10 $P profile --es tf_open delete
-nshot p29-toast 9 $P profile --es tf_open toast
+nshot p29-toast 2 $P profile --es tf_open toast
 nshot b01-builder 9 $P builder
 nshot b02-builder-error 10 $P builder --es tf_open error
 nshot b03-builder-uploading 10 $P builder --es tf_open uploading
