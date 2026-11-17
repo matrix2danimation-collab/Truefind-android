@@ -53,8 +53,9 @@ class CallStageView(ctx: Context, private val webLook: Boolean = false) : FrameL
         // top: title + kind, "100% Safe & Secure" on the right
         val top = FrameLayout(ctx).apply { setPadding(Ui.dpi(16f), Ui.dpi(14f), Ui.dpi(16f), 0); minimumHeight = Ui.dpi(48f) }
         val mid = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        mid.addView(Ui.text(ctx, "True Find", 23f, PURPLE))
-        kind = Ui.text(ctx, "", 11.5f, SUB).apply { setPadding(0, Ui.dpi(2f), 0, 0) }
+        // (webLook: centred like the web's flex column; Explore keeps its own)
+        mid.addView(Ui.text(ctx, "True Find", 23f, PURPLE).apply { if (webLook) gravity = Gravity.CENTER_HORIZONTAL })
+        kind = Ui.text(ctx, "", 11.5f, SUB).apply { setPadding(0, Ui.dpi(2f), 0, 0); if (webLook) gravity = Gravity.CENTER_HORIZONTAL }
         mid.addView(kind)
         top.addView(mid, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL))
         val safe = LinearLayout(ctx).apply {
@@ -115,7 +116,8 @@ class CallStageView(ctx: Context, private val webLook: Boolean = false) : FrameL
                 status.invalidate()
             }
         }
-        panel.addView(status)
+        if (webLook) panel.addView(status, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        else panel.addView(status)
         cancelBox = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         val btn = ImageView(ctx).apply {
             setImageDrawable(PathIcon(PathIcon.PHONE, Color.WHITE, 30f))
@@ -127,7 +129,7 @@ class CallStageView(ctx: Context, private val webLook: Boolean = false) : FrameL
         }
         Ui.pressable(btn, 0.94f)
         cancelBox.addView(btn, LinearLayout.LayoutParams(Ui.dpi(72f), Ui.dpi(72f)))
-        cancelBox.addView(Ui.text(ctx, "Cancel", 13f, Color.WHITE).apply { setPadding(0, Ui.dpi(8f), 0, 0) })
+        cancelBox.addView(Ui.text(ctx, "Cancel", 13f, Color.WHITE).apply { setPadding(0, Ui.dpi(8f), 0, 0); if (webLook) gravity = Gravity.CENTER_HORIZONTAL })
         panel.addView(cancelBox, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(14f) })
         spacer = View(ctx)
         panel.addView(spacer, LinearLayout.LayoutParams(1, Ui.dpi(96f)).apply { topMargin = Ui.dpi(14f) })
