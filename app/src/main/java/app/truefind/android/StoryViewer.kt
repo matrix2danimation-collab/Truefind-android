@@ -67,7 +67,7 @@ object StoryViewer {
         val nameBox = vbox(ctx)
         val name = sdText(ctx, "", 17f, Color.WHITE).oneLine().icon(Seal(16f), 6f, end = true)
         val sub = sdText(ctx, "", 13f, Color.argb(199, 255, 255, 255), bold = false)
-        nameBox.addView(name); nameBox.addView(sub)
+        nameBox.addView(name, lp(WRAP, WRAP)); nameBox.addView(sub)
         who.addView(nameBox, lp(0, WRAP, 1f))
         who.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 24f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(64, 0, 0, 0)); contentDescription = "Close story" }
             .onTap { close() }, lp(dpi(44f), dpi(44f)))

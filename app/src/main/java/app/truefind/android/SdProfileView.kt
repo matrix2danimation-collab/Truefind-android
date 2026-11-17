@@ -136,8 +136,11 @@ object SdProfileView {
                     mainBox.addView(big("Open Chat", if (prem) Icon(Lucide.MessageCircleMore, white, 27f, 2f) else Icon(Lucide.Lock, white, 22f, 2.3f)) { if (prem) h.openChat(p) else h.locked("chat") }, lp(MATCH, dpi(60f)))
                     mainBox.addView(note("Your private chat with ${SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "them" }}. Numbers and links stay hidden."), lp(MATCH, WRAP, t = 8f))
                 }
-                same -> mainBox.addView(sdText(ctx, "Requests can be sent to the opposite gender only.", 15f, K.sub, bold = false).icon(Icon(Lucide.Info, K.rose, 18f), 8f).apply {
-                    gravity = Gravity.CENTER; lineHeight(1.15f); background = rounded(white, 18f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f))
+                same -> mainBox.addView(FrameLayout(ctx).apply {
+                    background = rounded(white, 18f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f))
+                    addView(sdText(ctx, "Requests can be sent to the opposite gender only.", 15f, K.sub, bold = false).icon(Icon(Lucide.Info, K.rose, 18f), 8f).apply {
+                        gravity = Gravity.CENTER; lineHeight(1.15f)
+                    }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
                 }, lp(MATCH, WRAP))
                 h.mayRequest -> {
                     val st = h.inviteOf(p.optString("id"))
@@ -174,7 +177,7 @@ object SdProfileView {
         val sec = vbox(ctx).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
         if (about.isNotEmpty()) {
             sec.addView(sdText(ctx, "About Me", 21f, Ui.c("#A1144A")))
-            sec.addView(sdText(ctx, about, 17f, Ui.c("#161216"), bold = false).lineHeight(1.2f).icon(Icon(Lucide.Heart, K.hot, 16f, 2.2f), 4f, end = true), lp(MATCH, WRAP, t = 8f))
+            sec.addView(sdText(ctx, about, 17f, Ui.c("#161216"), bold = false).lineHeight(1.2f).inlineIcon(Icon(Lucide.Heart, K.hot, 16f, 2.2f), 4f, atEnd = true), lp(MATCH, WRAP, t = 8f))
         }
         val g = SdRules.sexOf(p)
         val chips = listOfNotNull(

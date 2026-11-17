@@ -312,7 +312,8 @@ class SdDeck(
         private val city = sdText(ctx, "", 17f, Color.WHITE, bold = false).oneLine().shadow(8f, 1f, Color.argb(128, 60, 0, 25))
         private val verified = sdText(ctx, "Verified", 15f, Color.WHITE).icon(Seal(22f, Color.WHITE, K.hot), 5f)
         private val online = sdText(ctx, "Online", 15f, Color.WHITE).icon(oval(Ui.c("#D8FFC9")).apply { setSize(dpi(9f), dpi(9f)) }, 6f)
-        private val cta = sdText(ctx, "Send Request", 22f, Color.WHITE).apply { gravity = Gravity.CENTER }
+        private val cta = sdText(ctx, "Send Request", 22f, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1 }
+        private val ctaBox = FrameLayout(ctx).apply { addView(cta, LayoutParams(-2, -1, Gravity.CENTER)) }
         private var boundId = ""
         private var front = true
         private var ctaKey = -1
@@ -339,8 +340,8 @@ class SdDeck(
             addView(verified, LayoutParams(-2, dpi(32f), Gravity.TOP or Gravity.START).apply { setMargins(dpi(16f), dpi(16f), 0, 0) })
             online.background = rounded(Ui.c("#16B339"), 16f); online.setPadding(dpi(11f), 0, dpi(13f), 0); online.gravity = Gravity.CENTER_VERTICAL
             addView(online, LayoutParams(-2, dpi(32f), Gravity.TOP or Gravity.END).apply { setMargins(0, dpi(16f), dpi(16f), 0) })
-            cta.elevation = Ui.dp(6f)
-            addView(cta, LayoutParams(-1, dpi(58f), Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), dpi(16f)) })
+            ctaBox.elevation = Ui.dp(6f)
+            addView(ctaBox, LayoutParams(-1, dpi(58f), Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), dpi(16f)) })
             cameraDistance = 8000 * Ui.density
         }
 
@@ -374,7 +375,7 @@ class SdDeck(
 
         /** c: 0 (middle) … 1 (side); info: how much name / buttons show */
         fun style(c: Float, infoA: Float, isFront: Boolean, ctaLive: Boolean, done: Boolean, premium: Boolean) {
-            info.alpha = infoA; verified.alpha = infoA; online.alpha = infoA; cta.alpha = infoA
+            info.alpha = infoA; verified.alpha = infoA; online.alpha = infoA; ctaBox.alpha = infoA
             veil.setBackgroundColor(Color.argb((c * 0.55f * 255).toInt(), 253, 236, 245))
             if (isFront != front) { front = isFront; elevation = Ui.dp(if (isFront) 14f else 6f) }
             val key = (if (done) 1 else 0) + (if (premium) 2 else 0)
@@ -382,19 +383,19 @@ class SdDeck(
                 ctaKey = key
                 cta.text = if (done) "Request Sent" else "Send Request"
                 cta.setTextColor(if (done) K.wine else Color.WHITE)
-                cta.background = rounded(if (done) Color.WHITE else K.hot, 29f, 2f, Color.argb(235, 255, 255, 255))
+                ctaBox.background = rounded(if (done) Color.WHITE else K.hot, 29f, 2f, Color.argb(235, 255, 255, 255))
                 val ic = if (done) Lucide.Check else if (premium) Lucide.Send else Lucide.Lock
                 cta.icon(Icon(ic, if (done) K.wine else Color.WHITE, if (ic == Lucide.Lock) 23f else 24f, if (done) 3f else if (premium) 2.2f else 2.3f), 10f)
-                cta.contentDescription = if (done) "Request sent" else if (premium) "Send request, 1 credit" else "Send request, Premium only"
+                ctaBox.contentDescription = if (done) "Request sent" else if (premium) "Send request, 1 credit" else "Send request, Premium only"
             }
-            cta.tag = ctaLive
+            ctaBox.tag = ctaLive
         }
 
         fun hitButton(x: Float, y: Float): Boolean {
-            if (cta.tag != true) return false
+            if (ctaBox.tag != true) return false
             // the card is drawn scaled around its middle: undo it
             val lx = (x - width / 2f) / scaleX + width / 2f; val ly = (y - height / 2f) / scaleY + height / 2f
-            return lx >= cta.left && lx <= cta.right && ly >= cta.top && ly <= cta.bottom
+            return lx >= ctaBox.left && lx <= ctaBox.right && ly >= ctaBox.top && ly <= ctaBox.bottom
         }
     }
 }

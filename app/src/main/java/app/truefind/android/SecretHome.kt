@@ -433,7 +433,7 @@ class SecretHome(
         storyLock.press().onTap { locked("watch") }
         col.addView(storyLock, lp(MATCH, WRAP, t = 14f))
         addLine.gravity = Gravity.CENTER; addLine.lineHeight(1.15f)
-        addLine.icon(Icon(Lucide.Pencil, K.deep, 17f, 2.2f), 7f)
+        addLine.inlineIcon(Icon(Lucide.Pencil, K.deep, 17f, 2.2f), 7f)
         addLine.setPadding(dpi(6f), dpi(8f), dpi(6f), dpi(8f)); addLine.minHeight = dpi(44f)
         addLine.press().onTap { addStory() }
         col.addView(addLine, lp(MATCH, WRAP, t = 8f))
@@ -592,9 +592,12 @@ class SecretHome(
                 for ((k, l, ic) in listOf(Triple("like", "Like", Lucide.Heart), Triple("message", "Message", Lucide.MessageCircleMore), Triple("view", "View", Lucide.Eye))) {
                     val n = count(k)
                     val col = if (n > 0) K.wine else Ui.c("#B8A3AE")
-                    chips.addView(sdText(context, "$n ${if (n == 1) l else "${l}s"}", 13f, col).icon(Icon(ic, col, 14f, 2.4f, if (k == "like" && n > 0) col else null), 5f).apply {
-                        gravity = Gravity.CENTER; background = rounded(if (n > 0) K.tint else Ui.c("#FAF5F8"), 15f); maxLines = 1
-                    }, lp(0, dpi(30f), 1f))
+                    // icon + count side by side in the middle of the chip
+                    val chip = FrameLayout(context).apply { background = rounded(if (n > 0) K.tint else Ui.c("#FAF5F8"), 15f) }
+                    chip.addView(sdText(context, "$n ${if (n == 1) l else "${l}s"}", 13f, col).icon(Icon(ic, col, 14f, 2.4f, if (k == "like" && n > 0) col else null), 5f).apply {
+                        gravity = Gravity.CENTER; maxLines = 1
+                    }, LayoutParams(-2, -1, Gravity.CENTER))
+                    chips.addView(chip, lp(0, dpi(30f), 1f))
                 }
                 box.addView(chips, lp(MATCH, WRAP))
                 val rows = vbox(context, 2f).apply { setPadding(0, dpi(6f), 0, 0) }
@@ -978,7 +981,16 @@ class SecretHome(
             "pop" -> showPop(list(activity?.optJSONArray("items")).take(1))
             "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height)
             "scrollmid" -> scroll.scrollTo(0, deckBox.top + deckBox.height / 2)
+            "stories" -> scroll.scrollTo(0, (storyRow.parent as View).top - dpi(260f))
+            "seeall" -> { actAll = true; renderActivity() }
+            "profileend" -> { openProfile(first); postDelayed({ lastScroll(layer.root)?.let { it.scrollTo(0, it.getChildAt(0).height) } }, 1200) }
         }
+    }
+
+    private fun lastScroll(v: View): ScrollView? {
+        if (v is ScrollView) return v
+        if (v is android.view.ViewGroup) for (k in v.childCount - 1 downTo 0) lastScroll(v.getChildAt(k))?.let { return it }
+        return null
     }
 
     // ── toast (bottom) and the drop-in card for new notifications (top) ──

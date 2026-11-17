@@ -236,6 +236,28 @@ fun TextView.icon(d: Drawable?, gapDp: Float, end: Boolean = false): TextView {
     return this
 }
 
+/** an icon inside the text itself (like an inline <svg> in the web page): it sits right next to the words, also in centred text */
+class IconSpan(private val d: Drawable, private val gapPx: Int, private val atEnd: Boolean) : android.text.style.ReplacementSpan() {
+    override fun getSize(paint: Paint, text: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+        if (fm != null) { val p = paint.fontMetricsInt; fm.ascent = p.ascent; fm.descent = p.descent; fm.top = p.top; fm.bottom = p.bottom }
+        return d.bounds.width() + gapPx
+    }
+    override fun draw(c: Canvas, text: CharSequence?, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
+        val p = paint.fontMetrics
+        val mid = y + (p.ascent + p.descent) / 2f // the middle of the letters
+        c.save(); c.translate(x + if (atEnd) gapPx.toFloat() else 0f, mid - d.bounds.height() / 2f); d.draw(c); c.restore()
+    }
+}
+fun TextView.inlineIcon(d: Drawable, gapDp: Float, atEnd: Boolean = false): TextView {
+    d.setBounds(0, 0, d.intrinsicWidth, d.intrinsicHeight)
+    val t = text.toString()
+    val s = android.text.SpannableString(if (atEnd) "$t\u2060\uFFFC" else "\uFFFC$t")
+    val at = if (atEnd) s.length - 1 else 0
+    s.setSpan(IconSpan(d, Ui.dpi(gapDp), atEnd), at, at + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    text = s
+    return this
+}
+
 fun hbox(ctx: Context, gapDp: Float = 0f, gravity: Int = Gravity.CENTER_VERTICAL): LinearLayout = LinearLayout(ctx).apply {
     orientation = LinearLayout.HORIZONTAL; this.gravity = gravity
     if (gapDp > 0) { showDividers = LinearLayout.SHOW_DIVIDER_MIDDLE; dividerDrawable = gap(gapDp) }

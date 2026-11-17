@@ -35,14 +35,14 @@ shot() {
   adb logcat -c
   echo "== $name" >> "$OUT/start.txt"
   adb shell am start -W -n $PKG/.MainActivity "$@" >> "$OUT/start.txt" 2>&1
-  case "$mode" in
-    open)  waitlog "preview open" 45; settle 60 ;;
-    quick) waitlog "preview open" 45; sleep 2 ;;
-    *)     sleep 4; settle 60 ;;
-  esac
   # a slow emulator can show "System UI isn't responding" on top: close such system pop-ups first
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
-  sleep 2
+  case "$mode" in
+    open)  waitlog "preview open" 45; settle 60 ;;
+    quick) waitlog "preview open" 45; sleep 1 ;;   # toasts and pop-ups go away after a few seconds
+    *)     sleep 4; settle 60 ;;
+  esac
+  [ "$mode" = quick ] || { adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 2; }
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
@@ -66,5 +66,9 @@ shot 14-my-edit open --es tf_preview secret --es tf_open myedit
 shot 15-add-story open --es tf_preview secret --ez tf_premium true --es tf_open addstory
 shot 16-toast quick --es tf_preview secret --ez tf_premium true --es tf_open toast
 shot 17-girl-home home --es tf_preview secret --ez tf_girl true
+shot 18-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
+shot 19-free-stories open --es tf_preview secret --es tf_open stories
+shot 20-see-all open --es tf_preview secret --ez tf_premium true --es tf_open seeall
+shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"
