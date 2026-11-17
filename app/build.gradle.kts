@@ -18,6 +18,9 @@ android {
         // test builds: the app checks this file and offers the newer APK (Update button)
         buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/test-build/version.json\"")
         buildConfigField("boolean", "SELF_UPDATE", "true")
+        // the games' voice (Agora) has phone code for each kind of processor: keep the phones'
+        // (arm) and the GitHub test phone's (x86_64)
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
     // Test builds are always signed with the same key (in this repo), so a new
@@ -54,4 +57,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.webkit:webkit:1.14.0")
+    // native games: the web's SVG pictures drawn by the phone, and the games' voice room
+    implementation("com.caverock:androidsvg-aar:1.4")
+    implementation("io.agora.rtc:voice-sdk:4.5.0")
 }

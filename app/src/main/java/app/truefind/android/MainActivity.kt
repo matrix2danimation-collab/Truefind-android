@@ -29,6 +29,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import app.truefind.android.games.GameApi
+import app.truefind.android.games.GameVoice
+import app.truefind.android.games.GamesDemo
+import app.truefind.android.games.GamesLayer
 import org.json.JSONObject
 
 /**
@@ -38,6 +42,8 @@ import org.json.JSONObject
  *    calls, games …
  *  - Explore is drawn natively (ExploreScreen) on top of the web page whenever
  *    the address is /explore. The web's own bottom bar stays visible under it.
+ *  - Games are native too (GamesLayer): the Games page, Heart Chase Boxes, Mood Changer,
+ *    ClueMe and Dress Code, whenever the address is /games or a game's address.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -49,6 +55,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var root: FrameLayout
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
+    private lateinit var games: GamesLayer
     private var path = "/"
     private var cover = false
     private var navTopCss = -1f
@@ -84,6 +91,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         fileCallback = null
     }
 
+    // the microphone for the games' voice (native Agora)
+    private var micDone: ((Boolean) -> Unit)? = null
+    private val askMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        val cb = micDone
+        micDone = null
+        cb?.invoke(ok)
+    }
+
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -114,14 +129,29 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         explore.visibility = View.GONE
         root.addView(explore, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        games = GamesLayer(this, { p, state -> openWeb(p, state) }, { fallback -> if (web.canGoBack()) web.goBack() else openWeb(fallback, null) })
+        root.addView(games, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        GameVoice.micAsker = { done ->
+            if (has(Manifest.permission.RECORD_AUDIO)) done(true)
+            else {
+                micDone?.invoke(false)
+                micDone = done
+                try { askMic.launch(Manifest.permission.RECORD_AUDIO) } catch (e: Exception) { micDone = null; done(false) }
+            }
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (games.visibility == View.VISIBLE && games.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (web.canGoBack()) web.goBack() else finish()
             }
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
+        // test mode (emulator pictures on GitHub only): a native games screen with made-up data
+        val gamesPreview = intent?.getStringExtra("tf_games").orEmpty()
+        if (gamesPreview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startGamesPreview(gamesPreview); return }
         if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: START_URL)
     }
 
@@ -259,6 +289,30 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             web.evaluateJavascript("document.documentElement.classList.${if (show) "add" else "remove"}('tfnx')", null)
             explore.setShown(show)
         }
+        if (previewing) return
+        val gamesWas = games.active
+        games.setRoute(path, Api.token.isNotEmpty(), cover)
+        if (games.active != gamesWas) web.evaluateJavascript("document.documentElement.classList.${if (games.active) "add" else "remove"}('tfgm')", null)
+    }
+
+    private var previewing = false
+
+    /** Test mode: the games with made-up answers (GamesDemo), no web page, no login. */
+    private fun startGamesPreview(scene: String) {
+        previewing = true
+        GameApi.demo = true
+        GamesDemo.scene = scene
+        GamesDemo.girl = intent.getBooleanExtra("tf_girl", false)
+        web.loadUrl("about:blank")
+        val path = when {
+            scene.startsWith("hc") -> "/games/heart-chase"
+            scene.startsWith("mc") -> "/games/mood-changer"
+            scene.startsWith("cm") -> "/games/clue-me"
+            else -> "/games"
+        }
+        games.setRoute(path, true, false)
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        if (open.isNotEmpty()) root.postDelayed({ games.open(open) }, 2500)
     }
 
     override fun onResume() {
@@ -284,6 +338,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onDestroy() {
+        games.shutdown()
         root.removeView(web)
         web.destroy()
         super.onDestroy()

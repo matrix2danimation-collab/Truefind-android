@@ -2,7 +2,7 @@ name: Build True Find APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, games-native]
   workflow_dispatch:
 
 permissions:
@@ -48,7 +48,9 @@ jobs:
           path: TrueFind-test.apk
 
       # Easy phone download: Releases → "Test build" → TrueFind-test.apk
+      # (only main reaches the phone's Update button; work branches are checked first)
       - name: Put the APK on the Releases page
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: test-build
@@ -59,3 +61,43 @@ jobs:
           files: |
             TrueFind-test.apk
             version.json
+
+  # Work branch "games-native": photograph the native game screens on an Android phone (emulator)
+  games-screens:
+    needs: apk
+    if: github.ref == 'refs/heads/games-native'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrueFind-test-apk
+      - name: Enable KVM (fast emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Photograph the games
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash ci/games-screens.sh TrueFind-test.apk shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: games-screens
+          path: shots
+      - name: Keep the pictures on branch "screens-games"
+        if: always()
+        run: |
+          cd shots
+          git init -q && git checkout -q -b screens-games
+          echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
+          git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "games screens ${{ github.sha }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-games
