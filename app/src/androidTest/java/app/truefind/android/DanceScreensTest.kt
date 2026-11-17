@@ -36,7 +36,7 @@ class DanceScreensTest {
         DanceApi.fake = { n, p -> fake.handle(n, p) }
         shell("mkdir -p $dir")
         scenario = ActivityScenario.launch(DanceTestActivity::class.java)
-        wait(500)
+        pause(500)
     }
 
     @After fun end() { DanceApi.fake = null; scenario.close() }
@@ -49,11 +49,11 @@ class DanceScreensTest {
     }
 
     private fun act(f: (DanceTestActivity) -> Unit) { scenario.onActivity { f(it) }; inst.waitForIdleSync() }
-    private fun wait(ms: Long) { Thread.sleep(ms); inst.waitForIdleSync() }
+    private fun pause(ms: Long) { Thread.sleep(ms); inst.waitForIdleSync() }
     private fun check(ok: Boolean, what: String) { if (!ok) problems.add(what) }
 
     private fun shot(name: String) {
-        wait(300)
+        pause(300)
         shell("screencap -p $dir/$name.png")
         if (!File("$dir/$name.png").exists()) {
             // fallback: draw the window ourselves (kept inside the app)
@@ -101,7 +101,7 @@ class DanceScreensTest {
     @Test fun everyScreen() {
         // ── the 3 big boxes ──
         act { it.open("/dance") }
-        wait(2500)
+        pause(2500)
         shot("01_boxes")
         check(has("Solo Dance: ", true), "Solo box missing")
         check(has("1 vs 1 Battle: ", true), "1 vs 1 box missing")
@@ -112,117 +112,117 @@ class DanceScreensTest {
             while (p != null && p !is RecyclerView) p = p.parent
             (p as? RecyclerView)?.smoothScrollBy(0, 2000)
         }
-        wait(900)
+        pause(900)
         shot("02_boxes_scrolled")
 
         // ── demo mode sheet (admins) ──
         tap("Demo mode")
-        wait(700)
+        pause(700)
         shot("03_demo_sheet")
         tap("Add demo dance lives")
-        wait(900)
+        pause(900)
         check(called("demo_seed"), "demo_seed not sent")
-        back(); wait(500)
+        back(); pause(500)
 
         // ── the lives of each mode ──
         tap("Solo Dance: ", true)
-        wait(1500)
+        pause(1500)
         shot("04_solo_list")
         check(has("Bollywood Night", true), "solo live card missing")
-        back(); wait(700)
+        back(); pause(700)
         tap("1 vs 1 Battle: ", true)
-        wait(1500)
+        pause(1500)
         shot("05_battle_list")
-        back(); wait(700)
+        back(); pause(700)
         tap("2 Dancer Battle: ", true)
-        wait(1500)
+        pause(1500)
         shot("06_duo_list")
 
         // ── entry fee ──
         act { it.open("/dance/pay1") }
-        wait(2000)
+        pause(2000)
         shot("07_pay")
         tap("Join Live Room for 50 coins")
-        wait(2500)
+        pause(2500)
         shot("08_after_pay_live")
         check(called("pay"), "pay not sent")
         check(has("All gifts"), "room did not open after paying")
 
         // ── solo live ──
         act { it.open("/dance/solo1") }
-        wait(2500)
+        pause(2500)
         shot("09_solo_live")
         tap("Send hearts")
-        wait(400)
+        pause(400)
         shot("10_hearts")
         // quick gift: the first tap asks, the second tap sends
         tap("Send Rose for 10 coins", true)
-        wait(300)
+        pause(300)
         shot("11_quick_armed")
         tap("Tap again to send Rose", true)
-        wait(1200)
+        pause(1200)
         shot("12_gift_sent")
         check(called("gift"), "gift not sent")
-        tap("All gifts"); wait(800); shot("13_gift_sheet")
-        tap("Teddy, 50 coins"); wait(300); shot("13b_gift_sheet_teddy")
-        back(); wait(500)
-        tap("Request a song"); wait(800); shot("14_song_sheet"); back(); wait(500)
-        tap("Rules"); wait(800); shot("15_rules"); back(); wait(500)
-        tap("Room info"); wait(800); shot("16_room_info"); back(); wait(500)
-        tap("View all supporters"); wait(1200); shot("17_supporters"); back(); wait(500)
-        tap("People (", true); wait(1200); shot("18_people")
-        tap("Rahul"); wait(800); shot("19_person"); back(); wait(500)
+        tap("All gifts"); pause(800); shot("13_gift_sheet")
+        tap("Teddy, 50 coins"); pause(300); shot("13b_gift_sheet_teddy")
+        back(); pause(500)
+        tap("Request a song"); pause(800); shot("14_song_sheet"); back(); pause(500)
+        tap("Rules"); pause(800); shot("15_rules"); back(); pause(500)
+        tap("Room info"); pause(800); shot("16_room_info"); back(); pause(500)
+        tap("View all supporters"); pause(1200); shot("17_supporters"); back(); pause(500)
+        tap("People (", true); pause(1200); shot("18_people")
+        tap("Rahul"); pause(800); shot("19_person"); back(); pause(500)
         // a chat message
         act { a ->
             val l = ArrayList<View>(); find(a.window.decorView, "Message", false, l)
             (l.firstOrNull() as? EditText)?.setText("Superb dance 🔥")
         }
-        tap("Send"); wait(1200)
+        tap("Send"); pause(1200)
         check(called("message"), "message not sent")
         shot("19b_message_sent")
-        tap("Emojis"); wait(400); shot("20_emoji"); back(); wait(300)
+        tap("Emojis"); pause(400); shot("20_emoji"); back(); pause(300)
 
         // ── camera-off solo + a song request that is waiting ──
-        act { it.open("/dance/solo2") }; wait(2200); shot("21_solo_camera_off")
-        act { it.open("/dance/solo3") }; wait(2200); tap("Request a song"); wait(800); shot("22_song_waiting"); back(); wait(400)
+        act { it.open("/dance/solo2") }; pause(2200); shot("21_solo_camera_off")
+        act { it.open("/dance/solo3") }; pause(2200); tap("Request a song"); pause(800); shot("22_song_waiting"); back(); pause(400)
 
         // ── 1 vs 1 battle: vote, rank ──
         act { it.open("/dance/battle1") }
-        wait(2500)
+        pause(2500)
         shot("23_battle_live")
-        tap("Vote Riya", true); wait(1200); shot("24_voted")
+        tap("Vote Riya", true); pause(1200); shot("24_voted")
         check(called("vote"), "vote not sent")
-        tap("Battle Rank"); wait(1200); shot("25_rank"); back(); wait(500)
+        tap("Battle Rank"); pause(1200); shot("25_rank"); back(); pause(500)
 
         // ── a battle ends → the winner ──
         act { it.open("/dance/battle3") }
-        wait(7000)
+        pause(7000)
         shot("26_winner")
 
         // ── empty seat → request to dance → on the stage ──
         act { it.open("/dance/battle2") }
-        wait(2200)
+        pause(2200)
         shot("27_empty_seat")
-        tap("Request to dance"); wait(3500)
+        tap("Request to dance"); pause(3500)
         shot("28_on_stage")
         check(called("seat_request"), "seat_request not sent")
         check(has("Leave"), "dancer tools missing")
-        tap("Leave"); wait(600); shot("29_leave_confirm"); back(); wait(400)
+        tap("Leave"); pause(600); shot("29_leave_confirm"); back(); pause(400)
 
         // ── 2 dancer battle ──
         act { it.open("/dance/duo1") }
-        wait(2500)
+        pause(2500)
         shot("30_duo_live")
-        tap("All gifts"); wait(800); shot("31_duo_gift_sheet"); back(); wait(400)
+        tap("All gifts"); pause(800); shot("31_duo_gift_sheet"); back(); pause(400)
 
         // ── ended / can't open ──
-        act { it.open("/dance/ended1") }; wait(2000); shot("32_ended")
-        act { it.open("/dance/gone1") }; wait(2000); shot("33_cant_open")
+        act { it.open("/dance/ended1") }; pause(2000); shot("32_ended")
+        act { it.open("/dance/gone1") }; pause(2000); shot("33_cant_open")
 
         // ── back from a room goes back to that list ──
-        act { it.open("/dance?m=solo") }; wait(800)
-        act { it.open("/dance/solo1") }; wait(1500)
-        back(); wait(900)
+        act { it.open("/dance?m=solo") }; pause(800)
+        act { it.open("/dance/solo1") }; pause(1500)
+        back(); pause(900)
         shot("34_back_to_list")
         var last = ""
         scenario.onActivity { a -> last = a.history.lastOrNull().orEmpty() }
