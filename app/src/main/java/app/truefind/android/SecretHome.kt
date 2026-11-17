@@ -960,7 +960,10 @@ class SecretHome(
     fun previewOpen(what: String, tries: Int = 0) {
         // wait until the made-up data is there (and drawn)
         if ((liveDeck.isEmpty() || myProfile == null || activity == null || renderQueued) && tries < 20) { postDelayed({ previewOpen(what, tries + 1) }, 300); return }
+        // and laid out once more before opening anything on top
+        if (tries >= 0) { postDelayed({ previewOpen(what, -1) }, 900); return }
         val first = liveDeck.firstOrNull() ?: online?.firstOrNull() ?: return
+        if (Demo.on) android.util.Log.i("TFDBG", "preview open $what")
         when (what) {
             "profile" -> openProfile(first)
             "request" -> SdSheets.request(this, first)

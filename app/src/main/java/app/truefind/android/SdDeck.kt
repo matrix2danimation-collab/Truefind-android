@@ -185,7 +185,7 @@ class SdDeck(
 
     /** side cards get a light blur once they stand still (the web does the same; never while moving) */
     private fun blurSides(on: Boolean) {
-        if (Build.VERSION.SDK_INT < 31) return
+        if (Build.VERSION.SDK_INT < 31 || Demo.noBlur) return
         for ((k, card) in cards) {
             val c = min(abs(k - center), 1f)
             card.photo.setRenderEffect(if (on && c > 0.02f) RenderEffect.createBlurEffect(Ui.dp(c * 2.5f), Ui.dp(c * 2.5f), Shader.TileMode.CLAMP) else null)

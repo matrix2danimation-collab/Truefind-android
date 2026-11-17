@@ -13,6 +13,7 @@ object Demo {
     @Volatile var on = false
     var premium = false          // the made-up user has a Secret Dating plan
     var girl = false              // the made-up user is a girl (sees boys)
+    var noBlur = false            // test runs only: compare speed without the side-card blur
 
     private val girls = listOf("Anvi" to "Rohtak", "Simran" to "Delhi", "Kavya" to "Jaipur", "Riya" to "Hisar", "Meher" to "Chandigarh", "Ishita" to "Noida", "Pooja" to "Panipat")
     private val boys = listOf("Aarav" to "Rohtak", "Rohan" to "Delhi", "Kabir" to "Jaipur", "Arjun" to "Hisar", "Karan" to "Chandigarh")

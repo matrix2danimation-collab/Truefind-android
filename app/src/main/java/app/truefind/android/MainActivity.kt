@@ -300,7 +300,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.on = true
         Demo.premium = intent.getBooleanExtra("tf_premium", false)
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
+        Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
         web.loadUrl("about:blank")
+        if (intent.getBooleanExtra("tf_noweb", false)) web.visibility = View.GONE
+        watchFrames()
         val screen = if (preview.startsWith("secret")) secret else explore
         val lp = screen.layoutParams as FrameLayout.LayoutParams
         lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
@@ -308,6 +311,26 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (screen === explore) explore.setShown(true) else secret.setShown(true, "")
         val open = intent.getStringExtra("tf_open").orEmpty()
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
+    }
+
+    /** test runs only: write slow frames (and a count every 2 s) to the log, to see where time goes */
+    private fun watchFrames() {
+        if (android.os.Build.VERSION.SDK_INT < 24) return
+        val t = android.os.HandlerThread("tf-frames").apply { start() }
+        var frames = 0; var slow = 0; var worst = 0L
+        val ms = { m: android.view.FrameMetrics, k: Int -> m.getMetric(k) / 1_000_000 }
+        window.addOnFrameMetricsAvailableListener({ _, m, _ ->
+            frames++
+            val total = ms(m, android.view.FrameMetrics.TOTAL_DURATION)
+            if (total > worst) worst = total
+            if (total > 100) {
+                slow++
+                val gpu = if (android.os.Build.VERSION.SDK_INT >= 31) ms(m, android.view.FrameMetrics.GPU_DURATION) else -1
+                android.util.Log.i("TFDBG", "slow frame #$frames total=${total}ms anim=${ms(m, android.view.FrameMetrics.ANIMATION_DURATION)} layout=${ms(m, android.view.FrameMetrics.LAYOUT_MEASURE_DURATION)} draw=${ms(m, android.view.FrameMetrics.DRAW_DURATION)} sync=${ms(m, android.view.FrameMetrics.SYNC_DURATION)} issue=${ms(m, android.view.FrameMetrics.COMMAND_ISSUE_DURATION)} swap=${ms(m, android.view.FrameMetrics.SWAP_BUFFERS_DURATION)} gpu=$gpu")
+            }
+        }, android.os.Handler(t.looper))
+        val tick = object : Runnable { override fun run() { android.util.Log.i("TFDBG", "frames so far $frames (slow >100ms: $slow, worst ${worst}ms)"); root.postDelayed(this, 2000) } }
+        root.postDelayed(tick, 2000)
     }
 
     override fun onResume() {
