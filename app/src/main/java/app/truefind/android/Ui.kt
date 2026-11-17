@@ -13,13 +13,18 @@ object Ui {
     var density = 1f
     lateinit var regular: Typeface
     lateinit var bold: Typeface
+    lateinit var boldItalic: Typeface
+    private var ready = false
 
     fun init(ctx: Context) {
         density = ctx.resources.displayMetrics.density
+        if (ready) return
+        ready = true
         // Calibri look-alike (Carlito), same as the web app. The build puts the
         // font files in assets/fonts; if they are missing the phone's font is used.
         regular = load(ctx, "fonts/Carlito-Regular.ttf") ?: Typeface.SANS_SERIF
         bold = load(ctx, "fonts/Carlito-Bold.ttf") ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+        boldItalic = load(ctx, "fonts/Carlito-BoldItalic.ttf") ?: Typeface.create(bold, Typeface.BOLD_ITALIC)
     }
 
     private fun load(ctx: Context, path: String): Typeface? = try {

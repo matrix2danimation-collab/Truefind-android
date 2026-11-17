@@ -48,11 +48,12 @@ object AvatarArt {
     private val cache = HashMap<String, Bitmap>()
 
     /** Same look the web picks for this person (key = gender + hash % 30). */
-    fun forPerson(person: Person, size: Int): Bitmap {
-        val girl = person.gender != "male"
-        val i = Person.hashStr(person.id.ifEmpty { person.name }) % 30
-        val k = "${if (girl) "g" else "b"}$i|$size"
-        return cache.getOrPut(k) { Photos.circle(draw(i, girl, size)) }
+    fun forPerson(person: Person, size: Int): Bitmap = forKey(person.id.ifEmpty { person.name }, person.gender != "male", size)
+
+    fun forKey(key: String, girl: Boolean, size: Int, round: Boolean = true): Bitmap {
+        val i = Person.hashStr(key) % 30
+        val k = "${if (girl) "g" else "b"}$i|$size|$round"
+        return cache.getOrPut(k) { val b = draw(i, girl, size); if (round) Photos.circle(b) else b }
     }
 
     private fun draw(i: Int, girl: Boolean, size: Int): Bitmap {

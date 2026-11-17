@@ -44,10 +44,10 @@ class WebBridge(private val listener: Listener) {
   window.TFNativeApp = true;
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
-  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}';
+  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}';
   (document.head || document.documentElement).appendChild(css);
   var lastPath = '';
-  function sendRoute(){ var p = location.pathname || '/'; if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
+  function sendRoute(){ var p = (location.pathname || '/') + (location.search || ''); if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
   ['pushState','replaceState'].forEach(function(k){
     var o = history[k];
     history[k] = function(){ var r = o.apply(this, arguments); setTimeout(sendRoute, 0); setTimeout(info, 0); return r; };
@@ -67,7 +67,7 @@ class WebBridge(private val listener: Listener) {
     } catch(e){}
     return appId;
   }
-  function visible(el){ return !!(el && el.getClientRects().length) && !(el.closest && el.closest('.tfc')); }
+  function visible(el){ return !!(el && el.getClientRects().length) && !(el.closest && el.closest('.tfc')) && !(document.documentElement.classList.contains('tfsd') && el.closest && el.closest('#root .sd')); }
   function covered(){
     var list = document.querySelectorAll('.tfic,[role="alertdialog"],[aria-modal="true"]');
     for (var i = 0; i < list.length; i++) if (visible(list[i])) return true;
@@ -77,8 +77,9 @@ class WebBridge(private val listener: Listener) {
     try {
       var tok = localStorage.getItem('base44_access_token') || localStorage.getItem('token') || '';
       if (tok && tok.charAt(0) === '"') { try { tok = JSON.parse(tok); } catch(e){} }
-      var nav = document.querySelector('nav.tfnav');
-      var top = nav && nav.getClientRects().length ? nav.getBoundingClientRect().top : -1;
+      var top = -1;
+      var navs = document.querySelectorAll('nav.tfnav, nav[aria-label="Secret Dating"]');
+      for (var i = 0; i < navs.length; i++) { var n = navs[i]; if (n.getClientRects().length) { var r = n.getBoundingClientRect(); if (r.height > 0 && r.top < innerHeight) { top = r.top; break; } } }
       B.info(location.origin, String(tok || ''), findAppId(), top, covered());
     } catch(e){}
   }

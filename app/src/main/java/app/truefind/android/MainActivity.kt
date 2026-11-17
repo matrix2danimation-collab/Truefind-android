@@ -49,7 +49,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var root: FrameLayout
     private lateinit var web: WebView
     private lateinit var explore: ExploreScreen
+    private lateinit var secret: SecretHome
     private var path = "/"
+    private var search = ""
+    private var preview = ""
     private var cover = false
     private var navTopCss = -1f
     private var scriptAtStart = false
@@ -84,6 +87,16 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         fileCallback = null
     }
 
+    // Secret Dating "Add to your story": the phone's photo picker
+    private var pickDone: ((ByteArray?, String) -> Unit)? = null
+    private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val cb = pickDone ?: return@registerForActivityResult
+        pickDone = null
+        if (uri == null) { cb(null, ""); return@registerForActivityResult }
+        val type = contentResolver.getType(uri) ?: "image/jpeg"
+        Api.async({ try { contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (e: Exception) { null } }) { bytes -> cb(bytes, type) }
+    }
+
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -113,15 +126,25 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         explore = ExploreScreen(this, root) { p, state -> openWeb(p, state) }
         explore.visibility = View.GONE
         root.addView(explore, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        secret = SecretHome(this, root) { p, state -> openWeb(p, state) }
+        secret.visibility = View.GONE
+        secret.onWantsWeb = { update() }
+        root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
+                if (secret.visibility == View.VISIBLE && secret.back()) return
+                if (preview.isNotEmpty()) { finish(); return }
                 if (web.canGoBack()) web.goBack() else finish()
             }
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
+        // test mode (emulator screenshots on GitHub only): a native screen with made-up data, no web page
+        preview = intent?.getStringExtra("tf_preview").orEmpty()
+        if (preview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startPreview(); return }
         if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: START_URL)
     }
 
@@ -235,7 +258,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     // ── from the page ──
     override fun onRoute(path: String) {
-        this.path = path
+        val q = path.indexOf('?')
+        this.path = if (q >= 0) path.substring(0, q) else path
+        this.search = if (q >= 0) path.substring(q) else ""
         update()
     }
 
@@ -249,26 +274,52 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     private fun update() {
-        val onExplore = path.trimEnd('/') == "/explore"
-        val show = onExplore && !cover && Api.token.isNotEmpty()
-        // native Explore ends where the web's bottom bar starts
-        val lp = explore.layoutParams as FrameLayout.LayoutParams
+        if (preview.isNotEmpty()) return
+        val p = path.trimEnd('/')
+        val onExplore = p == "/explore"
+        val onSecret = p == "/secret-app" && !search.contains("tab=chat")
+        val signedIn = Api.token.isNotEmpty()
+        val show = onExplore && !cover && signedIn
+        val showSecret = onSecret && !cover && signedIn && !secret.wantsWeb
+        // the native page ends where the web's bottom bar starts
         val h = if (navTopCss > 0) (navTopCss * resources.displayMetrics.density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
-        if (lp.height != h) { lp.height = h; explore.layoutParams = lp }
+        for (v in listOf(explore, secret)) {
+            val lp = v.layoutParams as FrameLayout.LayoutParams
+            if (lp.height != h) { lp.height = h; v.layoutParams = lp }
+        }
         if (show != (explore.visibility == View.VISIBLE)) {
             web.evaluateJavascript("document.documentElement.classList.${if (show) "add" else "remove"}('tfnx')", null)
             explore.setShown(show)
         }
+        if (showSecret != (secret.visibility == View.VISIBLE)) web.evaluateJavascript("document.documentElement.classList.${if (showSecret) "add" else "remove"}('tfsd')", null)
+        secret.setShown(showSecret, search)
+    }
+
+    /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
+    private fun startPreview() {
+        Demo.on = true
+        Demo.premium = intent.getBooleanExtra("tf_premium", false)
+        Demo.girl = intent.getBooleanExtra("tf_girl", false)
+        web.loadUrl("about:blank")
+        val screen = if (preview.startsWith("secret")) secret else explore
+        val lp = screen.layoutParams as FrameLayout.LayoutParams
+        lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
+        screen.layoutParams = lp
+        if (screen === explore) explore.setShown(true) else secret.setShown(true, "")
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }
 
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
-        updater.check() // test builds: "Update available" when GitHub has a newer APK
+        secret.onAppVisible(true)
+        if (preview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
         explore.onAppVisible(false)
+        secret.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }
