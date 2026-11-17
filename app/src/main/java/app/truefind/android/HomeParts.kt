@@ -50,10 +50,12 @@ abstract class LoopView(ctx: Context, private val periodMs: Long) : View(ctx) {
         duration = periodMs; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
         addUpdateListener { t = it.animatedValue as Float; invalidate() }
     }
-    private fun sync() { if (isAttachedToWindow && isShown) { if (!anim.isStarted) anim.start() else if (anim.isPaused) anim.resume() } else if (anim.isRunning) anim.pause() }
+    // runs only while it can be seen (not when hidden, scrolled into a GONE parent, or the app is in the background)
+    private fun sync() { if (isAttachedToWindow && isShown && windowVisibility == VISIBLE) { if (!anim.isStarted) anim.start() else if (anim.isPaused) anim.resume() } else if (anim.isRunning) anim.pause() }
     override fun onAttachedToWindow() { super.onAttachedToWindow(); post { sync() } }
     override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
     override fun onVisibilityChanged(changedView: View, visibility: Int) { super.onVisibilityChanged(changedView, visibility); sync() }
+    override fun onWindowVisibilityChanged(visibility: Int) { super.onWindowVisibilityChanged(visibility); sync() }
     protected fun phase(delayMs: Long): Float = ((t - delayMs.toFloat() / periodMs) % 1f + 1f) % 1f
 }
 
@@ -159,10 +161,11 @@ class RmCircle(ctx: Context, private val m: Zm) : View(ctx) {
         ValueAnimator.ofFloat(0f, 1f).apply { duration = 9000; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator(); addUpdateListener { tSpin = it.animatedValue as Float } },
         ValueAnimator.ofFloat(0f, 1f).apply { duration = 1800; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator(); addUpdateListener { tSwap = it.animatedValue as Float; invalidate() } },
     )
-    private fun sync() { val on = isAttachedToWindow && isShown; for (a in anims) if (on) { if (!a.isStarted) a.start() else if (a.isPaused) a.resume() } else if (a.isRunning) a.pause() }
+    private fun sync() { val on = isAttachedToWindow && isShown && windowVisibility == VISIBLE; for (a in anims) if (on) { if (!a.isStarted) a.start() else if (a.isPaused) a.resume() } else if (a.isRunning) a.pause() }
     override fun onAttachedToWindow() { super.onAttachedToWindow(); post { sync() } }
     override fun onDetachedFromWindow() { anims.forEach { it.cancel() }; super.onDetachedFromWindow() }
     override fun onVisibilityChanged(changedView: View, visibility: Int) { super.onVisibilityChanged(changedView, visibility); sync() }
+    override fun onWindowVisibilityChanged(visibility: Int) { super.onWindowVisibilityChanged(visibility); sync() }
     override fun onDraw(c: Canvas) {
         val cx = width / 2f; val cy = height / 2f
         val r = m.px(28f)

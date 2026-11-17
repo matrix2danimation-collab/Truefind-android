@@ -372,6 +372,14 @@ object PUi {
         return TfBtn(ctx, label, kind, iconInner?.let { lu(it, fg, iconSize) }, height, radius, 15f).apply { setOnClickListener { onClick() } }
     }
 
+    /** icon + text side by side in the middle of a wide button (the web's centred flex row with a gap) */
+    fun iconText(ctx: Context, label: String, inner: String, sizeDp: Float, color: Int, iconDp: Float, gapDp: Float, bg: Drawable?, stroke: Float = 2f): LinearLayout = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
+        background = bg
+        addView(ImageView(ctx).apply { setImageDrawable(lu(inner, color, iconDp, stroke)) }, LinearLayout.LayoutParams(Ui.dpi(iconDp), Ui.dpi(iconDp)).apply { rightMargin = Ui.dpi(gapDp) })
+        addView(Tf.t(ctx, label, sizeDp, color), LinearLayout.LayoutParams(-2, -2))
+    }
+
     /** a paragraph (regular weight) with its line height */
     fun para(ctx: Context, s: CharSequence, size: Float, color: Int, lh: Float, bold: Boolean = false): TextView = Tf.t(ctx, s, size, color, bold).lineH(lh)
 
@@ -541,12 +549,7 @@ object PViewer {
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(Ui.dpi(16f), Ui.dpi(8f), Ui.dpi(16f), Ui.dpi(16f)); isClickable = true }
             actions.forEachIndexed { i, a ->
                 val fg = if (a.danger) Ui.c("#FCA5A5") else Color.WHITE
-                val b = Tf.t(ctx, a.label, 14f, fg).apply {
-                    gravity = Gravity.CENTER
-                    background = Tf.box(if (a.danger) Color.argb(46, 220, 38, 38) else Color.argb(31, 255, 255, 255), 14f)
-                    compoundDrawablePadding = Ui.dpi(7f)
-                    setCompoundDrawablesWithIntrinsicBounds(PUi.lu(a.iconInner, fg, 17f), null, null, null)
-                    setPadding(Ui.dpi(12f), 0, Ui.dpi(12f), 0)
+                val b = PUi.iconText(ctx, a.label, a.iconInner, 14f, fg, 17f, 7f, Tf.box(if (a.danger) Color.argb(46, 220, 38, 38) else Color.argb(31, 255, 255, 255), 14f)).apply {
                     setOnClickListener { a.onClick() }
                     Ui.pressable(this, .97f)
                 }

@@ -368,8 +368,10 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
-    fun startPreview(what: String, open: String) {
+    fun startPreview(what: String, open0: String) {
         preview = what
+        // "settings=apply,form": an address (?settings=apply) and then a test action on that screen ("form")
+        val open = if (!open0.startsWith("?") && open0.substringBefore(",").contains("=")) "?" + open0.replaceFirst(",", "|") else open0
         Demo.on = true
         DemoHome.on = true
         val h = root.resources.displayMetrics.heightPixels
@@ -391,9 +393,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         }
         // "?settings=apply|form": the address, then a test action on that screen
         val action = if (open.startsWith("?")) open.substringAfter("|", "") else open
-        if (action.isNotEmpty()) main.postDelayed({
+        main.postDelayed({
             android.util.Log.i("TFDBG", "preview open $action")
-            when {
+            if (action.isNotEmpty()) when {
                 what.startsWith("home") -> home.previewOpen(action)
                 what.startsWith("profile") -> profile.previewOpen(action)
                 what.startsWith("verify") -> verify.previewOpen(action)
@@ -436,7 +438,11 @@ class LiveBlinkDot(ctx: android.content.Context, private val color: Int = Ui.c("
         addUpdateListener { val f = it.animatedValue as Float; val k = if (f < .5f) f / .5f else (1f - f) / .5f; a = 1f - (1f - low) * smooth(k); invalidate() }
     }
     private fun smooth(x: Float) = x * x * (3 - 2 * x)
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); anim.start() }
+    // blinks only while it can be seen
+    private fun sync() { if (isAttachedToWindow && isShown && windowVisibility == VISIBLE) { if (!anim.isStarted) anim.start() else if (anim.isPaused) anim.resume() } else if (anim.isRunning) anim.pause() }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); post { sync() } }
     override fun onDetachedFromWindow() { anim.cancel(); super.onDetachedFromWindow() }
+    override fun onVisibilityChanged(changedView: View, visibility: Int) { super.onVisibilityChanged(changedView, visibility); sync() }
+    override fun onWindowVisibilityChanged(visibility: Int) { super.onWindowVisibilityChanged(visibility); sync() }
     override fun onDraw(c: android.graphics.Canvas) { pt.color = color; pt.alpha = (a * 255).toInt(); c.drawCircle(width / 2f, height / 2f, minOf(width, height) / 2f, pt) }
 }

@@ -43,6 +43,11 @@ class TfLoader(ctx: Context, private val sizeDp: Float = 24f, var color: Int = T
     override fun onVisibilityChanged(changedView: View, v: Int) {
         super.onVisibilityChanged(changedView, v)
         if (!isAttachedToWindow) return
+        if (v == VISIBLE && isShown && windowVisibility == VISIBLE) { if (!anim.isStarted) anim.start() } else anim.cancel()
+    }
+    override fun onWindowVisibilityChanged(v: Int) {
+        super.onWindowVisibilityChanged(v)
+        if (!isAttachedToWindow) return
         if (v == VISIBLE && isShown) { if (!anim.isStarted) anim.start() } else anim.cancel()
     }
     override fun onDraw(c: Canvas) {

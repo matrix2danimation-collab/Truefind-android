@@ -144,9 +144,7 @@ class PRefer(ctx: Context, ps: ProfileScreen) : PPanel(ctx, ps) {
         }
         r2.addView(cp, LinearLayout.LayoutParams(Ui.dpi(48f), Ui.dpi(48f)))
         top.addView(r2)
-        top.addView(Tf.t(ctx, "Share invite", 15f, Color.WHITE).apply {
-            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#7C3AED"), 13f)
-            compoundDrawablePadding = Ui.dpi(8f); setCompoundDrawablesWithIntrinsicBounds(PUi.lu(Lu.Share2, Color.WHITE, 18f), null, null, null)
+        top.addView(PUi.iconText(ctx, "Share invite", Lu.Share2, 15f, Color.WHITE, 18f, 8f, Tf.box(Ui.c("#7C3AED"), 13f)).apply {
             setOnClickListener { share(message) }; Ui.pressable(this, .97f)
         }, LinearLayout.LayoutParams(-1, Ui.dpi(46f)).apply { topMargin = Ui.dpi(10f) })
         view.addView(top, lp())
@@ -304,16 +302,12 @@ class PSupport(val ctx: Context, private val ps: ProfileScreen) {
 
     private fun home() {
         box.addView(PUi.para(ctx, "Didn't find your answer? Write to us — our team replies here and you get a notification.", 13.5f, HC.sub, 19f))
-        box.addView(Tf.t(ctx, "New message", 15f, Color.WHITE).apply {
-            gravity = Gravity.CENTER; background = Tf.box(HC.black, 13f)
-            compoundDrawablePadding = Ui.dpi(8f); setCompoundDrawablesWithIntrinsicBounds(PUi.lu(Lu.Plus, Color.WHITE, 17f), null, null, null)
+        box.addView(PUi.iconText(ctx, "New message", Lu.Plus, 15f, Color.WHITE, 17f, 8f, Tf.box(HC.black, 13f)).apply {
             setOnClickListener { writing = true; render() }; Ui.pressable(this, .97f)
         }, LinearLayout.LayoutParams(-1, Ui.dpi(46f)).apply { topMargin = Ui.dpi(12f) })
         if (email.isNotEmpty() || whatsapp.isNotEmpty()) {
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-            fun link(t: String, inner: String, go: () -> Unit) = Tf.t(ctx, t, 13f, HC.purple).apply {
-                gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 12f, 1.5f, HC.line)
-                compoundDrawablePadding = Ui.dpi(6f); setCompoundDrawablesWithIntrinsicBounds(PUi.lu(inner, HC.purple, 15f), null, null, null)
+            fun link(t: String, inner: String, go: () -> Unit) = PUi.iconText(ctx, t, inner, 13f, HC.purple, 15f, 6f, Tf.box(Color.WHITE, 12f, 1.5f, HC.line)).apply {
                 setOnClickListener { go() }; Ui.pressable(this, .97f)
             }
             if (email.isNotEmpty()) row.addView(link("Email us", Lu.Mail) { open(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$email"))) }, LinearLayout.LayoutParams(0, Ui.dpi(40f), 1f))

@@ -79,6 +79,11 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
     override fun onDetachedFromWindow() { badgeAnim.cancel(); super.onDetachedFromWindow() }
     override fun onVisibilityChanged(changedView: View, visibility: Int) {
         super.onVisibilityChanged(changedView, visibility)
+        if (visibility == VISIBLE && isShown && unread > 0 && windowVisibility == VISIBLE) { if (!badgeAnim.isStarted) badgeAnim.start() } else badgeAnim.cancel()
+    }
+    // the badge stops blinking while the app is in the background
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
         if (visibility == VISIBLE && isShown && unread > 0) { if (!badgeAnim.isStarted) badgeAnim.start() } else badgeAnim.cancel()
     }
 

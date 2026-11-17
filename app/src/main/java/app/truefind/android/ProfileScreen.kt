@@ -664,7 +664,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
             b.addView(Tf.t(ctx, text, 12.5f, PC.sub, false).lineH(16f).apply {
                 gravity = Gravity.CENTER_VERTICAL; compoundDrawablePadding = Ui.dpi(2f)
                 setCompoundDrawablesWithIntrinsicBounds(null, null, PUi.lu(Lu.ChevronRight, PC.sub, 13f, 2.2f), null)
-            })
+            }, LinearLayout.LayoutParams(-2, -2))
             counts.addView(b, LinearLayout.LayoutParams(0, -1, 1f))
         }
         body.addView(counts, LinearLayout.LayoutParams(-1, Ui.dpi(68f)))
@@ -750,10 +750,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         layoutParams = ViewGroup.LayoutParams(-2, Ui.dpi(hDp))
     }
 
-    private fun flatBtn(label: String, inner: String, bg: Int, fg: Int, onClick: () -> Unit): TextView = Tf.t(context, label, 15f, fg).apply {
-        gravity = Gravity.CENTER; background = Tf.box(bg, 12f)
-        compoundDrawablePadding = Ui.dpi(8f)
-        setCompoundDrawablesWithIntrinsicBounds(PUi.lu(inner, fg, 16f), null, null, null)
+    private fun flatBtn(label: String, inner: String, bg: Int, fg: Int, onClick: () -> Unit): View = PUi.iconText(context, label, inner, 15f, fg, 16f, 8f, Tf.box(bg, 12f)).apply {
         setOnClickListener { onClick() }; Ui.pressable(this, .97f)
     }
 

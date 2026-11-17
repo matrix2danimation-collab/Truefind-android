@@ -593,6 +593,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx
     private fun maybePop() {
         val d = daily ?: return
         if (!dailyFresh || !d.ready || needsApp.isNotEmpty() || claimOpen || !shown) return
+        if (pages.preview.isNotEmpty()) return   // test screens: the pop-up opens only when asked ("daily")
         val key = "tf_daily_pop:${me?.optString("_uid")?.ifEmpty { null } ?: "me"}"
         val today = Tf.todayIst()
         if (prefs.getString(key, "") == today) return
