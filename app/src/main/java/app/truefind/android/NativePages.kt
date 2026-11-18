@@ -408,6 +408,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     /** navigate(path, { state, replace }) of the web app */
     /** a native screen opens a page (MainActivity: the app leads the move) */
     var onNativeGo: () -> Unit = {}
+    /** Home read the True Find wallet (MainActivity hands it to the Wallet page, which asks for the same) */
+    var onWallet: (JSONObject) -> Unit = {}
     fun go(path: String, state: JSONObject? = null, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast.show("→ $path"); return }
         onNativeGo()

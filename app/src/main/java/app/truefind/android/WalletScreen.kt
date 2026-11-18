@@ -369,6 +369,17 @@ class WalletScreen(
         }
     }
 
+    /**
+     * Home has just read the True Find wallet (the very answer this page asks for): it is kept, so the
+     * first visit shows the balance and the coin packs at once instead of an empty page while it loads.
+     */
+    fun offer(d: JSONObject) {
+        if (shown && app == "truefind") return   // on screen: its own answer is on its way
+        val w = d.optJSONObject("wallet") ?: return
+        cache["truefind"] = Cached(w, list(d.optJSONArray("transactions")), d.str("account_type").ifEmpty { "user" },
+            d.str("my_profile_id").ifEmpty { null }, d.num("chat_rate_coins"), d.opt("first_offer") == true)
+    }
+
     /** getWallet for the wallet on screen. A slow answer for the other wallet is dropped. */
     private fun load(initial: Boolean = false, done: ((Boolean) -> Unit)? = null) {
         val id = ++reqId

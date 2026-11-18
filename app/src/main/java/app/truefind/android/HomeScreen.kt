@@ -395,6 +395,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             if (r.ok && w != null) {
                 coins = HomeRules.num(w.opt("coins")).toLong()
                 earned = HomeRules.num(w.opt("earned_coins")).toLong()
+                pages.onWallet(r.data)
                 render()
             }
             done?.invoke()

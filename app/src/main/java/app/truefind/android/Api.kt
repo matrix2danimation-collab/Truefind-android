@@ -27,10 +27,14 @@ object Api {
     private val pool = Executors.newFixedThreadPool(3)
     private val main = Handler(Looper.getMainLooper())
     /**
-     * An answer goes back to the screen that asked — but not in the middle of a page move: filling a page
-     * while it slides made the move stop half way. It then waits the few tenths of a second until the move ends.
+     * What was read from the server (a page's people, coins, lists, pictures) goes back to the screen that
+     * asked — but not in the middle of a page move: filling a page while it slides made the move stop half
+     * way. It then waits the few tenths of a second until the move ends. Anything you do (a call, a message,
+     * a payment, saving) is never held back.
      */
     private fun deliver(block: () -> Unit) { main.post { PageFx.whenStill(block) } }
+    /** an action's answer: at once */
+    private fun <T> act(work: () -> T, done: (T) -> Unit) { pool.execute { val r = work(); main.post { done(r) } } }
 
     val ready: Boolean get() = Demo.on || (appId.isNotEmpty() && token.isNotEmpty())
 
@@ -39,7 +43,7 @@ object Api {
         if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
         pool.execute {
             val r = call(name, payload, timeoutMs)
-            deliver { done(r) }
+            main.post { done(r) }
         }
     }
 
@@ -147,14 +151,14 @@ object Api {
 
     /** entities.X.delete(id) */
     fun delete(entity: String, id: String, done: (Result) -> Unit) {
-        if (Demo.on) { deliver { done(Result(200, JSONObject(), null)) }; return }
-        async({ request("DELETE", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
+        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        act({ request("DELETE", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
     }
 
     /** entities.X.updateMany(query, data) — PATCH …/update-many (HttpURLConnection can't send PATCH: OkHttp does) */
     fun updateMany(entity: String, query: JSONObject, data: JSONObject, done: (Result) -> Unit = {}) {
-        if (Demo.on) { deliver { done(Result(200, JSONObject(), null)) }; return }
-        async({ requestOk("PATCH", "/entities/$entity/update-many", JSONObject().put("query", query).put("data", data)) }, done)
+        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        act({ requestOk("PATCH", "/entities/$entity/update-many", JSONObject().put("query", query).put("data", data)) }, done)
     }
 
     val http: okhttp3.OkHttpClient by lazy {
@@ -185,18 +189,18 @@ object Api {
 
     /** integrations.Core.X(json) */
     fun core(endpoint: String, payload: JSONObject, done: (Result) -> Unit) {
-        if (Demo.on) { deliver { done(Demo.core(endpoint, payload)) }; return }
-        async({ request("POST", "/integration-endpoints/Core/$endpoint", payload.toString().toByteArray(Charsets.UTF_8), "application/json") }, done)
+        if (Demo.on) { main.post { done(Demo.core(endpoint, payload)) }; return }
+        act({ request("POST", "/integration-endpoints/Core/$endpoint", payload.toString().toByteArray(Charsets.UTF_8), "application/json") }, done)
     }
 
     /** integrations.Core.UploadPrivateFile({ file }) — a photo from the phone. */
     fun uploadPrivate(bytes: ByteArray, fileName: String, mime: String, done: (Result) -> Unit) {
-        if (Demo.on) { deliver { done(Result(200, JSONObject().put("file_uri", "demo://story"), null)) }; return }
+        if (Demo.on) { main.post { done(Result(200, JSONObject().put("file_uri", "demo://story"), null)) }; return }
         val boundary = "----TrueFind" + System.currentTimeMillis()
         val out = java.io.ByteArrayOutputStream()
         out.write("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\nContent-Type: $mime\r\n\r\n".toByteArray())
         out.write(bytes)
         out.write("\r\n--$boundary--\r\n".toByteArray())
-        async({ request("POST", "/integration-endpoints/Core/UploadPrivateFile", out.toByteArray(), "multipart/form-data; boundary=$boundary", 60000) }, done)
+        act({ request("POST", "/integration-endpoints/Core/UploadPrivateFile", out.toByteArray(), "multipart/form-data; boundary=$boundary", 60000) }, done)
     }
 }

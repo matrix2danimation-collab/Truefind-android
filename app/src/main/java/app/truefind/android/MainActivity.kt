@@ -215,6 +215,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
         pages.onNativeGo = { nativeNavAt = uptime(); webFx() }
         pages.checkUpdate = { updater.checkNow() }
+        pages.onWallet = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offer(d) }
         pages.onLeadEnd = {
             val h = heldRoute; heldRoute = null
             if (h != null) onRoute(h)
@@ -712,6 +713,20 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }
         if (before == null) { backShot = null }
     }
+    /** [work] as soon as the phone has nothing else to do (1.2 s later at most), and never during a page move */
+    private fun whenQuiet(delay: Long, work: () -> Unit) {
+        root.postDelayed({
+            var done = false
+            fun go() {
+                if (done) return
+                if (PageFx.running) { root.postDelayed({ go() }, 300); return }
+                done = true
+                work()
+            }
+            android.os.Looper.myQueue().addIdleHandler { go(); false }
+            root.postDelayed({ go() }, 1200)
+        }, delay)
+    }
     /**
      * Explore and Recent get ready in the background a moment after Home first shows (laid out and drawn off
      * the screen, nothing loaded): their first visit then moves as smoothly as the later ones.
@@ -720,12 +735,22 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun readyTabs() {
         if (tabsReadied || Api.token.isEmpty() || !(pages.onHome && pages.home.visibility == View.VISIBLE)) return
         tabsReadied = true
-        fun soon(ms: Long, page: KeepPage) = root.postDelayed({
-            // when the phone has nothing else to do, and never during a move
-            android.os.Looper.myQueue().addIdleHandler { if (PageFx.running) true else { page.keepReady(); false } }
-        }, ms)
-        soon(2500, explore)
-        soon(3600, pages.recent)
+        whenQuiet(2500) { explore.keepReady() }
+        whenQuiet(3600) { pages.recent.keepReady() }
+    }
+    /** the pages that stay ready while hidden (KeepPage) */
+    private fun keptPages(): List<KeepPage> = listOf(pages.home, explore, pages.recent, wallet, secret, pages.profile)
+    override fun onStop() {
+        // Android drops every drawing while the app is away: hidden pages are drawn again one by one after
+        // coming back (onStart), not all of them in the first frame
+        if (::wallet.isInitialized) for (p in keptPages()) p.appStopped()
+        super.onStop()
+    }
+    override fun onStart() {
+        super.onStart()
+        if (!::wallet.isInitialized) return
+        var i = 0
+        for (p in keptPages()) if (p.asleep) whenQuiet(900L + 450L * i++) { p.wake() }
     }
     /** after a move: the pages that should be hidden now are hidden (no new move from here) */
     private fun settle() {
@@ -935,32 +960,35 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             "Secret Dating -> Home (back)" to { web("/", back = true) },
         )
         root.postDelayed({ say("start"); web("/") }, 1500)
+        // test set "fx3": the moves running freely — each must end on the right page with the pages it left
+        // kept ready ("parked"); the log gets one TFFX line per move
+        if (intent.getBooleanExtra("tf_fx_live", false)) {
+            fun state(v: View) = if (v.visibility == View.VISIBLE) "shown" else if (v is KeepPage && v.parked) (if (v.asleep) "asleep" else "parked") else "gone"
+            val live: List<Pair<String, () -> Unit>> = listOf(
+                "Home -> Explore" to { pages.go("/explore"); web("/explore") },
+                "Explore -> Home" to { pages.go("/"); web("/") },
+                "Home -> Wallet (open)" to { openWeb("/wallet", null); web("/wallet") },
+                "Wallet -> Home (back)" to { web("/", back = true) },
+                "Home -> Recent (Explore passes by)" to { pages.go("/chats"); web("/chats") },
+                "Recent -> Home" to { pages.go("/"); web("/") },
+            )
+            var t = 8000L
+            live.forEachIndexed { i, (what, act) ->
+                root.postDelayed({ say("live ${i + 1} $what"); act() }, t)
+                root.postDelayed({
+                    say("live done ${i + 1}: moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
+                        "x=${pages.home.translationX.toInt()},${explore.translationX.toInt()},${pages.recent.translationX.toInt()},${wallet.translationX.toInt()}")
+                }, t + 4500)
+                t += 8000L
+            }
+            root.postDelayed({ say("end") }, t)
+            return
+        }
         var at = 6000L
         for (k in from..to.coerceAtMost(list.size)) {
             val (what, act) = list[k - 1]
             root.postDelayed({ frozenStep(k, what, act) }, at)
             at += 24000L
-        }
-        // then the same moves running freely (second half only): each must end on the right page with the
-        // pages it left kept ready ("parked"), and the log gets one TFFX line per move
-        if (to >= list.size) {
-            fun state(v: View) = if (v.visibility == View.VISIBLE) "shown" else if (v is KeepPage && v.parked) "parked" else "gone"
-            val live: List<Pair<String, () -> Unit>> = listOf(
-                "Home -> Explore" to { pages.go("/explore"); web("/explore") },
-                "Explore -> Home" to { pages.go("/"); web("/") },
-                "Home -> Recent (Explore passes by)" to { pages.go("/chats"); web("/chats") },
-                "Recent -> Home" to { pages.go("/"); web("/") },
-                "Home -> Wallet (open)" to { openWeb("/wallet", null); web("/wallet") },
-                "Wallet -> Home (back)" to { web("/", back = true) },
-            )
-            live.forEachIndexed { i, (what, act) ->
-                root.postDelayed({ say("live ${i + 1} $what"); act() }, at)
-                root.postDelayed({
-                    say("live done ${i + 1}: moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
-                        "x=${pages.home.translationX.toInt()},${explore.translationX.toInt()},${pages.recent.translationX.toInt()},${wallet.translationX.toInt()}")
-                }, at + 4000)
-                at += 7000L
-            }
         }
         root.postDelayed({ say("end") }, at)
     }
