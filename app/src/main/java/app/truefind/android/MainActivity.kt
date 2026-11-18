@@ -78,6 +78,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var navTopCss = -1f
     private var scriptAtStart = false
     private val updater by lazy { Updater(this) }
+    // native Control Center (/admin), status screens (maintenance, announcement, blocked, errors) and the notifications card
+    private lateinit var admin: AdminScreen
+    private lateinit var status: AppStatus
+    private lateinit var notify: NotifyPrompt
 
     // ── permissions asked by the web page (mic / camera for calls, location for the map) ──
     private var pendingWebPermission: PermissionRequest? = null
@@ -239,9 +243,25 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         dance.visibility = View.GONE
         root.addView(dance, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        // native Control Center (/admin), status screens and the "Never miss a call" card
+        admin = AdminScreen(this, object : AdminScreen.Nav {
+            override fun go(path: String, replace: Boolean) = pages.go(path, null, replace)
+            override fun back() { web.evaluateJavascript("history.length > 1 ? history.back() : (window.__tfNav && window.__tfNav('/home', null, true))", null) }
+        })
+        admin.visibility = View.GONE
+        root.addView(admin, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        notify = NotifyPrompt(this, root, web)
+        status = AppStatus(this, root, web, { p -> pages.go(p) }, { pages.logout() })
+        notify.navPx = { if (pages.nav.visibility == View.VISIBLE) pages.nav.barPx else 0 }
+        notify.busyElsewhere = { pages.layer.open || pages.dailySheet != null || cover || status.blocking }
+        web.addJavascriptInterface(status.Bridge(), AppStatus.NAME)
+        if (scriptAtStart) WebViewCompat.addDocumentStartJavaScript(web, AppStatus.JS, ORIGINS)
+        CrashNote.install(this)
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 backAt = android.os.SystemClock.uptimeMillis()
+                if (status.onBack()) return
                 if (dance.visibility == View.VISIBLE) {
                     if (!dance.onBack()) {
                         if (web.canGoBack()) web.goBack() else dance.nav.back()
@@ -250,6 +270,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 }
                 chatRoom?.let { r -> if (r.visibility == View.VISIBLE) { if (!r.back()) chatBack(); return } }
                 if (wallet.visibility == View.VISIBLE && wallet.onBack()) return
+                if (admin.visibility == View.VISIBLE && admin.onBack()) return
                 if (pages.onBack()) return
                 if (games.visibility == View.VISIBLE && games.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
@@ -273,6 +294,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // test mode (emulator pictures on GitHub only): the native Wallet with made-up data
         val walletScene = intent?.getStringExtra("tf_wallet").orEmpty()
         if (walletScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startWalletPreview(walletScene); return }
+        // test mode (emulator pictures on GitHub only): the Control Center / status screens / notifications card, made-up data
+        val miscScene = intent?.getStringExtra("tf_misc").orEmpty()
+        if (miscScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startMiscPreview(miscScene); return }
         // test mode (emulator screenshots on GitHub only): a native screen with made-up data, no web page
         preview = intent?.getStringExtra("tf_preview").orEmpty()
         if (preview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startPreview(); return }
@@ -328,8 +352,23 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null) }
+                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null); view.evaluateJavascript(AppStatus.JS, null) }
                 CookieManager.getInstance().flush()
+                if (::status.isInitialized) status.onPageFinished(url)
+            }
+
+            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                if (::status.isInitialized) status.onPageStarted(url)
+            }
+
+            // True Find's page could not load (no internet, server down): the native error screen, not Chrome's
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
+                val d = error.description?.toString().orEmpty()
+                if (!request.isForMainFrame || d.contains("ERR_ABORTED") || d.contains("ERR_BLOCKED")) return
+                if (::status.isInitialized) status.onLoadError(request.url.toString(), true)
+            }
+            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: android.webkit.WebResourceResponse) {
+                if (request.isForMainFrame && response.statusCode >= 500 && isOurs(request.url) && ::status.isInitialized) status.onLoadError(request.url.toString(), false)
             }
 
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
@@ -419,6 +458,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val newLogin = token != Api.token
         Api.token = token
         if (newLogin) Realtime.tokenChanged()
+        if (newLogin && ::status.isInitialized) status.tokenChanged(token.isNotEmpty())
+        if (newLogin && token.isNotEmpty()) CrashNote.sendPending(this)
         this.navTopCss = navTopCss
         this.cover = cover
         update()
@@ -458,6 +499,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun pageViews(): List<View> = buildList {
         add(explore); add(secret); add(wallet); add(games); add(dance)
         chatRoom?.let { add(it) }
+        if (::admin.isInitialized) add(admin)
         addAll(pages.pageViews)
     }
     private fun shownPage(): View? = pageViews().filter { it.visibility == View.VISIBLE && it.parent === root }
@@ -538,6 +580,33 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             games.setRoute(path, Api.token.isNotEmpty(), cover)
             if (games.active != gamesWas) web.evaluateJavascript("document.documentElement.classList.${if (games.active) "add" else "remove"}('tfgm')", null)
         }
+        // the Control Center (/admin, admins only), maintenance / announcement / blocked / error screens, "Never miss a call"
+        if (::admin.isInitialized) {
+            admin.setShown(path.trimEnd('/') == "/admin" && !cover && signedIn, search)
+            status.update(path + search, signedIn, cover)
+            notify.update(pages.onHome && pages.home.visibility == View.VISIBLE, signedIn)
+        }
+    }
+
+    /** Test mode: the Control Center, a status screen or the notifications card with made-up data (no web page, no login). */
+    private fun startMiscPreview(scene: String) {
+        preview = "misc"
+        web.loadUrl("about:blank")
+        watchFrames()
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        val ready = Runnable { android.util.Log.i("TFDBG", "preview open $open") }
+        if (scene.startsWith("admin")) {
+            admin.startPreview(scene.removePrefix("admin").removePrefix("-"))
+            root.postDelayed({ if (open.isNotEmpty()) admin.previewOpen(open); root.postDelayed(ready, if (open.isNotEmpty()) 1500L else 500L) }, 2500)
+            return
+        }
+        // the status screens and the card over the native Home (made-up data), as members see them
+        Demo.girl = intent.getBooleanExtra("tf_girl", false)
+        root.post { pages.startPreview("home", "") }
+        root.postDelayed({
+            if (scene.startsWith("notify")) notify.startPreview(scene) else status.startPreview(scene)
+            root.postDelayed(ready, 1200)
+        }, 3000)
     }
 
     /** While the native Wallet is on screen, the web page's own Wallet (.tfw) is not drawn. */
@@ -659,6 +728,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
         wallet.onAppVisible(true)
+        admin.onAppVisible(true); status.onAppVisible(true); notify.onAppVisible(true)
         if (preview.isEmpty() && !walletPreviewing && !previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
     }
@@ -669,6 +739,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(false)
         chatRoom?.onAppVisible(false)
         wallet.onAppVisible(false)
+        admin.onAppVisible(false); status.onAppVisible(false); notify.onAppVisible(false)
         dance.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()

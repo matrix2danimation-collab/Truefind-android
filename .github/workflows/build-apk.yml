@@ -19,7 +19,10 @@ jobs:
       # which emulator photo sets to take this time (ci/sets.json, e.g. ["home","chat"])
       - name: Photo sets
         id: sets
-        run: echo "list=$(cat ci/sets.json 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
+        run: |
+          # branch misc-admin-native photographs only its own screens (Control Center + status screens)
+          if [ "${{ github.ref_name }}" = misc-admin-native ]; then echo 'list=["misc","admin"]' >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "list=$(cat ci/sets.json 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
         with:
@@ -142,7 +145,10 @@ jobs:
         run: |
           cd shots
           if [ "${{ matrix.set }}" = home ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-all-native.apk; fi
-          git init -q && git checkout -q -b screens-all-${{ matrix.set }}
+          # misc-admin-native keeps its pictures on its own branches (screens-misc-…), never over another work's
+          B=screens-all-${{ matrix.set }}
+          if [ "${{ github.ref_name }}" = misc-admin-native ]; then B=screens-misc-${{ matrix.set }}; fi
+          git init -q && git checkout -q -b "$B"
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-all-${{ matrix.set }}
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$B"

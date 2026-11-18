@@ -24,3 +24,9 @@ Every push to `main` builds a test APK with GitHub Actions:
 | `CallStageView.kt` | "Finding someone…" / "Calling …" screen |
 | `AvatarArt.kt` | drawn faces for profiles without a photo (same as web) |
 | `Photos.kt`, `Api.kt`, `Person.kt`, `Ui.kt`, `Widgets.kt` | helpers |
+| `AdminScreen.kt` | native Control Center (`/admin`, admin only): black top with the section tabs, members and overview data, verification decisions |
+| `AdTabs1.kt`, `AdVerify.kt`, `AdMembers.kt`, `AdTabs2.kt`, `AdTabs3.kt` | the Control Center sections: Overview, Growth · Verify · Members + member sheet · Reports, Experts, Live, Payouts · Support, Errors, Settings, System |
+| `AdKit.kt`, `AdSheets.kt`, `AdMedia.kt`, `AdIcons.kt`, `AdSource.kt`, `AdDemo.kt` | the Control Center's look (cards, buttons, pills, sheets, photo / video viewers), its server calls, and made-up data for the test pictures |
+| `AppStatus.kt` | maintenance screen (+ the admin's "Maintenance is ON" pill), announcement card, "account is blocked", error screens ("Something went wrong", "No internet connection"), crash notes for Control Center → Errors |
+| `NotifyPrompt.kt` | "Never miss a call" card on Home: asks Android's notifications question once (again after 3 days on "Not now") |
+
