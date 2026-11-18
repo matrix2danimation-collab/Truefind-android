@@ -585,11 +585,12 @@ class CallSession(
                 if (scene.contains("theyliked")) practiceTheyLiked = true
                 if (scene.contains("camoff")) camOff = true
                 if (scene.contains("peeroff")) peerVideoOn = false else peerVideoOn = true
-                if (scene.contains("low")) previewSecsLeft = 24
+                // made-up numbers that agree with each other (10 coins/min voice, 40 video, as the practice call)
+                if (scene.contains("low")) { previewSecsLeft = 24; coins = if (video) 16 else 4 } // 24 s of talk left
                 if (scene.contains("reconnect")) netState = "RECONNECTING"
                 if (scene.contains("ended")) { practiceEnded = true; practiceEndedAt = 312; meSpeaking = false; peerSpeaking = false }
-                if (scene.contains("ranout")) ranOut = true
-                if (scene.contains("charged")) previewCharge = 50
+                if (scene.contains("ranout")) { ranOut = true; coins = 0 }
+                if (scene.contains("charged")) previewCharge = Math.round((if (video) 40 else 10) * 312 / 60.0) // 5:12 talked, as the server bills
             }
         }
         emit()
