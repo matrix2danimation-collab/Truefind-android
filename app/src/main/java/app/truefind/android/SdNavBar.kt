@@ -44,6 +44,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
         }
 
     private val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val strip = Paint().apply { color = Ui.c("#FEFEFF") }
     private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = maxOf(1f, Ui.dp(1f)); color = Color.argb(36, 214, 40, 120) }
     private val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
     private val pill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = K.hot }
@@ -114,7 +115,8 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     override fun onDraw(c: Canvas) {
         // the page under the bar ends in white: the strip behind the bar is white
-        c.drawColor(Ui.c("#FEFEFF"))
+        // (only this view's own strip: the app's pages are not clipped to their box, a fill would cover the page above)
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), strip)
         val b = bar()
         val l = b.left; val t = b.top; val r = b.right; val btm = b.bottom
         val rr = Ui.dp(24f)
