@@ -82,7 +82,9 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
             when (st) { "approved" -> "Approved"; "pending" -> "Under review"; "rejected" -> "Rejected · apply again"; else -> "Not applied" }, Lu.Radio, PC.tHost))
         g1.add(Item("verification", "Verification", if (vi.verified) "Verified" else if (vi.pending) "Under review" else "Identity and age status", Lu.ShieldCheck, PC.tVerification))
         g1.add(Item("memberships", "Memberships & premium", if (ps.premiumActive) "Secret Dating premium active" else "True Find, Secret Dating", Lu.Crown, PC.tMemberships))
-        val g2 = listOf(
+        val g2 = listOfNotNull(
+            // the app's own updates (test builds from GitHub): ask now instead of waiting for the box
+            if (BuildConfig.SELF_UPDATE) Item("update", "Check for update", "Version ${BuildConfig.VERSION_NAME} · tap to look for a new one", Lu.RefreshCw, PC.tHelp, action = { ps.pages.checkUpdate() }) else null,
             Item("privacy", "Privacy", if (ps.profile?.opt("location_visible") == false) "Location hidden" else "Location visible", Lu.Eye, PC.tPrivacy),
             Item("blocked", "Blocked users", "${ps.blocked.size} blocked", Lu.Ban, PC.tBlocked),
             Item("security", "Security & guidelines", "Stay safe on the app", Lu.Lock, PC.tSecurity),

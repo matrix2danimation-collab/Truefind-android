@@ -65,6 +65,36 @@ class Updater(private val activity: Activity) {
         }
     }
 
+    /**
+     * Settings → Check for update: asks GitHub now (no 10-minute wait) and always answers —
+     * the Update box, the GitHub login, "You have the latest version", or that it couldn't check.
+     */
+    fun checkNow() {
+        if (!BuildConfig.SELF_UPDATE) { say("Updates come from the Play Store."); return }
+        if (showing) return
+        lastCheck = System.currentTimeMillis()
+        say("Checking for update…")
+        thread {
+            val (status, info) = fetchJson(BuildConfig.UPDATE_INFO_URL)
+            main.post {
+                when {
+                    info == null && status in listOf(401, 403, 404) -> { askedLogin = false; askLogin() }
+                    info == null -> say("Couldn't check right now. Please check your internet and try again.")
+                    else -> {
+                        val code = info.optInt("versionCode", 0)
+                        val url = info.optString("apk", "")
+                        if (code > BuildConfig.VERSION_CODE && url.startsWith("https://")) offer(url)
+                        else say("You have the latest version (${BuildConfig.VERSION_NAME}).")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun say(text: String) {
+        if (!activity.isFinishing) android.widget.Toast.makeText(activity, text, android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     private fun askLogin() {
         if (activity.isFinishing || showing) return
         askedLogin = true

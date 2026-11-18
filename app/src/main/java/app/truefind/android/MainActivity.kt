@@ -177,6 +177,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // native Home, Profile and the bottom bar (they follow the web address like Explore)
         pages = NativePages(this, root, web) { update() }
         pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
+        pages.checkUpdate = { updater.checkNow() }
         pages.onLeadEnd = {
             val h = heldRoute; heldRoute = null
             if (h != null) onRoute(h)

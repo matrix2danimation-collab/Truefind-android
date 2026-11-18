@@ -242,6 +242,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     // a white flash and the web's half-moved page). Now a tap on a native screen's page switches the
     // native screens at once; the web follows underneath. If the web doesn't confirm within 1.5 s,
     // what it says wins again.
+    /** Settings → Check for update (MainActivity asks GitHub) */
+    var checkUpdate: () -> Unit = {}
     /** MainActivity follows the same address (Explore, Secret Dating) */
     var onLead: (String, String) -> Unit = { _, _ -> }
     var onLeadEnd: () -> Unit = {}
