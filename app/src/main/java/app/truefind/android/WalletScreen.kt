@@ -1911,6 +1911,7 @@ class WalletScreen(
         when (what) {
             "pick" -> pick(if (offerOn) "w49" else "p259")
             "plan" -> pickPlan("starter")
+            "planpay" -> { pickPlan("starter"); main.postDelayed({ buyPlan("starter") }, 600) }   // the plan's button with no payment gateway yet
             "soon" -> { isAdmin = false; openBuy(WData.findPack("p259")) }
             "method" -> { isAdmin = true; openBuy(WData.findPack("p259")) }
             "pack" -> { isAdmin = true; openBuy(null) }

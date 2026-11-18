@@ -32,6 +32,7 @@ shot 12-all-transactions 9 --es tf_wallet tf --es tf_open alltx
 shot 13-help 9 --es tf_wallet tf --es tf_open help
 shot 14-secret 8 --es tf_wallet secret
 shot 15-secret-plan 9 --es tf_wallet secret-plan --es tf_open plan
+shot 15b-secret-plan-pay 10 --es tf_wallet secret-plan --es tf_open planpay
 shot 16-secret-girl-verify 8 --es tf_wallet secret-girl
 shot 17-earnings 9 --es tf_wallet tf-earn --es tf_open earnings
 shot 18-earnings-pending 9 --es tf_wallet tf-earn-pending --es tf_open earnings
