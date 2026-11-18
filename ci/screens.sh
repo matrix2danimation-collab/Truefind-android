@@ -133,6 +133,11 @@ rshot() {
   [ -s "$OUT/$name.png" ] || rm -f "$OUT/$name.png"
 }
 rshot r01-recent 8
+# the list alone (no card): scrolled, empty, couldn't load, loading
+rshot r12-recent-end 3 --es tf_open scroll
+rshot r13-recent-empty 8 --es tf_scene empty
+rshot r14-recent-error 8 --es tf_scene error
+rshot r15-recent-loading 6 --es tf_scene skeleton
 # which part of the small card the test phone can't draw (each one alone first)
 rshot d01-picked-row 3 --es tf_open picked
 rshot d02-sheet-only 3 --es tf_open sheetonly
@@ -140,6 +145,7 @@ rshot d03-card-plain 3 --es tf_open cardplain
 rshot d04-card-ready 3 --es tf_open cardready
 rshot r02-recent-card 3 --es tf_open card
 rshot r03-recent-card-busy 3 --es tf_open cardbusy
+rshot r16-recent-card-error 3 --es tf_open card --es tf_scene proferror
 rshot r04-recent-full 4 --es tf_open full
 rshot r05-recent-full-end 5 --es tf_open fullscroll
 rshot r06-recent-photo 5 --es tf_open viewer
@@ -147,11 +153,6 @@ rshot r07-recent-coins 3 --es tf_open coins
 rshot r08-recent-busy 3 --es tf_open busy --es tf_scene busy
 rshot r09-recent-unfollow 4 --es tf_open unfollow
 rshot r10-recent-follow-toast 2 --es tf_open follow
-rshot r12-recent-end 3 --es tf_open scroll
-rshot r13-recent-empty 8 --es tf_scene empty
-rshot r14-recent-error 8 --es tf_scene error
-rshot r15-recent-loading 6 --es tf_scene skeleton
-rshot r16-recent-card-error 3 --es tf_open card --es tf_scene proferror
 # the phone's Back: full profile → card → list; a message closes first
 BACKS=1 rshot r17-recent-back-full 4 --es tf_open full
 BACKS=2 rshot r18-recent-back-twice 4 --es tf_open full
