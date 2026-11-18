@@ -9,24 +9,27 @@ import android.graphics.Picture
 import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
 
 /**
  * The move from one full page to the next (Home ↔ Explore ↔ Find ↔ Wallet, Profile, Games, Live Dance,
- * a chat …): the page you leave slides a little and fades away while the new one slides in under it.
+ * a chat …), the way FRND moves between its pages: the two pages sit side by side and slide together
+ * the whole width of the screen — the old one goes out one side while the new one comes in from the
+ * other, no fading. (Before: a 30 dp nudge with a fade, which on a phone looked like a quick blink.)
  *
  * - The page you leave is shown as a recording of its last look (a [Picture]: no pixels are drawn at the
  *   moment of the tap, the recording is replayed by the GPU), so the real page can be hidden at once and the
  *   new page is never waited for.
- * - Forward slides from the right, Back from the left. 30 dp of movement, 280 ms, eased out
- *   (fast start, soft stop), the way Android's own apps move between pages.
+ * - Forward (a tab to the right, or a page opened) comes in from the right, Back from the left.
+ * - 300 ms with Android's ViewPager curve (1 − (1 − t)⁵): most of the way in the first third, then a long
+ *   soft stop — measured frame by frame on the FRND video (a page is ~90% across after ~100 ms).
  * - Phones with animations turned off (Settings → Developer options, or Remove animations) get no movement.
  * - A new move while one is running finishes the old one at once.
  */
 object PageFx {
-    private const val MS = 280L
-    private val ease = PathInterpolator(0.2f, 0f, 0f, 1f)
+    private const val MS = 300L
+    /** ViewPager's scroll curve */
+    private val ease = android.animation.TimeInterpolator { t -> val u = t - 1f; u * u * u * u * u + 1f }
 
     private var running: ValueAnimator? = null
     private var snap: View? = null
@@ -54,7 +57,7 @@ object PageFx {
         if (gone == null && came == null) return
         if (off(root.context) || root.width == 0) return
         val dir = if (back) -1f else 1f
-        val shift = Ui.dp(30f)
+        val shift = root.width.toFloat()
 
         // the page you leave: its last look, on top of both pages
         var overlay: View? = null
@@ -83,25 +86,16 @@ object PageFx {
         moving = came
         if (came != null) {
             came.translationX = dir * shift
-            // no page to fade away (the web page showed before): the new page fades in itself
-            if (overlay == null) came.alpha = 0f
             came.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         }
         overlay?.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
-        val fadeIn = overlay == null
         val a = ValueAnimator.ofFloat(0f, 1f).setDuration(MS)
         a.interpolator = ease
         a.addUpdateListener { v ->
             val t = v.animatedValue as Float
-            if (came != null) {
-                came.translationX = dir * shift * (1f - t)
-                if (fadeIn) came.alpha = minOf(1f, t * 1.6f)
-            }
-            overlay?.let { o ->
-                o.translationX = -dir * shift * t
-                o.alpha = 1f - minOf(1f, t * 1.4f)
-            }
+            came?.translationX = dir * shift * (1f - t)
+            overlay?.translationX = -dir * shift * t
         }
         a.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) { if (running === animation) finish() }

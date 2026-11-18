@@ -46,6 +46,20 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
     var uploading = false; private set
     var uploadingAvatar = false; private set
     private var loading = false
+    // The last profile seen on this phone (for this sign-in): the page opens with it at once and is
+    // refreshed underneath. Before, every first open showed a blank page with a spinner for ~1 s
+    // (two server answers in a row) — seen frame by frame on the phone video.
+    private val saved = ctx.getSharedPreferences("tfprofile", 0)
+    private fun signKey() = Api.token.hashCode().toString()
+    private fun restoreSaved() {
+        if (profile != null || Api.token.isEmpty() || saved.getString("k", null) != signKey()) return
+        try {
+            me = JSONObject(saved.getString("me", null) ?: return)
+            profile = JSONObject(saved.getString("p", null) ?: return)
+        } catch (e: Exception) { me = null; profile = null }
+    }
+    /** loads the profile in the background (from Home), so the first open is instant */
+    fun prefetch() { if (profile == null && !loading && pages.signedIn) { restoreSaved(); load() } }
     private var loadError = ""
     private var loadSeq = 0
 
@@ -129,6 +143,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
             return
         }
         this.search = search; this.usr = usr
+        if (profile == null) { restoreSaved(); if (profile != null) renderPage() }
         if (!was && !loading) load()
         applyAddress()
     }
@@ -145,6 +160,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         me = null; profile = null; notifications = emptyList(); blocked = emptyList(); premium = null; followCounts = null
         loadError = ""; loadSeq++; loading = false
         pageCol.removeAllViews()
+        saved.edit().clear().apply()
     }
 
     private fun q(name: String): String? = try { Uri.parse("tf://x/" + (if (search.startsWith("?")) search else "?$search")).getQueryParameter(name) } catch (e: Exception) { null }
@@ -254,6 +270,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         loading = false
         val firstTime = profile == null || PR.s(profile, "id") != PR.s(p, "id")
         profile = p
+        if (p != null) saved.edit().putString("k", signKey()).putString("me", me?.toString()).putString("p", p.toString()).apply()
         if (p != null) {
             Api.filter("Block", JSONObject().put("blocker_id", uid)) { r -> if (seq == loadSeq) { blocked = if (r.ok) PR.list(r) else emptyList(); drawer?.refresh() } }
             Api.filter("Notification", JSONObject().put("user_id", uid)) { r -> if (seq == loadSeq) { notifications = if (r.ok) PR.sortNew(PR.list(r)).take(40) else emptyList(); drawer?.refresh() } }

@@ -244,6 +244,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     // what it says wins again.
     /** Settings → Check for update (MainActivity asks GitHub) */
     var checkUpdate: () -> Unit = {}
+    private var profilePrefetched = false
     /** MainActivity follows the same address (Explore, Secret Dating) */
     var onLead: (String, String) -> Unit = { _, _ -> }
     var onLeadEnd: () -> Unit = {}
@@ -318,6 +319,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val pageH = if (showNav && innerH > 0) innerH - nav.barPx else ViewGroup.LayoutParams.MATCH_PARENT
         sizeTo(home, pageH)
         home.setShown(showHome)
+        // Profile gets its data ready while Home shows, so opening it is instant (like FRND)
+        if (showHome && !profilePrefetched) { profilePrefetched = true; main.postDelayed({ profile.prefetch() }, 1500) }
+        if (!live) profilePrefetched = false
         profile.setShown(showProfile, search, usr)
         builder.setShown(showBuilder)
         verify.setShown(showVerify)
