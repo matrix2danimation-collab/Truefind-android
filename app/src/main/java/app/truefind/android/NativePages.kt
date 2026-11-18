@@ -20,6 +20,7 @@ import org.json.JSONObject
  * native screen shows whenever its address is open:
  *   /, /home            → Home              /profile[?…]          → Profile
  *   /profile/edit       → Edit your profile  /register/verification → Verification
+ *   /chats              → Recent (RecentScreen)
  *   /, /home, /explore, /chats → the bottom bar (the web's own bar is hidden there)
  *   /expert-talk        → Expert Talk (member side or the expert's panel)
  *   /dashboard          → My Dashboard        /secret-earnings      → Secret Dating Earning
@@ -50,6 +51,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
   css.textContent = 'html.tfnn nav.tfnav{display:none!important}'
     + 'html.tfhn .tf-tab[data-tab="home"]{visibility:hidden!important}html.tfhn .tfdc{display:none!important}'
     + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}'
+    + 'html.tfrn .tf-tab[data-tab="chats"]{visibility:hidden!important}'
     // In the app a tab switch is instant (as in other Android apps): the web's 0.3 s tab slide
     // stuttered on phones and showed half-moved pages; the page going out is simply hidden.
     + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}'
@@ -127,6 +129,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     if (h.contains('tfpn') && el.closest('.tfp-root')) return true;
     if (h.contains('tfbn') && el.closest('.tfb')) return true;
     if (h.contains('tfvn') && el.closest('.tfv')) return true;
+    if (h.contains('tfrn') && el.closest('.tf-tab[data-tab="chats"]')) return true;
     return false;
   }
   function covered(){
@@ -194,13 +197,14 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val expert = ExpertTalkScreen(act, this)
     val dash = DashboardScreen(act, this)
     val earn = SecretEarningsScreen(act, this)
+    val recent = RecentScreen(act, this)
     /** the native calls (when the web page hands its calls over) */
     var calls: CallManager? = null
     private val callPill = CallPill(act) {
         val c = calls
         if (c != null && c.enabled) c.returnToCall() else web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null)
     }
-    private val screens: List<View> get() = listOf(home, profile, builder, verify, expert, dash, earn)
+    private val screens: List<View> get() = listOf(home, profile, builder, verify, expert, dash, earn, recent)
     /** the full pages this part shows (for the move between pages) */
     val pageViews: List<View> get() = screens
     /** the Daily Free Coins pop-up while it is open */
@@ -297,7 +301,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             // the native Wallet, Games, Live Dance, Expert Talk, Dashboard and Earnings open at the tap too
             p == "/wallet" || p == "/games" || p.startsWith("/games/") ||
             p == "/dance" || p.startsWith("/dance/") || p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings" || p == "/admin" ||
-            p == "/live" || p.startsWith("/live/")
+            p == "/live" || p.startsWith("/live/") || p == "/chats"
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
         if (preview.isNotEmpty() || !gotState || !signedIn || cover) return
@@ -321,6 +325,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val onExpert: Boolean get() = p() == "/expert-talk"
     val onDash: Boolean get() = p() == "/dashboard"
     val onEarn: Boolean get() = p() == "/secret-earnings"
+    val onRecent: Boolean get() = p() == "/chats"
 
     /** the bottom bar is on screen */
     var navShown = false; private set
@@ -341,6 +346,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val showExpert = live && onExpert && !cover
         val showDash = live && onDash && !cover
         val showEarn = live && onEarn && !cover
+        val showRecent = live && onRecent && !cover
         // the web's own pages under the native ones stay hidden (not removed)
         setClass("tfnn", live && NAV_ON.contains(p()))
         setClass("tfhn", live && onHome)
@@ -350,6 +356,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         setClass("tfetn", live && onExpert)
         setClass("tfdbn", live && onDash)
         setClass("tfsen", live && onEarn)
+        setClass("tfrn", live && onRecent)
         navShown = showNav
         nav.visibility = if (showNav) View.VISIBLE else View.GONE
         nav.current = when (p()) { "/", "/home" -> "home"; "/explore" -> "explore"; "/chats" -> "recent"; else -> "" }
@@ -367,7 +374,10 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         expert.setShown(showExpert)
         dash.setShown(showDash)
         earn.setShown(showEarn, search)
-        if (!(showHome || showProfile || showBuilder || showVerify || showExpert || showDash || showEarn)) layer.closeAll()
+        recent.setShown(showRecent)
+        // the Recent list is loaded once in the background after sign-in (the first visit shows it at once)
+        if (live) recent.warm()
+        if (!(showHome || showProfile || showBuilder || showVerify || showExpert || showDash || showEarn || showRecent)) layer.closeAll()
         // "Call in progress · Return": the app's own (native calls: on every page but games, rooms and calls),
         // else the web's pill under the native screens
         val cm = calls
@@ -453,7 +463,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val here = nav.current
         if (key == here) {
             // the tab you are on: back to its top
-            when (key) { "home" -> home.scrollTop(); "explore" -> {}; else -> web.evaluateJavascript("window.__tfTop && window.__tfTop()", null) }
+            when (key) { "home" -> home.scrollTop(); "explore" -> {}; "recent" -> recent.scrollTop(); else -> web.evaluateJavascript("window.__tfTop && window.__tfTop()", null) }
             return
         }
         go(path)
@@ -469,6 +479,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         if (verify.visibility == View.VISIBLE && verify.onBack()) return true
         if (builder.visibility == View.VISIBLE && builder.onBack()) return true
         if (expert.visibility == View.VISIBLE && expert.onBack()) return true
+        if (recent.visibility == View.VISIBLE && recent.onBack()) return true
         return false
     }
 
@@ -479,6 +490,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         verify.onAppVisible(v)
         expert.onAppVisible(v)
         dash.onAppVisible(v)
+        recent.onAppVisible(v)
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
@@ -523,6 +535,11 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             }
             what.startsWith("dash") -> { path = "/dashboard"; signedIn = true; EtDemo.on = true; EtDemo.creator = what == "dash-creator"; dash.setShown(true) }
             what.startsWith("earn") -> { path = "/secret-earnings"; signedIn = true; EtDemo.on = true; earn.setShown(true, if (what == "earn-admin") "?creator=demo-c1" else "") }
+            what.startsWith("recent") -> {
+                DemoHome.recentScene = act.intent?.getStringExtra("tf_scene").orEmpty()
+                path = "/chats"; nav.visibility = View.VISIBLE; nav.current = "recent"; nav.unread = 3
+                recent.setShown(true)
+            }
         }
         // "?settings=apply|form": the address, then a test action on that screen
         val action = if (open.startsWith("?")) open.substringAfter("|", "") else open
@@ -536,6 +553,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
                 what.startsWith("et") -> expert.previewOpen(action)
                 what.startsWith("dash") -> dash.previewOpen(action)
                 what.startsWith("earn") -> earn.previewOpen(action)
+                what.startsWith("recent") -> recent.previewOpen(action)
             }
         }, 3500)
     }

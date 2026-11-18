@@ -143,7 +143,8 @@ jobs:
           name: screens-${{ matrix.set }}
           path: shots
       # the same pictures on "screens-all-<set>" (easy to read back for checking; the other work
-      # branches keep their own "screens-…" names); the first set also keeps the APK beside them
+      # branches keep their own "screens-…" names: recent-native → "screens-recent-<set>", so the
+      # all-native pictures are never overwritten); the first set also keeps the APK beside them
       - name: Keep the screenshots on a "screens-…" branch
         if: always()
         run: |

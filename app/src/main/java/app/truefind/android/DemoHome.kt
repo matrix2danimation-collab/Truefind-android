@@ -12,6 +12,8 @@ object DemoHome {
     @Volatile var on = false
     /** test runs only: the daily coins are already taken today (no pop-up over the pages) */
     @Volatile var dailyTaken = false
+    /** test screens of Recent: "" (calls), "empty", "error", "skeleton" (never answers), "busy" (the call finds them busy), "proferror" (the profile won't load) */
+    @Volatile var recentScene = ""
     private val girl get() = Demo.girl
 
     private fun iso(minAgo: Long) = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
@@ -66,9 +68,45 @@ object DemoHome {
 
     fun core(endpoint: String, payload: JSONObject): Api.Result? = if (!on) null else Api.Result(200, JSONObject().put("signed_url", "").put("file_uri", "demo://file").put("file_url", "demo://file"), null)
 
+    // ── Recent (made-up calls: every kind of row) ──
+    private class RecentDemo(val id: String, val name: String, val age: Int, val face: String, val verified: Boolean, val online: Boolean, val busy: Boolean,
+                             val seenMin: Long, val type: String, val status: String, val mine: Boolean, val atMin: Long)
+    private val RECENT = listOf(
+        RecentDemo("u1", "Simran Kaur", 24, "g01", true, true, false, 1, "video", "ended", true, 12),
+        RecentDemo("u2", "Kavya", 22, "g02", false, true, true, 1, "voice", "ended", false, 65),
+        RecentDemo("u3", "Riya Sharma", 27, "g03", true, false, false, 185, "voice", "missed", false, 200),
+        RecentDemo("u4", "Meher", 25, "g05", true, false, false, 60 * 26, "voice", "missed", true, 60 * 27),
+        RecentDemo("u5", "Ishita", 23, "", false, false, false, 60 * 50, "video", "declined", false, 60 * 30),
+        RecentDemo("u6", "Pooja Verma", 26, "g07", true, true, false, 2, "voice", "declined", true, 60 * 24 * 3),
+        RecentDemo("u7", "Naina", 21, "g08", false, false, false, -1, "video", "ended", false, 60 * 24 * 6),
+    )
+    private fun recentEntries(): JSONArray = JSONArray().apply {
+        for (r in RECENT) put(JSONObject().put("user_id", r.id).put("name", r.name).put("age", r.age)
+            .put("photo", if (r.face.isEmpty()) "" else "asset:home/faces/${r.face}.jpg").put("photo_thumb", "")
+            .put("verified", r.verified).put("online", r.online).put("busy", r.busy).put("last_active", if (r.seenMin < 0) "" else iso(r.seenMin))
+            .put("last_call", JSONObject().put("type", r.type).put("status", r.status).put("mine", r.mine).put("at", iso(r.atMin))))
+    }
+    private fun recentProfile(id: String): JSONObject {
+        val r = RECENT.firstOrNull { it.id == id } ?: RECENT[0]
+        val photos = JSONArray()
+        if (r.face.isNotEmpty()) for (f in listOf(r.face, "g09", "g10")) photos.put(JSONObject().put("uri", "asset:home/faces/$f.jpg").put("thumb", ""))
+        return JSONObject().put("user_id", r.id).put("name", r.name).put("age", r.age).put("gender", "female").put("city", "Rohtak").put("state", "Haryana")
+            .put("photo", if (r.face.isEmpty()) "" else "asset:home/faces/${r.face}.jpg").put("photo_thumb", "").put("photos", photos)
+            .put("bio", "Simple girl, family first. Love long drives, chai and old songs.").put("interests", JSONArray(listOf("Music", "Travel", "Movies", "Romantic Talk")))
+            .put("verified", r.verified).put("creator", true).put("host", false).put("online", r.online).put("busy", r.busy)
+            .put("last_active", if (r.seenMin < 0) "" else iso(r.seenMin)).put("joined", "2026-11-02T10:15:00.000")
+            .put("followers", 128).put("following", 36).put("i_follow", r.id == "u2").put("follows_me", true).put("me", false)
+    }
+
     fun function(name: String, payload: JSONObject): Api.Result? {
         if (!on) return null
         val d: JSONObject = when (name) {
+            "getRecentActivity" -> when (recentScene) {
+                "skeleton" -> { try { Thread.sleep(60_000) } catch (e: InterruptedException) { }; JSONObject().put("me", "demo-me").put("entries", JSONArray()) }
+                "error" -> return Api.Result(500, JSONObject().put("error", "Something went wrong. Please try again."), "Something went wrong. Please try again.")
+                "empty" -> JSONObject().put("me", "demo-me").put("entries", JSONArray())
+                else -> JSONObject().put("me", "demo-me").put("entries", recentEntries())
+            }
             "getWallet" -> JSONObject().put("wallet", JSONObject().put("coins", 1250).put("earned_coins", 0))
             "claimDailyCoins" -> if (payload.optBoolean("peek")) JSONObject().put("ready", !dailyTaken).put("amount", 10).put("streak", JSONObject().put("day", 3).put("done", 2).put("bonus_amount", 50))
                 else JSONObject().put("claimed", 10).put("amount", 10).put("next_at", iso(-24 * 60)).put("streak", JSONObject().put("day", 4).put("done", 3).put("bonus_amount", 50)).put("wallet", JSONObject().put("coins", 1260))
@@ -77,6 +115,8 @@ object DemoHome {
             "getSecretActivity" -> JSONObject().put("counts", JSONObject().put("total", 3))
             "follow" -> when (payload.optString("action")) {
                 "counts" -> JSONObject().put("followers", 128).put("following", 36)
+                "profile" -> if (recentScene == "proferror") return Api.Result(500, JSONObject().put("error", "Something went wrong. Please try again."), "Something went wrong. Please try again.")
+                    else JSONObject().put("profile", recentProfile(payload.optString("user_id")))
                 "list" -> JSONObject().put("followers", 128).put("following", 36).put("people", JSONArray().apply {
                     for (i in 0 until 6) { val p = person(i, !girl); put(JSONObject().put("user_id", p.optString("user_id")).put("name", p.optString("name").substringBefore(" ")).put("city", p.optString("city")).put("state", "Haryana")
                         .put("online", i % 2 == 0).put("verified", i % 3 == 0).put("i_follow", i % 2 == 1).put("follows_me", payload.optString("kind") == "followers" || i == 0)) }
@@ -98,7 +138,8 @@ object DemoHome {
                 payload.optJSONObject("updates")?.let { u -> u.keys().forEach { k -> m.put(k, u.get(k)) } }
                 payload.optJSONObject("apply")?.let { a -> if (a.optString("kind") == "host") m.put("host_applied_at", iso(0)).put("host_status", "pending") else m.put("creator_submitted_at", iso(0)).put("creator_status", "pending") }
             })
-            "startCall" -> return Api.Result(402, JSONObject().put("error", "insufficient_coins").put("rate", 40).put("balance", 12), "insufficient_coins")
+            "startCall" -> return if (recentScene == "busy") Api.Result(409, JSONObject().put("error", "busy"), "busy")
+                else Api.Result(402, JSONObject().put("error", "insufficient_coins").put("rate", 40).put("balance", 12), "insufficient_coins")
             else -> JSONObject().put("ok", true)
         }
         return Api.Result(200, d, null)

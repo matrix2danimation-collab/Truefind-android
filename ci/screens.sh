@@ -68,6 +68,101 @@ shot() {
 }
 # the native Control Center and status screens (their own list, from the misc-admin-native work)
 if [ "$SET" = misc ] || [ "$SET" = admin ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
+# ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
+if [ "$SET" = recent ]; then
+R="--es tf_preview recent"
+T() { timeout "$@"; }   # every phone command has a time limit: one stuck command can't hold up the rest
+SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+RESTARTS=0
+alive() { [ "$(T 10 adb get-state 2>/dev/null | tr -d '\r')" = device ]; }
+host() { { echo "== $1 $(date +%T)"; free -m | head -2; ps -eo pid,rss,vsz,pcpu,comm --sort=-rss | head -4; } >> "$OUT/host.txt"; }
+# the phone (emulator) stopped: write down what the computer saw, start the phone again and put the app back on it
+restart() {
+  RESTARTS=$((RESTARTS+1))
+  { echo "== $1: the phone stopped ($(date +%T)) — starting it again (#$RESTARTS)"; free -m | head -2
+    sudo dmesg 2>/dev/null | grep -iE "oom|killed process|out of memory|qemu|segfault|general protection|emulator" | tail -15; } >> "$OUT/problems.txt"
+  [ $RESTARTS -gt 6 ] && { echo "too many stops: the rest is skipped" >> "$OUT/problems.txt"; return 1; }
+  pkill -9 -f qemu-system 2>/dev/null; pkill -9 -f "emulator/emulator" 2>/dev/null; sleep 3
+  T 20 adb kill-server > /dev/null 2>&1; T 20 adb start-server > /dev/null 2>&1
+  nohup "$SDK/emulator/emulator" -port 5554 -avd test -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot > "$OUT/emulator-$RESTARTS.log" 2>&1 &
+  T 240 adb wait-for-device || return 1
+  local t=0
+  while [ $t -lt 300 ]; do [ "$(T 10 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ] && break; sleep 3; t=$((t+3)); done
+  sleep 5
+  for k in window_animation_scale transition_animation_scale animator_duration_scale; do T 15 adb shell settings put global $k 0; done
+  T 15 adb shell input keyevent 82
+  T 15 adb shell settings put system screen_off_timeout 600000
+  T 15 adb shell settings put global hide_error_dialogs 1
+  T 240 adb install -r "$APK" > /dev/null || return 1
+  echo "   phone back at $(date +%T)" >> "$OUT/problems.txt"
+}
+rwait() { local t=0; while [ $t -lt "$2" ]; do T 10 adb logcat -d -s TFDBG:I 2>/dev/null | grep -q "$1" && return 0; alive || return 1; sleep 1; t=$((t+1)); done; echo "  (no '$1' after $2 s)" >> "$OUT/start.txt"; }
+rshot() {
+  local name="$1"; local wait="$2"; shift 2
+  [ $RESTARTS -gt 6 ] && return 0
+  alive || restart "$name" || return 0
+  host "$name"
+  T 30 adb shell am force-stop $PKG
+  T 30 adb shell pm clear $PKG > /dev/null
+  sleep 1
+  T 15 adb logcat -c
+  # everything the phone writes while this screen opens (kept only if something goes wrong)
+  T 300 adb logcat -v threadtime -b main,system,crash > "$OUT/$name.live.txt" 2>&1 &
+  local lc=$!
+  echo "== $name" >> "$OUT/start.txt"
+  T 90 adb shell am start -W -n $PKG/.MainActivity $R "$@" >> "$OUT/start.txt" 2>&1
+  case "$*" in
+    *tf_open*) rwait "preview open" 60; sleep "$wait" ;;
+    *) rwait "frames so far" 60; sleep "$wait" ;;
+  esac
+  # BACKS=n: the phone's Back n times first (each closes the top pop-up)
+  for _ in $(seq 1 "${BACKS:-0}"); do T 15 adb shell input keyevent 4; sleep 1.5; done
+  local bad=0
+  if alive; then
+    T 15 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+    T 60 adb exec-out screencap -p > "$OUT/$name.png" || { echo "$name: no picture" >> "$OUT/problems.txt"; bad=1; }
+    # the app must still be open (Back must never close it while a pop-up is open)
+    T 20 adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG" || { echo "$name: app not on top" >> "$OUT/problems.txt"; bad=1; }
+    T 20 adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+    [ -s "$OUT/$name.crash.txt" ] && bad=1 || rm -f "$OUT/$name.crash.txt"
+    { echo "== $name"; T 20 adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+    { echo "== $name"; T 20 adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
+  else
+    echo "$name: the phone stopped while this screen was open" >> "$OUT/problems.txt"; bad=1
+  fi
+  sleep 1; kill $lc 2>/dev/null; wait $lc 2>/dev/null
+  [ $bad = 1 ] || rm -f "$OUT/$name.live.txt"
+  [ -s "$OUT/$name.png" ] || rm -f "$OUT/$name.png"
+}
+rshot r01-recent 8
+# the list alone (no card): scrolled, empty, couldn't load, loading
+rshot r12-recent-end 3 --es tf_open scroll
+rshot r13-recent-empty 8 --es tf_scene empty
+rshot r14-recent-error 8 --es tf_scene error
+rshot r15-recent-loading 6 --es tf_scene skeleton
+# which part of the small card the test phone can't draw (each one alone first)
+rshot d01-picked-row 3 --es tf_open picked
+rshot d02-sheet-only 3 --es tf_open sheetonly
+rshot d03-card-plain 3 --es tf_open cardplain
+rshot d04-card-ready 3 --es tf_open cardready
+rshot r02-recent-card 3 --es tf_open card
+rshot r03-recent-card-busy 3 --es tf_open cardbusy
+rshot r16-recent-card-error 3 --es tf_open card --es tf_scene proferror
+rshot r04-recent-full 4 --es tf_open full
+rshot r05-recent-full-end 5 --es tf_open fullscroll
+rshot r06-recent-photo 5 --es tf_open viewer
+rshot r07-recent-coins 3 --es tf_open coins
+rshot r08-recent-busy 3 --es tf_open busy --es tf_scene busy
+rshot r09-recent-unfollow 4 --es tf_open unfollow
+rshot r10-recent-follow-toast 2 --es tf_open follow
+# the phone's Back: full profile → card → list; a message closes first
+BACKS=1 rshot r17-recent-back-full 4 --es tf_open full
+BACKS=2 rshot r18-recent-back-twice 4 --es tf_open full
+BACKS=1 rshot r19-recent-back-message 3 --es tf_open coins
+BACKS=1 rshot r20-recent-back-photo 5 --es tf_open viewer
+alive && T 30 adb logcat -d > "$OUT/logcat-last.txt"
+exit 0
+fi
 # the native Wallet (its own list of screens, from the Wallet work)
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native calls (their own list of screens, from the calls work)

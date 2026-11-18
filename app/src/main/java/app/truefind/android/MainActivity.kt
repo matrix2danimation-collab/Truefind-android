@@ -52,6 +52,8 @@ import org.json.JSONObject
  *    ClueMe and Dress Code, whenever the address is /games or a game's address.
  *  - Signing in is native too (LoginLayer): Get Started / mobile OTP (/welcome), /login, /register,
  *    forgot / reset password, /mfa, the old profile pages and /delete-account — the same Base44 calls.
+ *  - Recent is native too (RecentScreen, inside NativePages) whenever the address is /chats:
+ *    the recent calls, a person's small card and full profile, calling again.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -919,7 +921,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun startPreview() {
         if (preview == "fx") { startFxTest(); return }
         if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify") ||
-            preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn")) {
+            preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn") || preview.startsWith("recent")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             web.loadUrl("about:blank")
             watchFrames()
