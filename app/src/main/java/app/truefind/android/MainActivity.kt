@@ -29,6 +29,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import app.truefind.android.games.GameApi
+import app.truefind.android.games.GameVoice
+import app.truefind.android.games.GamesDemo
+import app.truefind.android.games.GamesLayer
 import org.json.JSONObject
 
 /**
@@ -43,6 +47,8 @@ import org.json.JSONObject
  *    Dating bar; one chat (/chat/:id) in ChatRoom, over the whole screen.
  *  - The Wallet is native too (WalletScreen), full screen, whenever the address
  *    is /wallet (True Find and Secret Dating wallets, Earnings, payments).
+ *  - Games are native too (GamesLayer): the Games page, Heart Chase Boxes, Mood Changer,
+ *    ClueMe and Dress Code, whenever the address is /games or a game's address.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -59,6 +65,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var chatRoom: ChatRoom? = null
     private lateinit var wallet: WalletScreen
     private var walletPreviewing = false
+    private lateinit var games: GamesLayer
     private var path = "/"
     private var search = ""
     /** an address the web sent while a native tap was leading (applied when the lead ends) */
@@ -106,6 +113,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (uri == null) { cb(null, ""); return@registerForActivityResult }
         val type = contentResolver.getType(uri) ?: "image/jpeg"
         Api.async({ try { contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (e: Exception) { null } }) { bytes -> cb(bytes, type) }
+    }
+    // the microphone for the games' voice (native Agora)
+    private var micDone: ((Boolean) -> Unit)? = null
+    private val askMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        val cb = micDone
+        micDone = null
+        cb?.invoke(ok)
     }
 
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
@@ -174,11 +188,23 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         wallet.visibility = View.GONE
         root.addView(wallet, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        games = GamesLayer(this, { p, state -> openWeb(p, state) }, { fallback -> if (web.canGoBack()) web.goBack() else openWeb(fallback, null) })
+        root.addView(games, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        GameVoice.micAsker = { done ->
+            if (has(Manifest.permission.RECORD_AUDIO)) done(true)
+            else {
+                micDone?.invoke(false)
+                micDone = done
+                try { askMic.launch(Manifest.permission.RECORD_AUDIO) } catch (e: Exception) { micDone = null; done(false) }
+            }
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 chatRoom?.let { r -> if (r.visibility == View.VISIBLE) { if (!r.back()) chatBack(); return } }
                 if (wallet.visibility == View.VISIBLE && wallet.onBack()) return
                 if (pages.onBack()) return
+                if (games.visibility == View.VISIBLE && games.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty() || walletPreviewing) { finish(); return }
@@ -187,6 +213,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
+        // test mode (emulator pictures on GitHub only): a native games screen with made-up data
+        val gamesPreview = intent?.getStringExtra("tf_games").orEmpty()
+        if (gamesPreview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startGamesPreview(gamesPreview); return }
         // test mode (emulator pictures on GitHub only): the native Wallet with made-up data
         val walletScene = intent?.getStringExtra("tf_wallet").orEmpty()
         if (walletScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startWalletPreview(walletScene); return }
@@ -381,6 +410,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val showWallet = path.trimEnd('/') == "/wallet" && !cover && Api.token.isNotEmpty() && !wallet.wantsWeb
         if (showWallet != (wallet.visibility == View.VISIBLE)) web.evaluateJavascript(walletCss(showWallet), null)
         wallet.setShown(showWallet, search.removePrefix("?"))
+        if (!previewing) {
+            val gamesWas = games.active
+            games.setRoute(path, Api.token.isNotEmpty(), cover)
+            if (games.active != gamesWas) web.evaluateJavascript("document.documentElement.classList.${if (games.active) "add" else "remove"}('tfgm')", null)
+        }
     }
 
     /** While the native Wallet is on screen, the web page's own Wallet (.tfw) is not drawn. */
@@ -473,6 +507,28 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         root.postDelayed(tick, 2000)
     }
 
+    private var previewing = false
+
+    /** Test mode: the games with made-up answers (GamesDemo), no web page, no login. */
+    private fun startGamesPreview(scene: String) {
+        previewing = true
+        GameApi.demo = true
+        GamesDemo.scene = scene
+        GamesDemo.girl = intent.getBooleanExtra("tf_girl", false)
+        web.loadUrl("about:blank")
+        val path = when {
+            scene.startsWith("hc") -> "/games/heart-chase"
+            scene.startsWith("mc") -> "/games/mood-changer"
+            scene.startsWith("cm") -> "/games/clue-me"
+            else -> "/games"
+        }
+        games.setRoute(path, true, false)
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        if (open.isNotEmpty()) root.postDelayed({ games.open(open) }, 2500)
+        // the test phone loads the games' voice engine once (no call), see GameVoice.selfCheck
+        if (scene == "voice-check") root.postDelayed({ android.util.Log.i("TFVOICE", app.truefind.android.games.GameVoice.selfCheck(this)) }, 1500)
+    }
+
     override fun onResume() {
         super.onResume()
         explore.onAppVisible(true)
@@ -480,7 +536,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
         wallet.onAppVisible(true)
-        if (preview.isEmpty() && !walletPreviewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
+        if (preview.isEmpty() && !walletPreviewing && !previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
@@ -504,6 +560,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onDestroy() {
+        games.shutdown()
         root.removeView(web)
         web.destroy()
         super.onDestroy()

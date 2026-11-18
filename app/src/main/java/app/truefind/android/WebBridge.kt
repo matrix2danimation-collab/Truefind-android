@@ -42,9 +42,11 @@ class WebBridge(private val listener: Listener) {
 (function(){
   if (window.__tfNativeInit) return; window.__tfNativeInit = true;
   window.TFNativeApp = true;
+  window.TFNativeGames = 1; // the app draws the games itself (the web game pages stay quiet)
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
-  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}html.tfcr .cr{visibility:hidden!important}';
+  css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}html.tfcr .cr{visibility:hidden!important}'
+    + 'html.tfgm #root .tg,html.tfgm #root .hc,html.tfgm #root .mc{display:none!important}';
   (document.head || document.documentElement).appendChild(css);
   var lastPath = '';
   function sendRoute(){ var p = (location.pathname || '/') + (location.search || ''); if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
