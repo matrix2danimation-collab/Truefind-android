@@ -299,7 +299,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         notify = NotifyPrompt(this, root, web)
         status = AppStatus(this, root, web, { p -> pages.go(p) }, { pages.logout() })
         notify.navPx = { if (pages.nav.visibility == View.VISIBLE) pages.nav.barPx else 0 }
-        notify.busyElsewhere = { pages.layer.open || pages.dailySheet != null || cover || status.blocking }
+        notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || cover || status.blocking }
         web.addJavascriptInterface(status.Bridge(), AppStatus.NAME)
         if (scriptAtStart) WebViewCompat.addDocumentStartJavaScript(web, AppStatus.JS, ORIGINS)
         CrashNote.install(this)
@@ -663,6 +663,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val navBefore = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
         val fromPath = fxPath
         val fromIdx = fxIdx
+        PageFx.release()
         updateNow()
         PageFx.reassert()
         val after = shownPage()
@@ -889,7 +890,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             if (back) backAt = uptime()
             root.postDelayed({ val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else ""); onRoute(p) }, if (back) 0L else 120L)
         }
-        // each move stops part of the way (45 %) for a picture ("fx frozen N"), then ends 4 s later
+        // each move stops part of the way (45 %) for a picture ("fx frozen N"), then ends 9 s later (steps 24 s apart:
+        // the test phone takes several seconds per picture)
         var n = 0
         fun frozenStep(what: String, act: () -> Unit) {
             n++
@@ -898,22 +900,22 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             PageFx.freezeAt = 0.45f
             act()
             root.postDelayed({ say("frozen $k"); }, 3000)
-            root.postDelayed({ PageFx.finish(); say("done $k") }, 8000)
+            root.postDelayed({ PageFx.finish(); say("done $k") }, 12000)
         }
         val steps: List<Pair<Long, () -> Unit>> = listOf(
             1500L to { say("start"); web("/") },
             6000L to { frozenStep("Home -> Explore (tab)") { pages.go("/explore"); web("/explore") } },
-            18000L to { frozenStep("Explore -> Home (tab back)") { pages.go("/"); web("/") } },
-            30000L to { frozenStep("Home -> Profile (open)") { pages.go("/profile"); web("/profile") } },
-            42000L to { frozenStep("Profile -> Home (back)") { web("/", back = true) } },
-            54000L to { frozenStep("Home -> Wallet (open)") { openWeb("/wallet", null); web("/wallet") } },
-            66000L to { frozenStep("Wallet -> Home (back)") { web("/", back = true) } },
-            78000L to { frozenStep("Home -> Recent web page (tab)") { pages.go("/chats"); web("/chats") } },
-            90000L to { frozenStep("Recent -> Home (tab back)") { pages.go("/"); web("/") } },
-            102000L to { frozenStep("Home -> Secret Dating (open)") { openWeb("/secret-app", null); web("/secret-app") } },
-            114000L to { frozenStep("Secret Dating Home -> Map (its own tab)") { web("/dating") } },
-            126000L to { frozenStep("Secret Dating -> Home (back)") { web("/", back = true) } },
-            138000L to { say("end") },
+            30000L to { frozenStep("Explore -> Home (tab back)") { pages.go("/"); web("/") } },
+            54000L to { frozenStep("Home -> Profile (open)") { pages.go("/profile"); web("/profile") } },
+            78000L to { frozenStep("Profile -> Home (back)") { web("/", back = true) } },
+            102000L to { frozenStep("Home -> Wallet (open)") { openWeb("/wallet", null); web("/wallet") } },
+            126000L to { frozenStep("Wallet -> Home (back)") { web("/", back = true) } },
+            150000L to { frozenStep("Home -> Recent web page (tab)") { pages.go("/chats"); web("/chats") } },
+            174000L to { frozenStep("Recent -> Home (tab back)") { pages.go("/"); web("/") } },
+            198000L to { frozenStep("Home -> Secret Dating (open)") { openWeb("/secret-app", null); web("/secret-app") } },
+            222000L to { frozenStep("Secret Dating Home -> Map (its own tab)") { web("/dating") } },
+            246000L to { frozenStep("Secret Dating -> Home (back)") { web("/", back = true) } },
+            270000L to { say("end") },
         )
         for ((at, step) in steps) root.postDelayed({ step() }, at)
     }

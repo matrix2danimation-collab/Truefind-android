@@ -72,6 +72,11 @@ object PageFx {
      * The app has just set which pages show: the pages still moving stay on screen until the move ends,
      * and then get what the app set last (a screen that was told "hidden" once isn't told again).
      */
+    /**
+     * Before the app sets which pages show again: the pages still moving get back what the app set last, so a
+     * screen that only hides itself once ("already hidden: nothing to do") isn't taken for one that should show.
+     */
+    fun release() { if (running) for (v in held) wanted[v]?.let { v.visibility = it } }
     fun reassert() { if (running) for (v in held) { wanted[v] = v.visibility; if (v.visibility != View.VISIBLE) v.visibility = View.VISIBLE } }
 
     /** test runs only: the next move stops at this point (0..1) until [finish], so it can be photographed */

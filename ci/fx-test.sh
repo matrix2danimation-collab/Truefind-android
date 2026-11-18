@@ -32,8 +32,8 @@ waitlog "fx step start" 90
 sleep 3; adb exec-out screencap -p > "$OUT/fx-00-start.png"
 for n in 1 2 3 4 5 6 7 8 9 10 11; do
   N=$(printf %02d $n)
-  if waitlog "fx step frozen $n\$" 75; then sleep 2; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; adb exec-out screencap -p > "$OUT/fx-$N-mid.png"; fi
-  if waitlog "fx step done $n\$" 75; then sleep 3; adb exec-out screencap -p > "$OUT/fx-$N-end.png"; fi
+  if waitlog "fx step frozen $n\$" 90; then sleep 1; echo "$(date +%T.%N | cut -c1-12) fx-$N-mid" >> "$OUT/shots.txt"; adb exec-out screencap -p > "$OUT/fx-$N-mid.png"; fi
+  if waitlog "fx step done $n\$" 90; then sleep 2; echo "$(date +%T.%N | cut -c1-12) fx-$N-end" >> "$OUT/shots.txt"; adb exec-out screencap -p > "$OUT/fx-$N-end.png"; fi
 done
 adb logcat -d -s TFDBG:I TFFX:I AndroidRuntime:E | grep -v "frames so far" > "$OUT/fx-log.txt"
 adb logcat -d -b crash > "$OUT/crash-log.txt"
