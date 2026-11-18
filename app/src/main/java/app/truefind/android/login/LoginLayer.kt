@@ -156,6 +156,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         mfaWeb = o.optBoolean("mfaWeb")
         LoginApi.here = origin + path + search
         gotState = true
+        stale = false; main.removeCallbacks(unstale)
         foreign = false
         refresh()
     }
@@ -175,14 +176,25 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         if (preview.isNotEmpty()) return
         val u = try { Uri.parse(url) } catch (e: Exception) { null }
         val ours = u != null && u.scheme == "https" && MainActivity.ORIGINS.contains("https://${u.host}")
-        if (!finished) { pageLoading = true; foreign = !ours && url.startsWith("http"); gotState = false; mfaWeb = false }
-        else { pageLoading = false; pageDoneAt = SystemClock.uptimeMillis() }
+        if (!finished) {
+            pageLoading = true; foreign = !ours && url.startsWith("http"); mfaWeb = false
+            // a new page of the app: the page on screen stays until the new one says where it is (no flash)
+            if (ours) stale = true
+        } else {
+            pageLoading = false; pageDoneAt = SystemClock.uptimeMillis()
+            // a page that never says where it is (not the app): let it show
+            main.removeCallbacks(unstale); if (stale) main.postDelayed(unstale, 2500)
+        }
         refresh()
     }
+    /** a new page started and has not said where it is yet */
+    private var stale = false
+    private val unstale = Runnable { if (stale) { stale = false; gotState = false; refresh() } }
 
     // ═════════════════ which page shows ═════════════════
     private fun wantedKey(): String {
         if (cover || foreign || !gotState) return ""
+        if (stale) return if (page != null) pageKey else ""
         val p = norm(path)
         val key = PAGES[p]
         if (key != null) {

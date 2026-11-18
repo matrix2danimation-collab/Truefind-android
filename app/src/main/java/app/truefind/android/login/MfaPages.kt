@@ -466,20 +466,18 @@ internal class MfaManageView(ctx: Context, private val layer: LoginLayer, privat
         if (status == null && err == null) items.add(FrameLayout(ctx).apply { addView(darkSpinner(ctx, 24f), LayoutParams(-2, -2, Gravity.CENTER)) })
         status?.let { st ->
             val methods = st.optJSONArray("methods")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
-            for ((id, name, icon, desc) in listOf(
+            for ((id, name, ico, desc) in listOf(
                 arrayOf("totp", "Authenticator app", LK.I.Smartphone, "Use an app like Google Authenticator or Duo to generate secure sign-in codes."),
                 arrayOf("sms", "Text messages", LK.I.MessageSquare, "Get sign-in codes sent to your phone by text message."))) {
                 val enrolled = methods.contains(id)
-                val row = LK.row(ctx).apply { background = CssBox(Color.TRANSPARENT, 16f, 1f, AK.input); setPadding(Ui.dpi(17f), Ui.dpi(17f), Ui.dpi(17f), Ui.dpi(17f)) }
-                row.addView(ImageView(ctx).apply { setImageDrawable(LK.lu(icon, AK.mutedFg, 20f)) }, LK.lp(Ui.dpi(20f), Ui.dpi(20f), r = 12f))
+                val icon = ImageView(ctx).apply { setImageDrawable(LK.lu(ico, AK.mutedFg, 20f)) }
                 val t = LK.col(ctx)
                 t.addView(LK.t(ctx, name, 16f, AK.fg, false, 1.5f))
                 t.addView(LK.t(ctx, if (enrolled) (if (id == "sms" && st.optString("phone_hint").isNotEmpty()) "Enabled · ${st.optString("phone_hint")}" else "Enabled") else desc, 14f, AK.mutedFg, false, 20f / 14f))
-                row.addView(t, LK.lp(0, -2, weight = 1f))
-                val btns = LK.col(ctx, Gravity.END)
+                val btns = LK.row(ctx)
                 btns.addView(ABtn(ctx, if (enrolled) "Replace" else "Enable", "outline", 32f, size = 12f, bold = false).apply { setPadding(Ui.dpi(12f), 0, Ui.dpi(12f), 0); setOnClickListener { setupView(id) } })
-                if (enrolled) btns.addView(ABtn(ctx, "Disable", "ghost", 32f, size = 12f, bold = false).apply { setPadding(Ui.dpi(12f), 0, Ui.dpi(12f), 0); setOnClickListener { disableView(id) } }, LK.lp(t = 8f))
-                row.addView(btns, LK.lp(l = 12f))
+                if (enrolled) btns.addView(ABtn(ctx, "Disable", "ghost", 32f, size = 12f, bold = false).apply { setPadding(Ui.dpi(12f), 0, Ui.dpi(12f), 0); setOnClickListener { disableView(id) } }, LK.lp(l = 8f))
+                val row = MethodRow(ctx, icon, t, btns).apply { background = CssBox(Color.TRANSPARENT, 16f, 1f, AK.input); setPadding(Ui.dpi(17f), Ui.dpi(17f), Ui.dpi(17f), Ui.dpi(17f)) }
                 items.add(row)
             }
         }
@@ -573,7 +571,7 @@ internal class MfaPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer, n
             for ((id, flag, name) in listOf(Triple("google", "enable_google_login", "Google"), Triple("microsoft", "enable_microsoft_login", "Microsoft"), Triple("facebook", "enable_facebook_login", "Facebook"), Triple("apple", "enable_apple_login", "Apple"))) {
                 val on = if (o.has(flag) && !o.isNull(flag)) o.optBoolean(flag) else id == "google"
                 if (!on) continue
-                items.add(ABtn(ctx, "Continue with $name", "outline", 48f, bold = false, icon = if (id == "google") LK.art(AK.GOOGLE, 20f) else null, iconGap = 8f).apply {
+                items.add(ABtn(ctx, "Continue with $name", "outline", 48f, bold = false, icon = if (id == "google") LK.art(AK.GOOGLE, 16f) else null, iconGap = 16f).apply {
                     setOnClickListener { GoogleSignIn.provider(layer, id, returnTo, true) { res -> if (res == "fail") { err = MfaSession.Err("Unable to load sign-in options", 0); showErr() } } }
                 })
             }
@@ -612,5 +610,41 @@ internal class MfaPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer, n
             variant.contains("enroll") -> flow(JSONObject().put("mfa_session_token", "demo").put("next_step", "enroll"))
             variant.contains("manage") -> manage(MfaSession(layer, JSONObject().put("mfa_session_token", "demo")))
         }
+    }
+}
+
+/**
+ * One method in the two-factor settings (flex flex-wrap items-center gap-3): icon, the words (at least 160 wide)
+ * and the buttons; on a narrow screen the buttons drop below, to the right, instead of squeezing the words.
+ */
+@SuppressLint("ViewConstructor")
+internal class MethodRow(ctx: Context, private val icon: View, private val text: View, private val actions: View) : ViewGroup(ctx) {
+    private var wrapped = false
+    init { addView(icon); addView(text); addView(actions) }
+    override fun onMeasure(wSpec: Int, hSpec: Int) {
+        val w = MeasureSpec.getSize(wSpec)
+        val inner = w - paddingLeft - paddingRight
+        val gap = Ui.dpi(12f)
+        val un = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+        icon.measure(MeasureSpec.makeMeasureSpec(Ui.dpi(20f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(Ui.dpi(20f), MeasureSpec.EXACTLY))
+        actions.measure(un, un)
+        val rest = inner - icon.measuredWidth - gap - gap - actions.measuredWidth
+        wrapped = rest < Ui.dpi(160f)
+        val tw = if (wrapped) inner - icon.measuredWidth - gap else rest
+        text.measure(MeasureSpec.makeMeasureSpec(tw.coerceAtLeast(0), MeasureSpec.EXACTLY), un)
+        val line1 = maxOf(icon.measuredHeight, text.measuredHeight, if (wrapped) 0 else actions.measuredHeight)
+        val h = line1 + (if (wrapped) gap + actions.measuredHeight else 0)
+        setMeasuredDimension(w, h + paddingTop + paddingBottom)
+    }
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        val gap = Ui.dpi(12f)
+        val line1 = maxOf(icon.measuredHeight, text.measuredHeight, if (wrapped) 0 else actions.measuredHeight)
+        var x = paddingLeft
+        val y = paddingTop
+        fun put(v: View, vx: Int, top: Int, lineH: Int) { val vy = top + (lineH - v.measuredHeight) / 2; v.layout(vx, vy, vx + v.measuredWidth, vy + v.measuredHeight) }
+        put(icon, x, y, line1); x += icon.measuredWidth + gap
+        put(text, x, y, line1)
+        val ax = (r - l) - paddingRight - actions.measuredWidth
+        if (wrapped) put(actions, ax, y + line1 + gap, actions.measuredHeight) else put(actions, ax, y, line1)
     }
 }

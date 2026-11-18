@@ -149,7 +149,7 @@ internal object LK {
     /** false in the test pictures (the keyboard would cover half of the page) */
     var autoKeyboard = true
     /** a page puts the cursor in its first box: the keyboard comes up with it, like the web's focus() after a tap */
-    fun autoFocus(v: View) { if (autoKeyboard) showKeyboard(v) else v.requestFocus() }
+    fun autoFocus(v: View) { if (autoKeyboard) showKeyboard(v) }
 
     fun showKeyboard(v: View) {
         v.requestFocus()

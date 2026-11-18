@@ -154,7 +154,7 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         val top = LK.row(ctx)
         top.addView(WK.icoView(ctx, svg24("""<rect x="3" y="7" width="12" height="10" rx="2.5" fill="rgba(255,255,255,0.75)"/><path d="M15 10.5l6-3v9l-6-3z" fill="rgba(255,255,255,0.75)"/>"""), Color.WHITE, 11f), LK.lp(Ui.dpi(11f), Ui.dpi(11f), r = 5f))
         top.addView(LK.t(ctx, "Incoming video call", 10.5f, LK.a(Color.WHITE, 0.75f)))
-        scr.addView(top)
+        scr.addView(top, LK.lp())
         // the caller: round picture with the green online dot
         val av = FrameLayout(ctx).apply { clipChildren = false }
         av.addView(ImageView(ctx).apply { setImageDrawable(SilDrawable(LK.c("#A78BFA"), Color.argb(242, 255, 255, 255))) }, FrameLayout.LayoutParams(-1, -1))
@@ -186,7 +186,7 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
             c.addView(LK.t(ctx, b.third, 9.5f, LK.a(Color.WHITE, 0.65f)), LK.lp(t = 5f))
             btns.addView(c, LK.lp(l = if (k == 0) 0f else 34f))
         }
-        scr.addView(btns)
+        scr.addView(btns, LK.lp())
         // the feature pills
         class Pill(val x: Float, val y: Float, val rot: Float, val tint: String, val icon: String, val label: String, val live: Boolean = false)
         val pills = listOf(
