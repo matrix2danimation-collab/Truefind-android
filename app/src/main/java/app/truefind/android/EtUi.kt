@@ -244,13 +244,10 @@ class EtUi(val ctx: Context) {
     /** .kv2: label left, value right, a line under */
     fun kv2(k: View, v: View, last: Boolean = false): LinearLayout = etRow(ctx, 10f).apply {
         setPadding(0, Ui.dpi(10f), 0, Ui.dpi(10f))
-        // the label keeps its words; a long value takes the rest of the row and wraps, at the right
+        // like the web's space-between row: the label keeps its words; the value sits at the right
+        // and, when it is long, takes the rest of the row and wraps there
         put(k)
-        when (v) {
-            is TextView -> v.gravity = Gravity.END
-            is LinearLayout -> v.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-        }
-        put(v, 0f, -2f, 1f)
+        put(LinearLayout(ctx).apply { gravity = Gravity.END or Gravity.CENTER_VERTICAL; put(v) }, 0f, -2f, 1f)
         if (!last) background = BottomLine(Et.SOFT_LINE)
     }
     fun kv2(k: String, v: String, last: Boolean = false) = kv2(etT(ctx, k, 12.5f, Et.MUT), etT(ctx, v, 12.5f, Et.INK, true), last)

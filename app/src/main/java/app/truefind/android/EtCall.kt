@@ -224,7 +224,11 @@ class EtCallPage(et: ExpertTalkScreen, private val bookingId: String, private va
         }
     }
 
+    private var roundKey = ""
     private fun paintRound() {
+        val k = "${voice.muted}|${voice.loud}"
+        if (k == roundKey && muteBtn.childCount > 0) return
+        roundKey = k
         muteBtn.removeAllViews()
         muteBtn.background = Tf.circle(if (voice.muted) Et.P else Ui.c("#F3F0F8"))
         muteBtn.addView(etIcon(ctx, if (voice.muted) EtIcon.MicOff else EtIcon.Mic, 22f, if (voice.muted) Color.WHITE else Et.INK), FrameLayout.LayoutParams(Ui.dpi(22f), Ui.dpi(22f), Gravity.CENTER))

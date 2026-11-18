@@ -761,7 +761,8 @@ object EtProfileBody {
             life.put(ui.kv2(ui.iconLabel(EtIcon.Briefcase, "Experience"), etT(ctx, "$years year${if (years == 1) "" else "s"}", 12.5f, Et.INK, true), last = false), -1f, -2f)
             life.put(ui.kv2(ui.iconLabel(EtIcon.Languages, "Languages"), etT(ctx, Et.strs(e.optJSONArray("langs")).joinToString(", "), 12.5f, Et.INK, true), last = qual.isEmpty()), -1f, -2f)
             if (qual.isNotEmpty()) life.put(ui.kv2(ui.iconLabel(EtIcon.GraduationCap, "Background"), etRow(ctx, 5f).apply {
-                put(etT(ctx, qual, 12.5f, Et.INK, true))
+                // the text wraps and the "Checked" pill keeps its size (white-space: nowrap on the web)
+                put(etT(ctx, qual, 12.5f, Et.INK, true), 0f, -2f, 1f)
                 if (Et.b(e, "qual_checked")) put(etPill(ctx, "Checked", "ok", EtIcon.Check, 10f, 18f))
             }, last = true), -1f, -2f)
             sec("Life experience", life)

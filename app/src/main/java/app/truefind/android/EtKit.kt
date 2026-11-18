@@ -320,11 +320,15 @@ class EtPhoto(ctx: Context, private val sizeDp: Float) : View(ctx) {
     private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#E8DFFD") }
     var demoKey = ""
     fun set(src: String?): EtPhoto {
+        // test mode: a drawn face for each made-up person (checked first: their photo is "")
+        if (demoKey.isNotEmpty() && Demo.on) {
+            if (raw != "demo:$demoKey" || bmp == null) { raw = "demo:$demoKey"; bmp = AvatarArt.forKey(demoKey, !demoKey.contains("-b"), px(), round = true); invalidate() }
+            return this
+        }
         val s = src.orEmpty()
         if (s == raw && (bmp != null || s.isEmpty())) return this
         raw = s
         bmp = null
-        if (demoKey.isNotEmpty() && Demo.on) { bmp = AvatarArt.forKey(demoKey, !demoKey.contains("-b"), px(), round = true); invalidate(); return this }
         if (s.isEmpty()) { invalidate(); return this }
         bmp = Photos.cached(listOf(s), px())
         invalidate()
