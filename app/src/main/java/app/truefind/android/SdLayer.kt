@@ -53,12 +53,14 @@ class SdLayer(private val host: FrameLayout) {
      * A bottom sheet: dim + [panel] (already filled). Tap on the dim closes it unless [locked]() says no.
      * Returns the close function.
      */
-    fun sheet(panel: View, z: Float = 37f, locked: () -> Boolean = { false }, onClose: () -> Unit = {}): () -> Unit {
+    fun sheet(panel: View, z: Float = 37f, locked: () -> Boolean = { false }, onClose: () -> Unit = {}, maxVh: Float = 0f): () -> Unit {
         val ctx = host.context
         val box = FrameLayout(ctx)
         val dim = View(ctx).apply { setBackgroundColor(Color.argb(115, 60, 0, 25)); alpha = 0f }
         box.addView(dim, FrameLayout.LayoutParams(-1, -1))
-        val maxH = (host.height * 0.94f).toInt().coerceAtLeast(Ui.dpi(300f))
+        // the web's max-height: N vh = N % of the page's own height (the screen inside the phone's bars)
+        val maxH = if (maxVh > 0f) (maxVh * (host.height - host.paddingTop - host.paddingBottom)).toInt().coerceAtLeast(Ui.dpi(300f))
+            else (host.height * 0.94f).toInt().coerceAtLeast(Ui.dpi(300f))
         val scroll = object : ScrollView(ctx) {
             override fun onMeasure(w: Int, h: Int) { super.onMeasure(w, MeasureSpec.makeMeasureSpec(maxH, MeasureSpec.AT_MOST)) }
         }.apply { isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; isFillViewport = true; clipToPadding = false }
@@ -84,7 +86,7 @@ class SdLayer(private val host: FrameLayout) {
     }
 
     /** A full page sliding in from the right (sd-in). [back] may handle Back itself (e.g. leave the edit form). */
-    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}): () -> Unit {
+    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}, animate: Boolean = true): () -> Unit {
         var closed = false
         val close: () -> Unit = {
             if (!closed) {
@@ -95,8 +97,10 @@ class SdLayer(private val host: FrameLayout) {
         }
         view.isClickable = true
         add(view, back, close, z)
-        view.translationX = host.width.toFloat().coerceAtLeast(1000f)
-        view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()
+        if (animate) {
+            view.translationX = host.width.toFloat().coerceAtLeast(1000f)
+            view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()
+        }
         return close
     }
 

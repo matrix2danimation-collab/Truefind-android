@@ -11,8 +11,15 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    outputs:
+      sets: ${{ steps.sets.outputs.list }}
     steps:
       - uses: actions/checkout@v5
+
+      # which emulator photo sets to take this time (ci/sets.json, e.g. ["home","chat"])
+      - name: Photo sets
+        id: sets
+        run: echo "list=$(cat ci/sets.json 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
         with:
@@ -51,16 +58,17 @@ jobs:
       # branch home-native only: the jars the Kotlin code is compiled against, kept
       # on the branch "cp-home" so the code can be checked before each push
       - name: Keep the compile jars on branch "cp-home"
-        if: github.ref_name == 'home-native'
+        if: github.ref_name == 'home-native' || github.ref_name == 'all-native'
         continue-on-error: true
         run: |
           gradle -I ci/cp.gradle :app:exportCp --no-daemon -q
           cp "$ANDROID_HOME/platforms/android-36/android.jar" cp/ 2>/dev/null || cp "$(ls -d $ANDROID_HOME/platforms/android-* | sort -V | tail -1)/android.jar" cp/
           ls -la cp | head -80
           cd cp
-          git init -q && git checkout -q -b cp-home
+          B=cp-home; [ "${{ github.ref_name }}" = all-native ] && B=cp-all
+          git init -q && git checkout -q -b "$B"
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "cp ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" cp-home
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$B"
 
       # only main reaches the phone's Update button; work branches are tested first
       - name: Put the APK on the Releases page
@@ -80,6 +88,10 @@ jobs:
     needs: apk
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        set: ${{ fromJSON(needs.apk.outputs.sets) }}   # emulators side by side: Home screens · Map + Chat screens
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
@@ -99,23 +111,20 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash ci/screens.sh TrueFind-test.apk shots
+          script: bash ci/screens.sh TrueFind-test.apk shots ${{ matrix.set }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screens
+          name: screens-${{ matrix.set }}
           path: shots
-      # the same pictures on the branch "screens" (easy to read back for checking);
-      # the home-native work branch keeps its own pictures on "screens-home"
-      - name: Keep the screenshots on branch "screens"
+      # the same pictures on "screens-all-<set>" (easy to read back for checking; the other work
+      # branches keep their own "screens-…" names); the first set also keeps the APK beside them
+      - name: Keep the screenshots on a "screens-…" branch
         if: always()
         run: |
           cd shots
-          B=screens; [ "${{ github.ref_name }}" = "home-native" ] && B=screens-home
-          [ "${{ github.ref_name }}" = "home-smooth" ] && B=screens-home-smooth && cp ../TrueFind-test.apk ./TrueFind-home-smooth.apk 2>/dev/null
-          # the work branch keeps its APK next to its screenshots (easy to hand over)
-          if [ "${{ github.ref_name }}" = "home-native" ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-home-native.apk; fi
-          git init -q && git checkout -q -b "$B"
+          if [ "${{ matrix.set }}" = home ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-all-native.apk; fi
+          git init -q && git checkout -q -b screens-all-${{ matrix.set }}
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$B"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screens-all-${{ matrix.set }}

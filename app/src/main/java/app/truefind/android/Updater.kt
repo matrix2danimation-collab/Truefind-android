@@ -100,8 +100,20 @@ class Updater(private val activity: Activity) {
                 }
             }
         }
+        // the phone's keyboard: a dialog with no text box of its own is told to keep the keyboard away
+        // (Android's FLAG_ALT_FOCUSABLE_IM), so tapping GitHub's fields showed no keys. The box now
+        // lets the keyboard in, and a tap gives the page focus.
+        web.isFocusable = true
+        web.isFocusableInTouchMode = true
+        web.setOnTouchListener { v, e ->
+            if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN && !v.hasFocus()) v.requestFocus()
+            false
+        }
         box.show()
         box.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        box.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+        box.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        web.requestFocus(android.view.View.FOCUS_DOWN)
         web.loadUrl("https://github.com/login?return_to=%2Fmatrix2danimation-collab%2FTruefind-android%2Freleases")
     }
 

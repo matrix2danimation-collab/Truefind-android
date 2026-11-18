@@ -75,6 +75,11 @@ class SecretHome(
     private val myPhoto = RoundPhoto(ctx, 43f)
     private val myBadge = FrameLayout(ctx)
     private val creditsPill = sdText(ctx, "", 13f, Color.WHITE)
+    private val pills = ArrayList<TextView>()                 // the same pill on the map and chat pages
+    /** which Secret Dating page: "home" (/secret-app) · "map" (/dating) · "chat" (/secret-app?tab=chat) */
+    var page = "home"; private set
+    private var mapPage: SdMapPage? = null
+    private var chatPage: SdChatsPage? = null
     private val noticeBox = sdText(ctx, "", 15f, Ui.c("#166534"), bold = false)
     private val actBox = FrameLayout(ctx)
     private val completeBtn = LinearLayout(ctx)
@@ -95,6 +100,9 @@ class SecretHome(
     init {
         SdRules.load(ctx)
         clipChildren = false
+        // nothing of these pages may be drawn below their bottom edge: the web's Secret Dating bar is there
+        outlineProvider = android.view.ViewOutlineProvider.BOUNDS
+        clipToOutline = true
         addView(PinkBackdrop(ctx), LayoutParams(-1, -1))
         scroll.isVerticalScrollBarEnabled = false
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
@@ -190,24 +198,73 @@ class SecretHome(
 
     // ═════════════════ loading ═════════════════
     private var lastSearch: String? = null
-    fun setShown(on: Boolean, search: String = "") {
+    fun setShown(on: Boolean, view: String = "home", search: String = "") {
         if (on && search != lastSearch) { lastSearch = search; parseNotice(search) }
         if (!on) lastSearch = null
+        if (on && view != page) {
+            // another Secret Dating page: its own content (pop-ups of the last one close, as on the web)
+            layer.closeAll()
+            switchTo(view)
+            if (shown) { loadAll(); restartPoll() }
+        }
         if (on == shown) return
         shown = on
         if (on) {
             visibility = VISIBLE
+            switchTo(view)
             loadAll()
-            main.removeCallbacks(poll); main.postDelayed(poll, 45_000)
+            restartPoll()
         } else {
             visibility = GONE
             layer.closeAll()
             main.removeCallbacks(poll)
+            mapPage?.setActive(false); chatPage?.setActive(false)
+            liveOff()
         }
     }
-    fun onAppVisible(v: Boolean) { if (!shown) return; if (v) { loadAll(); main.removeCallbacks(poll); main.postDelayed(poll, 45_000) } else main.removeCallbacks(poll) }
-    fun back(): Boolean = layer.back()
-    private val poll = object : Runnable { override fun run() { if (shown) { loadPeople(); loadStories(); loadActivity() }; main.postDelayed(this, 45_000) } }
+    private fun switchTo(view: String) {
+        page = view
+        scroll.visibility = if (view == "home") VISIBLE else GONE
+        if (view == "map" && mapPage == null) mapPage = SdMapPage(this).also { addView(it, indexOfChild(scroll) + 1, LayoutParams(-1, -1)) }
+        if (view == "chat" && chatPage == null) chatPage = SdChatsPage(this).also { addView(it, indexOfChild(scroll) + 1, LayoutParams(-1, -1)) }
+        mapPage?.visibility = if (view == "map") VISIBLE else GONE
+        chatPage?.visibility = if (view == "chat") VISIBLE else GONE
+        if (shown) {
+            mapPage?.setActive(view == "map")
+            chatPage?.setActive(view == "chat")
+            if (view == "map") liveOff() else liveOn()
+        }
+        render()
+    }
+    private fun restartPoll() { main.removeCallbacks(poll); main.postDelayed(poll, 45_000) }
+    fun onAppVisible(v: Boolean) {
+        if (!shown) return
+        if (v) { loadAll(); restartPoll(); if (page != "map") liveOn(); chatPage?.setActive(page == "chat") }
+        else { main.removeCallbacks(poll); liveOff(); chatPage?.setActive(false) }
+    }
+    fun back(): Boolean {
+        if (layer.back()) return true
+        mapPage?.let { if (page == "map" && it.isFull) { it.setFull(false); return true } }
+        return false
+    }
+    private val poll = object : Runnable {
+        override fun run() {
+            // the web: every 45 s while the page is on screen — not the people on the Chats page
+            if (shown) { if (page != "chat") loadPeople(); loadStories(); loadActivity() }
+            main.postDelayed(this, 45_000)
+        }
+    }
+    // a new message arrives: Notifications updates at once (no need to wait for the next check)
+    private var liveStop: (() -> Unit)? = null
+    private val actSoon = Runnable { loadActivity() }
+    private fun liveOn() {
+        if (liveStop != null || !shown) return
+        liveStop = Realtime.subscribe("Message") { ev ->
+            val d = ev.data ?: return@subscribe
+            if (ev.type == "create" && d.optString("app").ifEmpty { "secret" } == "secret" && d.optString("to_user_id").isNotEmpty() && d.optString("to_user_id") == myId) { main.removeCallbacks(actSoon); main.postDelayed(actSoon, 900) }
+        }
+    }
+    private fun liveOff() { liveStop?.invoke(); liveStop = null; main.removeCallbacks(actSoon) }
 
     private fun parseNotice(search: String) {
         val q = android.net.Uri.parse("x://x$search")
@@ -230,7 +287,7 @@ class SecretHome(
     }
 
     private fun loadPeople() {
-        Api.invoke("getDiscoverProfiles", JSONObject().put("intent", "dating")) { r ->
+        if (page != "map") Api.invoke("getDiscoverProfiles", JSONObject().put("intent", "dating")) { r ->
             if (r.ok) {
                 needSecret = r.data.optString("needs_membership") == "secret"
                 discover = list(r.data.optJSONArray("profiles"))
@@ -302,7 +359,7 @@ class SecretHome(
             val known = actKnown
             if (known != null) {
                 val added = all.filter { it.optBoolean("fresh") && it.optString("id") !in known }
-                if (added.isNotEmpty() && shown) showPop(added)
+                if (added.isNotEmpty() && shown && page == "home") showPop(added)
             }
             actKnown = all.map { it.optString("id") }.toSet()
             if ((r.data.optJSONObject("counts")?.optInt("total") ?: 0) > 0) seenSent = false
@@ -496,6 +553,9 @@ class SecretHome(
         renderDeck()
         renderActivity()
         renderStories()
+        for (p in pills) p.text = creditsPill.text
+        if (page == "map") mapPage?.render()
+        if (page == "chat") chatPage?.render()
     }
 
     private fun renderNotice() {
@@ -830,11 +890,11 @@ class SecretHome(
         SdSheets.verify(this, st) { layer.closeAll(); go("/profile?open=creator", null) }
     }
 
-    fun openProfile(p: JSONObject) {
+    fun openProfile(p: JSONObject): (JSONObject) -> Unit {
         val withOnline = JSONObject(p.toString()).put("_online", p.optBoolean("_online") || p.optString("id") in onlineIds || SdRules.isOnline(p))
         val id = withOnline.optString("id")
         if (id.isNotEmpty() && viewed.add(id) && !id.startsWith("demo")) Api.invoke("recordProfileView", JSONObject().put("profile_id", id)) { }
-        SdProfileView.open(this, withOnline)
+        return SdProfileView.open(this, withOnline)
     }
     // notifications row: with a plan it opens the profile / the chat; without, Go Premium (girls: verify)
     private fun openActivity(x: JSONObject) {
@@ -842,6 +902,92 @@ class SecretHome(
         if (activity?.optBoolean("can_see") != true || p == null) { locked("activity"); return }
         if (x.optString("kind") == "message" && x.optString("match_id").isNotEmpty() && !x.isNull("match_id")) { go("/chat/${x.optString("match_id")}", JSONObject().put("openChat", 1)); return }
         openProfile(p)
+    }
+
+    // ── for the map and chat pages ──
+    val onlineNow: List<JSONObject>? get() = online
+    val meNow: JSONObject? get() = me
+    val mineNow: JSONObject get() = mine
+    val noticeNow: String get() = notice
+    val myIdNow: String get() = myId
+    val verifyFirst: Boolean get() = girlUnverified
+    val hostRoot: FrameLayout get() = host
+    fun clearNotice() { notice = ""; renderNotice(); render() }
+    fun goHome() = go("/secret-app", null)
+    /** the same credits pill as the Home header (opens the Secret Dating wallet) */
+    fun newCreditsPill(): View {
+        val t = sdText(context, creditsPill.text, 13f, Color.WHITE).apply {
+            background = rounded(K.wine2, 17f); elevation = Ui.dp(3f); gravity = Gravity.CENTER_VERTICAL
+            setPadding(dpi(7f), 0, dpi(5f), 0); compoundDrawablePadding = dpi(4f)
+            setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(Icon(Lucide.Plus, K.hot, 13f, 3.2f)), null)
+        }
+        pills.add(t)
+        return FrameLayout(context).apply { addView(t, LayoutParams(-2, dpi(34f), Gravity.CENTER)); contentDescription = creditsPill.contentDescription }.also { it.press().onTap { wallet() } }
+    }
+    /** header of the map and chat pages: back · title · credits */
+    fun pageHeader(title: String): View {
+        val row = hbox(context, 2f)
+        row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ArrowLeft, Color.WHITE, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back to Secret Dating" }
+            .press().onTap { goHome() }, lp(dpi(44f), dpi(44f)))
+        val vw = resources.displayMetrics.widthPixels / Ui.density
+        row.addView(sdText(context, title, (vw * .076f).coerceIn(25f, 32f), Color.WHITE, italic = true).oneLine(), lp(0, WRAP, 1f, l = 4f))
+        row.addView(newCreditsPill(), lp(WRAP, dpi(44f)))
+        return FrameLayout(context).apply { addView(row, LayoutParams(-1, -2).apply { setMargins(-dpi(12f), 0, -dpi(8f), 0) }); clipChildren = false }
+    }
+    /** "— Verified Boys & Girls Across India —" */
+    fun pageSub(text: String): View {
+        val row = hbox(context, 8f, Gravity.CENTER)
+        fun line(toRight: Boolean) = View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, if (toRight) intArrayOf(Color.argb(0, 255, 255, 255), Color.argb(230, 255, 255, 255)) else intArrayOf(Color.argb(230, 255, 255, 255), Color.argb(0, 255, 255, 255))) }
+        val vw = resources.displayMetrics.widthPixels / Ui.density
+        row.addView(line(true), lp(dpi(26f), dpi(1.5f)))
+        row.addView(sdText(context, text, (vw * .039f).coerceIn(13.5f, 15f), Color.WHITE))
+        row.addView(line(false), lp(dpi(26f), dpi(1.5f)))
+        return row
+    }
+    /** "Premium · 2d left" (tap: wallet) — null without a running plan */
+    fun planPill(): View? {
+        val d = daysLeft
+        if (!(premiumKnown && premium && d != null)) return null
+        val renew = d == "Renew"
+        return sdText(context, if (renew) "Premium ended · Renew" else "Premium · $d", 13f, if (renew) Ui.c("#B4183C") else K.wine)
+            .icon(Icon(Lucide.Hourglass, if (renew) Ui.c("#B4183C") else K.wine, 13f), 5f).apply {
+                gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
+            }.also { it.press().onTap { wallet() } }
+    }
+    /** a story from someone you're chatting with (shown on their profile) */
+    fun chatStoryFor(uid: String, pid: String, otherId: String): JSONObject? = storyList.firstOrNull { x ->
+        val xu = x.optString("user_id"); val xp = x.optString("profile_id")
+        (xu.isNotEmpty() && (xu == uid || xu == otherId)) || (xp.isNotEmpty() && (xp == pid || xp == otherId))
+    }
+    /** Chat list: tap a photo → that person's profile (story + Open Chat) — at once, the rest of the profile fills in when it arrives */
+    fun openFromChat(c: SdChatsPage.Chat) {
+        if (!canUse) { locked("chat"); return }
+        val known = ((online ?: emptyList()) + (discover ?: emptyList())).firstOrNull { p ->
+            (c.pid.isNotEmpty() && p.optString("id") == c.pid) || (c.uid.isNotEmpty() && (p.optString("user_id") == c.uid || p.optString("created_by_id") == c.uid))
+        }
+        val base = known?.let { JSONObject(it.toString()) } ?: JSONObject().put("id", c.pid.ifEmpty { c.id }).put("user_id", c.uid).put("name", c.name).put("photo", c.photo).put("age", c.age).put("verified", c.verified)
+        base.put("_online", c.online || base.optString("id") in onlineIds || SdRules.isOnline(base)).put("_chatId", c.id)
+        chatStoryFor(c.uid, c.pid, "")?.let { base.put("_story", it) }
+        val refresh = openProfile(base)
+        if (known != null) return
+        // the web: { ...profile, ...what we had, name/photo/city/state from the profile when we had none }
+        fun merge(p: JSONObject) {
+            val m = JSONObject(p.toString())
+            base.keys().forEach { k -> m.put(k, base.get(k)) }
+            m.put("name", SdRules.s(base, "name").ifEmpty { SdRules.s(p, "full_name", "name") })
+            m.put("photo", SdRules.s(base, "photo").ifEmpty { SdRules.s(p, "photo", "profile_picture") })
+            m.put("city", SdRules.s(base, "city").ifEmpty { SdRules.s(p, "city") }).put("state", SdRules.s(base, "state").ifEmpty { SdRules.s(p, "state") })
+            refresh(m)
+        }
+        fun byUser() { if (c.uid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("created_by_id", c.uid), null, 1) { r -> r.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } } }
+        if (c.pid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("id", c.pid), null, 1) { r -> r.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } ?: byUser() }
+        else byUser()
+    }
+    /** Chat list: tap the name / message → the chat (a locked chat opens the plans straight away) */
+    fun openChatRow(c: SdChatsPage.Chat) {
+        if (premiumKnown && !canUse) { unlock(); return }
+        chatPage?.markRead(c.id)
+        go("/chat/${c.id}", JSONObject().put("openChat", 1))
     }
 
     // ── for the profile page and the sheets ──
@@ -961,6 +1107,7 @@ class SecretHome(
 
     /** test mode only: open one pop-up so the emulator can photograph it */
     fun previewOpen(what: String, tries: Int = 0) {
+        if (page != "home") { previewPage(what, tries); return }
         // wait until the made-up data is there (and drawn)
         if ((liveDeck.isEmpty() || myProfile == null || activity == null || renderQueued) && tries < 20) { postDelayed({ previewOpen(what, tries + 1) }, 300); return }
         // and laid out once more before opening anything on top
@@ -987,6 +1134,21 @@ class SecretHome(
         }
     }
 
+    /** test shots on the map and chat pages */
+    private fun previewPage(what: String, tries: Int) {
+        val ready = if (page == "map") online != null && SdMapData.ready else chatPage?.chats != null && myProfile != null
+        if (!ready && tries < 40) { postDelayed({ previewPage(what, tries + 1) }, 300); return }
+        if (tries >= 0) { postDelayed({ previewPage(what, -1) }, 900); return }
+        when {
+            what == "profile" -> (online?.firstOrNull { SdRules.liveOf(it) } ?: online?.firstOrNull())?.let { openProfile(it) }
+            what == "chatprofile" -> chatPage?.chats?.firstOrNull()?.let { openFromChat(it) }
+            what == "premium" -> locked("chat")
+            page == "map" -> mapPage?.preview(what)
+            else -> chatPage?.preview(what)
+        }
+        android.util.Log.i("TFDBG", "preview open $what")
+    }
+
     private fun lastScroll(v: View): ScrollView? {
         if (v is ScrollView) return v
         if (v is android.view.ViewGroup) for (k in v.childCount - 1 downTo 0) lastScroll(v.getChildAt(k))?.let { return it }
@@ -1003,7 +1165,7 @@ class SecretHome(
         toastText.text = text
         toastText.setTextColor(if (kind == "err") Ui.c("#B4183C") else K.ink2)
         toastBtn.visibility = if (kind == "credits" || kind == "premium") VISIBLE else GONE
-        toastBtn.text = if (kind == "credits") "Get Credits" else "Get Premium"
+        toastBtn.text = if (kind == "credits" || freeGirl) "Get a Plan" else "Get Premium"
         toastBtn.setOnClickListener { main.removeCallbacks(hideToast); toast.visibility = GONE; unlock() }
         toast.visibility = VISIBLE; toast.alpha = 0f; toast.animate().alpha(1f).setDuration(250).start()
         main.removeCallbacks(hideToast); main.postDelayed(hideToast, 4200)

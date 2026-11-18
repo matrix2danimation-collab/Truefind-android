@@ -13,7 +13,8 @@ import org.json.JSONObject
 
 /** A member's full profile (opens when a card is tapped) — ProfileView in SecretApp.jsx. */
 object SdProfileView {
-    fun open(h: SecretHome, p: JSONObject) {
+    /** Opens the page; returns "show this fuller profile instead" (in place, no slide) for data that arrives a moment later. */
+    fun open(h: SecretHome, p: JSONObject, animate: Boolean = true): (JSONObject) -> Unit {
         val ctx = h.context
         val root = FrameLayout(ctx)
         root.addView(PinkBackdrop(ctx), FrameLayout.LayoutParams(-1, -1))
@@ -228,13 +229,14 @@ object SdProfileView {
 
         root.addView(menu, FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(18f + 46f), dpi(12f), 0) })
         root.setOnClickListener { menu.visibility = View.GONE }
-        close = h.layer.page(root, z = 30f)
+        close = h.layer.page(root, z = 30f, animate = animate)
         // the request state can change while this page is open (sent, sending): keep the button fresh
         var key = ""
         fun keyNow() = "${h.isPremium}|${h.mayRequest}|${h.inviteOf(p.optString("id"))}|${h.creditsShown}"
         key = keyNow()
         val tick = object : Runnable { override fun run() { if (root.parent != null) { val k = keyNow(); if (k != key) { key = k; renderMain() }; root.postDelayed(this, 700) } } }
         root.postDelayed(tick, 700)
+        return { fuller -> if (root.parent != null) { h.layer.remove(root, animate = false); open(h, fuller, animate = false) } }
     }
 
     /** chips that wrap onto the next line (flex-wrap) */
