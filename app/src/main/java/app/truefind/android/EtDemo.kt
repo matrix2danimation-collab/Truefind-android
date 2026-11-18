@@ -107,7 +107,7 @@ object EtDemo {
             "getSecretEarnings" -> JSONObject().put("creator", JSONObject().put("name", "Neha Verma")).put("viewed_by_admin", p.has("creator_id"))
                 .put("total", JSONObject().put("week", 220).put("month", 865).put("all", 2310.5))
                 .put("like_bonus", JSONObject().put("inr_month", 300).put("likes_month", 46).put("count_month", 6).put("inr_all", 900))
-                .put("renewal_bonus", JSONObject().put("inr_month", 120).put("count_month", 4).put("messages_renewed", 9).put("inr_all", 420))
+                .put("renewal_bonus", JSONObject().put("inr_month", 120).put("count_month", 4).put("messages_renewed", 14).put("inr_all", 420))
                 .put("gifts", JSONObject().put("inr_month", 445).put("count_month", 31).put("inr_all", 990.5))
                 .put("locked_messages", JSONObject().put("limit", 10).put("sent_today", 3).put("left_today", 7).put("sent_month", 58))
                 .put("rates", JSONObject().put("first", JSONObject().put("1", 10).put("7", 25).put("30", 50)).put("renewal", 30).put("gift_pct", 100)).put("capped", false)
@@ -136,15 +136,36 @@ object EtDemo {
     }
 
     private fun dashboard(): JSONObject {
-        val week = JSONArray(); val labels = listOf("Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed")
-        val wv = if (creator) listOf(120, 340, 0, 260, 410, 180, 530) else listOf(30, 0, 60, 10, 0, 40, 20)
-        for (i in 0 until 7) week.put(JSONObject().put("l", labels[i]).put("v", wv[i]))
-        val month = JSONArray(); for (i in 0 until 30) month.put(JSONObject().put("l", "${(i % 30) + 1} Nov").put("v", if (creator) (i * 37) % 420 else (i * 7) % 60))
-        val all = JSONArray(); for ((i, l) in listOf("Jun", "Jul", "Aug", "Sep", "Oct", "Nov").withIndex()) all.put(JSONObject().put("l", l).put("v", if (creator) listOf(0, 0, 900, 2400, 3100, 1840)[i] else listOf(0, 0, 80, 140, 210, 160)[i]))
+        // Made-up daily earnings (₹) for about five months, slowly growing. The totals and the
+        // three graphs are worked out from them the way the server's summarise() does, so they agree.
+        val today = Et.todayIST()
+        val n = 150
+        val daily = DoubleArray(n)                      // daily[k] = the day today − (n − 1 − k)
+        if (creator) {
+            var seed = 7L
+            for (k in 0 until n) {
+                seed = (seed * 1103515245L + 12345L) and 0x7fffffffL
+                val r = (seed % 1000) / 1000.0
+                val grow = 0.25 + 0.75 * k / (n - 1)
+                daily[k] = if (r < 0.28) 0.0 else Math.round((60 + r * 420) * grow / 10.0) * 10.0
+            }
+            daily[n - 1] += 0.5                         // a gift share with half a rupee
+        }
+        fun dateAt(k: Int) = Et.addDays(today, -(n - 1 - k))
+        fun sum(from: Int, to: Int): Double { var t = 0.0; for (k in from..to) t += daily[k]; return t }
+        val week = JSONArray(); for (k in n - 7 until n) week.put(JSONObject().put("l", Et.WDN[Et.wdOf(dateAt(k))]).put("v", daily[k]))
+        val month = JSONArray(); for (k in n - 30 until n) { val d = dateAt(k); month.put(JSONObject().put("l", "${Et.dayOfMonth(d)} ${Et.MON[Et.monthOf(d)]}").put("v", daily[k])) }
+        val byMonth = HashMap<Int, Double>(); var firstM = Int.MAX_VALUE
+        for (k in 0 until n) if (daily[k] > 0) { val d = dateAt(k); val m = Et.yearOf(d) * 12 + Et.monthOf(d); byMonth[m] = (byMonth[m] ?: 0.0) + daily[k]; if (m < firstM) firstM = m }
+        val curM = Et.yearOf(today) * 12 + Et.monthOf(today)
+        val all = JSONArray(); for (m in maxOf(curM - 11, minOf(curM - 5, firstM))..curM) all.put(JSONObject().put("l", Et.MON[m % 12]).put("v", byMonth[m] ?: 0.0))
+        val weekSum = sum(n - 7, n - 1); val prevWeek = sum(n - 14, n - 8)
+        val money = JSONObject().put("unit", if (creator) "inr" else "coins").put("total", sum(0, n - 1)).put("week", weekSum).put("month", sum(n - 30, n - 1)).put("prev_week", prevWeek)
+            .put("change_pct", if (prevWeek > 0) Math.round((weekSum - prevWeek) / prevWeek * 1000) / 10.0 else JSONObject.NULL)
         return JSONObject().put("role", if (creator) "creator" else "user")
-            .put("profile", JSONObject().put("name", if (creator) "Neha Verma" else "Aman Verma").put("photo", "").put("verified", creator).put("label", if (creator) "Creator" else "Member").put("joined", "2026-11-02T10:15:00"))
+            .put("profile", JSONObject().put("name", if (creator) "Neha Verma" else "Aman Verma").put("photo", "").put("verified", creator).put("label", if (creator) "Creator" else "Member").put("joined", Et.addDays(today, -(n + 12)) + "T10:15:00"))
             .put("stats", JSONObject().put("voice_calls", 42).put("video_calls", 7).put("talk_seconds", 3 * 3600 + 25 * 60).put("gifts", 18))
-            .put("money", JSONObject().put("unit", if (creator) "inr" else "coins").put("total", if (creator) 8240.5 else 590).put("week", if (creator) 1840 else 160).put("month", if (creator) 3610 else 420).put("prev_week", 1500).put("change_pct", 23))
+            .put("money", money)
             .put("series", JSONObject().put("week", week).put("month", month).put("all", all))
             .put("secret", if (creator) JSONObject().put("active", false).put("until", "") else JSONObject().put("active", true).put("until", iso(-3 * 24 * 60)))
             .put("capped", false).put("partial", false)

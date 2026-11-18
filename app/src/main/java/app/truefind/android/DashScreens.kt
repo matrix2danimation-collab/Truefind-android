@@ -375,7 +375,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         val pct = money?.opt("change_pct")
         if (pct is Number) {
             val p = pct.toDouble()
-            val txt = "${if (p > 0) "+" else if (p < 0) "−" else ""}${Et.num(abs(p))}% vs last week"
+            val txt = "${if (p > 0) "+" else if (p < 0) "−" else ""}${EtM.jsNum(abs(p))}% vs last week"   // as the web writes it
             top.addView(DashK.t(ctx, m, txt, 12f, Color.WHITE, true).apply { gravity = Gravity.CENTER; background = DashK.box(m, Ui.c("#5F33AE"), 12f); setPadding(m.pi(9f), 0, m.pi(9f), 0); maxLines = 1 }, DashK.lp(m, -2f, 24f))
         }
         c.addView(top, DashK.lp(m, -1f, -2f))
