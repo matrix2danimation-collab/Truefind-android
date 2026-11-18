@@ -22,7 +22,8 @@ adb shell am start -W -n $PKG/.MainActivity --es tf_preview fx > "$OUT/start.txt
     if ! adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG"; then
       echo "$(date +%T) app not on top: brought back" >> "$OUT/start.txt"
       adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
-      adb shell am start -n $PKG/.MainActivity > /dev/null 2>&1
+      # (if Android closed the app — on this emulator it does when Google Play services stops — the test starts again)
+      adb shell am start -n $PKG/.MainActivity --es tf_preview fx > /dev/null 2>&1
     fi
   done ) &
 KEEP=$!
@@ -31,8 +32,8 @@ waitlog "fx step start" 90
 sleep 3; adb exec-out screencap -p > "$OUT/fx-00-start.png"
 for n in 1 2 3 4 5 6 7 8 9 10 11; do
   N=$(printf %02d $n)
-  if waitlog "fx step frozen $n\$" 120; then sleep 2; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; adb exec-out screencap -p > "$OUT/fx-$N-mid.png"; fi
-  if waitlog "fx step done $n\$" 120; then sleep 3; adb exec-out screencap -p > "$OUT/fx-$N-end.png"; fi
+  if waitlog "fx step frozen $n\$" 75; then sleep 2; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; adb exec-out screencap -p > "$OUT/fx-$N-mid.png"; fi
+  if waitlog "fx step done $n\$" 75; then sleep 3; adb exec-out screencap -p > "$OUT/fx-$N-end.png"; fi
 done
 adb logcat -d -s TFDBG:I TFFX:I AndroidRuntime:E | grep -v "frames so far" > "$OUT/fx-log.txt"
 adb logcat -d -b crash > "$OUT/crash-log.txt"
