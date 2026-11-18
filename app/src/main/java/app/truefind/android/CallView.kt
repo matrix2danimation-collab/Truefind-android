@@ -3,10 +3,12 @@ package app.truefind.android
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -286,7 +288,7 @@ class CallView(
             val top = Tf.row(ctx).apply { setPadding(Ui.dpi(16f), Ui.dpi(14f), Ui.dpi(16f), 0); minimumHeight = Ui.dpi(48f) }
             top.addView(View(ctx), Tf.ll(Ui.dpi(86f), 1))
             val mid = Tf.col(ctx, Gravity.CENTER_HORIZONTAL)
-            mid.addView(CallKit.t(ctx, "True Find", 23f, CallKit.PURPLE, 800))
+            mid.addView(CallKit.t(ctx, "True Find", 23f, CallKit.PURPLE, 800), Tf.ll())
             kind = CallKit.t(ctx, "", 11.5f, CallKit.SUB, 600)
             mid.addView(kind, Tf.ll(t = 2f))
             top.addView(mid, Tf.ll(0, Tf.W, 1f))
@@ -479,7 +481,7 @@ class CallView(
             val mid = Tf.col(ctx, Gravity.CENTER_HORIZONTAL)
             title.setTextColor(if (builtVideo) Color.WHITE else CallKit.PURPLE)
             (title.parent as? ViewGroup)?.removeView(title)
-            mid.addView(title)
+            mid.addView(title, Tf.ll())
             val srow = Tf.row(ctx)
             srow.addView(CallKit.blinkDot(ctx, CallKit.GREEN), Tf.ll(Ui.dpi(7f), Ui.dpi(7f), r = 5f))
             statusText.setTextColor(if (builtVideo) Color.WHITE else CallKit.INK)
@@ -522,6 +524,7 @@ class CallView(
                 setCompoundDrawablesWithIntrinsicBounds(CallKit.svg(CallKit.UP, 14f), null, null, null)
                 setOnClickListener { hideUi = false; bind() }
                 contentDescription = "Show call buttons"
+                visibility = GONE
             }
             addView(showBtns, LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = Ui.dpi(18f) })
 
@@ -575,9 +578,17 @@ class CallView(
 
         private fun buildDateCard(ctx: Context) {
             dateCard = Tf.col(ctx).apply { clipChildren = false }
-            dateBox = FrameLayout(ctx).apply { clipChildren = false }
-            val shadow = View(ctx).apply { background = Tf.box(CallKit.INK, 20f) }
-            dateBox.addView(shadow, LayoutParams(-1, -1).apply { leftMargin = Ui.dpi(4f); topMargin = Ui.dpi(4f); rightMargin = -Ui.dpi(4f); bottomMargin = -Ui.dpi(4f) })
+            // the card's hard shadow (4 px right and down), drawn behind it: the box is exactly the card's size
+            dateBox = object : FrameLayout(ctx) {
+                private val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CallKit.INK }
+                private val rr = RectF()
+                override fun dispatchDraw(c: Canvas) {
+                    val d = Ui.dp(4f); val r = Ui.dp(20f)
+                    rr.set(d, d, width + d, height + d)
+                    c.drawRoundRect(rr, r, r, sp)
+                    super.dispatchDraw(c)
+                }
+            }.apply { clipChildren = false }
             val card = FrameLayout(ctx).apply {
                 background = Tf.box(Color.WHITE, 20f, 2f, CallKit.INK)
                 setPadding(Ui.dpi(16f), Ui.dpi(8f), Ui.dpi(12f), Ui.dpi(8f))
@@ -628,7 +639,8 @@ class CallView(
             vPeerFace.badge(vPeerHeart, 34f, 34f, rightDp = -12f, topDp = -10f)
             vPeerChip.addView(vPeerFace, Tf.ll(Ui.dpi(46f), Ui.dpi(46f), r = 10f))
             val nameCol = Tf.col(ctx)
-            nameCol.addView(vPeerName)
+            vPeerName.maxLines = 1; vPeerName.ellipsize = android.text.TextUtils.TruncateAt.END; vPeerName.maxWidth = Ui.dpi(170f)
+            nameCol.addView(vPeerName, Tf.ll())
             val bb = FrameLayout(ctx); bb.addView(vPeerBars, LayoutParams(-2, -2, Gravity.CENTER_VERTICAL))
             nameCol.addView(bb, Tf.ll(Tf.W, Ui.dpi(16f), t = 2f))
             vPeerChip.addView(nameCol)
@@ -819,6 +831,7 @@ class CallView(
                 heartCircle.alpha = if (flying) .35f else 1f
                 dateErr.text = likeErr; dateErr.visibility = if (likeErr.isEmpty()) GONE else VISIBLE
                 heartBtn.contentDescription = "Date $peerName"
+                showBtns.visibility = GONE
             } else {
                 vPeerFace.setPhoto(s.otherPhoto)
                 vPeerFace.border(if (s.peerSpeaking) CallKit.LILAC else Color.WHITE)

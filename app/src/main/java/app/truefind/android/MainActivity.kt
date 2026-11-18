@@ -721,7 +721,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
         wallet.onAppVisible(true)
-        if (preview.isEmpty() && !walletPreviewing && !previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
+        if (preview.isEmpty() && !walletPreviewing && !previewing && callPreview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
     }
 
