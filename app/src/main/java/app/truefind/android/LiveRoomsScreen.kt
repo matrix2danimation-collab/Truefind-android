@@ -136,7 +136,8 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
     /** only the page on top asks the server */
     private fun syncActive() {
         val on = shown && appVisible
-        roomPage?.setActive(on && current === roomPage)
+        // a room keeps asking the server under a web pop-up (shown = false), only its sound stops
+        roomPage?.setActive(appVisible && current === roomPage, sound = on && current === roomPage)
         val listOn = on && (current === homePage || current === listPage)
         main.removeCallbacks(homePoll)
         if (listOn) scheduleHome()

@@ -93,6 +93,7 @@ class LiveScreensTest {
     }
 
     private fun shot(name: String) {
+        note("shot: $name")
         dismissSystemDialogs()
         pause(350)
         shell("screencap -p $dir/$name.png")
@@ -121,6 +122,7 @@ class LiveScreensTest {
     }
 
     private fun tap(desc: String, prefix: Boolean = false): Boolean {
+        note("tap: $desc")
         var done = false
         main {
             val list = ArrayList<View>()

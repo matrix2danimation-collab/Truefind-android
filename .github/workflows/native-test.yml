@@ -107,8 +107,14 @@ jobs:
       - name: Build the app + the test (with x86_64 for the emulator)
         run: gradle assembleDebug assembleDebugAndroidTest -PtfAllAbis=true --no-daemon
 
+      # memory and disk of this machine every 10 s while the emulator runs (to see why an emulator stops)
+      - name: Watch the machine
+        run: nohup bash -c 'while true; do echo "$(date -u +%T) $(free -m | awk "/Mem:/{print \"mem used \"\$3\" MB, free \"\$4\" MB\"}") $(free -m | awk "/Swap:/{print \"swap used \"\$3\" MB\"}") $(df -h / | awk "NR==2{print \"disk free \"\$4}")"; sleep 10; done' > /tmp/mon.txt 2>&1 &
+
       - name: Open every screen on an emulator
         uses: reactivecircus/android-emulator-runner@v2
+        # a stuck test or emulator must not eat the whole job: the pictures and the log still come out
+        timeout-minutes: 36
         with:
           api-level: 34
           arch: x86_64
@@ -127,10 +133,12 @@ jobs:
             adb shell svc power stayon true || true
             adb shell input keyevent 82 || true
             adb shell wm dismiss-keyguard || true
-            gradle connectedDebugAndroidTest -PtfAllAbis=true --no-daemon || echo failed > tests-failed.txt
+            nohup adb logcat -v time > logcat-live.txt 2>&1 &
+            timeout 25m gradle connectedDebugAndroidTest -PtfAllAbis=true --no-daemon || echo failed > tests-failed.txt
             df -h / | tail -1
-            mkdir -p shots && adb pull /data/local/tmp/tf-shots shots/ || true
-            adb logcat -d > logcat.txt || true
+            P=$(timeout 20 adb shell pidof app.truefind.android | tr -d '\r'); if [ -n "$P" ]; then timeout 30 adb root; timeout 30 adb wait-for-device; timeout 60 adb shell debuggerd -j "$P" > stacks.txt 2>&1; fi; true
+            mkdir -p shots && timeout 180 adb pull /data/local/tmp/tf-shots shots/ || true
+            timeout 60 adb logcat -d > logcat.txt || true
 
       # the pictures also go into the log (small JPEGs as text), so they can be looked at without downloading
       - name: Pictures into the log
@@ -143,7 +151,17 @@ jobs:
             echo "==SHOT $n=="; base64 -w 0 "/tmp/$n.jpg"; echo; echo "==END=="
           done
           echo "---- test notes ----"
-          grep -h "TFTEST" logcat.txt 2>/dev/null | head -40 || true
+          grep -h "TFTEST" logcat.txt 2>/dev/null | head -120 || true
+          echo "---- the log kept while the test ran (also when the emulator stopped): test notes, crashes, last lines ----"
+          ls -la logcat-live.txt 2>/dev/null || true
+          grep -h "TFTEST" logcat-live.txt 2>/dev/null | tail -60 || true
+          grep -hE "FATAL EXCEPTION|AndroidRuntime|lowmemorykiller|Fatal signal|ANR in" -A6 logcat-live.txt 2>/dev/null | head -80 || true
+          tail -60 logcat-live.txt 2>/dev/null | cut -c1-240 || true
+          echo "---- this machine while the emulator ran ----"
+          tail -40 /tmp/mon.txt 2>/dev/null || true
+          sudo dmesg 2>/dev/null | grep -iE "oom|killed process|out of memory" | tail -10 || true
+          echo "---- a test still running when time ran out: where its threads stood ----"
+          grep -A45 -E '^"(main|Instr: androidx.test.runner.AndroidJUnitRunner)"' stacks.txt 2>/dev/null | head -120 || true
           echo "---- test problems / crashes ----"
           grep -hE "Problems:|nothing to tap|not sent|missing|FATAL EXCEPTION|AndroidRuntime" -A3 logcat.txt 2>/dev/null | head -80 || true
 
@@ -154,6 +172,7 @@ jobs:
           path: |
             shots/
             logcat.txt
+            stacks.txt
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
 

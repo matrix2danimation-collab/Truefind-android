@@ -77,6 +77,7 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
     var leaving = false
     private var closed = false
     private var active = true
+    private var soundOn = true
     private var started = false
     private var loopBusy = false
     private var sending = false
@@ -402,7 +403,7 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
         val v = voice ?: LiveVoice(context, roomId, this).also { voice = it; it.start() }
         v.setPublisher(onSeat())
         v.setMuted(myMuted())
-        v.setPaused(!active)
+        v.setPaused(!soundOn)
     }
     private fun stopVoice() { voice?.stop(); voice = null }
 
@@ -413,11 +414,16 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
     fun speakingNow(uid: Int) = speaking.contains(uid)
 
     // ───────────────────────── life ─────────────────────────
-    fun setActive(on: Boolean) {
-        if (on == active) return
-        active = on
-        voice?.setPaused(!on)
-        if (on && started && !closed) { quiet = 0; main.removeCallbacks(loop); pollRound() } else main.removeCallbacks(loop)
+    /**
+     * [poll]: ask the server (the app is open and this room is the page on top); [sound]: play the voice.
+     * A web pop-up over the room (an incoming call) stops the sound but not the asking, as on the web page:
+     * a host who is away from the server for 75 s loses the live.
+     */
+    fun setActive(poll: Boolean, sound: Boolean = poll) {
+        if (sound != soundOn) { soundOn = sound; voice?.setPaused(!sound) }
+        if (poll == active) return
+        active = poll
+        if (poll && started && !closed) { quiet = 0; main.removeCallbacks(loop); pollRound() } else main.removeCallbacks(loop)
     }
 
     fun close() {
