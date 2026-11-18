@@ -155,6 +155,7 @@ class RecentBackdrop(ctx: Context) : View(ctx) {
         val mask = LinearGradient(0f, 0f, 0f, fh, intArrayOf(Color.BLACK, Color.argb(115, 0, 0, 0), Color.argb(38, 0, 0, 0)), floatArrayOf(0f, .45f, 1f), Shader.TileMode.CLAMP)
         pat.shader = if (tile != null) ComposeShader(tile, mask, PorterDuff.Mode.DST_IN) else null
         pat.alpha = (0.55f * 255).roundToInt()
+        cache?.recycle(); cache = null
     }
 
     private fun ellipse(cx: Float, cy: Float, rx: Float, ry: Float, color: Int, stop: Float): Shader =
@@ -162,12 +163,35 @@ class RecentBackdrop(ctx: Context) : View(ctx) {
             setLocalMatrix(Matrix().apply { setScale(rx, ry); postTranslate(cx, cy) })
         }
 
-    override fun onDraw(c: Canvas) {
-        val w = width.toFloat(); val h = height.toFloat()
+    // The background is painted once into a picture of its own (same look) and that picture is what the screen
+    // draws: page moves and pop-ups then don't paint the gradients and the masked pattern again on every frame
+    // (the test phone's graphics stopped on exactly that, and it is lighter on real phones too).
+    private var cache: android.graphics.Bitmap? = null
+
+    private fun paint(c: Canvas, w: Float, h: Float) {
         p.shader = wash; c.drawRect(0f, 0f, w, h, p)
         for (g in glows) { p.shader = g; c.drawRect(0f, 0f, w, h, p) }
         p.shader = null
         if (pat.shader != null) c.drawRect(0f, 0f, w, h, pat)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cache?.recycle(); cache = null
+    }
+
+    override fun onDraw(c: Canvas) {
+        val w = width; val h = height
+        if (w <= 0 || h <= 0) return
+        var b = cache
+        if (b == null || b.width != w || b.height != h) {
+            b?.recycle()
+            b = try { android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888) } catch (e: Throwable) { null }
+            if (b == null) { paint(c, w.toFloat(), h.toFloat()); return }
+            paint(Canvas(b), w.toFloat(), h.toFloat())
+            cache = b
+        }
+        c.drawBitmap(b, 0f, 0f, null)
     }
 }
 
