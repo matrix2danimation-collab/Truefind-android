@@ -551,9 +551,9 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
         // header
         private val backBtn: View
         private val title: TextView
-        private val demoTag: View
         private val idText: TextView
         private val hostChip = LinearLayout(context)
+        private val hostBtn: LinearLayout
         private val hostFace = AvatarView(context, 42f)
         private val hostName: TextView
         private val followBtn: FrameLayout
@@ -626,8 +626,6 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
                 gravity = Gravity.CENTER; background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#ff2d6f"), Ui.c("#c026d3"))).apply { cornerRadius = Ui.dp(99f) }
                 setPadding(Ui.dpi(8f), 0, Ui.dpi(8f), 0)
             }, DK.llp(DK.WRAP, Ui.dpi(22f), l = 8f))
-            demoTag = DK.demoTag(ctx)
-            trow.addView(demoTag, DK.llp(DK.WRAP, Ui.dpi(20f), l = 6f))
             tcol.addView(trow)
             idText = Ui.text(ctx, "", 13.5f, Ui.ca("#ffffff", 0.85f), false).apply {
                 setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, DIcon(DIcon.COPY, Ui.ca("#ffffff", 0.85f), 14f), null); compoundDrawablePadding = Ui.dpi(5f)
@@ -642,7 +640,7 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
             hostChip.orientation = LinearLayout.HORIZONTAL; hostChip.gravity = Gravity.CENTER_VERTICAL
             hostChip.background = LK.glass(30f)
             hostChip.setPadding(Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(5f), Ui.dpi(4f))
-            val hostBtn = LinearLayout(ctx).apply {
+            hostBtn = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isClickable = true
                 setOnClickListener { LiveSheets.hostProfile(screen, roomId, if (isHost()) null else ({ LiveRoomSheets.panel(this@LiveRoomPage, "gifts", giftTo = host()?.optString("user_id")) }), isHost()) }
             }
@@ -806,12 +804,12 @@ class LiveRoomPage(ctx: Context, val screen: LiveRoomsScreen, val roomId: String
             // header
             backBtn.contentDescription = if (hostMe) "End live" else "Leave room"
             title.text = r.optString("name")
-            title.maxWidth = (width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels) - Ui.dpi(40f + 40f + 46f + 20f + 70f + if (r.optBoolean("demo")) 60f else 0f)
-            demoTag.visibility = if (r.optBoolean("demo")) View.VISIBLE else View.GONE
+            // no "Demo" label anywhere in Live Rooms (owner rule, Nov 17)
+            title.maxWidth = (width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels) - Ui.dpi(40f + 40f + 46f + 20f + 70f)
             idText.text = "ID: ${r.optString("code")}"
             hostFace.set(h.optString("photo")); hostFace.showOnline = h.optBoolean("online")
             hostName.text = h.optString("name")
-            hostChip.contentDescription = "Host ${h.optString("name")}"
+            hostBtn.contentDescription = "Host ${h.optString("name")}"
             followBtn.visibility = if (hostMe) View.GONE else View.VISIBLE
             (followBtn.getChildAt(0) as ImageView).setImageDrawable(if (followed) DIcon(DIcon.CHECK, Color.WHITE, 16f) else DIcon(DIcon.PLUS, Color.WHITE, 17f, stroke = 2.8f))
             followBtn.background = if (followed) DK.oval(Ui.ca("#ffffff", 0.2f)) else GradientDrawable(GradientDrawable.Orientation.TL_BR, LK.PINK_GRAD).apply { shape = GradientDrawable.OVAL }

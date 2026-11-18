@@ -167,6 +167,7 @@ class LiveScreensTest {
 
     @Test fun everyScreen() {
         // ═══════ the Live Room page (/live) ═══════
+        note("step: lists")
         act { it.open("/live") }
         pause(2200)
         shot("L01_live_page")
@@ -214,6 +215,7 @@ class LiveScreensTest {
         back(); pause(900)
 
         // ═══════ inside a room, as a listener ═══════
+        note("step: room as listener")
         tap("Aman Verma is live: ", true)
         pause(2600)
         shot("L10_room")
@@ -253,6 +255,7 @@ class LiveScreensTest {
         shot("L13_free_hearts")
 
         // ── gifts ──
+        note("step: gifts")
         tap("Send a gift"); pause(1100)
         shot("L14_gifts")
         tap("Teddy, 50 coins"); pause(200)
@@ -271,6 +274,7 @@ class LiveScreensTest {
         check(fake.bodiesOf("gift").any { it.contains("\"to_user_id\":\"u_Rahul\"") && it.contains("\"gift_id\":\"kiss\"") }, "the gift to a Co-Host was not sent to him")
 
         // ── the panel: Chat · Users · Gifts · Info ──
+        note("step: panel")
         tap("Chat, people, gifts and room info"); pause(1000)
         shot("L17_panel_chat")
         tap("Users (760)"); pause(1300)
@@ -310,6 +314,7 @@ class LiveScreensTest {
         back(); pause(500)
 
         // ── one person: report (with a screenshot) and block ──
+        note("step: report and block")
         tap("Rahul, Co-Host"); pause(900)
         shot("L27_person")
         check(has("Send a gift to Rahul"), "person sheet has no gift")
@@ -340,6 +345,7 @@ class LiveScreensTest {
         check(called("rate"), "rate not sent")
 
         // ── Join list → seat ──
+        note("step: join list and seat")
         tap("Join list, 2 waiting"); pause(900)
         shot("L33_join_list")
         tap("Request to join"); pause(1300)
@@ -373,6 +379,7 @@ class LiveScreensTest {
         shot("L38_back_to_list")
 
         // ═══════ invited from the Join list: Pay & Join pops up ═══════
+        note("step: invited")
         act { it.open("/live/inv1") }
         pause(2600)
         shot("L40_invited")
@@ -380,6 +387,7 @@ class LiveScreensTest {
         back(); pause(600)
 
         // ═══════ not enough coins ═══════
+        note("step: no coins")
         act { it.open("/live/poor1") }
         pause(2400)
         type("Super Chat, 2 coins", "Hello"); pause(150)
@@ -411,6 +419,7 @@ class LiveScreensTest {
         check(seesText("Can't open this room"), "no 'Can't open this room'")
 
         // ═══════ the host: Go Live → my room → Join list → End live ═══════
+        note("step: host")
         act { it.open("/live") }; pause(1800)
         tap("Go Live"); pause(1000)
         shot("L50_go_live")
@@ -442,6 +451,7 @@ class LiveScreensTest {
         shot("L55_after_end")
 
         // ═══════ the voice engine (Agora) with a made-up pass: loads, joins nothing real ═══════
+        note("step: voice")
         act { it.open("/live/voice1") }
         val voiced = waitFor(9000) { room()?.voiceOn == true }
         note("voice1: voiceOn=${room()?.voiceOn} voiced=$voiced")
