@@ -677,7 +677,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx
             if (r.ok && id.isNotEmpty()) {
                 calling = ""
                 sheets.closeAll()
-                pages.go("/call/$id")
+                // the call screen knows who is being called at once (name, photo)
+                pages.go("/call/$id", peerHint(p))
                 return true
             }
             return false
@@ -739,7 +740,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx
             if (r.ok && id.isNotEmpty()) {
                 lastMatch = HomeRules.idOf(p)
                 sheets.hideMatching()
-                pages.go("/call/$id")
+                pages.go("/call/$id", peerHint(p))
                 return@invoke
             }
             val err = r.data.optString("error")
@@ -756,6 +757,9 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx
     }
 
     fun cancelRandom() { matchRun += 1; sheets.hideMatching() }
+
+    /** what the call screen shows before it has loaded anything (the web's location.state.peer) */
+    private fun peerHint(p: JSONObject) = JSONObject().put("peer", JSONObject().put("name", HomeRules.firstName(p)).put("photo", HomeRules.listPhoto(p, HomeRules.photoOf(p))))
 
     /** test mode only: open one pop-up so the emulator can photograph it */
     fun previewOpen(what: String) {

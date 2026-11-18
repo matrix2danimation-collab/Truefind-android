@@ -542,7 +542,8 @@ class ExploreScreen(
             if (r.ok && id.isNotEmpty()) {
                 closeSheet()
                 coinsAt = 0L
-                go("/call/$id", null)
+                // the call screen knows who is being called at once (name, photo)
+                go("/call/$id", JSONObject().put("peer", peerJson(p)))
                 main.postDelayed({ hideStage() }, 400)
                 return@invoke
             }
@@ -619,7 +620,7 @@ class ExploreScreen(
             if (r.ok && id.isNotEmpty()) {
                 lastMatch = p.callId
                 coinsAt = 0L
-                go("/call/$id", null)
+                go("/call/$id", JSONObject().put("peer", peerJson(p)))
                 main.postDelayed({ hideStage() }, 400)
                 return@invoke
             }

@@ -66,6 +66,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var wallet: WalletScreen
     private var walletPreviewing = false
     private lateinit var games: GamesLayer
+    /** calls drawn by the phone: the incoming screen, the call screen, the Return pill (CallManager) */
+    private lateinit var calls: CallManager
+    private var callPreview = ""
     private var path = "/"
     private var search = ""
     /** an address the web sent while a native tap was leading (applied when the lead ends) */
@@ -126,6 +129,24 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     private fun has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+
+    // microphone (+ camera for video) for the native calls: asked before a call is answered or while it rings
+    private var callPermDone: ((Boolean) -> Unit)? = null
+    private var callPermVideo = false
+    private val askCallAv = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        val cb = callPermDone ?: return@registerForActivityResult
+        callPermDone = null
+        cb(has(Manifest.permission.RECORD_AUDIO) && (!callPermVideo || has(Manifest.permission.CAMERA)))
+    }
+    private fun askCallPerms(video: Boolean, done: (Boolean) -> Unit) {
+        val need = ArrayList<String>()
+        if (!has(Manifest.permission.RECORD_AUDIO)) need.add(Manifest.permission.RECORD_AUDIO)
+        if (video && !has(Manifest.permission.CAMERA)) need.add(Manifest.permission.CAMERA)
+        if (need.isEmpty()) { done(true); return }
+        callPermDone?.invoke(false)
+        callPermDone = done; callPermVideo = video
+        try { askCallAv.launch(need.toTypedArray()) } catch (e: Exception) { callPermDone = null; done(false) }
+    }
 
     // camera + microphone for the native live selfie videos (Become a Host / Creator, verification)
     private var camDone: ((Boolean) -> Unit)? = null
@@ -191,6 +212,20 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
             else { camDone = cb; try { askCam.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)) } catch (e: Exception) { camDone = null; cb(false) } }
         }
+        // calls are drawn by the phone (incoming screen, call screen, the Return pill): the web page hands its
+        // call pages to the app — only when this script runs before the page's own code (else the web keeps them)
+        calls = CallManager(this, root, object : CallManager.Host {
+            override fun path() = this@MainActivity.path + this@MainActivity.search
+            override fun go(path: String) { if (callPreview.isEmpty()) pages.go(path) }
+            override fun changed() { update() }
+            override fun askPerms(video: Boolean, done: (Boolean) -> Unit) = askCallPerms(video, done)
+        })
+        calls.enabled = scriptAtStart
+        if (scriptAtStart) {
+            web.addJavascriptInterface(calls.bridge, CallManager.NAME)
+            WebViewCompat.addDocumentStartJavaScript(web, CallManager.JS, ORIGINS)
+        }
+        pages.calls = calls
         var lastH = 0
         root.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ -> val h = bottom - top; if (h != lastH) { lastH = h; root.post { update() } } }
 
@@ -242,6 +277,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 backAt = android.os.SystemClock.uptimeMillis()
+                // a call on screen (or ringing) answers Back first
+                if (calls.onBack()) return
                 if (dance.visibility == View.VISIBLE) {
                     if (!dance.onBack()) {
                         if (web.canGoBack()) web.goBack() else dance.nav.back()
@@ -254,7 +291,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 if (games.visibility == View.VISIBLE && games.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
-                if (preview.isNotEmpty() || walletPreviewing) { finish(); return }
+                if (preview.isNotEmpty() || walletPreviewing || callPreview.isNotEmpty()) { finish(); return }
                 if (web.canGoBack()) { web.goBack(); return }
                 // Nothing behind in the web's history (a tab opened in place, or the app opened on this page):
                 // Back used to close the whole app here. Now it takes the app's own steps
@@ -267,6 +304,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
+        // test mode (emulator pictures on GitHub only): the native call screens with made-up data
+        val callScene = intent?.getStringExtra("tf_call").orEmpty()
+        if (callScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startCallPreview(callScene); return }
         // test mode (emulator pictures on GitHub only): a native games screen with made-up data
         val gamesPreview = intent?.getStringExtra("tf_games").orEmpty()
         if (gamesPreview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startGamesPreview(gamesPreview); return }
@@ -411,6 +451,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         this.search = if (q >= 0) path.substring(q) else ""
         wallet.wantsWeb = false // back in the app after the plan payment page
         update()
+        calls.routeChanged()
     }
 
     override fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean) {
@@ -419,6 +460,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val newLogin = token != Api.token
         Api.token = token
         if (newLogin) Realtime.tokenChanged()
+        calls.signedIn(token)
         this.navTopCss = navTopCss
         this.cover = cover
         update()
@@ -610,6 +652,25 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }
 
+    /** Test mode: a call screen (or the incoming call / the Return pill) with made-up data, no web page, no login. */
+    private fun startCallPreview(scene: String) {
+        callPreview = scene
+        Demo.on = true
+        Demo.girl = intent.getBooleanExtra("tf_girl", false)
+        web.loadUrl("about:blank")
+        watchFrames()
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        root.post {
+            if (scene == "pill") {
+                // "Call in progress · Return" over the native Home
+                pages.startPreview("home", "")
+                calls.preview("pill", "", Demo.girl)
+                pages.previewPill()
+            } else calls.preview(scene, open, Demo.girl)
+            android.util.Log.i("TFDBG", "preview open call $scene $open")
+        }
+    }
+
     /** test runs only: write slow frames (and a count every 2 s) to the log, to see where time goes */
     private fun watchFrames() {
         if (android.os.Build.VERSION.SDK_INT < 24) return
@@ -654,6 +715,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     override fun onResume() {
         super.onResume()
+        calls.onAppVisible(true)
         explore.onAppVisible(true)
         secret.onAppVisible(true)
         pages.onAppVisible(true)
@@ -664,6 +726,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onPause() {
+        calls.onAppVisible(false)
         explore.onAppVisible(false)
         secret.onAppVisible(false)
         pages.onAppVisible(false)
@@ -685,6 +748,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onDestroy() {
+        calls.shutdown()
         games.shutdown()
         dance.leave()
         DanceVideo.destroyAll()

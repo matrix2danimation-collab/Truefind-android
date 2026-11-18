@@ -3,10 +3,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- voice / video calls (Agora runs inside the Base44 pages) -->
+    <!-- voice / video calls (Agora: the app's own call screens, Live Dance, the games' voice) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- the incoming call's buzz (with the phone's ringtone) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Secret Dating map / nearby -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
