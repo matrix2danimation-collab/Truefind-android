@@ -177,6 +177,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // native Home, Profile and the bottom bar (they follow the web address like Explore)
         pages = NativePages(this, root, web) { update() }
         pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
+        pages.onNativeGo = { nativeNavAt = uptime(); webFx() }
         pages.checkUpdate = { updater.checkNow() }
         pages.onLeadEnd = {
             val h = heldRoute; heldRoute = null
@@ -241,7 +242,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                backAt = android.os.SystemClock.uptimeMillis()
+                backAt = uptime()
                 if (dance.visibility == View.VISIBLE) {
                     if (!dance.onBack()) {
                         if (web.canGoBack()) web.goBack() else dance.nav.back()
@@ -255,13 +256,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty() || walletPreviewing) { finish(); return }
-                if (web.canGoBack()) { web.goBack(); return }
+                if (web.canGoBack()) { backFromWeb(); return }
                 // Nothing behind in the web's history (a tab opened in place, or the app opened on this page):
                 // Back used to close the whole app here. Now it takes the app's own steps
                 // (Wallet → Recent → Explore → Home, Profile → Home) and leaves the app only from Home.
                 val up = stepAbove(path, search)
-                if (up != null) { pages.go(up, null, true); return }
-                if (pathOnly(path) != "/" && pathOnly(path) != "/home") { pages.go("/", null, true); return }
+                if (up != null) { backFromWeb { pages.go(up, null, true) }; return }
+                if (pathOnly(path) != "/" && pathOnly(path) != "/home") { backFromWeb { pages.go("/", null, true) }; return }
                 finish()
             }
         })
@@ -383,6 +384,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     /** Opens a page of the web app (same as navigate(path, { state }) inside it). */
     private fun openWeb(p: String, state: JSONObject?) {
+        nativeNavAt = uptime(); webFx()
         pages.lead(p, state)
         val js = "window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"});"
         web.evaluateJavascript(js, null)
@@ -424,6 +426,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         update()
     }
 
+    override fun onRouteIdx(idx: Int) { routeIdx = idx }
+
+    override fun onWebBack(n: Int) {
+        // nothing behind in the web view: nothing happens (as in a browser; __tfBack then uses its fallback)
+        if (!web.canGoBackOrForward(n)) return
+        backFromWeb(n)
+    }
+
     override fun onCaps(dance: Boolean) {
         // only when our script ran before the page's own code (else the web page draws Live Dance itself)
         val on = dance && scriptAtStart
@@ -452,34 +462,108 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun isDance(p: String): Boolean { val o = pathOnly(p); return o == "/dance" || o.startsWith("/dance/") }
     private fun webMode(p: String) = try { Uri.parse("https://x$p").getQueryParameter("web") == "1" } catch (e: Exception) { false }
 
-    // ── the move between pages (PageFx) ──
-    private var backAt = 0L
-    private var fxPath = ""
+    // ── the move between pages (PageFx: FRND's tab slide, push and back) ──
+    private var backAt = 0L        // phone Back, or a page's own back arrow (history.back in the web)
+    private var nativeNavAt = 0L   // a tap in a native screen opened another page (the app leads the move)
+    private var fxPath = ""        // the address at the last move check ("" until the first page shows)
+    private var fxIdx = -1         // the web's history position at the last move check
+    private var routeIdx = -1      // the web's history position now (sent with each address)
+    private var backShot: android.graphics.Bitmap? = null   // a web page's last look, taken just before going back
+    private var backShotAt = 0L
     private fun pageViews(): List<View> = buildList {
         add(explore); add(secret); add(wallet); add(games); add(dance)
         chatRoom?.let { add(it) }
         addAll(pages.pageViews)
     }
-    private fun shownPage(): View? = pageViews().filter { it.visibility == View.VISIBLE && it.parent === root }
+    /** the full native page on screen (null: the web page shows) — pages still sliding away don't count */
+    private fun shownPage(): View? = pageViews().filter { it.visibility == View.VISIBLE && it.parent === root && !PageFx.isHeld(it) }
         .maxByOrNull { root.indexOfChild(it) }
-    private val tabs = listOf("/", "/explore", "/secret-app", "/dating", "/chats", "/wallet")
-    private fun tabIndex(p: String) = tabs.indexOf(pathOnly(p).let { if (it == "/home") "/" else it })
+    /** pages of the bottom bar that slide side by side (Find and Wallet open over it, with their own back arrow) */
+    private fun tabIndex(p: String): Int = when (pathOnly(p).let { if (it == "/home") "/" else it }) {
+        "/" -> 0; "/explore" -> 1; "/chats" -> 3; else -> -1
+    }
+    private fun uptime() = android.os.SystemClock.uptimeMillis()
 
-    /** Shows the native screens that fit the page now, with a smooth move when the full page changes. */
+    /** Shows the native screens that fit the page now, and moves to it the way FRND does when the page changes. */
     private fun update() {
         // while the screens are still being made (onCreate), just show what fits
         if (!::dance.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
         val before = shownPage()
+        val navBefore = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
         val fromPath = fxPath
+        val fromIdx = fxIdx
         updateNow()
+        PageFx.reassert()
         val after = shownPage()
-        fxPath = path
-        if (before === after) return
-        if (preview.isNotEmpty() && !intent.getBooleanExtra("tf_fx", false)) return
-        val a = tabIndex(fromPath); val b = tabIndex(path)
-        val back = android.os.SystemClock.uptimeMillis() - backAt < 800 ||
-            (a >= 0 && b >= 0 && b < a) || (a < 0 && b >= 0 && fromPath.isNotEmpty())
-        PageFx.run(root, before, after, back)
+        val navAfter = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
+        val toPath = path
+        if (Api.token.isEmpty() || preview.isNotEmpty() || walletPreviewing) { fxPath = ""; return }
+        fxPath = toPath; fxIdx = routeIdx
+        if (fromPath.isEmpty()) return                       // the app just opened: no move
+        val now = uptime()
+        val shot = backShot?.takeIf { now - backShotAt < 1500 }
+        val webToWeb = before == null && after == null
+        if (before === after && !webToWeb) return            // the same native page
+        if (webToWeb && (pathOnly(fromPath) == pathOnly(toPath) || shot == null)) return // the web moves its own pages
+        val tA = tabIndex(fromPath); val tB = tabIndex(toPath)
+        val goingBack = now - backAt < 1500 || (routeIdx >= 0 && fromIdx >= 0 && routeIdx < fromIdx)
+        val kind = when {
+            tA >= 0 && tB >= 0 && tA != tB -> PageFx.Kind.TAB
+            goingBack -> PageFx.Kind.POP
+            tA < 0 && tB >= 0 -> PageFx.Kind.POP
+            else -> PageFx.Kind.PUSH
+        }
+        val nativeLed = now - nativeNavAt < 1500
+        val fromV: View = before ?: web
+        val toV: View = after ?: web
+        when (kind) {
+            PageFx.Kind.TAB -> PageFx.run(root, kind, fromV, toV, dir = if (tB > tA) 1 else -1,
+                waitFrames = if (after == null) 2 else 1, onEnd = { settle() })
+            PageFx.Kind.PUSH -> PageFx.run(root, kind, fromV, toV,
+                lowerExtras = if (navBefore && !navAfter) listOf(pages.nav) else emptyList(),
+                // Secret Dating's pink bar is the web page's: the web view comes in with it
+                upperExtras = if (after === secret && before != null) listOf(web) else emptyList(),
+                // a web page that opened a native one moves and darkens itself (the web's own push)
+                moveLower = before != null || nativeLed,
+                waitFrames = if (after == null) 2 else 1, onEnd = { settle() })
+            PageFx.Kind.POP -> {
+                backAt = 0L
+                PageFx.run(root, kind, before, toV,
+                    lowerExtras = if (navAfter && !navBefore) listOf(pages.nav) else emptyList(),
+                    upperExtras = if (before === secret && after != null) listOf(web) else emptyList(),
+                    snapshot = if (before == null) shot else null, onEnd = { settle() })
+            }
+        }
+        if (before == null) { backShot = null }
+    }
+    /** after a move: the pages that should be hidden now are hidden (no new move from here) */
+    private fun settle() {
+        if (!::dance.isInitialized) return
+        updateNow()
+        fxPath = path; fxIdx = routeIdx
+    }
+
+    /** The web's own page animations stop for a moment: the app is moving the pages itself. */
+    private fun webFx() {
+        web.evaluateJavascript("document.documentElement.classList.add('tfnav');clearTimeout(window.__tfNavT);window.__tfNavT=setTimeout(function(){document.documentElement.classList.remove('tfnav')},900);", null)
+    }
+    /**
+     * Back from a web page: its picture first (it slides away while the page under it comes back), then Back.
+     * [n]: how many pages back.
+     */
+    private fun backFromWeb(n: Int = -1, then: (() -> Unit)? = null) {
+        backAt = uptime()
+        val go = { webFx(); if (then != null) then() else web.goBackOrForward(n) }
+        if (shownPage() != null || android.os.Build.VERSION.SDK_INT < 26 || PageFx.off(this) || root.width == 0 || root.height == 0) { go(); return }
+        val bmp = try { android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888) } catch (e: Throwable) { null }
+        if (bmp == null) { go(); return }
+        val at = IntArray(2); root.getLocationInWindow(at)
+        try {
+            android.view.PixelCopy.request(window, android.graphics.Rect(at[0], at[1], at[0] + root.width, at[1] + root.height), bmp, { res ->
+                if (res == android.view.PixelCopy.SUCCESS) { backShot = bmp; backShotAt = uptime() }
+                go()
+            }, android.os.Handler(android.os.Looper.getMainLooper()))
+        } catch (e: Throwable) { go() }
     }
 
     private fun updateNow() {
@@ -575,7 +659,44 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
+    /**
+     * Test runs only: the page moves (PageFx) with made-up data and no web page — the same code as on the phone
+     * (taps go through the same calls; the web's reports are played by the test). The CI records the screen.
+     */
+    private var fxTest = false
+    private fun startFxTest() {
+        fxTest = true
+        Demo.on = true; DemoHome.on = true
+        Api.origin = "https://true-find.base44.app"; Api.appId = "demo"; Api.token = "demo"
+        web.loadUrl("about:blank")
+        watchFrames()
+        preview = ""
+        fun say(what: String) = android.util.Log.i("TFDBG", "fx step $what")
+        fun web(p: String, back: Boolean = false) {
+            // what the web would report a moment after a tap (or after Back)
+            if (back) backAt = uptime()
+            root.postDelayed({ val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else ""); onRoute(p) }, if (back) 0L else 120L)
+        }
+        val steps: List<Pair<Long, () -> Unit>> = listOf(
+            1500L to { say("start"); web("/") },
+            4500L to { say("1 Home -> Explore (tab)"); pages.go("/explore"); web("/explore") },
+            7500L to { say("2 Explore -> Home (tab)"); pages.go("/"); web("/") },
+            10500L to { say("3 Home -> Profile (open)"); pages.go("/profile"); web("/profile") },
+            13500L to { say("4 Profile -> Home (back)"); web("/", back = true) },
+            16500L to { say("5 Home -> Wallet (open)"); openWeb("/wallet", null); web("/wallet") },
+            19500L to { say("6 Wallet -> Home (back)"); web("/", back = true) },
+            22500L to { say("7 Home -> Recent web page (tab)"); pages.go("/chats"); web("/chats") },
+            25500L to { say("8 Recent -> Home (tab)"); pages.go("/"); web("/") },
+            28500L to { say("9 Home -> Secret Dating (open)"); openWeb("/secret-app", null); web("/secret-app") },
+            31500L to { say("10 Secret Dating Home -> Map (tab)"); web("/dating") },
+            34500L to { say("11 Secret Dating -> Home (back)"); web("/", back = true) },
+            37500L to { say("end") },
+        )
+        for ((at, step) in steps) root.postDelayed({ step() }, at)
+    }
+
     private fun startPreview() {
+        if (preview == "fx") { startFxTest(); return }
         if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             web.loadUrl("about:blank")
@@ -659,7 +780,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
         wallet.onAppVisible(true)
-        if (preview.isEmpty() && !walletPreviewing && !previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
+        if (preview.isEmpty() && !walletPreviewing && !previewing && !fxTest) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
     }
 

@@ -266,7 +266,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
     private fun shownNatively(p: String, q: String): Boolean =
         p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
-            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") || p == "/wallet" ||
+            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") ||
+            // the native Wallet and Games open at the tap too (the web catches up underneath)
+            p == "/wallet" || p == "/games" || p.startsWith("/games/") || p == "/wallet" ||
             p == "/dance" || p.startsWith("/dance/")
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
@@ -350,8 +352,11 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
 
     // ═════════════════ moving around (same as a tap in the web app) ═════════════════
     /** navigate(path, { state, replace }) of the web app */
+    /** a native screen opens a page (MainActivity: the app leads the move) */
+    var onNativeGo: () -> Unit = {}
     fun go(path: String, state: JSONObject? = null, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast.show("→ $path"); return }
+        onNativeGo()
         lead(path, state)
         web.evaluateJavascript("window.__tfNav && window.__tfNav(${JSONObject.quote(path)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
     }
@@ -430,6 +435,11 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
+    /** test runs only (the page moves test): what the web page would report for [path] */
+    fun testState(path: String, search: String = "") {
+        onState(JSONObject().put("path", path).put("search", search).put("unread", "3").toString())
+    }
+
     fun startPreview(what: String, open0: String) {
         preview = what
         // "settings=apply,form": an address (?settings=apply) and then a test action on that screen ("form")

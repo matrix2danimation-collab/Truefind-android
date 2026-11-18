@@ -230,8 +230,10 @@ class SecretHome(
         // the same smooth move as between the app's pages (Online Map | Home | Chat: left to right)
         val after = pageView(view)
         if (shown && isShown && before != null && after != null && before !== after) {
+            // side by side like FRND's tabs; the pink bar at the bottom stays still
             val order = listOf("map", "home", "chat")
-            PageFx.run(this, before, after, order.indexOf(view) < order.indexOf(from))
+            PageFx.run(this, PageFx.Kind.TAB, before, after, dir = if (order.indexOf(view) > order.indexOf(from)) 1 else -1,
+                onEnd = { pageView(page)?.let { cur -> listOf(scroll, mapPage, chatPage).forEach { v -> if (v != null && v !== cur) v.visibility = GONE } } })
         }
     }
     private fun switchNow(view: String) {

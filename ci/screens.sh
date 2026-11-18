@@ -70,6 +70,7 @@ shot() {
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native games (their own list of screens, from the Games work)
 if [ "$SET" = games ]; then bash ci/games-screens.sh "$APK" "$OUT"; exit 0; fi
+if [ "$SET" = fx ]; then bash ci/fx-test.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"

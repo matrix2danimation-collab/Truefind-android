@@ -16,6 +16,10 @@ class WebBridge(private val listener: Listener) {
         fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean)
         /** what the published web page can hand over to native screens (dance = Live Dance) */
         fun onCaps(dance: Boolean)
+        /** the web's history position of the page now shown (sent just before its address) */
+        fun onRouteIdx(idx: Int) {}
+        /** the web asked to go back [n] pages (history.back / history.go(-n)): the app does it */
+        fun onWebBack(n: Int) {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -32,6 +36,18 @@ class WebBridge(private val listener: Listener) {
         if (!allowed(origin)) return
         val o = origin ?: return
         main.post { listener.onInfo(o, token.orEmpty(), appId.orEmpty(), navTop.toFloat(), cover) }
+    }
+
+    @JavascriptInterface
+    fun idx(origin: String?, idx: Int) {
+        if (!allowed(origin)) return
+        main.post { listener.onRouteIdx(idx) }
+    }
+
+    @JavascriptInterface
+    fun back(origin: String?, n: Int) {
+        if (!allowed(origin)) return
+        main.post { listener.onWebBack(if (n < 0) n else -1) }
     }
 
     @JavascriptInterface
@@ -57,10 +73,28 @@ class WebBridge(private val listener: Listener) {
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
   css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}html.tfcr .cr{visibility:hidden!important}'
-    + 'html.tfgm #root .tg,html.tfgm #root .hc,html.tfgm #root .mc{display:none!important}';
+    + 'html.tfgm #root .tg,html.tfgm #root .hc,html.tfgm #root .mc{display:none!important}'
+    // the app moves the pages itself for a moment (tfnav): the web's own slide, under-page and dim stay still
+    + 'html.tfnav .tf-pop,html.tfnav .tf-under,html.tfnav .tf-tabdim{visibility:hidden!important;animation:none!important}'
+    + 'html.tfnav .tf-push,html.tfnav .tf-pop-in,html.tfnav .tf-glide,html.tfnav .tf-tab.tf-under-anim,html.tfnav .tf-pg-in,html.tfnav .tf-pg-out{animation:none!important}';
   (document.head || document.documentElement).appendChild(css);
   var lastPath = '';
-  function sendRoute(){ var p = (location.pathname || '/') + (location.search || ''); if (p !== lastPath) { lastPath = p; try { B.route(location.origin, p); } catch(e){} } }
+  function sendRoute(){
+    var p = (location.pathname || '/') + (location.search || '');
+    if (p !== lastPath) {
+      lastPath = p;
+      var i = (history.state && typeof history.state.idx === 'number') ? history.state.idx : -1;
+      try { B.idx(location.origin, i); } catch(e){}
+      try { B.route(location.origin, p); } catch(e){}
+    }
+  }
+  // Back inside the web (its back arrows, navigate(-1)) goes through the app, which moves the pages the
+  // way the phone's Back does (the page slides away to the right). The app then goes back in the web view.
+  try {
+    var hb = history.back, hg = history.go;
+    history.back = function(){ try { B.back(location.origin, -1); } catch(e){ hb.call(history); } };
+    history.go = function(n){ if (typeof n === 'number' && n < 0) { try { B.back(location.origin, n); } catch(e){ hg.call(history, n); } } else hg.apply(history, arguments); };
+  } catch(e){}
   ['pushState','replaceState'].forEach(function(k){
     var o = history[k];
     history[k] = function(){ var r = o.apply(this, arguments); setTimeout(sendRoute, 0); setTimeout(info, 0); return r; };

@@ -4,103 +4,232 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Picture
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.provider.Settings
+import android.view.Choreographer
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.PathInterpolator
+import android.webkit.WebView
 import android.widget.FrameLayout
 
 /**
- * The move from one full page to the next (Home ↔ Explore ↔ Find ↔ Wallet, Profile, Games, Live Dance,
- * a chat …), the way FRND moves between its pages: the two pages sit side by side and slide together
- * the whole width of the screen — the old one goes out one side while the new one comes in from the
- * other, no fading. (Before: a 30 dp nudge with a fade, which on a phone looked like a quick blink.)
+ * Moving from one page to the next, the way FRND does it. Measured frame by frame from the owner's
+ * screen recordings of FRND (same phone, 24 frames a second):
  *
- * - The page you leave is shown as a recording of its last look (a [Picture]: no pixels are drawn at the
- *   moment of the tap, the recording is replayed by the GPU), so the real page can be hidden at once and the
- *   new page is never waited for.
- * - Forward (a tab to the right, or a page opened) comes in from the right, Back from the left.
- * - 300 ms with Android's ViewPager curve (1 − (1 − t)⁵): most of the way in the first third, then a long
- *   soft stop — measured frame by frame on the FRND video (a page is ~90% across after ~100 ms).
- * - Phones with animations turned off (Settings → Developer options, or Remove animations) get no movement.
- * - A new move while one is running finishes the old one at once.
+ * - TAB (Home ↔ Explore ↔ Recent, and Secret Dating's Map ↔ Home ↔ Chat): both pages slide side by side,
+ *   a whole screen width, like a ViewPager. Nothing fades, the bottom bar stays still. In FRND the new page
+ *   was ~35 % of the way after the first recorded frame, ~76 % after the second, settled by the fourth.
+ * - PUSH (opening a page: Profile, Wallet, Games, Dashboard, a chat …): the new page slides in from the right
+ *   edge over the old one; the old page slides 24 % to the left and darkens to ~55 % brightness.
+ *   (FRND: 48 % → 79 % → 89 % → 94 % → 97 %, the old page 0.12 → 0.21 of the width, brightness ×0.76 → ×0.57.)
+ * - POP (Back): the same in reverse — the top page slides away to the right, the page under it comes back
+ *   from 24 % on the left and brightens.
+ *
+ * All moves use the same curve (Material "emphasized decelerate": a quick start and a long, soft stop), which
+ * matches those measurements. Only translation and opacity change, on the phone's graphics chip.
+ *
+ * The page you leave stays on screen until the move ends (the app hides it a moment later). A page that
+ * isn't a view any more (a web page you went back from) is shown as the picture taken just before.
+ * Phones with animations switched off get no movement.
  */
 object PageFx {
-    private const val MS = 300L
-    /** ViewPager's scroll curve */
-    private val ease = android.animation.TimeInterpolator { t -> val u = t - 1f; u * u * u * u * u + 1f }
+    enum class Kind { TAB, PUSH, POP }
 
-    private var running: ValueAnimator? = null
-    private var snap: View? = null
-    private var moving: View? = null
+    private const val TAB_MS = 220L
+    private const val PUSH_MS = 300L
+    private const val POP_MS = 300L
+    private const val UNDER = 0.24f   // how far the lower page moves left
+    private const val DIM = 0.45f     // how dark the lower page gets (FRND: brightness ×0.55)
+    private val ease = PathInterpolator(0.05f, 0.7f, 0.1f, 1f)
 
-    private fun off(ctx: Context): Boolean = try {
+    private var anim: ValueAnimator? = null
+    private var pending: Choreographer.FrameCallback? = null
+    private val held = ArrayList<View>()      // pages kept on screen until the move ends
+    private val moved = ArrayList<View>()     // views whose translation we change
+    private val lifted = ArrayList<Lift>()    // views lifted above the others for the move
+    private val layered = ArrayList<View>()   // views drawn from a GPU layer during the move
+    private var scrim: View? = null
+    private var overlayHost: ViewGroup? = null
+    private val overlays = ArrayList<Drawable>()
+    private var ended: (() -> Unit)? = null
+
+    private class Lift(val v: View, val z: Float, val spot: Int, val ambient: Int)
+
+    fun off(ctx: Context): Boolean = try {
         Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     } catch (e: Exception) { false }
 
-    /** ends a running move at once (pages in their final places) */
+    val running: Boolean get() = anim != null || pending != null
+    fun isHeld(v: View) = held.contains(v)
+    /** The app has just set which pages show: the pages still moving stay on screen. */
+    fun reassert() { if (running) for (v in held) if (v.visibility != View.VISIBLE) v.visibility = View.VISIBLE }
+
+    /** Ends a running move at once (every page in its final place). */
     fun finish() {
-        running?.let { a -> running = null; a.removeAllListeners(); a.cancel() }
-        snap?.let { s -> (s.parent as? ViewGroup)?.removeView(s) }
-        snap = null
-        moving?.let { m -> m.translationX = 0f; m.alpha = 1f; m.setLayerType(View.LAYER_TYPE_NONE, null) }
-        moving = null
+        pending?.let { Choreographer.getInstance().removeFrameCallback(it) }
+        pending = null
+        anim?.let { a -> anim = null; a.removeAllListeners(); a.cancel() }
+        for (v in moved) v.translationX = 0f
+        moved.clear()
+        for (l in lifted) {
+            l.v.translationZ = l.z
+            if (Build.VERSION.SDK_INT >= 28) { l.v.outlineSpotShadowColor = l.spot; l.v.outlineAmbientShadowColor = l.ambient }
+        }
+        lifted.clear()
+        for (v in layered) v.setLayerType(View.LAYER_TYPE_NONE, null)
+        layered.clear()
+        scrim?.let { s -> (s.parent as? ViewGroup)?.removeView(s) }
+        scrim = null
+        overlayHost?.let { h -> for (d in overlays) h.overlay.remove(d) }
+        overlays.clear(); overlayHost = null
+        held.clear()
+        val e = ended; ended = null
+        e?.invoke()
     }
 
     /**
-     * [gone]: the page that was just hidden (or null when the web page was showing),
-     * [came]: the page that was just shown (or null when the web page now shows).
+     * [from] / [to]: the page you leave and the page you go to (the web view counts as a page).
+     * [lowerExtras]: views that move with the lower page (the bottom bar of a tab page).
+     * [upperExtras]: views that move with the upper page, just under it (Secret Dating's bar lives in the web view).
+     * [snapshot]: for POP when the page you leave is already gone (a web page): its picture.
+     * [moveLower]: false when the web page moves and darkens its own lower page.
+     * [onEnd]: after the move (the app then hides the pages that should be hidden).
      */
-    fun run(root: FrameLayout, gone: View?, came: View?, back: Boolean) {
+    fun run(
+        container: FrameLayout, kind: Kind, from: View?, to: View?, dir: Int = 1,
+        lowerExtras: List<View> = emptyList(), upperExtras: List<View> = emptyList(), snapshot: Bitmap? = null, moveLower: Boolean = true,
+        waitFrames: Int = 1, onEnd: (() -> Unit)? = null,
+    ) {
         finish()
-        if (gone == null && came == null) return
-        if (off(root.context) || root.width == 0) return
-        val dir = if (back) -1f else 1f
-        val shift = root.width.toFloat()
+        val w = container.width.toFloat()
+        if (w <= 0f || off(container.context) || (from == null && to == null && snapshot == null) || (from != null && from === to)) { onEnd?.invoke(); return }
+        ended = onEnd
+        val zUp = Ui.dp(48f)
+        val zScrim = Ui.dp(40f)
+        fun hold(v: View?) { if (v != null && v !is WebView) { held.add(v); v.visibility = View.VISIBLE } }
+        fun move(v: View?) { if (v != null && !moved.contains(v)) moved.add(v) }
+        // (no GPU layers: moving a page only changes where it is drawn; a layer would be redrawn every frame
+        // on pages that move inside — Explore's floating bubbles — and costs a full extra picture at the tap)
+        fun layer(@Suppress("UNUSED_PARAMETER") v: View?) {}
+        fun lift(v: View, z: Float) {
+            val spot = if (Build.VERSION.SDK_INT >= 28) v.outlineSpotShadowColor else 0
+            val amb = if (Build.VERSION.SDK_INT >= 28) v.outlineAmbientShadowColor else 0
+            lifted.add(Lift(v, v.translationZ, spot, amb))
+            v.translationZ = z
+            // above the others without a big shadow (FRND's sliding page has a clean edge)
+            if (Build.VERSION.SDK_INT >= 28) { v.outlineSpotShadowColor = Color.TRANSPARENT; v.outlineAmbientShadowColor = Color.TRANSPARENT }
+        }
+        fun addScrim(alpha: Float): View = View(container.context).apply {
+            setBackgroundColor(Color.BLACK)
+            this.alpha = alpha
+            outlineProvider = null
+            isClickable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            translationZ = zScrim
+            container.addView(this, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        }.also { scrim = it }
 
-        // the page you leave: its last look, on top of both pages
-        var overlay: View? = null
-        if (gone != null && gone.width > 0 && gone.height > 0) {
-            val pic = try {
-                Picture().also { p ->
-                    val c: Canvas = p.beginRecording(gone.width, gone.height)
-                    try { gone.draw(c) } finally { p.endRecording() }
+        val ms: Long
+        val step: (Float) -> Unit
+        when (kind) {
+            Kind.TAB -> {
+                ms = TAB_MS
+                hold(from)
+                move(from); move(to); layer(from); layer(to)
+                to?.translationX = dir * w
+                step = { t ->
+                    from?.translationX = -dir * w * t
+                    to?.translationX = dir * w * (1f - t)
                 }
-            } catch (e: Throwable) { null }
-            if (pic != null) {
-                overlay = object : View(root.context) {
-                    override fun onDraw(canvas: Canvas) { canvas.drawPicture(pic) }
-                }.apply {
-                    isClickable = false
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    // just above whichever of the two pages sits higher (bars above them stay above)
-                    val at = maxOf(root.indexOfChild(gone), if (came != null) root.indexOfChild(came) else -1) + 1
-                    root.addView(this, at.coerceIn(0, root.childCount), FrameLayout.LayoutParams(gone.width, gone.height))
-                    x = gone.x; y = gone.y
-                    elevation = maxOf(gone.elevation, came?.elevation ?: 0f)
+            }
+            Kind.PUSH -> {
+                ms = PUSH_MS
+                val upper = to
+                if (upper == null) { ended = null; onEnd?.invoke(); return }
+                hold(from); lowerExtras.forEach { hold(it) }
+                lift(upper, zUp)
+                move(upper); layer(upper)
+                upper.translationX = w
+                val ups = upperExtras.filter { it !== upper && it !== from }
+                ups.forEach { lift(it, zUp - Ui.dp(1f)); move(it); it.translationX = w }
+                val lowers = if (moveLower) listOfNotNull(from) + lowerExtras else emptyList()
+                lowers.forEach { move(it); layer(it) }
+                val sc = if (moveLower) addScrim(0f) else null
+                step = { t ->
+                    upper.translationX = w * (1f - t)
+                    for (u in ups) u.translationX = w * (1f - t)
+                    for (l in lowers) l.translationX = -UNDER * w * t
+                    sc?.alpha = DIM * t
+                }
+            }
+            Kind.POP -> {
+                ms = POP_MS
+                val lowers = listOfNotNull(to) + lowerExtras
+                lowers.forEach { move(it); layer(it); it.translationX = -UNDER * w }
+                if (from != null) {
+                    // the page you leave is still a view: it slides away on top
+                    hold(from)
+                    lift(from, zUp)
+                    move(from); layer(from)
+                    val ups = upperExtras.filter { it !== from && it !== to }
+                    ups.forEach { lift(it, zUp - Ui.dp(1f)); move(it) }
+                    val sc = addScrim(DIM)
+                    step = { t ->
+                        from.translationX = w * t
+                        for (u in ups) u.translationX = w * t
+                        for (l in lowers) l.translationX = -UNDER * w * (1f - t)
+                        sc.alpha = DIM * (1f - t)
+                    }
+                } else {
+                    // the page you leave is gone (a web page): its picture slides away on top
+                    val dim = ColorDrawable(Color.BLACK).apply { setBounds(0, 0, container.width, container.height); alpha = (DIM * 255).toInt() }
+                    container.overlay.add(dim); overlays.add(dim)
+                    val shot = snapshot?.let { BitmapDrawable(container.resources, it).apply { setBounds(0, 0, container.width, container.height) } }
+                    shot?.let { container.overlay.add(it); overlays.add(it) }
+                    overlayHost = container
+                    step = { t ->
+                        for (l in lowers) l.translationX = -UNDER * w * (1f - t)
+                        dim.alpha = (DIM * 255 * (1f - t)).toInt()
+                        shot?.let { s -> val x = (w * t).toInt(); s.setBounds(x, 0, x + container.width, container.height) }
+                        container.invalidate()
+                    }
                 }
             }
         }
-        snap = overlay
-        moving = came
-        if (came != null) {
-            came.translationX = dir * shift
-            came.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        }
-        overlay?.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        step(0f)
 
-        val a = ValueAnimator.ofFloat(0f, 1f).setDuration(MS)
+        val a = ValueAnimator.ofFloat(0f, 1f).setDuration(ms)
         a.interpolator = ease
-        a.addUpdateListener { v ->
-            val t = v.animatedValue as Float
-            came?.translationX = dir * shift * (1f - t)
-            overlay?.translationX = -dir * shift * t
-        }
+        var frames = 0
+        var t0 = 0L
+        a.addUpdateListener { v -> frames++; step(v.animatedValue as Float) }
         a.addListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: Animator) { if (running === animation) finish() }
+            override fun onAnimationStart(animation: Animator) { t0 = android.os.SystemClock.uptimeMillis() }
+            override fun onAnimationEnd(animation: Animator) {
+                // one line per move (how long it took and how many frames it drew: a phone at 60 Hz draws ~18 in 300 ms)
+                android.util.Log.i("TFFX", "$kind ${ms}ms took ${android.os.SystemClock.uptimeMillis() - t0}ms, $frames frames")
+                if (anim === animation) { anim = null; step(1f); finish() }
+            }
         })
-        running = a
-        a.start()
+        // Start after the new page's first frame is drawn: building a page can take a moment the first time,
+        // and the clock of the move must not run during it (that is what makes a move jump).
+        var left = waitFrames.coerceAtLeast(1)
+        val cb = object : Choreographer.FrameCallback {
+            override fun doFrame(frameTimeNanos: Long) {
+                if (pending !== this) return
+                if (--left > 0) { Choreographer.getInstance().postFrameCallback(this); return }
+                pending = null
+                anim = a
+                a.start()
+            }
+        }
+        pending = cb
+        Choreographer.getInstance().postFrameCallback(cb)
     }
 }

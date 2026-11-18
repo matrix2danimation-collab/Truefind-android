@@ -30,9 +30,26 @@ object Api {
     val ready: Boolean get() = Demo.on || (appId.isNotEmpty() && token.isNotEmpty())
 
     fun invoke(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) {
+        // reading something (getWallet, getOnlineNow, getChats …) is safe to ask again
+        if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
         pool.execute {
             val r = call(name, payload, timeoutMs)
             main.post { done(r) }
+        }
+    }
+
+    // ── a read that failed for a moment is asked again ──
+    // On the owner's phone the server sometimes answered a read with 500 (or not at all) and the next
+    // try worked: the page showed "Try again" / an empty list for nothing. A read (never a payment, a call
+    // or a message) is now asked again up to 2 times, 0.7 s and then 1.8 s later, before it counts as failed.
+    private fun passing(r: Result) = r.status == 0 || r.status == 408 || r.status == 429 || r.status in 500..599
+    private fun readWithRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0) {
+        pool.execute {
+            val r = work()
+            main.post {
+                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1) }, if (tries == 0) 700L else 1800L)
+                else done(r)
+            }
         }
     }
 
@@ -107,13 +124,13 @@ object Api {
         val q = StringBuilder("?q=").append(java.net.URLEncoder.encode(query.toString(), "UTF-8"))
         if (sort != null) q.append("&sort=").append(java.net.URLEncoder.encode(sort, "UTF-8"))
         if (limit > 0) q.append("&limit=").append(limit)
-        async({ request("GET", "/entities/$entity$q", null, null) }, done)
+        readWithRetry({ request("GET", "/entities/$entity$q", null, null) }, done)
     }
 
     /** entities.X.get(id) */
     fun get(entity: String, id: String, done: (Result) -> Unit) {
         if (Demo.on) { main.post { done(Demo.filter(entity, JSONObject().put("id", id)).let { r -> Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error) }) }; return }
-        async({ request("GET", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
+        readWithRetry({ request("GET", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
     }
 
     /** entities.X.delete(id) */
