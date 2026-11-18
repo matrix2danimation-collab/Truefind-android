@@ -68,6 +68,8 @@ shot() {
 }
 # the native Wallet (its own list of screens, from the Wallet work)
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
+# the native Expert Talk, My Dashboard and Secret Dating Earning (their own list, from the expert-dash work)
+if [ "$SET" = et ] || [ "$SET" = etx ]; then bash ci/expert-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # the native games (their own list of screens, from the Games work)
 if [ "$SET" = games ]; then bash ci/games-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then

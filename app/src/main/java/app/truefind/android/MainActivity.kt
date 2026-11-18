@@ -576,7 +576,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
     private fun startPreview() {
-        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify")) {
+        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify") ||
+            preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             web.loadUrl("about:blank")
             watchFrames()

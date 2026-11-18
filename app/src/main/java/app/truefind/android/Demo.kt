@@ -140,6 +140,7 @@ object Demo {
     fun core(endpoint: String, payload: JSONObject) = DemoHome.core(endpoint, payload) ?: Api.Result(200, JSONObject().put("signed_url", ""), null)
 
     fun function(name: String, payload: JSONObject): Api.Result {
+        EtDemo.function(name, payload)?.let { return it }
         DemoHome.function(name, payload)?.let { return it }
         val d = when (name) {
             "getOnlineNow" -> JSONObject().put("me", JSONObject().put("gender", if (girl) "female" else "male").put("city", "Rohtak").put("state", "Haryana")).put("profiles", JSONArray()).put("online", 0).put("poll_ms", 15000)
