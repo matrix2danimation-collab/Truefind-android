@@ -35,6 +35,9 @@ shot() {
   { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
 }
 
+# a first (cold) start on a fresh emulator is very slow: warm the app up once, no picture
+adb shell am start -W -n $PKG/.MainActivity --es tf_preview et > /dev/null 2>&1; sleep 15; adb shell am force-stop $PKG
+
 if [ "$SET" = et ]; then
 shot et01-home 8 $P et
 shot et02-home-scroll1 5 $P et --es tf_open scroll1

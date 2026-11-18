@@ -167,11 +167,14 @@ class EtHome(et: ExpertTalkScreen) : EtPage(et, Et.PM_PAGE) {
         every(30_000) { tick30() }
     }
 
+    private var lastHome = ""
     override fun back(): Boolean = false
-    override fun homeChanged() = render()
+    // the answer is asked again each time Home opens: draw again only when something changed
+    override fun homeChanged() { if (et.home?.toString() != lastHome) render() }
 
     override fun render() {
         val home = et.home ?: return
+        lastHome = home.toString()
         rebuild { b ->
             b.put(header(home), -1f, -2f)
             val st = ui.stack(18f)
@@ -400,6 +403,7 @@ class EtHome(et: ExpertTalkScreen) : EtPage(et, Et.PM_PAGE) {
         val c = etCol(ctx, 8f, Gravity.CENTER_HORIZONTAL).apply {
             background = etCardBg(true); etShadow(3f)
             setPadding(Ui.dpi(12f), Ui.dpi(18f), Ui.dpi(12f), Ui.dpi(12f))
+            clipToPadding = false; clipChildren = false
         }
         c.put(etRingPhoto(ctx, Et.s(e, "photo"), 64f, Et.GREEN, Et.s(e, "id")), l = -2f, t = -2f, r = -2f, b = -2f)
         c.put(etRow(ctx, 4f).apply { put(etT(ctx, Et.s(e, "name"), 15f, Et.INK, true).etEll().apply { maxWidth = Ui.dpi(120f) }); put(etVerified(ctx, 14f), 14f, 14f) })
@@ -625,7 +629,8 @@ class EtExperts(et: ExpertTalkScreen) : EtPage(et, Et.PM_PAGE) {
             background = etCardBg(true); etShadow(3f); clipToOutline = true
             setPadding(Ui.dpi(16f), Ui.dpi(16f), Ui.dpi(16f), Ui.dpi(16f))
         }
-        val top = etRow(ctx, 12f, Gravity.TOP)
+        val top = etRow(ctx, 12f, Gravity.TOP).apply { clipChildren = false; clipToPadding = false }
+        c.clipToPadding = false
         top.put(etRingPhoto(ctx, Et.s(e, "photo"), 62f, if (free) Et.GREEN else Ui.c("#B5B0C2"), Et.s(e, "id")), l = -2f, t = -2f, r = -2f, b = -2f)
         val col = etCol(ctx, 4f)
         val nm = etRow(ctx, 5f)

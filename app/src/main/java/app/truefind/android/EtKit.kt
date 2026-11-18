@@ -78,22 +78,47 @@ object Et {
 
     // ── India time (etKit.jsx) ──
     const val IST = 330 * 60000L
-    private val UTC = TimeZone.getTimeZone("UTC")
-    private val ymdF = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = UTC; isLenient = false }
     val MON = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     val MONF = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
     val WDN = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
+    // Calendar dates as plain day numbers (days since 1 Jan 1970): no shared date formatter,
+    // so they are right on any thread (a SimpleDateFormat used from two threads mixes dates up).
+    private val YMD = Regex("^(\\d{4})-(\\d{2})-(\\d{2})$")
+    private fun daysFromCivil(y0: Int, m: Int, d: Int): Long {
+        val y = if (m <= 2) y0 - 1 else y0
+        val era = Math.floorDiv(y, 400)
+        val yoe = y - era * 400
+        val doy = (153 * (m + (if (m > 2) -3 else 9)) + 2) / 5 + d - 1
+        val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return era * 146097L + doe - 719468L
+    }
+    private fun civil(days: Long): IntArray {
+        val z = days + 719468L
+        val era = Math.floorDiv(z, 146097L)
+        val doe = (z - era * 146097L).toInt()
+        val yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+        val doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+        val mp = (5 * doy + 2) / 153
+        val d = doy - (153 * mp + 2) / 5 + 1
+        val m = if (mp < 10) mp + 3 else mp - 9
+        val y = (yoe + era * 400 + (if (m <= 2) 1 else 0)).toInt()
+        return intArrayOf(y, m, d)
+    }
+    private fun dayNo(date: String?): Long? {
+        val g = YMD.matchEntire(date ?: "") ?: return null
+        return daysFromCivil(g.groupValues[1].toInt(), g.groupValues[2].toInt(), g.groupValues[3].toInt())
+    }
     /** UTC midnight of a YYYY-MM-DD date (ms); 0 when it is not a date */
-    fun dayMs(date: String?): Long = try { ymdF.parse(date ?: "")?.time ?: 0L } catch (e: Exception) { 0L }
-    fun ymd(ms: Long): String = ymdF.format(Date(ms))
+    fun dayMs(date: String?): Long = (dayNo(date) ?: 0L) * 86_400_000L
+    fun ymd(ms: Long): String { val c = civil(Math.floorDiv(ms, 86_400_000L)); return "${c[0]}-${c[1].toString().padStart(2, '0')}-${c[2].toString().padStart(2, '0')}" }
     fun todayIST(now: Long = System.currentTimeMillis()) = ymd(now + IST)
-    fun addDays(date: String, n: Int) = ymd(dayMs(date) + n * 86_400_000L)
-    private fun cal(date: String): Calendar = Calendar.getInstance(UTC).apply { timeInMillis = dayMs(date) }
-    fun wdOf(date: String) = cal(date).get(Calendar.DAY_OF_WEEK) - 1
-    fun dayOfMonth(date: String) = cal(date).get(Calendar.DAY_OF_MONTH)
-    fun monthOf(date: String) = cal(date).get(Calendar.MONTH)
-    fun yearOf(date: String) = cal(date).get(Calendar.YEAR)
+    fun addDays(date: String, n: Int): String = ymd(dayMs(date) + n * 86_400_000L)
+    /** 0 = Sunday … 6 = Saturday (1 Jan 1970 was a Thursday) */
+    fun wdOf(date: String): Int = Math.floorMod((dayNo(date) ?: 0L) + 4L, 7L).toInt()
+    fun dayOfMonth(date: String) = civil(dayNo(date) ?: 0L)[2]
+    fun monthOf(date: String) = civil(dayNo(date) ?: 0L)[1] - 1
+    fun yearOf(date: String) = civil(dayNo(date) ?: 0L)[0]
     fun startMs(date: String, min: Int): Long = dayMs(date) + min * 60_000L - IST
     fun hm(min: Int): String { val h = min / 60; val m = min % 60; return "${((h + 11) % 12) + 1}:${m.toString().padStart(2, '0')} ${if (h >= 12) "PM" else "AM"}" }
     /** "3:00" (hm without AM / PM) */
@@ -452,7 +477,7 @@ class EtToast(private val host: FrameLayout) {
         val t = etT(host.context, msg, 13.5f, Color.WHITE, false, 1.35f).apply {
             background = Tf.box(Et.INK, 14f)
             setPadding(Ui.dpi(14f), Ui.dpi(11f), Ui.dpi(14f), Ui.dpi(11f))
-            elevation = Ui.dp(24f)
+            elevation = Ui.dp(200f)   // above the pop-ups too (the web's toast sits over its sheets)
             outlineSpotShadowColorCompat(Color.argb(90, 0, 0, 0))
         }
         host.addView(t, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f), 0) })

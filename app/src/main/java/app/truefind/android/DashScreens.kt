@@ -337,8 +337,8 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         for ((ic, v, l) in items) {
             val c = DashK.col(ctx, m, 2f, Gravity.CENTER).apply { background = DashK.box(m, Color.WHITE, 16f, DashK.LINE) }
             c.addView(DashK.svg(ctx, m, ic, 22f))
-            if (loading) c.addView(DashK.skel(ctx, false), DashK.lp(m, 34f, 21f)) else c.addView(DashK.t(ctx, m, v, 17f, DashK.INK, true, 21f).apply { maxLines = 1 })
-            c.addView(DashK.t(ctx, m, l, 11.5f, DashK.SUB, lh = 14f).apply { maxLines = 1 })
+            if (loading) c.addView(DashK.skel(ctx, false), DashK.lp(m, 34f, 21f)) else c.addView(DashK.t(ctx, m, v, 17f, DashK.INK, true, 21f).apply { maxLines = 1 }, LinearLayout.LayoutParams(-2, -2))
+            c.addView(DashK.t(ctx, m, l, 11.5f, DashK.SUB, lh = 14f).apply { maxLines = 1 }, LinearLayout.LayoutParams(-2, -2))
             g.addView(c, android.view.ViewGroup.LayoutParams(-1, m.pi(84f)))
         }
         return g

@@ -64,10 +64,12 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
   }
   try {
     var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.open = function(m, u){ this.__tfHeld = held(u); return xo.apply(this, arguments); };
-    XMLHttpRequest.prototype.send = function(){ if (this.__tfHeld) return; return xs.apply(this, arguments); };
+    // the hidden web Dashboard, whose held requests time out, would report "Dashboard load failed" as an error: not sent
+    function falseReport(u, b){ return /\/functions\/logClientError/.test(String(u || '')) && typeof b === 'string' && b.indexOf('Dashboard load failed') >= 0 && document.documentElement.classList.contains('tfdbn'); }
+    XMLHttpRequest.prototype.open = function(m, u){ this.__tfHeld = held(u); this.__tfUrl = u; return xo.apply(this, arguments); };
+    XMLHttpRequest.prototype.send = function(b){ if (this.__tfHeld || falseReport(this.__tfUrl, b)) return; return xs.apply(this, arguments); };
     var f0 = window.fetch;
-    if (f0) window.fetch = function(i, o){ var u = typeof i === 'string' ? i : (i && i.url) || ''; if (held(u)) return new Promise(function(){}); return f0.apply(this, arguments); };
+    if (f0) window.fetch = function(i, o){ var u = typeof i === 'string' ? i : (i && i.url) || ''; if (held(u) || falseReport(u, o && o.body)) return new Promise(function(){}); return f0.apply(this, arguments); };
   } catch(e){}
   // The app's own router (React Router's navigator), so a native tap opens a page
   // exactly like a tap in the web app (push / replace, with its state).
