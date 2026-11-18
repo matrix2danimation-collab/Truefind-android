@@ -364,7 +364,7 @@ internal class ABtn(
     private val row = LK.row(ctx, Gravity.CENTER)
     private val spin = TfLoader(ctx, 16f, Color.WHITE).apply { visibility = View.GONE }
     private val iconV = icon?.let { ImageView(ctx).apply { setImageDrawable(it) } }
-    private val text = LK.t(ctx, label, size, if (kind == "primary") Color.WHITE else AK.fg, bold)
+    private val text = LK.one(LK.t(ctx, label, size, if (kind == "primary") Color.WHITE else AK.fg, bold))
     var busy = false; set(v) { field = v; draw() }
     var off = false; set(v) { field = v; draw() }
     var busyLabel: String? = null

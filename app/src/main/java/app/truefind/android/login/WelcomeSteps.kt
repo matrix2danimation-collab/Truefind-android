@@ -158,7 +158,7 @@ internal class PhoneStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         page.onSent { err -> busy = false; if (err.isNotEmpty()) error = err; draw() }
     }
 
-    private val focusLater = Runnable { LK.showKeyboard(input); input.setSelection(input.value.length) }
+    private val focusLater = Runnable { LK.autoFocus(input); input.setSelection(input.value.length) }
     override fun setLive(v: Boolean) { main.removeCallbacks(focusLater); if (v) main.postDelayed(focusLater, 480) else LK.hideKeyboard(input) }
     override fun refresh() = draw()
     override fun dispose() { main.removeCallbacksAndMessages(null) }
@@ -319,7 +319,7 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         }
     }
 
-    private val focusLater = Runnable { LK.showKeyboard(hidden) }
+    private val focusLater = Runnable { LK.autoFocus(hidden) }
     override fun setLive(v: Boolean) {
         live = v
         main.removeCallbacks(focusLater); main.removeCallbacks(tick)

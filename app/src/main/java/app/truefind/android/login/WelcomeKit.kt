@@ -164,7 +164,8 @@ internal object WK {
 
     /** a Welcome screen: purple top + white sheet filling the rest, scrolling as one */
     fun page(ctx: Context, head: View, sheet: View): ScrollView {
-        val col = LK.col(ctx)
+        // .tfo: purple behind everything (it shows at the sheet's round top corners)
+        val col = LK.col(ctx).apply { setBackgroundColor(LK.head) }
         col.addView(head, LK.lp(-1, -2))
         col.addView(sheet, LK.lp(-1, 0, weight = 1f))
         return ScrollView(ctx).apply {
@@ -223,8 +224,8 @@ internal class SheetPanel(ctx: Context, title: String, sub: String, onClose: () 
         top.addView(View(ctx).apply { background = CssBox(LK.c("#E3DCEC"), 9f) }, LK.lp(Ui.dpi(38f), Ui.dpi(4f), b = 12f, g = Gravity.CENTER_HORIZONTAL))
         val head = LK.row(ctx)
         val t = LK.col(ctx)
-        t.addView(LK.t(ctx, title, 17f, LK.sheetTitle, true, 1.4f))
-        t.addView(LK.t(ctx, sub, 11f, LK.sheetSub, false, 1.4f), LK.lp(t = 2f))
+        t.addView(LK.t(ctx, title, 17f, LK.sheetTitle, true))
+        t.addView(LK.t(ctx, sub, 11f, LK.sheetSub, false), LK.lp(t = 2f))
         head.addView(t, LK.lp(0, -2, weight = 1f))
         val x = FrameLayout(ctx).apply {
             background = CssBox(LK.c("#F5F0FA"), 17f)

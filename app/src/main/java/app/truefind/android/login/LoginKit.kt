@@ -104,7 +104,7 @@ internal object LK {
             typeface = if (bold) Ui.bold else Ui.regular
             includeFontPadding = false
             if (ls != 0f) letterSpacing = ls / size
-            if (lh > 0f) cssLine(lh * size)
+            if (lh > 0f) cssLine(Ui.dp(lh * size))
         }
 
     fun one(v: TextView): TextView { v.maxLines = 1; v.isSingleLine = true; v.ellipsize = TextUtils.TruncateAt.END; return v }
@@ -145,6 +145,11 @@ internal object LK {
     }
 
     fun click(v: View, scale: Float = 0.97f, f: () -> Unit) { v.isClickable = true; v.setOnClickListener { f() }; press(v, scale) }
+
+    /** false in the test pictures (the keyboard would cover half of the page) */
+    var autoKeyboard = true
+    /** a page puts the cursor in its first box: the keyboard comes up with it, like the web's focus() after a tap */
+    fun autoFocus(v: View) { if (autoKeyboard) showKeyboard(v) else v.requestFocus() }
 
     fun showKeyboard(v: View) {
         v.requestFocus()
@@ -229,6 +234,11 @@ internal class CssBox(
         if (b.width() <= 0 || b.height() <= 0) return
         r.set(b)
         val rad = radii(r.width(), r.height())
+        if (shadows.isNotEmpty()) {
+            c.save()
+            shape(path, r, rad, 0f)
+            if (android.os.Build.VERSION.SDK_INT >= 26) c.clipOutPath(path) else @Suppress("DEPRECATION") c.clipPath(path, android.graphics.Region.Op.DIFFERENCE)
+        }
         for (s in shadows) {
             if (s.blur <= 0.01f) {
                 shape(path, r, rad, Ui.dp(s.spread))
@@ -244,6 +254,7 @@ internal class CssBox(
             c.drawBitmap(cached.bmp, 0f, 0f, sp)
             c.restore()
         }
+        if (shadows.isNotEmpty()) c.restore()
         shape(path, r, rad, 0f)
         val g = gradient
         p.style = Paint.Style.FILL
@@ -280,8 +291,6 @@ internal class CssBox(
             val radius = ((sigma * scale - 0.5f) / 0.57735f).coerceAtLeast(0.5f)
             maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
         }
-        cv.scale(1f, 1f)
-        val m = android.graphics.Matrix(); m.setScale(1f, 1f)
         cv.drawPath(pp, paint)
         return Cache(w, h, bmp, scale, pad)
     }

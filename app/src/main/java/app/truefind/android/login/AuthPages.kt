@@ -153,7 +153,7 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
         update()
         setNeon(true)
         put(col, 16f, 40f)
-        main.postDelayed({ LK.showKeyboard(field.edit) }, 120)
+        main.postDelayed({ LK.autoFocus(field.edit) }, 120)
     }
 
     private fun sendOtp() {
@@ -173,6 +173,7 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
 
     // ── the WhatsApp code ──
     private var otp: OtpRow? = null
+    private var otpTick: Runnable? = null
     private fun otpView() {
         val ctx = context
         val o = OtpRow(ctx); otp = o
@@ -185,6 +186,7 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
             stack(ctx, 20f, o, err, owner.apply { layoutParams = LK.lp(-2, -2, g = Gravity.CENTER_HORIZONTAL) }, btn, resend, AuthPages.shieldLine(ctx, "We never share your number with anyone.")))
         fun left() = maxOf(0, 30 - ((SystemClock.elapsedRealtime() - sentAt) / 1000L).toInt())
         val tick = object : Runnable { override fun run() { update(); if (left() > 0 && step == "otp") main.postDelayed(this, 1000) } }
+        otpTick = tick
         update = {
             o.bad = error.isNotEmpty()
             AK.setText(err, error)
@@ -205,7 +207,7 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
         put(col, 16f, 40f)
         main.removeCallbacksAndMessages(null)
         main.postDelayed(tick, 1000)
-        main.postDelayed({ o.focus() }, 120)
+        main.postDelayed({ LK.autoFocus(o.edit) }, 120)
     }
 
     private fun verifyOtp(value: String) {
@@ -256,7 +258,9 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
             if (!r.ok) { error = LoginApi.fnErr(r, "Could not resend the OTP. Try again."); update(); return@fn }
             if (!d.optBoolean("success")) { error = d.optString("error").ifEmpty { "Could not resend the OTP." }; update(); return@fn }
             sentAt = SystemClock.elapsedRealtime(); otp?.put("")
-            update(); otpView()
+            update()
+            otpTick?.let { main.removeCallbacks(it); main.postDelayed(it, 1000) }
+            otp?.let { LK.showKeyboard(it.edit) }
         }
     }
 
@@ -290,7 +294,7 @@ internal class EmailForm(ctx: Context, private val layer: LoginLayer, private va
         pass.onGo { submit() }
         btn.setOnClickListener { submit() }
         draw()
-        postDelayed({ LK.showKeyboard(email.edit) }, 150)
+        postDelayed({ LK.autoFocus(email.edit) }, 150)
     }
     private fun draw() {
         btn.busy = busy; btn.off = email.value.trim().isEmpty() || pass.value.isEmpty()
@@ -349,7 +353,7 @@ internal class RegisterPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, lay
         update()
         setNeon(true)
         put(col, 16f, 40f)
-        main.postDelayed({ LK.showKeyboard(e.edit) }, 150)
+        main.postDelayed({ LK.autoFocus(e.edit) }, 150)
     }
 
     private fun submit() {
@@ -388,7 +392,7 @@ internal class RegisterPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, lay
         update()
         setNeon(true)
         put(col, 16f, 40f)
-        main.postDelayed({ o.focus() }, 150)
+        main.postDelayed({ LK.autoFocus(o.edit) }, 150)
     }
 
     private fun verify(value: String) {
@@ -447,7 +451,7 @@ internal class ForgotPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer
         btn.setOnClickListener { submit() }
         put(authLayout("Forgot Password", "We'll email you a link to reset your password", footer("Remembered it? ", "Back to sign in") { layer.go("/login") },
             stack(ctx, 16f, AuthPages.labeled(ctx, "Email", e), btn)), 16f, 40f)
-        postDelayed({ LK.showKeyboard(e.edit) }, 150)
+        postDelayed({ LK.autoFocus(e.edit) }, 150)
     }
 
     private fun sent() {

@@ -420,6 +420,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
      */
     fun startPreview(scene: String, open: String) {
         preview = scene
+        LK.autoKeyboard = open == "kb"
         LoginApi.demo = LoginDemo::answer
         LoginDemo.scene = scene
         gotState = true

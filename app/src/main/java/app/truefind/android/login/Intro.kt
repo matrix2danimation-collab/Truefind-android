@@ -50,6 +50,23 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         val BG = intArrayOf(LK.c("#4A1D96"), LK.c("#861A4B"), LK.c("#0B4F5C"))
         val DOODLE = arrayOf("calls", "nearby", "safety")
         private const val W80 = 0xCCFFFFFF.toInt()
+
+        class Words(val dot: String, val label: String, val title: String, val text: String, val feats: List<Pair<String, String>>)
+        val WORDS = listOf(
+            Words("#F9A8D4", "Real conversations", "Voice & Video Calls", "Talk to real people near you — anytime, anywhere.", listOf(
+                """<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9L3.5 9.7l5.9-.8z" fill="rgba(255,255,255,0.8)"/>""" to "HD voice & video",
+                """<circle cx="12" cy="12" r="8.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M12 7.5v9M9.5 9.5h3.2a1.6 1.6 0 0 1 0 3.2H9.5h3.6a1.6 1.6 0 0 1 0 3.2H9.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" stroke-linecap="round"/>""" to "Pay per minute",
+            )),
+            Words("#FCD34D", "Nearby", "Find Your Match Nearby", "See who is online around you on the live India map.", listOf(
+                """<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6L13 13c1.1 1.6 2.3 2.6 4.3 2.6H20M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M20 8.4h-2.7c-1.4 0-2.4.5-3.2 1.3M17.5 5.5L20 8.4l-2.5 2.9M17.5 12.7l2.5 2.9-2.5 2.9" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>""" to "Random match",
+                """<path d="M4 6c3-1.5 13-1.5 16 0v5c0 5-4 8-8 8s-8-3-8-8z" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="9" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="15" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/>""" to "Secret Dating",
+            )),
+            Words("#6EE7B7", "Safety", "100% Safe & Private", "No fake users. Your data stays yours.", listOf(
+                """<rect x="4" y="5" width="16" height="14" rx="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="12" cy="12" r="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/><circle cx="17" cy="8.5" r="1" fill="rgba(255,255,255,0.8)"/>""" to "Live selfie check",
+                """<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M5 17l4.5-5 3.5 4 2.5-3 3.5 4" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linejoin="round"/><circle cx="15.5" cy="9" r="1.3" fill="rgba(255,255,255,0.8)"/>""" to "Photo review",
+                """<circle cx="12" cy="12" r="8.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M6 6l12 12" stroke="rgba(255,255,255,0.8)" stroke-width="2.2" stroke-linecap="round"/>""" to "Block anytime",
+            )),
+        )
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -103,23 +120,6 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         1 -> ArtView(ctx, IntroArt.MATCH) { s * 1.08f }
         else -> ArtView(ctx, IntroArt.SECURE) { s * 1.08f }
     }
-
-    private class Words(val dot: String, val label: String, val title: String, val text: String, val feats: List<Pair<String, String>>)
-    private val WORDS = listOf(
-        Words("#F9A8D4", "Real conversations", "Voice & Video Calls", "Talk to real people near you — anytime, anywhere.", listOf(
-            """<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9L3.5 9.7l5.9-.8z" fill="rgba(255,255,255,0.8)"/>""" to "HD voice & video",
-            """<circle cx="12" cy="12" r="8.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M12 7.5v9M9.5 9.5h3.2a1.6 1.6 0 0 1 0 3.2H9.5h3.6a1.6 1.6 0 0 1 0 3.2H9.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" stroke-linecap="round"/>""" to "Pay per minute",
-        )),
-        Words("#FCD34D", "Nearby", "Find Your Match Nearby", "See who is online around you on the live India map.", listOf(
-            """<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6L13 13c1.1 1.6 2.3 2.6 4.3 2.6H20M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M20 8.4h-2.7c-1.4 0-2.4.5-3.2 1.3M17.5 5.5L20 8.4l-2.5 2.9M17.5 12.7l2.5 2.9-2.5 2.9" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>""" to "Random match",
-            """<path d="M4 6c3-1.5 13-1.5 16 0v5c0 5-4 8-8 8s-8-3-8-8z" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="9" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="15" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/>""" to "Secret Dating",
-        )),
-        Words("#6EE7B7", "Safety", "100% Safe & Private", "No fake users. Your data stays yours.", listOf(
-            """<rect x="4" y="5" width="16" height="14" rx="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="12" cy="12" r="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/><circle cx="17" cy="8.5" r="1" fill="rgba(255,255,255,0.8)"/>""" to "Live selfie check",
-            """<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M5 17l4.5-5 3.5 4 2.5-3 3.5 4" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linejoin="round"/><circle cx="15.5" cy="9" r="1.3" fill="rgba(255,255,255,0.8)"/>""" to "Photo review",
-            """<circle cx="12" cy="12" r="8.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M6 6l12 12" stroke="rgba(255,255,255,0.8)" stroke-width="2.2" stroke-linecap="round"/>""" to "Block anytime",
-        )),
-    )
 
     private fun svg24(inner: String) = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$inner</svg>"""
 

@@ -20,11 +20,11 @@ shot() {
   if [ -n "$open" ]; then adb shell am start -W -n $PKG/.MainActivity --es tf_login "$scene" --es tf_open "$open" >> "$OUT/start.txt" 2>&1
   else adb shell am start -W -n $PKG/.MainActivity --es tf_login "$scene" >> "$OUT/start.txt" 2>&1; fi
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1 || true
-  waitlog 45
+  waitlog 30
   sleep "$wait"
   if ! on_top; then
     { echo "== $name: app not on top"; adb logcat -d -b main,system,crash | grep -iE "truefind|FATAL|ANR in|has died" | tail -40; } > "$OUT/$name.why.txt"
-    adb shell am start -W -n $PKG/.MainActivity --es tf_login "$scene" --es tf_open "$open" > /dev/null 2>&1; waitlog 45; sleep "$wait"
+    adb shell am start -W -n $PKG/.MainActivity --es tf_login "$scene" --es tf_open "$open" > /dev/null 2>&1; waitlog 30; sleep "$wait"
   fi
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1 || true
   adb exec-out screencap -p > "$OUT/$name.png"
@@ -39,6 +39,7 @@ shot w02-intro-2 4 welcome-intro-2-still
 shot w03-intro-3 4 welcome-intro-3-still
 shot w04-intro-rules 4 welcome-intro-still rules
 shot w05-phone 4 welcome-phone
+shot w05b-phone-keyboard 5 welcome-phone kb
 shot w06-phone-filled 4 welcome-phone-filled
 shot w07-phone-error 4 welcome-phone-error
 shot w08-phone-note 4 welcome-phone-note
@@ -60,6 +61,7 @@ shot w23-boot 3 welcome-boot
 # ── /login (email and password · WhatsApp OTP · the MFA step) ──
 shot l01-login 4 login
 shot l02-login-phone 4 login-phone
+shot l02b-login-keyboard 5 login-phone kb
 shot l03-login-phone-filled 4 login-phone-filled
 shot l04-login-otp 4 login-otp
 shot l05-login-otp-owner 4 login-otp-owner

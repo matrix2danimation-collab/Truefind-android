@@ -204,7 +204,7 @@ internal class BasicProfilePage(ctx: Context, layer: LoginLayer) : ShellPage(ctx
             btn.apply { layoutParams = LK.lp(-1, -2, t = 8f) })
         draw()
         shell(stepDots(ctx, 2, 4), header(LK.I.User, "Tell us about you", "These details help us find your matches."), err, rise(form))
-        postDelayed({ LK.showKeyboard(name.edit) }, 200)
+        postDelayed({ LK.autoFocus(name.edit) }, 200)
     }
 
     /** the date picker (max: today) */

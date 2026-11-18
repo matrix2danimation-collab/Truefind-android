@@ -237,7 +237,7 @@ internal class MfaFlowView(ctx: Context, private val layer: LoginLayer, private 
         draw()
         // text the code once when SMS is the method in use; resending is the person's call
         if (method == "sms" && !sent) { sent = true; sendCode() }
-        main.postDelayed({ otp.focus() }, 250)
+        main.postDelayed({ LK.autoFocus(otp.edit) }, 250)
     }
 
     private var verifying = false
@@ -271,6 +271,9 @@ internal class MfaMethodSetup(
     private var code = ""
     private val resend = ResendLine(ctx) { doResend() }
     private var touched = false
+    private var errV: TextView? = null
+    private var markPhone: (String?) -> Unit = {}
+    private var sendBtn: ABtn? = null
 
     init {
         if (method == "totp") { busy = true; session.setupAuthenticator { r, e -> busy = false; if (e != null) err = e else setup = r; draw() } }
@@ -339,11 +342,10 @@ internal class MfaMethodSetup(
             val (row, btns) = MfaKit.actions(ctx, "Back", "Verify", { step = "start"; code = ""; fieldError = null; err = null; resend.error(null); draw() }) { confirm(code) }
             btns.first.off = busy; btns.second.busy = busy
             items.add(row)
-            main.postDelayed({ otp.focus() }, 200)
+            main.postDelayed({ LK.autoFocus(otp.edit) }, 200)
         }
         addView(stack(ctx, 16f, *items.filter { it.visibility != View.GONE }.toTypedArray()), LayoutParams(-1, -2))
     }
-    private var errV: TextView? = null
 
     private fun phoneField(ctx: Context, error: String?): View {
         val col = LK.col(ctx)
@@ -371,11 +373,9 @@ internal class MfaMethodSetup(
         col.addView(line, LK.lp(-1, -2, t = 6f))
         markPhone = { mark(it) }
         main.post { mark(error) }
-        main.postDelayed({ LK.showKeyboard(f.edit) }, 200)
+        main.postDelayed({ LK.autoFocus(f.edit) }, 200)
         return col
     }
-    private var markPhone: (String?) -> Unit = {}
-    private var sendBtn: ABtn? = null
 
     /** the dial code list (a small searchable list under the button) */
     private fun dialPicker(anchor: View) {
