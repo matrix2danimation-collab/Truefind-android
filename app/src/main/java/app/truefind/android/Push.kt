@@ -51,6 +51,8 @@ object Push {
     @Volatile var visible = false
     /** the web page / app hears about a new token (MainActivity sets it) */
     @Volatile var onToken: ((String) -> Unit)? = null
+    /** a message arrived while the app is on screen (its kind: msg, like, info …): the app shows it itself */
+    @Volatile var onMessage: ((String) -> Unit)? = null
     private val pool = Executors.newSingleThreadExecutor()
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -149,7 +151,7 @@ object Push {
         channels(ctx)
         val t = d["t"].orEmpty()
         // the app is on screen: it rings / shows calls and messages itself (offers and tests still show)
-        if (visible && t != "test" && t != "offer") return
+        if (visible && t != "test" && t != "offer") { onMessage?.invoke(t); return }
         val nm = NotificationManagerCompat.from(ctx)
         if (!nm.areNotificationsEnabled()) return
         val title = d["title"].orEmpty().ifEmpty { "True Find" }

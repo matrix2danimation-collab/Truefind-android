@@ -248,31 +248,7 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
     }
 
     /** Join card (the server says this member has not joined this app yet) — components/JoinAppCard.jsx */
-    fun joinCard(app: String, onJoined: () -> Unit): View {
-        val secret = app == "secret"
-        val card = Tf.col(ctx, Gravity.CENTER_HORIZONTAL).apply {
-            background = Tf.box(Color.argb(179, 22, 31, 44), 24f, 1f, if (secret) Color.argb(102, 252, 211, 77) else Color.argb(102, 255, 92, 97))
-            setPadding(Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f))
-        }
-        card.addView(Tf.t(ctx, if (secret) "Secret Dating" else "True Find", 18f, if (secret) Ui.c("#FDE68A") else Color.WHITE))
-        card.addView(Tf.t(ctx, if (secret) "A separate private membership with its own map, requests, chat, premium and wallet. Joining does not touch your True Find account."
-            else "Friendship discovery with its own likes, chats, calls and wallet. Joining does not touch your Secret Dating account.", 14f, Color.argb(153, 255, 255, 255), false).apply { gravity = Gravity.CENTER; setLineSpacing(Ui.dp(14f) * 0.6f, 1f) }, Tf.ll(t = 8f))
-        val err = Tf.t(ctx, "", 14f, Ui.c("#FCA5A5"), false).apply { gravity = Gravity.CENTER; visibility = View.GONE }
-        val btn = TfBtn(ctx, if (secret) "Join Secret Dating" else "Join True Find", "primary", Tf.lu(Lu.Check, if (secret) Color.BLACK else Color.WHITE, 16f, 2f), 48f, 16f, 14f).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, if (secret) intArrayOf(Ui.c("#FCD34D"), Ui.c("#F59E0B")) else intArrayOf(Ui.c("#FF5C61"), Ui.c("#FF1A21"))).apply { cornerRadius = Ui.dp(16f) }
-            if (secret) text.setTextColor(Color.BLACK)
-        }
-        btn.setOnClickListener {
-            if (btn.busy) return@setOnClickListener
-            btn.busy = true; err.visibility = View.GONE
-            Api.invoke("joinApp", JSONObject().put("app", app)) { r ->
-                if (r.ok) { onJoined() } else { btn.busy = false; err.text = r.data.optString("error").ifEmpty { r.error ?: "Could not join." }; err.visibility = View.VISIBLE }
-            }
-        }
-        card.addView(btn, Tf.ll(Tf.M, Tf.W, t = 20f))
-        card.addView(err, Tf.ll(t = 12f))
-        return card
-    }
+    fun joinCard(app: String, onJoined: () -> Unit): View = JoinCard.build(ctx, app, onJoined)
 
     // ═════════════════ the full-screen "finding someone" while Random Match works ═════════════════
     fun showMatching(type: String, stageName: String, name: String, onCancel: () -> Unit) {
@@ -370,3 +346,34 @@ class FlowRow(ctx: Context, private val gapX: Int, private val gapY: Int) : andr
 
 @Suppress("FunctionName") fun ViewGroupLp(w: Int, h: Int) = android.view.ViewGroup.LayoutParams(w, h)
 @Suppress("unused") private val keepTV: Class<*> = TextView::class.java
+
+/** Join card for one app membership ("truefind" or "secret") — components/JoinAppCard.jsx. */
+object JoinCard {
+    fun build(ctx: android.content.Context, app: String, onJoined: () -> Unit): View {
+        val secret = app == "secret"
+        val card = Tf.col(ctx, Gravity.CENTER_HORIZONTAL).apply {
+            // True Find: bg-background/70 · Secret Dating: bg-card/85 (the web's dark card), amber edge
+            background = if (secret) Tf.box(Color.argb(217, 29, 40, 58), 24f, 1f, Color.argb(102, 252, 211, 77))
+                else Tf.box(Color.argb(179, 22, 31, 44), 24f, 1f, Color.argb(102, 255, 92, 97))
+            setPadding(Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f))
+        }
+        card.addView(Tf.t(ctx, if (secret) "Secret Dating" else "True Find", 18f, if (secret) Ui.c("#FDE68A") else Color.WHITE))
+        card.addView(Tf.t(ctx, if (secret) "A separate private membership with its own map, requests, chat, premium and wallet. Joining does not touch your True Find account."
+            else "Friendship discovery with its own likes, chats, calls and wallet. Joining does not touch your Secret Dating account.", 14f, Color.argb(153, 255, 255, 255), false).apply { gravity = Gravity.CENTER; setLineSpacing(Ui.dp(14f) * 0.6f, 1f) }, Tf.ll(t = 8f))
+        val err = Tf.t(ctx, "", 14f, Ui.c("#FCA5A5"), false).apply { gravity = Gravity.CENTER; visibility = View.GONE }
+        val btn = TfBtn(ctx, if (secret) "Join Secret Dating" else "Join True Find", "primary", Tf.lu(Lu.Check, if (secret) Color.BLACK else Color.WHITE, 16f, 2f), 48f, 16f, 14f).apply {
+            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, if (secret) intArrayOf(Ui.c("#FCD34D"), Ui.c("#F59E0B")) else intArrayOf(Ui.c("#FF5C61"), Ui.c("#FF1A21"))).apply { cornerRadius = Ui.dp(16f) }
+            if (secret) text.setTextColor(Color.BLACK)
+        }
+        btn.setOnClickListener {
+            if (btn.busy) return@setOnClickListener
+            btn.busy = true; err.visibility = View.GONE
+            Api.invoke("joinApp", JSONObject().put("app", app)) { r ->
+                if (r.ok) { onJoined() } else { btn.busy = false; err.text = r.data.optString("error").ifEmpty { r.error ?: "Could not join." }; err.visibility = View.VISIBLE }
+            }
+        }
+        card.addView(btn, Tf.ll(Tf.M, Tf.W, t = 20f))
+        card.addView(err, Tf.ll(t = 12f))
+        return card
+    }
+}

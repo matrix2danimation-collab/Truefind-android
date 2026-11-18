@@ -25,7 +25,8 @@ import org.json.JSONObject
  * SECRET DATING · Home — native version of the "home" view of src/pages/SecretApp.jsx.
  * Same data (getDiscoverProfiles, getMapProfiles, getRequestCredits, getStories,
  * getSecretActivity, UserProfile, PremiumAccess), same rules, same look.
- * The Secret Dating bottom bar (Online Map · Home · Chat) stays the web's own.
+ * The Secret Dating bottom bar (Online Map · Home · Chat) is the app's own too (SdNavBar): these pages
+ * end where it starts. A member who has not joined Secret Dating yet gets the Join card here (JoinCard).
  */
 @SuppressLint("ViewConstructor")
 class SecretHome(
@@ -62,16 +63,15 @@ class SecretHome(
     private var notice = ""
     private var shown = false
     private var seenSent = false
-    /** true when this page needs the web version (not a member of Secret Dating yet: the web's Join card) */
-    var wantsWeb = false
-        private set
-    var onWantsWeb: (() -> Unit)? = null
-
     private val prefs = ctx.getSharedPreferences("sd", 0)
 
     // ── views ──
     private val scroll = ScrollView(ctx)
     private val col = vbox(ctx)
+    /** everything under "Complete your profile": Online Now, the cards, Stories, Private by Design */
+    private val body = vbox(ctx)
+    /** not a member of Secret Dating yet: the Join card takes the body's place (JoinAppCard.jsx) */
+    private var joinCard: View? = null
     private val myPhoto = RoundPhoto(ctx, 43f)
     private val myBadge = FrameLayout(ctx)
     private val creditsPill = sdText(ctx, "", 13f, Color.WHITE)
@@ -100,7 +100,7 @@ class SecretHome(
     init {
         SdRules.load(ctx)
         clipChildren = false
-        // nothing of these pages may be drawn below their bottom edge: the web's Secret Dating bar is there
+        // nothing of these pages may be drawn below their bottom edge: the Secret Dating bar is there
         outlineProvider = android.view.ViewOutlineProvider.BOUNDS
         clipToOutline = true
         addView(PinkBackdrop(ctx), LayoutParams(-1, -1))
@@ -130,9 +130,11 @@ class SecretHome(
         col.addView(noticeBox, lp(MATCH, WRAP, t = 12f))
         col.addView(actBox, lp(MATCH, WRAP, t = 14f))
         buildComplete()
-        col.addView(onlineRow, lp(MATCH, WRAP, t = 12f))
+        body.clipChildren = false
+        col.addView(body, lp(MATCH, WRAP))
+        body.addView(onlineRow, lp(MATCH, WRAP, t = 12f))
         deckBox.clipChildren = false
-        col.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 10f))
+        body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 10f))
         buildStories()
         buildPrivate()
         buildToast()
@@ -306,7 +308,6 @@ class SecretHome(
                 needSecret = r.data.optString("needs_membership") == "secret"
                 discover = list(r.data.optJSONArray("profiles"))
             } else if (discover == null) discover = emptyList()
-            if (needSecret != wantsWeb) { wantsWeb = needSecret; onWantsWeb?.invoke() }
             render()
         }
         Api.invoke("getMapProfiles", JSONObject().put("include_offline", true)) { r ->
@@ -486,12 +487,12 @@ class SecretHome(
     }
 
     private fun buildStories() {
-        col.addView(sectionTitle("Stories"), lp(MATCH, WRAP, t = 24f, b = 14f))
+        body.addView(sectionTitle("Stories"), lp(MATCH, WRAP, t = 24f, b = 14f))
         val hs = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; clipToPadding = false }
         storyRow.orientation = LinearLayout.HORIZONTAL
         storyRow.setPadding(dpi(12f), dpi(2f), dpi(12f), dpi(4f))
         hs.addView(storyRow)
-        col.addView(hs, lp(MATCH, WRAP, l = -16f, r = -16f))
+        body.addView(hs, lp(MATCH, WRAP, l = -16f, r = -16f))
         // "Stories are Premium Only" / "Verify to use Stories free"
         storyLock.orientation = LinearLayout.HORIZONTAL; storyLock.gravity = Gravity.CENTER_VERTICAL
         storyLock.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FCDDEC"), Ui.c("#FDE8F2"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), Color.argb(71, 232, 120, 170)) }
@@ -502,16 +503,16 @@ class SecretHome(
         storyLock.addView(t, lp(0, WRAP, 1f))
         storyLock.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, K.wine, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 10f))
         storyLock.press().onTap { locked("watch") }
-        col.addView(storyLock, lp(MATCH, WRAP, t = 14f))
+        body.addView(storyLock, lp(MATCH, WRAP, t = 14f))
         addLine.gravity = Gravity.CENTER; addLine.lineHeight(1.15f)
         addLine.inlineIcon(Icon(Lucide.Pencil, K.deep, 17f, 2.2f), 7f)
         addLine.setPadding(dpi(6f), dpi(8f), dpi(6f), dpi(8f)); addLine.minHeight = dpi(44f)
         addLine.press().onTap { addStory() }
-        col.addView(addLine, lp(MATCH, WRAP, t = 8f))
+        body.addView(addLine, lp(MATCH, WRAP, t = 8f))
     }
 
     private fun buildPrivate() {
-        col.addView(sectionTitle("Private by Design", "Your privacy is the most important feature of this app."), lp(MATCH, WRAP, t = 24f, b = 14f))
+        body.addView(sectionTitle("Private by Design", "Your privacy is the most important feature of this app."), lp(MATCH, WRAP, t = 24f, b = 14f))
         val grid = hbox(context, 6f, Gravity.TOP)
         for ((ic, t) in listOf(Lucide.Lock to "No Private Number Sharing", Lucide.Link2Off to "No Link Sharing", Lucide.ShieldCheck to "Every Function Will Work After Full Verification", Lucide.MessageCircleMore to "Unlimited Chat")) {
             val cell = vbox(context, 8f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 18f); setPadding(dpi(2f), dpi(12f), dpi(2f), dpi(11f)); elevation = Ui.dp(2f) }
@@ -520,7 +521,7 @@ class SecretHome(
             cell.addView(sdText(context, t, (vw * .031f).coerceIn(11.5f, 13f), K.ink).apply { gravity = Gravity.CENTER; lineHeight(1.0f) })
             grid.addView(cell, lp(0, MATCH, 1f))
         }
-        col.addView(grid, lp(MATCH, WRAP))
+        body.addView(grid, lp(MATCH, WRAP))
     }
 
     private fun buildToast() {
@@ -563,6 +564,12 @@ class SecretHome(
         completeBtn.visibility = if (showComplete) VISIBLE else GONE
         completeSub.text = "Add ${missing.joinToString(", ") { SdRules.NEED_LABEL[it] ?: it }} to unlock Premium features."
         actBox.visibility = if (needSecret) GONE else VISIBLE
+        // not a member yet: the Join card instead of Online Now, the cards, Stories and Private by Design
+        body.visibility = if (needSecret) GONE else VISIBLE
+        if (needSecret && joinCard == null) {
+            joinCard = JoinCard.build(context, "secret") { needSecret = false; render(); loadPeople() }
+                .also { col.addView(it, col.indexOfChild(body), lp(MATCH, WRAP, t = 22f)) }
+        } else if (!needSecret) joinCard?.let { col.removeView(it); joinCard = null }
         renderOnline()
         renderDeck()
         renderActivity()

@@ -5,10 +5,10 @@ import android.os.Looper
 import android.webkit.JavascriptInterface
 
 /**
- * The link between the Base44 page (in the WebView) and the native screens.
- * The page tells the app: which address it is on, the login token, the app id,
- * where the bottom bar starts, and whether a web pop-up (incoming call …) is
- * on top. The app opens web pages with window.__tfGo(path, state).
+ * The link between the sign-in web page and the app. That page is only there while someone signs in
+ * or out (hidden under the native sign-in pages); signed in, the app leads itself and there is no page.
+ * The page tells the app: which address it is on, the login token, the app id, and whether a web
+ * pop-up is on top. The app opens its pages with window.__tfGo(path, state).
  */
 class WebBridge(private val listener: Listener) {
     interface Listener {
@@ -87,6 +87,19 @@ class WebBridge(private val listener: Listener) {
       } catch(e){ return false; }
     }
     window.__tfLiveQuiet = liveQuiet;
+    // "I am online / offline" is said by the app itself now (SessionWork). The page's own messages would
+    // cross with it: as the page closes after a sign-in it says "offline", a moment after the app said
+    // "online". So they are not sent from here (they fail at once, which the page ignores).
+    // (Only when the page holds the sign-in the app takes over. A sign-in kept as a cookie alone never
+    // reaches the app: that page stays the app, as before, and keeps saying it itself.)
+    function presenceQuiet(u){
+      try {
+        if (!/\/functions\/updatePresence(\?|\/|#|${'$'})/.test(String((u && u.url) || u || ''))) return false;
+        return !!(localStorage.getItem('base44_access_token') || localStorage.getItem('token'));
+      } catch(e){ return false; }
+    }
+    var liveOnly = liveQuiet;
+    liveQuiet = function(u){ return liveOnly(u) || presenceQuiet(u); };
     var XP = window.XMLHttpRequest && XMLHttpRequest.prototype;
     if (XP) {
       var xOpen = XP.open, xSend = XP.send;

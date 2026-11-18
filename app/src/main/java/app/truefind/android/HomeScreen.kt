@@ -383,8 +383,35 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
                 if (!pr.ok && me != null) { done?.invoke(); return@filter }
                 me = next
                 render()
+                // Signed in but sign-up never finished (no profile, or one without name / gender / date of birth /
+                // state / city): nothing here works without a finished profile, so the sign-up carries on.
+                // (the web's Home did this; the page under the native Home used to — now the app does)
+                if (pr.ok && shown && !Demo.on && pages.preview.isEmpty()) {
+                    val finished = prof != null && (prof.opt("profile_complete") == true ||
+                        listOf("full_name", "gender", "date_of_birth", "state", "city").all { k -> !prof.isNull(k) && prof.optString(k).isNotEmpty() })
+                    if (!finished) { pages.go("/welcome", null, true); done?.invoke(); return@filter }
+                    // joined from a friend's invite: the code is used once, quietly
+                    if (prof?.opt("profile_complete") == true) applyInvite()
+                    // an older main photo without its small list copy: this phone makes it once (quietly, later)
+                    ThumbBackfill.maybe(context, next)
+                }
                 done?.invoke()
             }
+        }
+    }
+
+    /** a friend's invite code kept on this phone: used once the member has a finished profile (lib/referral.js) */
+    private var inviteTrying = false
+    private fun applyInvite() {
+        val code = Session.refCode(context)
+        if (inviteTrying || !Regex("^TF[A-HJ-NP-Z2-9]{5}$").matches(code)) return
+        inviteTrying = true
+        Api.invoke("referral", JSONObject().put("action", "apply").put("code", code).put("device_id", Session.deviceId(context))) { r ->
+            inviteTrying = false
+            if (r.ok) {
+                Session.setRefCode(context, "")
+                say("Invite from ${r.data.optString("inviter").ifEmpty { "your friend" }} added — recharge to get your bonus coins")
+            } else if (r.status in 400..499 && r.status != 401 && r.status != 429) Session.setRefCode(context, "")
         }
     }
 

@@ -44,8 +44,8 @@ class PRefer(ctx: Context, ps: ProfileScreen) : PPanel(ctx, ps) {
     private val codeRe = Regex("^TF[A-HJ-NP-Z2-9]{5}$")
 
     init {
-        // a code from an invite link waits on this phone (the web keeps it): it fills the box
-        ps.pages.js("(function(){try{return localStorage.getItem('tf_ref')||''}catch(e){return ''}})()") { v -> if (alive && v != null && codeRe.matches(v) && code.isEmpty()) { code = v; if (data != null) render() } }
+        // a code from an invite link waits on this phone: it fills the box
+        Session.refCode(ctx).let { v -> if (codeRe.matches(v)) code = v }
         render()
         load()
     }
@@ -79,14 +79,14 @@ class PRefer(ctx: Context, ps: ProfileScreen) : PPanel(ctx, ps) {
                 if (!alive) return@invoke
                 busy = false
                 if (r.ok) {
-                    ps.pages.js("(function(){try{localStorage.removeItem('tf_ref')}catch(e){}return ''})()") { }
+                    Session.setRefCode(ctx, "")
                     val d = r.data
                     ps.say("Invite from ${PR.s(d, "inviter").ifEmpty { "your friend" }} added. Recharge ₹${PR.s(d, "min_recharge").ifEmpty { "49" }}+ and you both get ${PR.s(d, "reward").ifEmpty { PR.s(data, "reward") }} coins.")
                     code = ""
                     load()
                 } else {
                     ps.say(errOf(r, "Could not use this code."), true)
-                    if (r.status == 409 || r.status == 403) ps.pages.js("(function(){try{localStorage.removeItem('tf_ref')}catch(e){}return ''})()") { }
+                    if (r.status == 409 || r.status == 403) Session.setRefCode(ctx, "")
                 }
                 render()
             }

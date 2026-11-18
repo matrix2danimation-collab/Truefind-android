@@ -46,6 +46,8 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         fun pickPhoto(done: (ByteArray?, String) -> Unit)
         /** opens [url] in a Chrome Custom Tab (Google's own sign-in page); false when there is no browser */
         fun openTab(url: String): Boolean
+        /** Back on the first sign-in page, opened from a page of the app: that page again (true when it was) */
+        fun backToApp(): Boolean = false
     }
 
     companion object {
@@ -56,6 +58,8 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
             "/register/basic-profile" to "basic", "/register/complete-profile" to "complete",
         )
         fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }
+        /** one of the sign-in pages this layer draws (/welcome, /login, /mfa, the old profile pages, /delete-account …) */
+        fun isLoginPath(p: String): Boolean = PAGES.containsKey(norm(p))
         val EASE = PathInterpolator(0.25f, 0.8f, 0.25f, 1f)
 
         /** Runs in the page as early as possible (and again after each load, harmless). */
@@ -148,8 +152,24 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     private var mfaWeb = false
 
+    /**
+     * false while the app's own pages lead (signed in: there is no sign-in web page): this layer is off and
+     * forgets what the last web page told it. true again when a sign-in web page is opened.
+     */
+    private var active = true
+    fun setActive(on: Boolean) {
+        if (preview.isNotEmpty() || active == on) return
+        active = on
+        gotState = false; webWelcome = false; foreign = false; mfaWeb = false
+        stale = false; main.removeCallbacks(unstale)
+        pageLoading = false
+        path = "/"; search = ""
+        if (!on) dropHand()
+        refresh()
+    }
+
     private fun onState(origin: String, json: String) {
-        if (preview.isNotEmpty()) return
+        if (preview.isNotEmpty() || !active) return
         val o = try { JSONObject(json) } catch (e: Exception) { return }
         path = o.optString("path", "/").ifEmpty { "/" }
         search = o.optString("search", "")
@@ -174,7 +194,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     /** The web view starts / finishes a page (sign-in hand-offs wait for it). */
     fun onWebPage(url: String, finished: Boolean) {
-        if (preview.isNotEmpty()) return
+        if (preview.isNotEmpty() || !active) return
         val u = try { Uri.parse(url) } catch (e: Exception) { null }
         val ours = u != null && u.scheme == "https" && MainActivity.ORIGINS.contains("https://${u.host}")
         if (!finished) {
@@ -194,7 +214,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     // ═════════════════ which page shows ═════════════════
     private fun wantedKey(): String {
-        if (cover || foreign || !gotState) return ""
+        if (!active || cover || foreign || !gotState) return ""
         if (stale) return if (page != null) pageKey else ""
         val p = norm(path)
         val key = PAGES[p]
@@ -210,6 +230,8 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
     }
 
     val shown: Boolean get() = visibility == View.VISIBLE
+    /** the sign-in web page is on someone else's page (Google's, Base44's sign-in link): it must be seen */
+    val away: Boolean get() = foreign
 
     private fun refresh() {
         if (preview.isNotEmpty()) return
@@ -290,6 +312,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         backAt = SystemClock.uptimeMillis()
         if (preview.isNotEmpty()) { host.finishApp(); return true }
         if (host.canWebBack()) { host.webBack(); return true }
+        if (host.backToApp()) return true
         when (pageKey) {
             "welcome" -> host.finishApp()
             "basic", "complete" -> host.go("/", true)

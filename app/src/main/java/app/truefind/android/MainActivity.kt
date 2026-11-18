@@ -39,23 +39,21 @@ import app.truefind.android.login.LoginLayer
 import org.json.JSONObject
 
 /**
- * True Find for Android.
- *  - The whole app is the Base44 web app (true-find.base44.app) in a WebView,
- *    exactly as it is today: login, Home, Secret Dating, Wallet, Recent,
- *    calls, games …
- *  - Explore is drawn natively (ExploreScreen) on top of the web page whenever
- *    the address is /explore. The web's own bottom bar stays visible under it.
- *  - Secret Dating is drawn natively too: Home (/secret-app), Online Map (/dating)
- *    and Chats (/secret-app?tab=chat) in SecretHome, above the web's own Secret
- *    Dating bar; one chat (/chat/:id) in ChatRoom, over the whole screen.
- *  - The Wallet is native too (WalletScreen), full screen, whenever the address
- *    is /wallet (True Find and Secret Dating wallets, Earnings, payments).
- *  - Games are native too (GamesLayer): the Games page, Heart Chase Boxes, Mood Changer,
- *    ClueMe and Dress Code, whenever the address is /games or a game's address.
- *  - Signing in is native too (LoginLayer): Get Started / mobile OTP (/welcome), /login, /register,
- *    forgot / reset password, /mfa, the old profile pages and /delete-account — the same Base44 calls.
- *  - Recent is native too (RecentScreen, inside NativePages) whenever the address is /chats:
- *    the recent calls, a person's small card and full profile, calling again.
+ * True Find for Android — every screen is drawn by the phone itself; the backend stays on Base44
+ * (the same functions and data as the website).
+ *
+ *  - Signed in, the app leads itself: [Router] keeps where you are and where Back goes, [Session] keeps
+ *    the sign-in, [SessionWork] does what the web page did in the background (online / offline, the red
+ *    number on Find, who am I). There is NO web page while you are signed in. (Before, the whole web app
+ *    ran hidden under the native screens and every page change went through it — two apps at once, which
+ *    made page moves hang.)
+ *  - Only signing in and signing out still use a web page for a moment, hidden under the native sign-in
+ *    pages (LoginLayer): Base44's one-time sign-in link, Google's page and the server's log-out only work
+ *    in a browser. It is made when it is needed and thrown away as soon as you are in.
+ *
+ * The screens: Home, Profile, Recent, Expert Talk, Dashboard (NativePages) · Explore · Secret Dating
+ * (SecretHome + its own bar SdNavBar, one chat in ChatRoom) · Wallet · Games · Live Dance · Live Rooms ·
+ * Control Center · calls (CallManager) · status screens (AppStatus) · sign-in pages (LoginLayer).
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -65,7 +63,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     private lateinit var root: FrameLayout
-    private lateinit var web: WebView
+    /** the sign-in web page: only there while signing in or out (never while the app's own pages lead) */
+    private var web: WebView? = null
     private lateinit var explore: ExploreScreen
     private lateinit var secret: SecretHome
     private lateinit var pages: NativePages
@@ -78,20 +77,37 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var callPreview = ""
     private var path = "/"
     private var search = ""
-    /** an address the web sent while a native tap was leading (applied when the lead ends) */
-    private var heldRoute: String? = null
     private var preview = ""
+
+    // ── where the app is ──
+    /** the app's own history: where you are, where Back goes (signed in) */
+    private val router = Router()
+    /** signed in and inside the app: the app's own pages lead; there is no web page */
+    private var native = false
+    /** the app's pages are being left for a sign-in page (log out, "Finish profile" …): they stay until it shows */
+    private var leaving = false
+    private var signingOut = false
+    /** the address the sign-in web page last told ("" = nothing since it was opened) */
+    private var webRoute = ""
+    private var webSynced = false
+    /** on the way to a sign-in page: the web page has said it holds the app's sign-in (none when logging out) */
+    private var webAgrees = false
+    /** the app's history as it was when a tap inside the app opened a sign-in page: Back there returns to it */
+    private var returnTo: String? = null
+    private lateinit var work: SessionWork
+    private lateinit var sdNav: SdNavBar
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var dance: LiveDanceScreen
     private lateinit var login: LoginLayer
     /** Google sign-in came back while the app was closed (truefind://auth): handed over once the page is up */
     private var pendingAuth: Uri? = null
-    private var danceGate = false   // the published web page leaves Live Dance to this app
     private var danceOn = false
     private lateinit var live: LiveRoomsScreen
     private var liveOn = false
     private var cover = false
     private var navTopCss = -1f
-    private var scriptAtStart = false
+    /** this phone's WebView can run the app's script before a page's own code (asked only when a web page is made) */
+    private val scriptAtStart: Boolean by lazy { try { WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) } catch (e: Throwable) { false } }
     private val updater by lazy { Updater(this) }
     // native Control Center (/admin), status screens (maintenance, announcement, blocked, errors) and the notifications card
     private lateinit var admin: AdminScreen
@@ -178,13 +194,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         cb?.invoke(has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO))
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Lite.init(this)
         // notifications while the app is closed (Firebase, when this build has it): this phone's push token
-        Push.onToken = { _ -> runOnUiThread { if (::web.isInitialized) { web.evaluateJavascript("try{window.dispatchEvent(new Event('tf-native-token'))}catch(e){}", null); if (Api.token.isNotEmpty()) Push.register(this, Api.token.takeLast(24)) } } }
+        Push.onToken = { _ -> runOnUiThread { web?.evaluateJavascript("try{window.dispatchEvent(new Event('tf-native-token'))}catch(e){}", null); if (Api.token.isNotEmpty()) Push.register(this, Api.token.takeLast(24)) } }
+        // a message, like or note arrived while the app is open: the red number on Find is asked again
+        Push.onMessage = { t -> runOnUiThread { if (::work.isInitialized && (t == "msg" || t == "like" || t == "info")) work.unreadSoon(300) } }
         Push.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -203,59 +220,50 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             WindowInsetsCompat.CONSUMED
         }
 
-        web = WebView(this)
-        root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        setupWeb()
+        // the app's own history: every change shows the page it now points at
+        router.onChange = { move -> onRouterChange(move) }
 
-        explore = ExploreScreen(this, root) { p, state -> openWeb(p, state) }
+        explore = ExploreScreen(this, root) { p, state -> navigate(p, state) }
         explore.visibility = View.GONE
         root.addView(explore, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        secret = SecretHome(this, root) { p, state -> openWeb(p, state) }
+        secret = SecretHome(this, root) { p, state -> navigate(p, state) }
         secret.visibility = View.GONE
-        secret.onWantsWeb = { update() }
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        // Secret Dating's own bottom bar (Online Map · Home · Chat)
+        sdNav = SdNavBar(this) { to -> navigate(to) }
+        sdNav.visibility = View.GONE
+        root.addView(sdNav, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
-        // native Home, Profile and the bottom bar (they follow the web address like Explore)
-        pages = NativePages(this, root, web) { update() }
-        pages.onLead = { p, s -> path = p; search = s; heldRoute = null }
-        pages.onNativeGo = { nativeNavAt = uptime(); webFx() }
+        // native Home, Profile, Recent … and the bottom bar
+        pages = NativePages(this, root) { update() }
+        pages.host = object : NativePages.Host {
+            override fun go(path: String, state: JSONObject?, replace: Boolean) = navigate(path, state, replace)
+            override fun back(n: Int): Boolean = goBack(n)
+            override val canGoBack: Boolean get() = native && router.canGoBack
+            override fun logout(presence: Boolean) = signOut(presence)
+        }
         pages.checkUpdate = { updater.checkNow() }
         pages.onWallet = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offer(d) }
-        pages.onLeadEnd = {
-            val h = heldRoute; heldRoute = null
-            if (h != null) onRoute(h)
-            else web.evaluateJavascript("location.pathname + location.search") { v ->
-                val now = try { org.json.JSONArray("[$v]").optString(0) } catch (e: Exception) { "" }
-                if (now.startsWith("/")) onRoute(now)
-            }
-        }
-        pages.attach(scriptAtStart)
         pages.askCamera = { cb ->
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
             else { camDone = cb; try { askCam.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)) } catch (e: Exception) { camDone = null; cb(false) } }
         }
-        // calls are drawn by the phone (incoming screen, call screen, the Return pill): the web page hands its
-        // call pages to the app — only when this script runs before the page's own code (else the web keeps them)
+        // calls are drawn by the phone (incoming screen, call screen, the Return pill)
         calls = CallManager(this, root, object : CallManager.Host {
             override fun path() = this@MainActivity.path + this@MainActivity.search
-            override fun go(path: String) { if (callPreview.isEmpty()) pages.go(path) }
+            override fun go(path: String) { if (callPreview.isEmpty()) navigate(path) }
             override fun changed() { if (overLock && !calls.busyWithCall) showOverLock(false); update() }
             override fun askPerms(video: Boolean, done: (Boolean) -> Unit) = askCallPerms(video, done)
         })
-        calls.enabled = scriptAtStart
-        if (scriptAtStart) {
-            web.addJavascriptInterface(calls.bridge, CallManager.NAME)
-            WebViewCompat.addDocumentStartJavaScript(web, CallManager.JS, ORIGINS)
-        }
         pages.calls = calls
         var lastH = 0
         root.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ -> val h = bottom - top; if (h != lastH) { lastH = h; root.post { update() } } }
 
-        wallet = WalletScreen(this, { p, state -> openWeb(p, state) }, { walletBack() }, { url -> openWalletCheckout(url) }, { app -> walletAddress(app) })
+        wallet = WalletScreen(this, { p, state -> navigate(p, state) }, { walletBack() }, { url -> openCheckout(url) }, { app -> walletAddress(app) })
         wallet.visibility = View.GONE
         root.addView(wallet, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
-        games = GamesLayer(this, { p, state -> openWeb(p, state) }, { fallback -> if (web.canGoBack()) web.goBack() else openWeb(fallback, null) })
+        games = GamesLayer(this, { p, state -> navigate(p, state) }, { fallback -> if (!goBack()) navigate(fallback) })
         root.addView(games, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         GameVoice.micAsker = { done ->
             if (has(Manifest.permission.RECORD_AUDIO)) done(true)
@@ -267,18 +275,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }
 
         dance = LiveDanceScreen(this, object : LiveDanceScreen.Nav {
-            override fun go(path: String) {
-                // show it at once; the web address follows (a moment later, through onRoute)
-                if (isDance(path)) { setPath(path); update() }
-                openWeb(path, null)
-            }
-            override fun replace(path: String) {
-                if (isDance(path)) { setPath(path); update() }
-                web.evaluateJavascript("window.__tfReplace && window.__tfReplace(${JSONObject.quote(path)});", null)
-            }
+            override fun go(path: String) = navigate(path)
+            override fun replace(path: String) = navigate(path, null, true)
             override fun back() {
-                if (web.canGoBack()) web.goBack()
-                else replace(if (pathOnly(this@MainActivity.path) != "/dance") "/dance" else "/")
+                if (goBack()) return
+                replace(if (pathOnly(this@MainActivity.path) != "/dance") "/dance" else "/")
             }
             override fun askCameraMic(done: (Boolean) -> Unit) {
                 if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) { done(true); return }
@@ -298,30 +299,26 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
         // native Control Center (/admin), status screens and the "Never miss a call" card
         admin = AdminScreen(this, object : AdminScreen.Nav {
-            override fun go(path: String, replace: Boolean) = pages.go(path, null, replace)
-            override fun back() { web.evaluateJavascript("history.length > 1 ? history.back() : (window.__tfNav && window.__tfNav('/home', null, true))", null) }
+            override fun go(path: String, replace: Boolean) = navigate(path, null, replace)
+            override fun back() { if (!goBack()) navigate("/home", null, true) }
         })
         admin.visibility = View.GONE
         root.addView(admin, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        notify = NotifyPrompt(this, root, web)
-        status = AppStatus(this, root, web, { p -> pages.go(p) }, { pages.logout() })
+        notify = NotifyPrompt(this, root)
+        status = AppStatus(this, root, object : AppStatus.Host {
+            override fun webJs(code: String) { web?.evaluateJavascript(code, null) }
+            override fun webLoad(url: String) { if (!native || leaving) loadWeb(url) }
+            override fun retrySession() { if (::work.isInitialized) work.retry() }
+        }, { p -> navigate(p) }, { signOut(true) })
         notify.navPx = { if (pages.nav.visibility == View.VISIBLE) pages.nav.barPx else 0 }
-        notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || cover || status.blocking }
-        web.addJavascriptInterface(status.Bridge(), AppStatus.NAME)
-        if (scriptAtStart) WebViewCompat.addDocumentStartJavaScript(web, AppStatus.JS, ORIGINS)
+        notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking }
         CrashNote.install(this)
-        // native Live Rooms (/live …): the web page under it stays quiet (WebBridge)
+        // native Live Rooms (/live …)
         live = LiveRoomsScreen(this, object : LiveRoomsScreen.Nav {
-            override fun go(path: String) {
-                if (isLive(path)) { setPath(path); update() }
-                openWeb(path, null)
-            }
-            override fun replace(path: String) {
-                if (isLive(path)) { setPath(path); update() }
-                web.evaluateJavascript("window.__tfReplace && window.__tfReplace(${JSONObject.quote(path)});", null)
-            }
+            override fun go(path: String) = navigate(path)
+            override fun replace(path: String) = navigate(path, null, true)
             override fun back() {
-                if (web.canGoBack()) { web.goBack(); return }
+                if (goBack()) return
                 // opened straight on this page: a room / the list / the Leaderboard → Live Room page → Home
                 val atTop = pathOnly(this@MainActivity.path) == "/live" && !search.contains("m=")
                 replace(if (atTop) "/" else "/live")
@@ -347,13 +344,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         live.visibility = View.GONE
         root.addView(live, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
-        // native sign-in pages (over everything else while the web page is on one of them)
+        // native sign-in pages (over everything else while the sign-in web page is on one of them)
         login = LoginLayer(this, object : LoginLayer.Host {
-            override fun go(path: String, replace: Boolean) { if (replace) replaceWeb(path) else openWeb(path, null) }
-            override fun loadWeb(url: String) { web.loadUrl(url) }
-            override fun js(code: String) { web.evaluateJavascript(code, null) }
-            override fun canWebBack() = web.canGoBack()
-            override fun webBack() { if (web.canGoBack()) web.goBack() }
+            override fun go(path: String, replace: Boolean) = webGo(path, null, replace)
+            override fun loadWeb(url: String) { this@MainActivity.loadWeb(url) }
+            override fun js(code: String) { web?.evaluateJavascript(code, null) }
+            override fun canWebBack() = web?.canGoBack() ?: false
+            override fun webBack() { web?.let { if (it.canGoBack()) it.goBack() } }
             override fun finishApp() { finish() }
             override fun pickPhoto(done: (ByteArray?, String) -> Unit) {
                 pickDone?.invoke(null, "")
@@ -361,10 +358,24 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; done(null, "") }
             }
             override fun openTab(url: String): Boolean = openBrowserTab(url)
+            override fun backToApp(): Boolean = this@MainActivity.backToApp()
         })
-        login.onChange = { update() }
+        // the sign-in layer shows or goes: the pages move; a finished sign-in opens the app's own pages
+        var loginSeen = false
+        login.onChange = {
+            if (login.shown != loginSeen) { loginSeen = login.shown; note("sign-in page " + if (loginSeen) "shown" else "hidden") }
+            update(); checkLeave(); maybeEnterNative()
+        }
         root.addView(login, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        login.attach(web, scriptAtStart)
+
+        // what the web page did in the background for a signed-in member (online / offline, the number on Find …)
+        work = SessionWork(this, object : SessionWork.Host {
+            override fun unread(n: Int) { pages.nav.unread = n }
+            override fun rejected() { sessionRejected() }
+            override fun offline(on: Boolean) { note(if (on) "the sign-in could not be checked (no answer from the server)" else "the server answers again"); status.setSessionOffline(on) }
+            override fun expert(on: Boolean) { if (on && native && !leaving && !expertAllowed(pathOnly(path))) router.go("/expert-talk", null, true) }
+            override fun barShown(): Boolean = pages.navShown
+        })
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -374,9 +385,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 // a call on screen (or ringing) answers Back first
                 if (calls.onBack()) return
                 if (dance.visibility == View.VISIBLE) {
-                    if (!dance.onBack()) {
-                        if (web.canGoBack()) web.goBack() else dance.nav.back()
-                    }
+                    if (!dance.onBack()) dance.nav.back()
                     return
                 }
                 if (live.visibility == View.VISIBLE) {
@@ -391,18 +400,22 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty() || walletPreviewing || callPreview.isNotEmpty()) { finish(); return }
-                if (web.canGoBack()) { backFromWeb(); return }
-                // Nothing behind in the web's history (a tab opened in place, or the app opened on this page):
-                // Back used to close the whole app here. Now it takes the app's own steps
-                // (Wallet → Recent → Explore → Home, Profile → Home) and leaves the app only from Home.
-                val up = stepAbove(path, search)
-                if (up != null) { backFromWeb { pages.go(up, null, true) }; return }
-                if (pathOnly(path) != "/" && pathOnly(path) != "/home") { backFromWeb { pages.go("/", null, true) }; return }
+                if (native) {
+                    if (leaving) return
+                    // the page before; nothing behind: the app's own steps (Wallet → Recent → Explore → Home,
+                    // Profile → Home); the app is left only from Home
+                    if (router.back()) return
+                    if (router.up()) return
+                    finish()
+                    return
+                }
+                // a sign-in web page that is not one of the app's own (Google's): its own history
+                val w = web
+                if (w != null && w.canGoBack()) { w.goBack(); return }
                 finish()
             }
         })
 
-        if (savedInstanceState != null) web.restoreState(savedInstanceState)
         // test mode (emulator pictures on GitHub only): the native call screens with made-up data
         val callScene = intent?.getStringExtra("tf_call").orEmpty()
         if (callScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startCallPreview(callScene); return }
@@ -422,14 +435,260 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val loginScene = intent?.getStringExtra("tf_login").orEmpty()
         if (loginScene.isNotEmpty() && BuildConfig.SELF_UPDATE) {
             preview = "login"
-            web.loadUrl("about:blank")
             watchFrames()
             login.startPreview(loginScene, intent?.getStringExtra("tf_open").orEmpty())
             return
         }
         intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
-        val pushUrl = intent?.let { pushOpen(it, true) }
-        if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: pushUrl ?: START_URL)
+        val pushPath = intent?.let { pushOpen(it, true) }
+        val linkPath = intent?.data?.takeIf { isOurs(it) }?.let { u -> (u.encodedPath ?: "/").ifEmpty { "/" } + (u.encodedQuery?.let { "?$it" } ?: "") }
+        startSession(pushPath ?: linkPath, savedInstanceState)
+    }
+
+    /** one line in the phone's log whenever the app changes between its own pages and the sign-in pages (no personal data) */
+    private fun note(what: String) { android.util.Log.i("TFDBG", "mode: $what") }
+
+    // ═════════════════ signed in → the app's own pages · signed out → the sign-in pages ═════════════════
+    /**
+     * The app opens: a sign-in kept on this phone goes straight to the app's own pages (no web page at all);
+     * without one the sign-in web page opens under the native sign-in pages (a phone that was signed in
+     * through the web page before this version hands its sign-in over there, once).
+     */
+    private fun startSession(first: String?, saved: Bundle?) {
+        if (Session.load(this)) {
+            note("start: sign-in kept on this phone, no web page")
+            val restored = saved?.getString("tf_router")?.let { router.restore(it) } == true
+            enterNative(first ?: "/", restored && first == null)
+            return
+        }
+        note("start: no sign-in on this phone, the sign-in web page opens")
+        // (the app's id is the same for everyone: known from an earlier visit, the sign-in calls don't wait for it)
+        Session.knownAppId(this).takeIf { it.isNotEmpty() && Api.appId.isEmpty() }?.let { Api.appId = it }
+        val w = ensureWeb()
+        if (saved != null && w.restoreState(saved) != null) return
+        w.loadUrl(if (first != null) START_URL.trimEnd('/') + first else START_URL)
+    }
+
+    /** The sign-in is good and the web page is off the sign-in pages: from here the app leads itself. */
+    private fun maybeEnterNative() {
+        if (native || preview.isNotEmpty() || walletPreviewing || previewing || callPreview.isNotEmpty() || fxTest) return
+        if (web == null || webRoute.isEmpty() || !Api.ready || Demo.on) return
+        if (!::login.isInitialized || login.shown || login.handActive()) return
+        val p = pathOnly(webRoute)
+        if (LoginLayer.isLoginPath(p)) return
+        note("signed in on the web page at $p: the app's own pages take over")
+        enterNative(webRoute, false)
+    }
+
+    private fun enterNative(target: String, restored: Boolean, move: Router.Move = Router.Move.RESET) {
+        native = true; leaving = false; signingOut = false
+        returnTo = null
+        main.removeCallbacks(leaveTimeout); showBusy(false)
+        Session.save(this)
+        calls.enabled = true
+        tokenChanged()
+        calls.signedIn(Api.token)
+        login.setActive(false)
+        // this phone's id that the web page made before (kept, so the phone stays the same phone), then the page goes
+        val w = web
+        var started = false
+        val begin = {
+            if (!started) {
+                started = true
+                if (web === w && !leaving) dropWeb()
+                work.start()
+                // (the sign-in page may have said "offline" as it closed: "online" once more in a moment)
+                if (w != null) work.beatSoon()
+            }
+        }
+        if (w != null && !Session.hasDeviceId(this)) {
+            main.postDelayed({ begin() }, 700)
+            try {
+                w.evaluateJavascript("(function(){try{return localStorage.getItem('tf_device_id')||''}catch(e){return ''}})()") { v ->
+                    Session.adoptDeviceId(this, try { org.json.JSONTokener(v ?: "").nextValue() as? String } catch (e: Exception) { null })
+                    begin()
+                }
+            } catch (e: Throwable) { begin() }
+        } else begin()
+        // (the first page of the app just shows: no move from the sign-in page)
+        fxPath = ""
+        note("native" + if (restored && router.started) " (history kept)" else " at ${pathOnly(target)}")
+        if (restored && router.started) onRouterChange(move)
+        else {
+            var t = guard(target)
+            // (Home takes nothing from the address: whatever the sign-in page left there is dropped)
+            if (Router.same(pathOnly(t), "/")) t = pathOnly(t)
+            // (a page opened from a notification or a link sits on Home: Back goes there)
+            router.reset(t, null, if (Router.same(t, "/")) null else "/")
+        }
+    }
+
+    /**
+     * Leaves the app's own pages for a sign-in page ([target], e.g. /welcome to finish a profile): the sign-in
+     * web page is made and opened there; the page on screen stays until the native sign-in page shows.
+     */
+    private fun enterLogin(target: String, replace: Boolean = false) {
+        if (!native || leaving) return
+        leaving = true; signingOut = false; webSynced = false; webAgrees = false
+        // Back on that page comes back here (a page that sent you there in its own place: to the page before it)
+        returnTo = if (replace) router.saveBelow() else router.save()
+        note("leaving for the sign-in page ${pathOnly(target)}")
+        showBusy(true)
+        loadWeb(Api.origin.trimEnd('/') + target)
+        main.removeCallbacks(leaveTimeout); main.postDelayed(leaveTimeout, 12_000)
+    }
+
+    /**
+     * Log out (the web's logout()): this phone stops getting this account's notifications, Explore is told
+     * "offline" ([presence]; 1.5 s at most), the sign-in is forgotten here and in the sign-in web page's
+     * storage, then the server's log-out → Get Started.
+     */
+    private fun signOut(presence: Boolean) {
+        if (preview.isNotEmpty() || fxTest) return
+        if (!native) { if (::login.isInitialized && web != null) login.serverLogout(); return }
+        if (leaving) return
+        leaving = true; signingOut = true; webSynced = false; webAgrees = false
+        returnTo = null
+        // (a quiet "one moment" over the page until the sign-in page is up)
+        showBusy(true)
+        note("signing out")
+        Push.unregister(this)
+        work.stop(presence) { finishSignOut() }
+    }
+    private fun finishSignOut() {
+        Session.clear(this)
+        Api.token = ""
+        // the web page's own copy of the sign-in goes too (else it would sign itself in again)
+        try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (e: Throwable) { }
+        // (the app was closed meanwhile: no page to open — its cookies go here instead of by the server's log-out)
+        if (isDestroyed) { try { CookieManager.getInstance().removeAllCookies(null) } catch (e: Throwable) { }; return }
+        tokenChanged()
+        calls.signedIn("")
+        val o = Api.origin.trimEnd('/')
+        loadWeb("$o/api/apps/auth/logout?from_url=" + Uri.encode("$o/welcome"))
+        main.removeCallbacks(leaveTimeout); main.postDelayed(leaveTimeout, 12_000)
+    }
+    /** "Who am I" was answered with "not signed in": the sign-in is over. */
+    private fun sessionRejected() {
+        note("the server no longer accepts this sign-in")
+        when {
+            // on the sign-in pages already: only what this phone keeps is forgotten (the page handles its own)
+            !native -> Session.clear(this)
+            !leaving -> signOut(false)
+            // on the way to a sign-in page (Finish profile …): that becomes the log-out
+            !signingOut -> {
+                signingOut = true; webSynced = false; webAgrees = false; returnTo = null
+                Push.unregister(this)
+                work.stop(false) { finishSignOut() }
+            }
+        }
+    }
+
+    /** the native sign-in page is up: the app's own pages go */
+    private fun checkLeave() {
+        if (!leaving || !::login.isInitialized || !login.shown) return
+        // (first the web page says which sign-in it holds: the app's own, or none after a log-out — see onInfo)
+        if (!webAgrees) return
+        endLeave()
+    }
+
+    /** Back on the first sign-in page, opened from a page of the app (Complete my profile …): that page again. */
+    private fun backToApp(): Boolean {
+        val saved = returnTo ?: return false
+        returnTo = null
+        if (native || Api.token.isEmpty() || !Api.ready || !router.restore(saved)) return false
+        note("Back on the sign-in page: the app's page again")
+        enterNative(router.current.url, true, Router.Move.POP)
+        return true
+    }
+    private fun endLeave() {
+        note("the sign-in pages lead" + if (::login.isInitialized && login.shown) "" else " (not shown yet)")
+        native = false; leaving = false; signingOut = false
+        main.removeCallbacks(leaveTimeout); showBusy(false)
+        calls.enabled = scriptAtStart
+        router.clear()
+        if (webRoute.isNotEmpty()) setPath(webRoute)
+        update()
+    }
+    /** the sign-in page never came (no internet …): whatever the web page shows is shown; a good sign-in comes back in */
+    private val leaveTimeout = Runnable { if (leaving) { note("the sign-in page did not come in 12 s"); endLeave(); maybeEnterNative() } }
+
+    /** a quiet "one moment" over the page while the sign-in page is on its way (shown after a third of a second) */
+    private var busyView: View? = null
+    private val busyShow = Runnable { busyView?.let { v -> v.visibility = View.VISIBLE; v.alpha = 0f; v.animate().alpha(1f).setDuration(160).start() } }
+    private fun showBusy(on: Boolean) {
+        main.removeCallbacks(busyShow)
+        if (!on) { busyView?.let { root.removeView(it) }; busyView = null; return }
+        if (busyView != null) return
+        val box = FrameLayout(this).apply { isClickable = true; visibility = View.INVISIBLE; elevation = Ui.dp(400f); outlineProvider = null; setBackgroundColor(Color.argb(40, 23, 18, 31)) }
+        val card = FrameLayout(this).apply { background = Tf.box(Color.WHITE, 18f); elevation = Ui.dp(6f) }
+        card.addView(TfLoader(this, 26f), FrameLayout.LayoutParams(Ui.dpi(26f), Ui.dpi(26f), android.view.Gravity.CENTER))
+        box.addView(card, FrameLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(64f), android.view.Gravity.CENTER))
+        root.addView(box, FrameLayout.LayoutParams(-1, -1))
+        busyView = box
+        main.postDelayed(busyShow, 350)
+    }
+
+    /** the things that follow the sign-in (live updates, notifications, status screens): once per change */
+    private var signalled: String? = null
+    private fun tokenChanged() {
+        val t = Api.token
+        Push.keepAuth(this, Api.origin, Api.appId, t)
+        // (the app's id may still be on its way from the sign-in page: its next message tries again)
+        if (t.isNotEmpty() && !Api.ready) return
+        if (t == signalled) return
+        signalled = t
+        Realtime.tokenChanged()
+        if (t.isNotEmpty()) Push.register(this, t.takeLast(24))
+        if (::status.isInitialized) status.tokenChanged(t.isNotEmpty())
+        if (t.isNotEmpty()) CrashNote.sendPending(this)
+    }
+
+    // ═════════════════ the sign-in web page (made when needed, thrown away when signed in) ═════════════════
+    private fun ensureWeb(): WebView {
+        web?.let { return it }
+        val w = WebView(this)
+        web = w
+        note("web page made")
+        webRoute = ""; webSynced = false
+        // under every native page
+        root.addView(w, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        setupWeb(w)
+        if (!native) calls.enabled = scriptAtStart
+        login.setActive(true)
+        return w
+    }
+    private fun loadWeb(url: String) { ensureWeb().loadUrl(url) }
+
+    /**
+     * Signed in, and the sign-in web page is already on a page of the app (a moment before the app's own
+     * pages take over): its own drawing of that page is never shown — a plain "one moment" covers it.
+     */
+    private var bootCover: View? = null
+    /** the app's own pages did not take over in time: the web page shows itself (it is the whole app too) */
+    private var coverGaveUp = false
+    private val coverTimeout = Runnable { if (bootCover != null) { note("the app's pages did not take over in 10 s: the web page shows"); coverGaveUp = true; coverWeb(false) } }
+    private fun coverWeb(on: Boolean) {
+        if (!on || coverGaveUp) { main.removeCallbacks(coverTimeout); bootCover?.let { root.removeView(it) }; bootCover = null; return }
+        if (bootCover != null) return
+        main.postDelayed(coverTimeout, 10_000)
+        val w = web ?: return
+        val box = FrameLayout(this).apply { setBackgroundColor(Color.WHITE); isClickable = true }
+        box.addView(TfLoader(this, 26f), FrameLayout.LayoutParams(Ui.dpi(26f), Ui.dpi(26f), android.view.Gravity.CENTER))
+        // just above the web page, under every native page
+        root.addView(box, root.indexOfChild(w) + 1, FrameLayout.LayoutParams(-1, -1))
+        bootCover = box
+    }
+    private fun dropWeb() {
+        val w = web ?: return
+        web = null
+        note("web page gone")
+        webRoute = ""; cover = false; navTopCss = -1f; coverGaveUp = false
+        try { w.stopLoading() } catch (e: Throwable) { }
+        coverWeb(false)
+        root.removeView(w)
+        try { w.destroy() } catch (e: Throwable) { }
+        if (::status.isInitialized) status.webGone()
     }
 
     // ═════════════════ opened from a notification (Push) ═════════════════
@@ -444,7 +703,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }
     }
     /** a tapped notification: a call rings / is answered here, anything else opens its page. [cold]: the app was
-     *  closed, the page address is returned for the first load instead. */
+     *  closed, the page's address is returned (the app opens on it) instead. */
     private fun pushOpen(i: Intent, cold: Boolean): String? {
         val call = i.getStringExtra(Push.EXTRA_CALL).orEmpty()
         val url = i.getStringExtra(Push.EXTRA_URL)
@@ -456,13 +715,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             return null
         }
         val u = url.orEmpty().takeIf { it.startsWith("/") && !it.startsWith("//") } ?: "/"
-        if (cold) return START_URL.trimEnd('/') + u
-        pages.go(u)
+        if (cold) return u
+        navigate(u)
         return null
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWeb() {
+    private fun setupWeb(web: WebView) {
         web.setBackgroundColor(Color.WHITE)
         web.overScrollMode = View.OVER_SCROLL_NEVER
         with(web.settings) {
@@ -482,10 +741,15 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         web.addJavascriptInterface(WebBridge(this), WebBridge.NAME)
         // lib/push.js: inside this app the push token comes from here (no web push in a WebView)
         web.addJavascriptInterface(Push.Bridge(applicationContext), Push.NAME)
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+        // calls are the app's own: the web page hands its call pages over and keeps its own ringing quiet
+        web.addJavascriptInterface(calls.bridge, CallManager.NAME)
+        web.addJavascriptInterface(status.Bridge(), AppStatus.NAME)
+        if (scriptAtStart) {
             WebViewCompat.addDocumentStartJavaScript(web, WebBridge.JS, ORIGINS)
-            scriptAtStart = true
+            WebViewCompat.addDocumentStartJavaScript(web, CallManager.JS, ORIGINS)
+            WebViewCompat.addDocumentStartJavaScript(web, AppStatus.JS, ORIGINS)
         }
+        login.attach(web, scriptAtStart)
 
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -512,7 +776,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null); view.evaluateJavascript(AppStatus.JS, null); view.evaluateJavascript(LoginLayer.JS, null) }
+                if (view !== this@MainActivity.web) return
+                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(AppStatus.JS, null); view.evaluateJavascript(LoginLayer.JS, null) }
                 CookieManager.getInstance().flush()
                 if (::status.isInitialized) status.onPageFinished(url)
                 if (::login.isInitialized) {
@@ -522,23 +787,28 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                if (view !== this@MainActivity.web) return
                 if (::login.isInitialized) login.onWebPage(url, false)
                 if (::status.isInitialized) status.onPageStarted(url)
             }
 
             // True Find's page could not load (no internet, server down): the native error screen, not Chrome's
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
+                if (view !== this@MainActivity.web) return
                 val d = error.description?.toString().orEmpty()
                 if (!request.isForMainFrame || d.contains("ERR_ABORTED") || d.contains("ERR_BLOCKED")) return
                 if (::status.isInitialized) status.onLoadError(request.url.toString(), true)
             }
             override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: android.webkit.WebResourceResponse) {
+                if (view !== this@MainActivity.web) return
                 if (request.isForMainFrame && response.statusCode >= 500 && isOurs(request.url) && ::status.isInitialized) status.onLoadError(request.url.toString(), false)
             }
 
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-                // the page crashed (low memory): start the app screen again instead of closing
-                recreate()
+                // the sign-in page crashed (low memory). Signed in, nobody needs it: it simply goes.
+                // On a sign-in page: the app screen starts again instead of closing.
+                if (view !== this@MainActivity.web) return true
+                if (native && !leaving) { root.post { if (this@MainActivity.web === view) dropWeb() } } else recreate()
                 return true
             }
         }
@@ -585,81 +855,150 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     private fun isOurs(u: Uri): Boolean = u.scheme == "https" && ORIGINS.contains("https://${u.host}")
 
-    /** Opens a page of the web app (same as navigate(path, { state }) inside it). */
-    private fun openWeb(p: String, state: JSONObject?) {
-        nativeNavAt = uptime(); webFx()
-        pages.lead(p, state)
-        val js = "window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"});"
-        web.evaluateJavascript(js, null)
+    // ═════════════════ moving around ═════════════════
+    /** pages only an expert account may open (ExpertGate.jsx): everything else takes her to her Expert Talk panel */
+    private fun expertAllowed(p: String): Boolean = listOf("/expert-talk", "/wallet", "/admin", "/delete-account").any { p == it || p.startsWith("$it/") }
+    /** a page the app has (the web showed "Page not found" for anything else) */
+    private fun known(p: String): Boolean =
+        p == "/" || p == "/home" || p == "/explore" || p == "/chats" || p == "/wallet" || p == "/profile" || p == "/profile/edit" ||
+            p == "/register/verification" || p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p) ||
+            p == "/games" || p.startsWith("/games/") || p == "/dance" || p.startsWith("/dance/") || p == "/live" || p.startsWith("/live/") ||
+            p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings" || p == "/admin"
+    /** where [target] really leads: an unknown address is Home; an expert account stays in Expert Talk */
+    private fun guard(target: String): String {
+        val p = pathOnly(target)
+        var t = if (known(p)) target else "/"
+        if (::work.isInitialized && work.isExpert && !expertAllowed(pathOnly(t))) t = "/expert-talk"
+        return t
     }
-    /** the same, in place of this page (navigate(path, { replace: true })) */
-    private fun replaceWeb(p: String) {
-        web.evaluateJavascript("window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, null, true);", null)
+    /** /call/<id> and /demo-call are the call screen (never a page of the history) */
+    private fun openCallPage(full: String, state: JSONObject?): Boolean {
+        val p = pathOnly(full)
+        val q = full.indexOf('?').let { if (it >= 0) full.substring(it) else "" }
+        if (p == "/demo-call") { calls.openPractice(state ?: JSONObject()); return true }
+        val id = Regex("^/call/([^/]+)$").find(p)?.groupValues?.get(1) ?: return false
+        calls.openCall(Uri.decode(id), state, q)
+        return true
+    }
+
+    /**
+     * Opens a page (the web's navigate(path, { state, replace })). Signed in, the app's own history takes it;
+     * on the sign-in pages the sign-in web page's router does.
+     */
+    private fun navigate(full: String, state: JSONObject? = null, replace: Boolean = false) {
+        if (!native) { webGo(full, state, replace); return }
+        if (leaving) return
+        if (openCallPage(full, state)) return
+        // a sign-in page (finish the profile, sign in again …): the sign-in layer takes over
+        if (LoginLayer.isLoginPath(pathOnly(full))) { enterLogin(full, replace); return }
+        val t = guard(full)
+        nativeNavAt = uptime()
+        router.go(t, if (t == full) state else null, replace)
+    }
+    /** [n] pages back; false when there is no page behind */
+    private fun goBack(n: Int = 1): Boolean {
+        if (!native) {
+            val w = web ?: return false
+            if (!w.canGoBackOrForward(-n)) return false
+            backAt = uptime()
+            w.goBackOrForward(-n)
+            return true
+        }
+        if (leaving) return true
+        return router.back(n)
+    }
+    /** the sign-in web page's own router (same as navigate(path, { state, replace }) inside it) */
+    private fun webGo(p: String, state: JSONObject?, replace: Boolean) {
+        web?.evaluateJavascript("window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
     }
     /** a chat's Back: the page you came from, or the Secret Dating chats (the web's goBack in ChatRoom.jsx) */
-    private fun chatBack() {
-        web.evaluateJavascript("window.__tfBack && window.__tfBack('/secret-app?tab=chat');", null)
-    }
-    private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> openWeb(p, st) }, goBack = { chatBack() }, replace = { replaceWeb(it) }).also {
+    private fun chatBack() { if (!goBack()) navigate("/secret-app?tab=chat", null, true) }
+    private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> navigate(p, st) }, goBack = { chatBack() }, replace = { navigate(it, null, true) }).also {
         it.visibility = View.GONE
         root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         chatRoom = it
     }
 
-    // ── from the page ──
-    override fun onRoute(path: String) {
-        // a native tap has already switched the screen: an older address still on its way waits
-        if (pages.leading(path)) { heldRoute = path; return }
-        heldRoute = null
-        val q = path.indexOf('?')
-        this.path = if (q >= 0) path.substring(0, q) else path
-        this.search = if (q >= 0) path.substring(q) else ""
-        wallet.wantsWeb = false // back in the app after the plan payment page
+    /** The app's own history changed: the pages follow (and move the way that change asks for). */
+    private fun onRouterChange(move: Router.Move) {
+        if (!native) return
+        val e = router.current
+        // an expert account is Expert Talk only (ExpertGate.jsx): any other page is her panel instead
+        if (::work.isInitialized && work.isExpert && !expertAllowed(pathOnly(e.path))) { router.go("/expert-talk", null, true); return }
+        path = e.path; search = e.search
+        routeIdx = router.idx
+        pages.setRoute(e.path, e.search, e.state, router.idx)
+        moveHint = move
+        if (move == Router.Move.POP) backAt = uptime()
         update()
         calls.routeChanged()
     }
 
+    // ── from the sign-in web page ──
+    override fun onRoute(path: String) {
+        if (web == null) return
+        webRoute = path
+        // signed in, the app leads itself: the page's address only matters once the sign-in pages take over
+        if (native) return
+        setPath(path)
+        update()
+        calls.routeChanged()
+        maybeEnterNative()
+    }
+
     override fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean) {
-        Api.origin = origin
-        if (appId.isNotEmpty()) Api.appId = appId
+        val w = web ?: return
+        if (native && !leaving) return
+        // only True Find's own page is believed (the sign-in is kept by the app from here on): a message that
+        // arrives while the web view is on someone else's page (Google's, a payment page) is not taken
+        val at = try { w.url.orEmpty() } catch (e: Throwable) { "" }
+        if (at.startsWith("http") && !(try { isOurs(Uri.parse(at)) } catch (e: Exception) { false })) return
+        if (MainActivity.ORIGINS.contains(origin)) Api.origin = origin
+        if (appId.isNotEmpty() && appId != Api.appId) { Api.appId = appId; Session.rememberAppId(this, appId) }
+        if (native) {
+            // On the way to a sign-in page: the app's own sign-in is what counts until that page is up. The web
+            // page must hold the same one (none after a log-out) before it takes over; one that doesn't is told
+            // once and opens again.
+            val want = if (signingOut) "" else Api.token
+            if (token == want) { if (!webAgrees) { webAgrees = true; checkLeave() } }
+            else if (!webSynced) {
+                webSynced = true
+                if (signingOut) {
+                    // logging out: a page that still holds the old sign-in forgets it and starts again
+                    w.evaluateJavascript("(function(){try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}location.replace('/welcome')})()", null)
+                } else {
+                    // the page lost its copy of the sign-in: it gets the app's, and opens the page again with it
+                    val t = JSONObject.quote(Api.token)
+                    w.evaluateJavascript("(function(){try{localStorage.setItem('base44_access_token',$t);localStorage.setItem('token',$t)}catch(e){}location.reload()})()", null)
+                }
+            }
+            return
+        }
         val newLogin = token != Api.token
         Api.token = token
-        if (newLogin) Realtime.tokenChanged()
-        Push.keepAuth(this, origin, Api.appId, token)
-        if (newLogin && token.isNotEmpty()) Push.register(this, token.takeLast(24))
+        if (newLogin) returnTo = null
+        // signed out on a sign-in page (Log out there, the server's log-out): this phone forgets the sign-in too
+        if (token.isEmpty() && (newLogin || Session.has(this))) { Session.clear(this); work.stop(false) }
+        tokenChanged()
         calls.signedIn(token)
-        if (newLogin && ::status.isInitialized) status.tokenChanged(token.isNotEmpty())
-        if (newLogin && token.isNotEmpty()) CrashNote.sendPending(this)
         this.navTopCss = navTopCss
         this.cover = cover
         update()
+        maybeEnterNative()
     }
 
-    override fun onRouteIdx(idx: Int) { routeIdx = idx }
+    override fun onRouteIdx(idx: Int) { if (!native) routeIdx = idx }
 
     override fun onWebBack(n: Int) {
-        // nothing behind in the web view: nothing happens (as in a browser; __tfBack then uses its fallback)
-        if (!web.canGoBackOrForward(n)) return
-        backFromWeb(n)
+        // (the sign-in web page's own back arrows) nothing behind: nothing happens, as in a browser
+        if (native) return
+        val w = web ?: return
+        if (!w.canGoBackOrForward(n)) return
+        backAt = uptime()
+        w.goBackOrForward(n)
     }
 
-    override fun onCaps(dance: Boolean) {
-        // only when our script ran before the page's own code (else the web page draws Live Dance itself)
-        val on = dance && scriptAtStart
-        if (on == danceGate) return
-        danceGate = on
-        update()
-    }
-
-    /** The step above a page for the phone's Back (the same steps as the web's PhoneBack). */
-    private fun stepAbove(p: String, q: String): String? = when (pathOnly(p)) {
-        "/explore" -> "/"
-        "/chats" -> "/explore"
-        "/wallet" -> "/chats"
-        "/profile/edit" -> "/profile"
-        "/profile" -> if (q.isNotEmpty() && q != "?") "/profile" else "/"
-        else -> null
-    }
+    override fun onCaps(dance: Boolean) { /* Live Dance is always the app's own now */ }
 
     /** the address in two parts, as the rest of the app keeps it: path and ?query */
     private fun setPath(full: String) {
@@ -670,16 +1009,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun pathOnly(p: String) = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }
     private fun isDance(p: String): Boolean { val o = pathOnly(p); return o == "/dance" || o.startsWith("/dance/") }
     private fun isLive(p: String): Boolean { val o = pathOnly(p); return o == "/live" || o.startsWith("/live/") }
-    private fun webMode(p: String) = try { Uri.parse("https://x$p").getQueryParameter("web") == "1" } catch (e: Exception) { false }
 
     // ── the move between pages (PageFx: FRND's tab slide, push and back) ──
-    private var backAt = 0L        // phone Back, or a page's own back arrow (history.back in the web)
-    private var nativeNavAt = 0L   // a tap in a native screen opened another page (the app leads the move)
+    private var backAt = 0L        // phone Back, or a page's own back arrow
+    private var nativeNavAt = 0L   // a tap in a native screen opened another page
     private var fxPath = ""        // the address at the last move check ("" until the first page shows)
-    private var fxIdx = -1         // the web's history position at the last move check
-    private var routeIdx = -1      // the web's history position now (sent with each address)
-    private var backShot: android.graphics.Bitmap? = null   // a web page's last look, taken just before going back
-    private var backShotAt = 0L
+    private var fxIdx = -1         // the history position at the last move check
+    private var routeIdx = -1      // the history position now
+    private var moveHint: Router.Move? = null   // what the app's own history just did (read once by the next move check)
     private fun pageViews(): List<View> = buildList {
         add(explore); add(secret); add(wallet); add(games); add(dance); add(live)
         if (::login.isInitialized) add(login)
@@ -687,7 +1024,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (::admin.isInitialized) add(admin)
         addAll(pages.pageViews)
     }
-    /** the full native page on screen (null: the web page shows) — pages still sliding away don't count */
+    /** the full native page on screen (null: the sign-in web page shows) — pages still sliding away don't count */
     private fun shownPage(): View? = pageViews().filter { it.visibility == View.VISIBLE && it.parent === root && !PageFx.isHeld(it) }
         .maxByOrNull { root.indexOfChild(it) }
     /** pages of the bottom bar that slide side by side (Find and Wallet open over it, with their own back arrow) */
@@ -697,21 +1034,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun uptime() = android.os.SystemClock.uptimeMillis()
 
     /** Shows the native screens that fit the page now, and moves to it the way FRND does when the page changes. */
-    private var splitSince = 0L
-    private val updateLate = Runnable { update() }
     private fun update() {
         // while the screens are still being made (onCreate), just show what fits
-        if (!::dance.isInitialized || !::live.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
-        // A new page comes from the web in two reports a few ms apart (the address, then what the page shows).
-        // Acting on the first alone showed the change in two halves, and Back between pages then had no move at
-        // all (the address had "already changed" when the page did). So: wait for the second (80 ms at most).
-        if (pages.agrees(path)) splitSince = 0L
-        else {
-            val t = uptime()
-            if (splitSince == 0L) splitSince = t
-            if (t - splitSince < 80) { root.removeCallbacks(updateLate); root.postDelayed(updateLate, 81 - (t - splitSince)); return }
-        }
-        root.removeCallbacks(updateLate)
+        if (!::dance.isInitialized || !::live.isInitialized || !::wallet.isInitialized || !::games.isInitialized || !::login.isInitialized || !::work.isInitialized) { updateNow(); return }
+        val hint = moveHint; moveHint = null
         val before = shownPage()
         val navBefore = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
         val fromPath = fxPath
@@ -721,19 +1047,21 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         PageFx.reassert()
         val after = shownPage()
         val navAfter = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
+        // the bottom bar came back (e.g. after reading a chat): the red number on Find is asked again
+        if (navAfter && !navBefore) work.barBack()
         val toPath = path
         if (Api.token.isEmpty() || preview.isNotEmpty() || walletPreviewing) { fxPath = ""; return }
         readyTabs()
         fxPath = toPath; fxIdx = routeIdx
         if (fromPath.isEmpty()) return                       // the app just opened: no move
         val now = uptime()
-        val shot = backShot?.takeIf { now - backShotAt < 1500 }
         val webToWeb = before == null && after == null
-        if (before === after && !webToWeb) return            // the same native page
-        if (pathOnly(fromPath) == pathOnly(toPath) && shot == null) return // same address (the app opening, a sheet)
-        if (webToWeb && (pathOnly(fromPath) == pathOnly(toPath) || shot == null)) return // the web moves its own pages
+        if (webToWeb) return                                 // the sign-in web page moves its own pages
+        if (before === after) return                         // the same native page
+        if (pathOnly(fromPath) == pathOnly(toPath)) return   // same address (the app opening, a sheet)
         val tA = tabIndex(fromPath); val tB = tabIndex(toPath)
-        val goingBack = now - backAt < 1500 || (routeIdx >= 0 && fromIdx >= 0 && routeIdx < fromIdx)
+        // the app's own history says which way it went; on the sign-in pages: a Back a moment ago, or an earlier place in the history
+        val goingBack = if (native && hint != null) hint == Router.Move.POP else (now - backAt < 1500 || (routeIdx >= 0 && fromIdx >= 0 && routeIdx < fromIdx))
         val kind = when {
             tA >= 0 && tB >= 0 && tA != tB -> PageFx.Kind.TAB
             goingBack -> PageFx.Kind.POP
@@ -741,8 +1069,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             else -> PageFx.Kind.PUSH
         }
         val nativeLed = now - nativeNavAt < 1500
-        val fromV: View = before ?: web
-        val toV: View = after ?: web
+        // (the sign-in web page counts as a page only while it leads)
+        val fromV: View? = before ?: if (native) null else web
+        val toV: View? = after ?: if (native) null else web
         when (kind) {
             PageFx.Kind.TAB -> PageFx.run(root, kind, fromV, toV, dir = if (tB > tA) 1 else -1,
                 // Home ↔ Recent: Explore lies between them and passes by (as the tab between does in FRND)
@@ -750,19 +1079,18 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 onEnd = { settle() })
             PageFx.Kind.PUSH -> PageFx.run(root, kind, fromV, toV,
                 lowerExtras = if (navBefore && !navAfter) listOf(pages.nav) else emptyList(),
-                // Secret Dating's pink bar is the web page's: the web view comes in with it
-                upperExtras = if (after === secret && before != null) listOf(web) else emptyList(),
-                // a web page that opened a native one moves and darkens itself (the web's own push)
+                // Secret Dating's pink bar comes in with its page
+                upperExtras = if (after === secret && before != null) listOf(sdNav) else emptyList(),
                 moveLower = before != null || nativeLed, onEnd = { settle() })
             PageFx.Kind.POP -> {
                 backAt = 0L
                 PageFx.run(root, kind, before, toV,
                     lowerExtras = if (navAfter && !navBefore) listOf(pages.nav) else emptyList(),
-                    upperExtras = if (before === secret && after != null) listOf(web) else emptyList(),
-                    snapshot = if (before == null) shot else null, onEnd = { settle() })
+                    // … and leaves with it
+                    upperExtras = if (before === secret && after != null) listOf(sdNav) else emptyList(),
+                    onEnd = { settle() })
             }
         }
-        if (before == null) { backShot = null }
     }
     /** [work] as soon as the phone has nothing else to do (1.2 s later at most), and never during a page move */
     private fun whenQuiet(delay: Long, work: () -> Unit) {
@@ -797,6 +1125,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     /** the pages that stay ready while hidden (KeepPage) */
     private fun keptPages(): List<KeepPage> = listOf(pages.home, explore, pages.recent, wallet, secret, pages.profile)
     override fun onStop() {
+        // off the screen: Explore is told "offline" at once (as the web page did when it was hidden)
+        if (::work.isInitialized) work.onVisible(false)
         // Android drops every drawing while the app is away: hidden pages are drawn again one by one after
         // coming back (onStart), not all of them in the first frame
         if (::wallet.isInitialized) for (p in keptPages()) p.appStopped()
@@ -804,6 +1134,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
     override fun onStart() {
         super.onStart()
+        if (::work.isInitialized) work.onVisible(true)
         if (!::wallet.isInitialized) return
         var i = 0
         for (p in keptPages()) if (p.asleep) whenQuiet(900L + 450L * i++) { p.wake() }
@@ -815,110 +1146,80 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         fxPath = path; fxIdx = routeIdx
     }
 
-    /** The web's own page animations stop for a moment: the app is moving the pages itself. */
-    private fun webFx() {
-        web.evaluateJavascript("document.documentElement.classList.add('tfnav');clearTimeout(window.__tfNavT);window.__tfNavT=setTimeout(function(){document.documentElement.classList.remove('tfnav')},900);", null)
-    }
-    /**
-     * Back from a web page: its picture first (it slides away while the page under it comes back), then Back.
-     * [n]: how many pages back.
-     */
-    private fun backFromWeb(n: Int = -1, then: (() -> Unit)? = null) {
-        backAt = uptime()
-        val go = { webFx(); if (then != null) then() else web.goBackOrForward(n) }
-        if (shownPage() != null || android.os.Build.VERSION.SDK_INT < 26 || PageFx.off(this) || root.width == 0 || root.height == 0) { go(); return }
-        val bmp = try { android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888) } catch (e: Throwable) { null }
-        if (bmp == null) { go(); return }
-        val at = IntArray(2); root.getLocationInWindow(at)
-        try {
-            android.view.PixelCopy.request(window, android.graphics.Rect(at[0], at[1], at[0] + root.width, at[1] + root.height), bmp, { res ->
-                if (res == android.view.PixelCopy.SUCCESS) { backShot = bmp; backShotAt = uptime() }
-                go()
-            }, android.os.Handler(android.os.Looper.getMainLooper()))
-        } catch (e: Throwable) { go() }
+    private fun sizeTo(v: View, h: Int) {
+        val lp = v.layoutParams as FrameLayout.LayoutParams
+        if (lp.height != h) { lp.height = h; v.layoutParams = lp }
     }
 
     private fun updateNow() {
         if (walletPreviewing) return
         if (preview.isNotEmpty()) return
-        if (::login.isInitialized) login.setRoute(Api.token, cover)
-        // ── Live Dance: native when the web page hands it over (not for ?web=1 pages) ──
-        val wantDance = isDance(path + search) && !webMode(path + search) && danceGate && Api.token.isNotEmpty()
+        // signed in and inside the app: its own pages show. Otherwise only the sign-in pages do.
+        val inApp = native
+        val covered = cover && !native
+        if (::login.isInitialized) login.setRoute(Api.token, covered)
+        // ── Live Dance ──
+        val wantDance = inApp && isDance(path + search)
         if (wantDance) {
             danceOn = true
             dance.route(path + search)
-            dance.setShown(!cover)
+            dance.setShown(true)
         } else if (danceOn) {
             danceOn = false
             dance.leave()
         }
-        // ── Live Rooms: native (not for ?web=1 pages); the web page's own room calls are stopped (WebBridge) ──
+        // ── Live Rooms ──
         if (::live.isInitialized) {
-            val wantLive = isLive(path + search) && !webMode(path + search) && scriptAtStart && Api.token.isNotEmpty()
+            val wantLive = inApp && isLive(path + search)
             if (wantLive) {
                 liveOn = true
                 live.route(path + search)
-                live.setShown(!cover)
+                live.setShown(true)
             } else if (liveOn) {
                 liveOn = false
                 live.leave()
             }
         }
 
-        val navTop = pages.update(Api.token.isNotEmpty())
+        val navTop = pages.update(inApp)
         val p = path.trimEnd('/')
         val onExplore = p == "/explore"
         // Secret Dating: which page (the web's SecretApp view)
         val tab = try { Uri.parse("x://x$search").getQueryParameter("tab") } catch (e: Exception) { null }
         val secretView = when (p) { "/secret-app" -> if (tab == "chat") "chat" else "home"; "/dating" -> "map"; else -> "" }
         val chatId = Regex("^/chat/([^/]+)$").find(p)?.groupValues?.get(1).orEmpty()
-        val signedIn = Api.token.isNotEmpty()
-        val show = onExplore && !cover && signedIn
-        val showSecret = secretView.isNotEmpty() && !cover && signedIn && !secret.wantsWeb
-        // one chat: over the whole screen (no bar on that page); a call on top (cover) hides it for a while, typing kept
-        val showRoom = chatId.isNotEmpty() && !cover && signedIn
-        if (chatId.isNotEmpty() && signedIn) room().open(chatId) else chatRoom?.close()
-        chatRoom?.let { r ->
-            if (showRoom != (r.visibility == View.VISIBLE)) {
-                web.evaluateJavascript("document.documentElement.classList.${if (showRoom) "add" else "remove"}('tfcr')", null)
-                r.visibility = if (showRoom) View.VISIBLE else View.GONE
-            }
-        }
-        // the native page ends where the web's bottom bar starts
-        val h = if (navTopCss > 0) (navTopCss * resources.displayMetrics.density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
-        for (v in listOf(explore, secret)) {
-            val lp = v.layoutParams as FrameLayout.LayoutParams
-            // the main bottom bar is native now: Explore ends where it starts
-            val want = if (v === explore && pages.navShown && navTop > 0) navTop else h
-            if (lp.height != want) { lp.height = want; v.layoutParams = lp }
-        }
-        if (show != (explore.visibility == View.VISIBLE)) {
-            web.evaluateJavascript("document.documentElement.classList.${if (show) "add" else "remove"}('tfnx')", null)
-            explore.setShown(show)
-        }
-        if (showSecret != (secret.visibility == View.VISIBLE)) web.evaluateJavascript("document.documentElement.classList.${if (showSecret) "add" else "remove"}('tfsd')", null)
+        val show = onExplore && inApp
+        val showSecret = secretView.isNotEmpty() && inApp
+        // one chat: over the whole screen (no bar on that page)
+        val showRoom = chatId.isNotEmpty() && inApp
+        if (showRoom) room().open(chatId) else chatRoom?.close()
+        chatRoom?.let { r -> if (showRoom != (r.visibility == View.VISIBLE)) r.visibility = if (showRoom) View.VISIBLE else View.GONE }
+        // Explore ends where the bottom bar starts; the Secret Dating pages end where their own bar starts
+        val innerH = root.height - root.paddingTop - root.paddingBottom
+        sizeTo(explore, if (pages.navShown && navTop > 0) navTop else ViewGroup.LayoutParams.MATCH_PARENT)
+        sizeTo(secret, if (innerH > 0) innerH - sdNav.barPx else ViewGroup.LayoutParams.MATCH_PARENT)
+        if (show != (explore.visibility == View.VISIBLE)) explore.setShown(show)
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
-        // native Wallet: full screen (the web hides its bottom bar on /wallet)
-        val showWallet = path.trimEnd('/') == "/wallet" && !cover && Api.token.isNotEmpty() && !wallet.wantsWeb
-        if (showWallet != (wallet.visibility == View.VISIBLE)) web.evaluateJavascript(walletCss(showWallet), null)
+        if (secretView.isNotEmpty()) sdNav.current = secretView
+        sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
+        // native Wallet: full screen
+        val showWallet = p == "/wallet" && inApp
         wallet.setShown(showWallet, search.removePrefix("?"))
-        if (!previewing) {
-            val gamesWas = games.active
-            games.setRoute(path, Api.token.isNotEmpty(), cover)
-            if (games.active != gamesWas) web.evaluateJavascript("document.documentElement.classList.${if (games.active) "add" else "remove"}('tfgm')", null)
-        }
+        if (!previewing) games.setRoute(path, inApp, false)
         // the Control Center (/admin, admins only), maintenance / announcement / blocked / error screens, "Never miss a call"
         if (::admin.isInitialized) {
-            admin.setShown(path.trimEnd('/') == "/admin" && !cover && signedIn, search)
-            status.update(path + search, signedIn, cover)
-            notify.update(pages.onHome && pages.home.visibility == View.VISIBLE, signedIn)
+            admin.setShown(p == "/admin" && inApp, search)
+            status.update(path + search, Api.token.isNotEmpty(), covered)
+            notify.update(pages.onHome && pages.home.visibility == View.VISIBLE, inApp)
         }
+        // signed in and the sign-in page already on a page of the app: its own drawing is covered until the app's pages take over
+        coverWeb(!native && web != null && Api.token.isNotEmpty() && webRoute.isNotEmpty() && !LoginLayer.isLoginPath(pathOnly(webRoute)) &&
+            ::login.isInitialized && !login.shown && !login.away)
     }
 
     /** Test mode: the Control Center, a status screen or the notifications card with made-up data (no web page, no login). */
     private fun startMiscPreview(scene: String) {
         preview = "misc"
-        web.loadUrl("about:blank")
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
         val ready = Runnable { android.util.Log.i("TFDBG", "preview open $open") }
@@ -936,60 +1237,57 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }, 3000)
     }
 
-    /** While the native Wallet is on screen, the web page's own Wallet (.tfw) is not drawn. */
-    private fun walletCss(on: Boolean) = "(function(){var d=document;if(!d.getElementById('tfwl-css')){var s=d.createElement('style');s.id='tfwl-css';" +
-        "s.textContent='html.tfwl .tfw{display:none!important}';(d.head||d.documentElement).appendChild(s);}" +
-        "d.documentElement.classList.toggle('tfwl',$on);})();"
-
-    /** The Wallet's back arrow: the web's navigate(-1), or Home when the Wallet was the first page. */
-    private fun walletBack() {
-        web.evaluateJavascript("(function(){var s=history.state||{};if(s.key&&s.key!=='default'){history.back();}else if(window.__tfGo){window.__tfGo('/',null);}})();", null)
-    }
+    /** The Wallet's back arrow: the page before, or Home when the Wallet was the first page. */
+    private fun walletBack() { if (!goBack()) navigate("/") }
 
     /** Keeps ?app=secret in the address when the Wallet switches (as the web page does). */
     private fun walletAddress(app: String) {
-        web.evaluateJavascript("(function(){try{if(location.pathname.replace(/\\/+$/,'')!=='/wallet')return;var u=new URL(location.href);" +
-            "if(${JSONObject.quote(app)}==='secret')u.searchParams.set('app','secret');else u.searchParams.delete('app');" +
-            "history.replaceState(history.state,'',u.pathname+u.search+u.hash);}catch(e){}})();", null)
+        if (!native || leaving || pathOnly(router.path) != "/wallet") return
+        val u = try { Uri.parse("x://x/${router.search}") } catch (e: Exception) { return }
+        val b = StringBuilder()
+        fun add(k: String, v: String) { b.append(if (b.isEmpty()) "?" else "&").append(Uri.encode(k)).append("=").append(Uri.encode(v)) }
+        var done = false
+        for (k in u.queryParameterNames) {
+            if (k == "app") { if (app == "secret") { add("app", "secret"); done = true } }
+            else for (v in u.getQueryParameters(k)) add(k, v)
+        }
+        if (app == "secret" && !done) add("app", "secret")
+        router.replaceSearch(b.toString())
     }
 
-    /** Secret Dating plan payment: the payment page opens in the web view; back in the app it returns to /wallet. */
-    private fun openWalletCheckout(url: String) {
-        wallet.wantsWeb = true
-        update()
-        web.loadUrl(url)
+    /**
+     * A Secret Dating plan's payment page (only when online payments are switched on on the server): it opens in
+     * the phone's browser, on top of the app; back in the app the Wallet reads the plan again.
+     */
+    private var checkoutOpen = false
+    private fun openCheckout(url: String) {
+        checkoutOpen = true
+        if (!openBrowserTab(url)) { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { checkoutOpen = false; wallet.checkoutClosed() } }
     }
 
     /** Test mode: the native Wallet with made-up data (WalletDemo), no web page, no login. */
     private fun startWalletPreview(scene: String) {
         walletPreviewing = true
-        web.loadUrl("about:blank")
         wallet.source = WalletDemo(scene)
         wallet.setShown(true, if (scene.startsWith("secret")) "app=secret" else "")
         val open = intent.getStringExtra("tf_open").orEmpty()
         if (open.isNotEmpty()) root.postDelayed({ wallet.previewOpen(open) }, 2500)
     }
 
-    /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
     /**
-     * Test runs only: the page moves (PageFx) with made-up data and no web page — the same code as on the phone
-     * (taps go through the same calls; the web's reports are played by the test). The CI records the screen.
+     * Test runs only: the page moves (PageFx) with made-up data — the same code as on the phone: every step
+     * is a tap's call into the app's own history (Router), nothing else. The CI records the screen.
      */
     private var fxTest = false
     private fun startFxTest() {
         fxTest = true
         Demo.on = true; DemoHome.on = true; DemoHome.dailyTaken = true
         Api.origin = "https://true-find.base44.app"; Api.appId = "demo"; Api.token = "demo"
-        web.loadUrl("about:blank")
         watchFrames()
         preview = ""
         fun say(what: String) = android.util.Log.i("TFDBG", "fx step $what")
-        fun web(p: String, back: Boolean = false) {
-            // what the web would report a moment after a tap (or after Back)
-            if (back) backAt = uptime()
-            // (in the web's own order: the address first, then the page's state, as two messages)
-            root.postDelayed({ onRoute(p); root.post { val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else "") } }, if (back) 0L else 120L)
-        }
+        native = true
+        calls.enabled = true
         // each move stops part of the way (45 %) for a picture ("fx frozen N"), then ends 9 s later (steps 24 s apart:
         // the test phone takes several seconds per picture)
         // test sets "fx" (steps 1–6) and "fx2" (7–11) each on their own test phone: the emulator tends to stop
@@ -1001,39 +1299,43 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             PageFx.freezeAt = 0.45f
             act()
             root.postDelayed({ say("frozen $k"); }, 3000)
-            root.postDelayed({ PageFx.finish(); say("done $k") }, 12000)
+            root.postDelayed({ PageFx.finish(); say("now $k: ${router.path}${router.search} (page ${router.idx})"); say("done $k") }, 12000)
         }
         val list: List<Pair<String, () -> Unit>> = listOf(
-            "Home -> Explore (tab)" to { pages.go("/explore"); web("/explore") },
-            "Explore -> Home (tab back)" to { pages.go("/"); web("/") },
-            "Home -> Profile (open)" to { pages.go("/profile"); web("/profile") },
-            "Profile -> Home (back)" to { web("/", back = true) },
-            "Home -> Wallet (open)" to { openWeb("/wallet", null); web("/wallet") },
-            "Wallet -> Home (back)" to { web("/", back = true) },
-            "Home -> Recent (tab)" to { pages.go("/chats"); web("/chats") },
-            "Recent -> Home (tab back)" to { pages.go("/"); web("/") },
-            "Home -> Secret Dating (open)" to { openWeb("/secret-app", null); web("/secret-app") },
-            "Secret Dating Home -> Map (its own tab)" to { web("/dating") },
-            "Secret Dating -> Home (back)" to { web("/", back = true) },
+            "Home -> Explore (tab)" to { navigate("/explore") },
+            "Explore -> Home (tab back)" to { navigate("/") },
+            "Home -> Profile (open)" to { navigate("/profile") },
+            "Profile -> Home (back)" to { goBack() },
+            "Home -> Wallet (open)" to { navigate("/wallet") },
+            "Wallet -> Recent (back: the fixed step above the Wallet)" to { goBack() },
+            "Recent -> Home (tab)" to { navigate("/") },
+            "Home -> Recent (tab)" to { navigate("/chats") },
+            "Recent -> Secret Dating (open)" to { navigate("/secret-app") },
+            "Secret Dating Home -> Map (its own tab)" to { navigate("/dating") },
+            "Secret Dating -> Recent (back, two pages)" to { goBack(2) },
         )
-        root.postDelayed({ say("start"); web("/") }, 1500)
+        root.postDelayed({
+            say("start"); router.reset("/")
+            // the second half starts where the first half ends (on Recent), without a move
+            if (from >= 7 && !intent.getBooleanExtra("tf_fx_live", false)) { navigate("/chats"); PageFx.finish() }
+        }, 1500)
         // test set "fx3": the moves running freely — each must end on the right page with the pages it left
-        // kept ready ("parked"); the log gets one TFFX line per move
+        // kept ready ("parked"); the log gets one TFFX line per move and where the app's history stands
         if (intent.getBooleanExtra("tf_fx_live", false)) {
             fun state(v: View) = if (v.visibility == View.VISIBLE) "shown" else if (v is KeepPage && v.parked) (if (v.asleep) "asleep" else "parked") else "gone"
             val live: List<Pair<String, () -> Unit>> = listOf(
-                "Home -> Explore" to { pages.go("/explore"); web("/explore") },
-                "Explore -> Home" to { pages.go("/"); web("/") },
-                "Home -> Wallet (open)" to { openWeb("/wallet", null); web("/wallet") },
-                "Wallet -> Home (back)" to { web("/", back = true) },
-                "Home -> Recent (Explore passes by)" to { pages.go("/chats"); web("/chats") },
-                "Recent -> Home" to { pages.go("/"); web("/") },
+                "Home -> Explore" to { navigate("/explore") },
+                "Explore -> Home" to { navigate("/") },
+                "Home -> Wallet (open)" to { navigate("/wallet") },
+                "Wallet -> Recent (back)" to { goBack() },
+                "Recent -> Home (back: Explore is the step above Recent, then Home)" to { goBack(); goBack() },
+                "Home -> Recent (Explore passes by)" to { navigate("/chats") },
             )
             var t = 8000L
             live.forEachIndexed { i, (what, act) ->
                 root.postDelayed({ say("live ${i + 1} $what"); act() }, t)
                 root.postDelayed({
-                    say("live done ${i + 1}: moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
+                    say("live done ${i + 1}: at=${router.path}${router.search} page=${router.idx} moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
                         "x=${pages.home.translationX.toInt()},${explore.translationX.toInt()},${pages.recent.translationX.toInt()},${wallet.translationX.toInt()}")
                 }, t + 4500)
                 t += 8000L
@@ -1055,7 +1357,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify") ||
             preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn") || preview.startsWith("recent")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
-            web.loadUrl("about:blank")
             watchFrames()
             root.post { pages.startPreview(preview, intent.getStringExtra("tf_open").orEmpty()) }
             return
@@ -1066,8 +1367,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
-        web.loadUrl("about:blank")
-        if (intent.getBooleanExtra("tf_noweb", false)) web.visibility = View.GONE
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
         // one chat (/chat/:id): the whole screen
@@ -1083,7 +1382,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
         screen.layoutParams = lp
         val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; else -> "home" }
-        if (screen === explore) explore.setShown(true) else secret.setShown(true, view, "")
+        if (screen === explore) explore.setShown(true) else {
+            secret.setShown(true, view, "")
+            // Secret Dating's own bar under its pages, as in the app
+            sdNav.current = view; sdNav.visibility = View.VISIBLE
+            root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
+        }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }
 
@@ -1092,7 +1396,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         callPreview = scene
         Demo.on = true
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
-        web.loadUrl("about:blank")
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
         root.post {
@@ -1134,7 +1437,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         GameApi.demo = true
         GamesDemo.scene = scene
         GamesDemo.girl = intent.getBooleanExtra("tf_girl", false)
-        web.loadUrl("about:blank")
         val path = when {
             scene.startsWith("hc") -> "/games/heart-chase"
             scene.startsWith("mc") -> "/games/mood-changer"
@@ -1158,6 +1460,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
         wallet.onAppVisible(true)
+        // back from a plan's payment page in the phone's browser: the Wallet reads the plan again
+        if (checkoutOpen) { checkoutOpen = false; wallet.checkoutClosed() }
         admin.onAppVisible(true); status.onAppVisible(true); notify.onAppVisible(true)
         if (preview.isEmpty() && !walletPreviewing && !previewing && !fxTest && callPreview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
@@ -1177,13 +1481,15 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         dance.onAppVisible(false)
         live.onAppVisible(false)
         if (::login.isInitialized) login.onAppVisible(false)
-        CookieManager.getInstance().flush()
+        if (web != null) CookieManager.getInstance().flush()
         super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        web.saveState(outState)
+        // signed in: where the app was (its own history); on the sign-in pages: the web page's
+        if (native && !leaving && router.started && !fxTest) outState.putString("tf_router", router.save())
+        else web?.saveState(outState)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1191,7 +1497,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val data = intent.data
         if (data != null && isAuthReturn(data)) { login.onAuthReturn(data); return }
         if (pushOpen(intent, false) != null) return
-        data?.takeIf { isOurs(it) }?.let { web.loadUrl(it.toString()) }
+        data?.takeIf { isOurs(it) }?.let { u ->
+            if (native) navigate((u.encodedPath ?: "/").ifEmpty { "/" } + (u.encodedQuery?.let { "?$it" } ?: ""))
+            else loadWeb(u.toString())
+        }
     }
 
     /** truefind://auth?… — Google sign-in in the phone's browser handing the sign-in back (GoogleSignIn) */
@@ -1209,13 +1518,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     } catch (e: Exception) { false }
 
     override fun onDestroy() {
+        if (::work.isInitialized) work.stop(false)
         calls.shutdown()
         games.shutdown()
         dance.leave()
         live.leave()
         DanceVideo.destroyAll()
-        root.removeView(web)
-        web.destroy()
+        main.removeCallbacksAndMessages(null)
+        web?.let { w -> web = null; root.removeView(w); try { w.destroy() } catch (e: Throwable) { } }
         super.onDestroy()
     }
 }

@@ -174,6 +174,8 @@ if [ "$SET" = games ]; then bash ci/games-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = fx ]; then bash ci/fx-test.sh "$APK" "$OUT" 1 6; exit 0; fi
 if [ "$SET" = fx2 ]; then bash ci/fx-test.sh "$APK" "$OUT" 7 11; exit 0; fi
 if [ "$SET" = fx3 ]; then bash ci/fx-test.sh "$APK" "$OUT" 1 0 live; exit 0; fi
+# signed out ⇄ signed in against the real server (no account): the sign-in page, the app's own pages, signing out
+if [ "$SET" = session ]; then bash ci/session-test.sh "$APK" "$OUT"; exit 0; fi
 # the native sign-in pages (their own list of screens, from the Login work)
 if [ "$SET" = login ]; then bash ci/login-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then

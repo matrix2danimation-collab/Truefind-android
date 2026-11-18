@@ -28,7 +28,7 @@ import androidx.core.content.ContextCompat
  * (Android 13 and newer); it only shows while that question hasn't been answered yet, and never
  * over another pop-up. It never blocks the page.
  */
-class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLayout, private val web: android.webkit.WebView) {
+class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLayout) {
     companion object {
         private const val AGAIN_MS = 3L * 24 * 60 * 60 * 1000
         private const val PERM = "android.permission.POST_NOTIFICATIONS"
@@ -195,9 +195,7 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
 
     /** the web's sendTestPush(): only when this app can receive pushes (its push token), else nothing reaches this phone */
     private fun testPush() {
-        web.evaluateJavascript("(function(){try{return !!(window.TrueFindNative&&window.TrueFindNative.getFcmToken&&window.TrueFindNative.getFcmToken())}catch(e){return false}})()") { v ->
-            if (v == "true") Api.invoke("pushSubscribe", org.json.JSONObject().put("action", "test")) { }
-        }
+        if (Push.token(act).isNotEmpty()) Api.invoke("pushSubscribe", org.json.JSONObject().put("action", "test")) { }
     }
 
     private fun draw() {

@@ -97,9 +97,9 @@ object WalletNet : WalletSource {
  * coin packs with the green Pay bar, the payment steps, history and help.
  * Same backend functions, same rules, same look. Full screen (no bottom bar).
  *
- * [go]           opens a web page of the app: go(path, stateJson)
- * [webBack]      the header's back arrow (the web's navigate(-1), or Home)
- * [openCheckout] opens the plan payment page in the web view
+ * [go]           opens a page of the app: go(path, stateJson)
+ * [webBack]      the header's back arrow (the page before, or Home)
+ * [openCheckout] opens the plan payment page in the phone's browser
  * [setAddress]   keeps ?app=secret in the address, as the web does
  */
 @SuppressLint("ViewConstructor", "ClickableViewAccessibility")
@@ -113,9 +113,6 @@ class WalletScreen(
 
     /** Made-up data for the emulator pictures replaces this (WalletDemo). */
     var source: WalletSource = WalletNet
-
-    /** true while the plan payment page is open in the web view: the native Wallet steps aside. */
-    var wantsWeb = false
 
     private class Cached(
         val wallet: JSONObject?, val transactions: List<JSONObject>, val accountType: String,
@@ -320,6 +317,12 @@ class WalletScreen(
     fun onAppVisible(visible: Boolean) {
         if (!visible) { appAwayAt = System.currentTimeMillis(); return }
         if (shown && appAwayAt > 0 && System.currentTimeMillis() - appAwayAt > 60_000) refreshQuietly()
+    }
+
+    /** back from a plan's payment page (the phone's browser): that tap is over, the plan is read again */
+    fun checkoutClosed() {
+        if (buyingCredits) { buyingCredits = false; renderPayBar() }
+        if (shown) refreshQuietly()
     }
 
     /** The phone's back button: closes a pop-up first. */
@@ -1741,7 +1744,7 @@ class WalletScreen(
         source.fn("createPremiumCheckout", JSONObject().put("app", "secret").put("plan", planKey)) { r ->
             val url = if (r.ok) r.data.str("url") else ""
             if (url.isNotEmpty()) {
-                openCheckout(url) // the web view opens the payment page; the Wallet steps aside
+                openCheckout(url) // the phone's browser opens the payment page; back in the app the plan is read again
                 return@fn
             }
             val d = r.data

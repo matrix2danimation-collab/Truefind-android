@@ -266,7 +266,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
             c.addView(DashK.t(ctx, m, if (busy) "Loading…" else if (errorAction.startsWith("/login")) "Sign in again" else "Finish profile", 14.5f, Color.WHITE, true).apply {
                 gravity = Gravity.CENTER; background = DashK.box(m, DashK.PURPLE, 22f); setPadding(m.pi(22f), 0, m.pi(22f), 0)
                 alpha = if (busy) .6f else 1f
-                setOnClickListener { pages.js("location.assign(${JSONObject.quote(errorAction)})") {} }
+                setOnClickListener { pages.go(errorAction) }
             }, DashK.lp(m, -2f, 44f))
             column.addView(c, DashK.lp(m, -1f, -2f))
             return

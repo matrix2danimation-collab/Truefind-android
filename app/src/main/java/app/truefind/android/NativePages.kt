@@ -4,185 +4,50 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import org.json.JSONObject
 
 /**
  * The native Home, Profile (with Settings and every screen inside it), Edit your
- * profile, Verification and the bottom bar — laid over the Base44 web app.
+ * profile, Verification, Recent, Expert Talk, My Dashboard, Secret Dating Earning
+ * and the bottom bar.
  *
- * They follow the web app's address exactly like the native Explore does: the
- * web app stays the one source of truth for where you are (so the phone's Back,
- * the web's own back rules (PhoneBack.jsx) and every link keep working), and a
- * native screen shows whenever its address is open:
+ * A screen shows whenever its address is open (the app's own Router keeps the address):
  *   /, /home            → Home              /profile[?…]          → Profile
  *   /profile/edit       → Edit your profile  /register/verification → Verification
  *   /chats              → Recent (RecentScreen)
- *   /, /home, /explore, /chats → the bottom bar (the web's own bar is hidden there)
+ *   /, /home, /explore, /chats → the bottom bar
  *   /expert-talk        → Expert Talk (member side or the expert's panel)
  *   /dashboard          → My Dashboard        /secret-earnings      → Secret Dating Earning
- * The web page under a native screen is hidden (not removed), and any web
- * pop-up that must be seen (incoming call, after-call sheet, a dialog on
- * Recent, maintenance …) puts the native screens aside until it closes.
+ * Before, these followed the address of the web page hidden underneath; now MainActivity tells
+ * them the address ([setRoute]) and their taps go back to it ([Host]).
  */
-class NativePages(private val act: ComponentActivity, private val root: FrameLayout, private val web: WebView, private val onChange: () -> Unit) {
+class NativePages(private val act: ComponentActivity, private val root: FrameLayout, private val onChange: () -> Unit) {
+
+    /** moving around and signing out (MainActivity) */
+    interface Host {
+        /** navigate(path, { state, replace }) */
+        fun go(path: String, state: JSONObject?, replace: Boolean)
+        /** navigate(-n); false when there is no page behind */
+        fun back(n: Int): Boolean
+        val canGoBack: Boolean
+        /** log out: [presence] says "offline" to Explore first */
+        fun logout(presence: Boolean)
+    }
 
     companion object {
-        const val NAME = "TFHome"
         val NAV_ON = setOf("/", "/home", "/explore", "/chats")
-
-        /** Runs in the page as early as possible (and again after each load, harmless). */
-        val JS = """
-(function(){
-  if (window.__tfHomeInit) return; window.__tfHomeInit = true;
-  var H = window.$NAME; if (!H) return;
-  // The Daily Free Coins pop-up is shown by the native Home (once a day); the web Home never opens its own.
-  try {
-    var gi = Storage.prototype.getItem;
-    Storage.prototype.getItem = function(k){
-      if (typeof k === 'string' && k.indexOf('tf_daily_pop:') === 0) return new Date(Date.now() + 19800000).toISOString().slice(0, 10);
-      return gi.apply(this, arguments);
-    };
-  } catch(e){}
-  var css = document.createElement('style');
-  css.textContent = 'html.tfnn nav.tfnav{display:none!important}'
-    + 'html.tfhn .tf-tab[data-tab="home"]{visibility:hidden!important}html.tfhn .tfdc{display:none!important}'
-    + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}'
-    + 'html.tfrn .tf-tab[data-tab="chats"]{visibility:hidden!important}'
-    // In the app a tab switch is instant (as in other Android apps): the web's 0.3 s tab slide
-    // stuttered on phones and showed half-moved pages; the page going out is simply hidden.
-    + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}'
-    // Expert Talk, My Dashboard and Secret Dating Earning are drawn by the app: the web's own pages stay hidden
-    + 'html.tfetn .et{display:none!important}html.tfdbn .tfd{display:none!important}html.tfsen .tfs{display:none!important}';
-  (document.head || document.documentElement).appendChild(css);
-  // While the app draws one of those pages, the hidden web page under it must not ask the server too
-  // (and Expert Talk's hidden web page must never open a second voice call): its requests are held.
-  var HELD = { expertTalk: 'tfetn', getDashboard: 'tfdbn', getSecretEarnings: 'tfsen' };
-  function held(u){
-    try { var m = /\/functions\/([A-Za-z0-9_]+)/.exec(String(u || '')); var c = m && HELD[m[1]]; return !!c && document.documentElement.classList.contains(c); } catch(e){ return false; }
-  }
-  try {
-    var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
-    // the hidden web Dashboard, whose held requests time out, would report "Dashboard load failed" as an error: not sent
-    function falseReport(u, b){ return /\/functions\/logClientError/.test(String(u || '')) && typeof b === 'string' && b.indexOf('Dashboard load failed') >= 0 && document.documentElement.classList.contains('tfdbn'); }
-    XMLHttpRequest.prototype.open = function(m, u){ this.__tfHeld = held(u); this.__tfUrl = u; return xo.apply(this, arguments); };
-    XMLHttpRequest.prototype.send = function(b){ if (this.__tfHeld || falseReport(this.__tfUrl, b)) return; return xs.apply(this, arguments); };
-    var f0 = window.fetch;
-    if (f0) window.fetch = function(i, o){ var u = typeof i === 'string' ? i : (i && i.url) || ''; if (held(u) || falseReport(u, o && o.body)) return new Promise(function(){}); return f0.apply(this, arguments); };
-  } catch(e){}
-  // The app's own router (React Router's navigator), so a native tap opens a page
-  // exactly like a tap in the web app (push / replace, with its state).
-  var navCache = null;
-  function findNav(){
-    if (navCache) return navCache;
-    try {
-      var root = document.getElementById('root'); if (!root) return null;
-      var key = null, ks = Object.keys(root);
-      for (var i = 0; i < ks.length; i++) if (ks[i].indexOf('__reactContainer$') === 0) { key = ks[i]; break; }
-      if (!key) return null;
-      var stack = [root[key]], n = 0;
-      while (stack.length && n < 20000) {
-        var f = stack.pop(); n++;
-        if (!f) continue;
-        var v = f.memoizedProps && f.memoizedProps.value;
-        if (v && v.navigator && typeof v.navigator.push === 'function' && typeof v.navigator.replace === 'function') { navCache = v.navigator; return navCache; }
-        if (f.sibling) stack.push(f.sibling);
-        if (f.child) stack.push(f.child);
-      }
-    } catch(e){}
-    return null;
-  }
-  window.__tfNav = function(path, state, replace){
-    var nav = findNav();
-    if (nav) { try { if (replace) nav.replace(path, state || null); else nav.push(path, state || null); return 'nav'; } catch(e){} }
-    if (replace) {
-      var i0 = (history.state && history.state.idx) || 0;
-      history.replaceState({ usr: state || null, key: Math.random().toString(36).slice(2, 10), idx: i0 }, '', path);
-    } else {
-      var i1 = ((history.state && history.state.idx) || 0) + 1;
-      history.pushState({ usr: state || null, key: Math.random().toString(36).slice(2, 10), idx: i1 }, '', path);
-    }
-    dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
-    return 'pop';
-  };
-  // Bottom bar tapped on the tab already open: back to the top of that page.
-  window.__tfTop = function(){
-    try {
-      var el = document.querySelector('.tf-tab:not(.off):not(.tf-pg-out)');
-      if (el) el.scrollTo({ top: 0, behavior: 'smooth' }); else window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch(e){}
-  };
-  window.__tfReturnCall = function(){ var b = document.querySelector('button[aria-label="Return to your call"]'); if (b) b.click(); };
-  function vis(el){
-    if (!el || !el.getClientRects().length) return false;
-    var r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < innerWidth && r.top < innerHeight;
-  }
-  function hidden(el){
-    var h = document.documentElement.classList;
-    if (el.closest('.tfc') || el.closest('.tfdc')) return true;
-    if (h.contains('tfsd') && el.closest('#root .sd')) return true;
-    if (h.contains('tfhn') && el.closest('.tf-tab[data-tab="home"]')) return true;
-    if (h.contains('tfpn') && el.closest('.tfp-root')) return true;
-    if (h.contains('tfbn') && el.closest('.tfb')) return true;
-    if (h.contains('tfvn') && el.closest('.tfv')) return true;
-    if (h.contains('tfrn') && el.closest('.tf-tab[data-tab="chats"]')) return true;
-    return false;
-  }
-  function covered(){
-    var l = document.querySelectorAll('.tfic,[role="alertdialog"],[role="dialog"],[aria-modal="true"]');
-    for (var i = 0; i < l.length; i++) if (vis(l[i]) && !hidden(l[i])) return true;
-    return false;
-  }
-  var last = '';
-  function report(){
-    try {
-      var st = history.state || {};
-      var badge = document.querySelector('nav.tfnav .tfnav-badge');
-      var pill = document.querySelector('button[aria-label="Return to your call"]');
-      var ht = '';
-      if (document.documentElement.classList.contains('tfhn')) { var te = document.querySelector('.tf-tab[data-tab="home"] [role="status"]'); if (te) ht = String(te.textContent || '').trim(); }
-      var o = { path: location.pathname || '/', search: location.search || '', usr: st.usr == null ? null : st.usr,
-        idx: st.idx == null ? -1 : st.idx, cover: covered(), unread: badge ? String(badge.textContent || '') : '',
-        pill: !!(pill && pill.getClientRects().length), htoast: ht, cls: String(document.documentElement.className || '') };
-      var s = JSON.stringify(o);
-      if (s !== last) { last = s; H.state(location.origin, s); }
-    } catch(e){}
-  }
-  window.__tfReport = function(){ last = ''; report(); };
-  ['pushState','replaceState'].forEach(function(k){
-    var o = history[k];
-    history[k] = function(){ var r = o.apply(this, arguments); setTimeout(report, 0); return r; };
-  });
-  addEventListener('popstate', function(){ setTimeout(report, 0); });
-  var t = 0;
-  function soon(){ if (!t) t = setTimeout(function(){ t = 0; report(); }, 120); }
-  function watch(){
-    if (!document.body) { setTimeout(watch, 50); return; }
-    new MutationObserver(soon).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'aria-label'] });
-  }
-  watch();
-  setInterval(report, 1000);
-  report();
-})();
-""".trimIndent()
     }
 
     private val main = Handler(Looper.getMainLooper())
+    lateinit var host: Host
 
-    // ── what the web page says ──
+    // ── where the app is ──
     var path = "/"; private set
     var search = ""; private set
     var usr: JSONObject? = null; private set
     var idx = -1; private set
-    private var cover = false
-    private var pill = false
-    private var unread = 0
-    private var gotState = false
-    private var lastHomeToast = ""
     var preview = ""                 // test mode (emulator screenshots): which screen
     private var appVisible = true
 
@@ -198,12 +63,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val dash = DashboardScreen(act, this)
     val earn = SecretEarningsScreen(act, this)
     val recent = RecentScreen(act, this)
-    /** the native calls (when the web page hands its calls over) */
+    /** the native calls */
     var calls: CallManager? = null
-    private val callPill = CallPill(act) {
-        val c = calls
-        if (c != null && c.enabled) c.returnToCall() else web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null)
-    }
+    private val callPill = CallPill(act) { calls?.returnToCall() }
     private val screens: List<View> get() = listOf(home, profile, builder, verify, expert, dash, earn, recent)
     /** the full pages this part shows (for the move between pages) */
     val pageViews: List<View> get() = screens
@@ -228,99 +90,17 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         layer.onChange = { onChange() }
     }
 
-    /** Before the page loads: the bridge and the script. */
-    fun attach(scriptAtStart: Boolean) {
-        web.addJavascriptInterface(Bridge(), NAME)
-        if (scriptAtStart) androidx.webkit.WebViewCompat.addDocumentStartJavaScript(web, JS, MainActivity.ORIGINS)
+    /** MainActivity: the address now (path, ?query), what was handed along with it, and its place in the history. */
+    fun setRoute(path: String, search: String, state: JSONObject?, idx: Int) {
+        this.path = path.ifEmpty { "/" }
+        this.search = search
+        this.usr = state
+        this.idx = idx
     }
 
-    inner class Bridge {
-        @JavascriptInterface
-        fun state(origin: String?, json: String?) {
-            if (origin == null || !MainActivity.ORIGINS.contains(origin) || json == null) return
-            main.post { onState(json) }
-        }
-    }
-
-    private fun onState(json: String) {
-        val o = try { JSONObject(json) } catch (e: Exception) { return }
-        val rp = o.optString("path", "/").ifEmpty { "/" }
-        // a native tap has already switched the screen: an older address still on its way is held back
-        if (leading(rp)) { heldJson = json; return }
-        if (lead != null) { lead = null; heldJson = null; main.removeCallbacks(leadEnd) }
-        path = rp
-        search = o.optString("search", "")
-        usr = o.optJSONObject("usr")
-        idx = o.optInt("idx", -1)
-        cover = o.optBoolean("cover")
-        pill = o.optBoolean("pill")
-        val u = o.optString("unread").trim()
-        unread = if (u.endsWith("+")) 100 else u.toIntOrNull() ?: 0
-        gotState = true
-        // a new page (reload) has none of the classes that hide the web screens: set them again
-        val cls = o.optString("cls", "").split(' ').filter { it.isNotEmpty() }.toSet()
-        if (classes.any { (c, on) -> on != cls.contains(c) }) classes.clear()
-        // a message of the (hidden) web Home, e.g. "Invite from … added": shown on the native Home
-        val ht = o.optString("htoast", "")
-        if (ht.isNotEmpty() && ht != lastHomeToast && onHome) home.say(ht)
-        lastHomeToast = ht
-        onChange()
-    }
-
-    // ═════════════════ a native tap leads ═════════════════
-    // The web reports a new address only after it has done its own work (on a slow phone that took
-    // half a second, and in between the old native screen had gone and the new one wasn't there yet:
-    // a white flash and the web's half-moved page). Now a tap on a native screen's page switches the
-    // native screens at once; the web follows underneath. If the web doesn't confirm within 1.5 s,
-    // what it says wins again.
     /** Settings → Check for update (MainActivity asks GitHub) */
     var checkUpdate: () -> Unit = {}
     private var profilePrefetched = false
-    /** MainActivity follows the same address (Explore, Secret Dating) */
-    var onLead: (String, String) -> Unit = { _, _ -> }
-    var onLeadEnd: () -> Unit = {}
-    private var lead: String? = null
-    private var leadUntil = 0L
-    private var heldJson: String? = null
-    private val leadEnd = Runnable {
-        lead = null
-        val j = heldJson; heldJson = null
-        // the web never confirmed: go by what it says now (it may not have sent anything new)
-        if (j != null) onState(j) else web.evaluateJavascript("window.__tfReport && window.__tfReport()", null)
-        onLeadEnd()
-    }
-    private fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }.let { if (it == "/home") "/" else it }
-    /**
-     * true when this page's own report is for the address [p] too. The web sends two reports for a new page
-     * (where it is — WebBridge; what it shows there — the state here), a few ms apart: MainActivity changes
-     * the screens once both say the same, so a page move is decided once, with everything known.
-     */
-    fun agrees(p: String): Boolean = !gotState || preview.isNotEmpty() || norm(path) == norm(p)
-    /** true while a native tap leads and [p] is another (older) address */
-    fun leading(p: String): Boolean {
-        val l = lead ?: return false
-        return android.os.SystemClock.uptimeMillis() < leadUntil && norm(p) != l
-    }
-    private fun shownNatively(p: String, q: String): Boolean =
-        p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
-            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") ||
-            // the native Wallet, Games, Live Dance, Expert Talk, Dashboard and Earnings open at the tap too
-            p == "/wallet" || p == "/games" || p.startsWith("/games/") ||
-            p == "/dance" || p.startsWith("/dance/") || p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings" || p == "/admin" ||
-            p == "/live" || p.startsWith("/live/") || p == "/chats"
-    /** Switches the native screens to [target] now (only when a native screen shows it). */
-    fun lead(target: String, state: JSONObject?) {
-        if (preview.isNotEmpty() || !gotState || !signedIn || cover) return
-        val q = target.indexOf('?')
-        val tp = norm(target)
-        val ts = if (q >= 0) target.substring(q) else ""
-        if (!shownNatively(tp, ts) || (norm(path) == tp && search == ts)) return
-        lead = tp; leadUntil = android.os.SystemClock.uptimeMillis() + 1500
-        main.removeCallbacks(leadEnd); main.postDelayed(leadEnd, 1500)
-        path = target.substringBefore('?').ifEmpty { "/" }; search = ts; usr = state
-        onLead(path, search)
-        onChange()
-    }
 
     // ═════════════════ which screen shows ═════════════════
     private fun p(): String = path.trimEnd('/').ifEmpty { "/" }
@@ -337,36 +117,25 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     var navShown = false; private set
 
     /**
-     * Called by MainActivity whenever the page or the login changes.
+     * Called by MainActivity whenever the page or the login changes ([signedIn]: signed in and inside the app).
      * Returns the bottom of the page area for the native Explore (px, or -1 = leave as it is).
      */
     fun update(signedIn: Boolean): Int {
         if (preview.isNotEmpty()) return -1
         this.signedIn = signedIn
-        val live = signedIn && gotState
-        val showNav = live && NAV_ON.contains(p()) && !cover
-        val showHome = live && onHome && !cover
-        val showProfile = live && onProfile && !cover
-        val showBuilder = live && onBuilder && !cover
-        val showVerify = live && onVerify && !cover
-        val showExpert = live && onExpert && !cover
-        val showDash = live && onDash && !cover
-        val showEarn = live && onEarn && !cover
-        val showRecent = live && onRecent && !cover
-        // the web's own pages under the native ones stay hidden (not removed)
-        setClass("tfnn", live && NAV_ON.contains(p()))
-        setClass("tfhn", live && onHome)
-        setClass("tfpn", live && onProfile)
-        setClass("tfbn", live && onBuilder)
-        setClass("tfvn", live && onVerify)
-        setClass("tfetn", live && onExpert)
-        setClass("tfdbn", live && onDash)
-        setClass("tfsen", live && onEarn)
-        setClass("tfrn", live && onRecent)
+        val live = signedIn
+        val showNav = live && NAV_ON.contains(p())
+        val showHome = live && onHome
+        val showProfile = live && onProfile
+        val showBuilder = live && onBuilder
+        val showVerify = live && onVerify
+        val showExpert = live && onExpert
+        val showDash = live && onDash
+        val showEarn = live && onEarn
+        val showRecent = live && onRecent
         navShown = showNav
         nav.visibility = if (showNav) View.VISIBLE else View.GONE
         nav.current = when (p()) { "/", "/home" -> "home"; "/explore" -> "explore"; "/chats" -> "recent"; else -> "" }
-        nav.unread = unread
         val innerH = root.height - root.paddingTop - root.paddingBottom
         val pageH = if (showNav && innerH > 0) innerH - nav.barPx else ViewGroup.LayoutParams.MATCH_PARENT
         sizeTo(home, pageH)
@@ -384,15 +153,13 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         // the Recent list is loaded once in the background after sign-in (the first visit shows it at once)
         if (live) recent.warm()
         if (!(showHome || showProfile || showBuilder || showVerify || showExpert || showDash || showEarn || showRecent)) layer.closeAll()
-        // "Call in progress · Return": the app's own (native calls: on every page but games, rooms and calls),
-        // else the web's pill under the native screens
+        // "Call in progress · Return": on every page but games, rooms and calls
         val cm = calls
-        val nativeCalls = cm != null && cm.enabled
-        val pillOn = if (nativeCalls) live && cm!!.pillVisible(path + search) else live && pill && (showHome || showNav || showProfile)
+        val pillOn = live && cm != null && cm.enabled && cm.pillVisible(path + search)
         callPill.visibility = if (pillOn) View.VISIBLE else View.GONE
         if (pillOn) (callPill.layoutParams as FrameLayout.LayoutParams).let { lp ->
             // above the bottom bar; on Profile 24 dp from the bottom (as before); on other pages where the web's pill sat (84 px)
-            val b = if (showNav) nav.barPx + Ui.dpi(12f) else if (showHome || showProfile || showBuilder || showVerify || !nativeCalls) Ui.dpi(24f) else Ui.dpi(84f)
+            val b = if (showNav) nav.barPx + Ui.dpi(12f) else if (showHome || showProfile || showBuilder || showVerify) Ui.dpi(24f) else Ui.dpi(84f)
             if (lp.bottomMargin != b) { lp.bottomMargin = b; callPill.layoutParams = lp }
         }
         return if (showNav && innerH > 0) innerH - nav.barPx else -1
@@ -403,76 +170,45 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         if (lp.height != h) { lp.height = h; v.layoutParams = lp }
     }
 
-    private val classes = HashMap<String, Boolean>()
-    private fun setClass(c: String, on: Boolean) {
-        if (classes[c] == on) return
-        classes[c] = on
-        web.evaluateJavascript("document.documentElement.classList.${if (on) "add" else "remove"}('$c')", null)
-    }
-
-    // ═════════════════ moving around (same as a tap in the web app) ═════════════════
-    /** navigate(path, { state, replace }) of the web app */
-    /** a native screen opens a page (MainActivity: the app leads the move) */
-    var onNativeGo: () -> Unit = {}
+    // ═════════════════ moving around ═════════════════
     /** Home read the True Find wallet (MainActivity hands it to the Wallet page, which asks for the same) */
     var onWallet: (JSONObject) -> Unit = {}
+    /** navigate(path, { state, replace }) */
     fun go(path: String, state: JSONObject? = null, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast.show("→ $path"); return }
-        onNativeGo()
-        lead(path, state)
-        web.evaluateJavascript("window.__tfNav && window.__tfNav(${JSONObject.quote(path)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
+        host.go(path, state, replace)
     }
     /** navigate(-1), or Home when there is nothing before (the ‹ button of Profile) */
     fun historyBack() {
         if (preview.isNotEmpty()) { act.finish(); return }
-        web.evaluateJavascript("history.length > 1 ? history.back() : (window.__tfNav && window.__tfNav('/'))", null)
+        if (!host.back(1)) host.go("/", null, false)
     }
+    /** a page was opened from another page of the app (there is one to go back to) */
+    val canGoBack: Boolean get() = preview.isEmpty() && host.canGoBack
 
-    /** runs [code] in the page; [done] gets the text it returns (null when none) */
-    fun js(code: String, done: (String?) -> Unit) {
-        if (preview.isNotEmpty()) { done(null); return }
-        web.evaluateJavascript(code) { v -> done(try { if (v == null || v == "null") null else org.json.JSONTokener(v).nextValue() as? String } catch (e: Exception) { null }) }
-    }
-    /** this phone's id that the web app keeps (deviceId() of presence.js), made the same way when missing */
-    fun deviceId(done: (String?) -> Unit) = js("(function(){try{var id=localStorage.getItem('tf_device_id');if(!id||!/^[A-Za-z0-9_-]{8,64}${'$'}/.test(id)){id=((window.crypto&&crypto.randomUUID&&crypto.randomUUID())||(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12))).replace(/[^A-Za-z0-9_-]/g,'');localStorage.setItem('tf_device_id',id)}return id}catch(e){return ''}})()", done)
+    /** this phone's own id (the web's deviceId() of presence.js) */
+    fun deviceId(done: (String?) -> Unit) = done(Session.deviceId(act))
 
     /**
-     * Log out like the web app: off Explore at once (presence offline) and this phone's
-     * notifications off (1.5 s at most), then the server's log-out page → /welcome.
+     * Log out: off Explore at once (presence offline) and this phone's notifications off
+     * (1.5 s at most), then the server's log-out → the sign-in pages.
      */
     fun logout(presence: Boolean = true) {
         if (preview.isNotEmpty()) { toast.show("→ log out"); return }
-        Push.unregister(act) // this phone stops getting this account's notifications
-        val app = JSONObject.quote(Api.appId); val tok = JSONObject.quote(Api.token)
-        val out = "(function(push){var o=location.origin,done=false;function out(){if(done)return;done=true;try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}" +
-            "location.href=o+'/api/apps/auth/logout?from_url='+encodeURIComponent(o+'/welcome')}" +
-            "if(!push){out();return}try{localStorage.removeItem('tf_push_sent')}catch(e){}var job=Promise.resolve();" +
-            "try{if('serviceWorker' in navigator&&'PushManager' in window){job=navigator.serviceWorker.getRegistration().then(function(r){return r&&r.pushManager?r.pushManager.getSubscription():null}).then(function(s){if(!s)return;" +
-            "return fetch('/api/apps/'+$app+'/functions/pushSubscribe',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',Accept:'application/json','X-App-Id':$app,Authorization:'Bearer '+$tok},body:JSON.stringify({action:'remove',endpoint:s.endpoint})})})}}catch(e){}" +
-            "Promise.race([job.catch(function(){}),new Promise(function(r){setTimeout(r,1500)})]).then(out,out)})(${if (presence) "true" else "false"})"
-        if (!presence) { web.evaluateJavascript(out, null); return }
-        var fired = false
-        val fire = { if (!fired) { fired = true; web.evaluateJavascript(out, null) } }
-        main.postDelayed({ fire() }, 1500)
-        Api.invoke("updatePresence", JSONObject().put("state", "offline"), 1500) { fire() }
+        host.logout(presence)
     }
 
     /** navigate(-n) */
     fun backBy(n: Int) {
         if (preview.isNotEmpty()) return
-        web.evaluateJavascript("history.go(${-maxOf(1, n)})", null)
-    }
-    /** the phone's Back on a page without pop-ups: the web history (PhoneBack.jsx fixes where it lands) */
-    fun webBack() {
-        if (preview.isNotEmpty()) { act.finish(); return }
-        if (web.canGoBack()) web.goBack() else go("/home", null, true)
+        host.back(maxOf(1, n))
     }
 
     private fun tab(key: String, path: String) {
         val here = nav.current
         if (key == here) {
             // the tab you are on: back to its top
-            when (key) { "home" -> home.scrollTop(); "explore" -> {}; "recent" -> recent.scrollTop(); else -> web.evaluateJavascript("window.__tfTop && window.__tfTop()", null) }
+            when (key) { "home" -> home.scrollTop(); "recent" -> recent.scrollTop(); else -> {} }
             return
         }
         go(path)
@@ -503,11 +239,6 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
-    /** test runs only (the page moves test): what the web page would report for [path] */
-    fun testState(path: String, search: String = "") {
-        onState(JSONObject().put("path", path).put("search", search).put("unread", "3").toString())
-    }
-
     /** test pictures: the "Call in progress · Return" pill over the native Home */
     fun previewPill() {
         callPill.visibility = View.VISIBLE
@@ -537,7 +268,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             what.startsWith("builder") -> { path = "/profile/edit"; builder.setShown(true) }
             what.startsWith("verify") -> { path = "/register/verification"; verify.setShown(true) }
             what.startsWith("et") -> {
-                path = "/expert-talk"; signedIn = true; gotState = true
+                path = "/expert-talk"; signedIn = true
                 app.truefind.android.games.GameApi.demo = true
                 EtDemo.on = true; EtDemo.expert = what == "et-expert"
                 expert.setShown(true)

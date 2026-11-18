@@ -138,7 +138,7 @@ object PageFx {
      * [from] / [to]: the page you leave and the page you go to (the web view counts as a page).
      * [between]: TAB only — the pages lying between them, in the order they pass by.
      * [lowerExtras]: views that move with the lower page (the bottom bar of a tab page).
-     * [upperExtras]: views that move with the upper page, just under it (Secret Dating's bar lives in the web view).
+     * [upperExtras]: views that move with the upper page, just under it (Secret Dating's own bottom bar).
      * [snapshot]: for POP when the page you leave is already gone (a web page): its picture.
      * [moveLower]: false when the web page moves and darkens its own lower page.
      * [onEnd]: after the move (the app then hides the pages that should be hidden).
@@ -236,7 +236,8 @@ object PageFx {
                     lift(from, zUp)
                     move(from)
                     val ups = upperExtras.filter { it !== from && it !== to }
-                    ups.forEach { lift(it, zUp - Ui.dp(1f)); move(it) }
+                    // (they leave with the page: on screen until the move ends, as that page is)
+                    ups.forEach { hold(it); lift(it, zUp - Ui.dp(1f)); move(it) }
                     val sc = addScrim(DIM)
                     step = { t ->
                         val x = w * t

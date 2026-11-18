@@ -119,9 +119,7 @@ class VerifyScreen(ctx: Context, private val pages: NativePages) : FrameLayout(c
     }
     private fun goBack() {
         if (pages.preview.isNotEmpty()) { pages.activity.finish(); return }
-        pages.js("(function(){return String(history.length)})()") { n ->
-            if ((n?.toIntOrNull() ?: 1) > 1) pages.backBy(1) else pages.go(if (alreadyRegistered) "/home" else "/register/basic-profile", null, true)
-        }
+        if (pages.canGoBack) pages.backBy(1) else pages.go(if (alreadyRegistered) "/home" else "/register/basic-profile", null, true)
     }
 
     private fun submitAge() {

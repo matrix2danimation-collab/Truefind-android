@@ -11,7 +11,6 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -46,9 +45,18 @@ object AppStatusHooks {
  * "maintenance" are noticed at once. The web's own copies are hidden under these.
  */
 class AppStatus(
-    private val act: ComponentActivity, private val root: FrameLayout, private val web: WebView,
+    private val act: ComponentActivity, private val root: FrameLayout, private val host: Host,
     private val go: (String) -> Unit, private val logout: () -> Unit,
 ) {
+    /** the sign-in web page (only there while signing in or out) and the app's own sign-in check */
+    interface Host {
+        /** runs [code] in the sign-in web page, when there is one */
+        fun webJs(code: String)
+        /** loads [url] in the sign-in web page */
+        fun webLoad(url: String)
+        /** "No internet connection" → Retry: the app asks the server again who is signed in */
+        fun retrySession()
+    }
     companion object {
         const val NAME = "TFStatus"
         private val QUIET = Regex("^/(call|admin|welcome|login|register|delete-account|games/(mood-changer|heart-chase|clue-me)|live/|dance/)")
@@ -124,6 +132,8 @@ class AppStatus(
     private var loadError = ""
     private var failedUrl = ""
     private var pageError = false
+    /** signed in, but the server could not be reached when the app opened (SessionWork) */
+    private var sessionOffline = false
 
     // ── where the app is ──
     private var path = "/"
@@ -219,6 +229,16 @@ class AppStatus(
         render()
     }
 
+    /** the app's own sign-in check has no internet (still signed in) / has it again */
+    fun setSessionOffline(on: Boolean) { if (sessionOffline != on) { sessionOffline = on; render() } }
+
+    /** the sign-in web page is gone (signed in, the app's own screens show): nothing of it counts any more */
+    fun webGone() {
+        webMaint = null; webBanned = false; webAnn = null; webErr = ""
+        loadError = ""; failedUrl = ""; pageError = false
+        render()
+    }
+
     // ═════════════════ the page itself could not load ═════════════════
     fun onPageStarted(url: String) { pageError = false }
     fun onLoadError(url: String, offline: Boolean) {
@@ -233,7 +253,7 @@ class AppStatus(
     private fun retryLoad(byHand: Boolean) {
         if (loadError.isEmpty()) return
         val u = failedUrl.ifEmpty { MainActivity.START_URL }
-        if (byHand || appVisible) web.loadUrl(u)
+        if (byHand || appVisible) host.webLoad(u)
     }
     private val again = object : Runnable { override fun run() { if (loadError.isNotEmpty() && appVisible) retryLoad(false); main.postDelayed(this, 15_000) } }
     private fun watchNetwork() {
@@ -258,7 +278,7 @@ class AppStatus(
             loadError == "offline" -> "load-offline"
             loadError == "server" -> "load-server"
             webErr == "crash" -> "crash"
-            webErr == "offline" -> "offline"
+            webErr == "offline" || sessionOffline -> "offline"
             else -> ""
         }
         showError(err)
@@ -342,7 +362,7 @@ class AppStatus(
                 if (b.busy) return@setOnClickListener
                 b.busy = true; b.label("Checking…")
                 val t0 = android.os.SystemClock.uptimeMillis()
-                web.evaluateJavascript("window.__tfStatusAct && window.__tfStatusAct('maint')", null)
+                host.webJs("window.__tfStatusAct && window.__tfStatusAct('maint')")
                 refresh(true) {
                     main.postDelayed({ b.busy = false; b.label("Try again") }, maxOf(0L, 400 - (android.os.SystemClock.uptimeMillis() - t0)))
                 }
@@ -415,9 +435,9 @@ class AppStatus(
     }
     private fun annOk() {
         if (annShownFor.isNotEmpty() && annShownFor != "web") prefs.edit().putString("seen_announcement", annShownFor).apply()
-        web.evaluateJavascript("window.__tfStatusAct && window.__tfStatusAct('ann')", null)
+        host.webJs("window.__tfStatusAct && window.__tfStatusAct('ann')")
         // the web app keeps the same "seen" mark (its own check, if it ever draws it itself)
-        if (annShownFor.isNotEmpty() && annShownFor != "web") web.evaluateJavascript("try{localStorage.setItem('tf_seen_announcement',${JSONObject.quote(annShownFor)})}catch(e){}", null)
+        if (annShownFor.isNotEmpty() && annShownFor != "web") host.webJs("try{localStorage.setItem('tf_seen_announcement',${JSONObject.quote(annShownFor)})}catch(e){}")
         webAnn = null
         annView?.let { setVisible(it, false) }
         render()
@@ -484,14 +504,14 @@ class AppStatus(
                 LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(6f); bottomMargin = Ui.dpi(22f) })
             val again = TfBtnLite(act, "Try again", Ui.c("#17121F"), Color.WHITE, 46f, 12f, 15f)
             again.setOnClickListener {
-                if (kind == "crash") web.evaluateJavascript("window.__tfStatusAct && window.__tfStatusAct('crash')", null)
+                if (kind == "crash") host.webJs("window.__tfStatusAct && window.__tfStatusAct('crash')")
                 else retryLoad(true)
             }
             col.addView(again, LinearLayout.LayoutParams(-1, Ui.dpi(46f)))
             val home = TfBtnLite(act, "Go to Home", Color.WHITE, Ui.c("#4C1D95"), 46f, 12f, 15f).apply { background = Tf.box(Color.WHITE, 12f, 1.5f, Ui.c("#E9E6EE")) }
             home.setOnClickListener {
                 loadError = ""; webErr = ""
-                web.loadUrl(Api.origin.trimEnd('/') + "/home")
+                host.webLoad(Api.origin.trimEnd('/') + "/home")
                 render()
             }
             col.addView(home, LinearLayout.LayoutParams(-1, Ui.dpi(46f)).apply { topMargin = Ui.dpi(10f) })
@@ -505,7 +525,7 @@ class AppStatus(
             LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = Ui.dpi(18f) })
         val retry = TfBtnLite(act, "Retry", Ui.c("#6C2BD9"), Color.WHITE, 0f, 10f, 14f).apply { setPadding(Ui.dpi(26f), Ui.dpi(10f), Ui.dpi(26f), Ui.dpi(10f)) }
         retry.setOnClickListener {
-            if (kind == "offline") web.evaluateJavascript("window.__tfStatusAct && window.__tfStatusAct('offline')", null) else retryLoad(true)
+            if (kind == "offline") { if (sessionOffline) host.retrySession() else host.webJs("window.__tfStatusAct && window.__tfStatusAct('offline')") } else retryLoad(true)
         }
         col.addView(retry, LinearLayout.LayoutParams(-2, -2))
         page.addView(col, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER).apply { val m = Ui.dpi(24f); setMargins(m, m, m, m) })
