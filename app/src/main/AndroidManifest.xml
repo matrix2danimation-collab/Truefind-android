@@ -50,6 +50,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Google sign-in in the phone's browser hands the sign-in back to the app (truefind://auth) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="truefind" android:host="auth" />
+            </intent-filter>
         </activity>
         <provider
             android:name="androidx.core.content.FileProvider"

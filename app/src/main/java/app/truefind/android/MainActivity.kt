@@ -33,6 +33,7 @@ import app.truefind.android.games.GameApi
 import app.truefind.android.games.GameVoice
 import app.truefind.android.games.GamesDemo
 import app.truefind.android.games.GamesLayer
+import app.truefind.android.login.LoginLayer
 import org.json.JSONObject
 
 /**
@@ -49,6 +50,8 @@ import org.json.JSONObject
  *    is /wallet (True Find and Secret Dating wallets, Earnings, payments).
  *  - Games are native too (GamesLayer): the Games page, Heart Chase Boxes, Mood Changer,
  *    ClueMe and Dress Code, whenever the address is /games or a game's address.
+ *  - Signing in is native too (LoginLayer): Get Started / mobile OTP (/welcome), /login, /register,
+ *    forgot / reset password, /mfa, the old profile pages and /delete-account — the same Base44 calls.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -75,6 +78,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var heldRoute: String? = null
     private var preview = ""
     private lateinit var dance: LiveDanceScreen
+    private lateinit var login: LoginLayer
+    /** Google sign-in came back while the app was closed (truefind://auth): handed over once the page is up */
+    private var pendingAuth: Uri? = null
     private var danceGate = false   // the published web page leaves Live Dance to this app
     private var danceOn = false
     private lateinit var live: LiveRoomsScreen
@@ -332,9 +338,29 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         live.visibility = View.GONE
         root.addView(live, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        // native sign-in pages (over everything else while the web page is on one of them)
+        login = LoginLayer(this, object : LoginLayer.Host {
+            override fun go(path: String, replace: Boolean) { if (replace) replaceWeb(path) else openWeb(path, null) }
+            override fun loadWeb(url: String) { web.loadUrl(url) }
+            override fun js(code: String) { web.evaluateJavascript(code, null) }
+            override fun canWebBack() = web.canGoBack()
+            override fun webBack() { if (web.canGoBack()) web.goBack() }
+            override fun finishApp() { finish() }
+            override fun pickPhoto(done: (ByteArray?, String) -> Unit) {
+                pickDone?.invoke(null, "")
+                pickDone = done
+                try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; done(null, "") }
+            }
+            override fun openTab(url: String): Boolean = openBrowserTab(url)
+        })
+        login.onChange = { update() }
+        root.addView(login, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        login.attach(web, scriptAtStart)
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 backAt = uptime()
+                if (::login.isInitialized && login.shown && login.onBack()) return
                 if (status.onBack()) return
                 // a call on screen (or ringing) answers Back first
                 if (calls.onBack()) return
@@ -383,6 +409,16 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // test mode (emulator screenshots on GitHub only): a native screen with made-up data, no web page
         preview = intent?.getStringExtra("tf_preview").orEmpty()
         if (preview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startPreview(); return }
+        // test mode: a native sign-in page with made-up answers
+        val loginScene = intent?.getStringExtra("tf_login").orEmpty()
+        if (loginScene.isNotEmpty() && BuildConfig.SELF_UPDATE) {
+            preview = "login"
+            web.loadUrl("about:blank")
+            watchFrames()
+            login.startPreview(loginScene, intent?.getStringExtra("tf_open").orEmpty())
+            return
+        }
+        intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
         if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: START_URL)
     }
 
@@ -435,12 +471,17 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null); view.evaluateJavascript(AppStatus.JS, null) }
+                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(NativePages.JS, null); view.evaluateJavascript(AppStatus.JS, null); view.evaluateJavascript(LoginLayer.JS, null) }
                 CookieManager.getInstance().flush()
                 if (::status.isInitialized) status.onPageFinished(url)
+                if (::login.isInitialized) {
+                    login.onWebPage(url, true)
+                    if (isOurs(Uri.parse(url))) pendingAuth?.let { u -> pendingAuth = null; login.onAuthReturn(u) }
+                }
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                if (::login.isInitialized) login.onWebPage(url, false)
                 if (::status.isInitialized) status.onPageStarted(url)
             }
 
@@ -598,6 +639,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var backShotAt = 0L
     private fun pageViews(): List<View> = buildList {
         add(explore); add(secret); add(wallet); add(games); add(dance); add(live)
+        if (::login.isInitialized) add(login)
         chatRoom?.let { add(it) }
         if (::admin.isInitialized) add(admin)
         addAll(pages.pageViews)
@@ -697,6 +739,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun updateNow() {
         if (walletPreviewing) return
         if (preview.isNotEmpty()) return
+        if (::login.isInitialized) login.setRoute(Api.token, cover)
         // ── Live Dance: native when the web page hands it over (not for ?web=1 pages) ──
         val wantDance = isDance(path + search) && !webMode(path + search) && danceGate && Api.token.isNotEmpty()
         if (wantDance) {
@@ -983,6 +1026,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (preview.isEmpty() && !walletPreviewing && !previewing && !fxTest && callPreview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
         live.onAppVisible(true)
+        if (::login.isInitialized) login.onAppVisible(true)
     }
 
     override fun onPause() {
@@ -995,6 +1039,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         admin.onAppVisible(false); status.onAppVisible(false); notify.onAppVisible(false)
         dance.onAppVisible(false)
         live.onAppVisible(false)
+        if (::login.isInitialized) login.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }
@@ -1006,8 +1051,24 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf { isOurs(it) }?.let { web.loadUrl(it.toString()) }
+        val data = intent.data
+        if (data != null && isAuthReturn(data)) { login.onAuthReturn(data); return }
+        data?.takeIf { isOurs(it) }?.let { web.loadUrl(it.toString()) }
     }
+
+    /** truefind://auth?… — Google sign-in in the phone's browser handing the sign-in back (GoogleSignIn) */
+    private fun isAuthReturn(u: Uri) = u.scheme == "truefind" && u.host == "auth"
+
+    /** Opens [url] in a Chrome Custom Tab (the phone's browser in the app's own window); false when there is none. */
+    private fun openBrowserTab(url: String): Boolean = try {
+        val i = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        // a Custom Tab without the browser library: the session extra (empty) is what asks for it
+        i.putExtras(Bundle().apply { putBinder("android.support.customtabs.extra.SESSION", null) })
+        i.putExtra("android.support.customtabs.extra.TOOLBAR_COLOR", Color.WHITE)
+        i.putExtra("android.support.customtabs.extra.TITLE_VISIBILITY", 1)
+        startActivity(i)
+        true
+    } catch (e: Exception) { false }
 
     override fun onDestroy() {
         calls.shutdown()
