@@ -83,8 +83,15 @@ android {
 
 val agoraVersion = (project.findProperty("agoraVersion") as String?) ?: "4.5.2"
 
+// Notifications while the app is closed (Push.kt): Firebase Cloud Messaging. Firebase is switched on only
+// when app/google-services.json is there (CI writes it from the GOOGLE_SERVICES_JSON secret); without it the
+// app builds and works as before, just without these notifications.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+
 dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-messaging")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     // Live Dance video: Agora's Android engine, basic part only (no extensions) to keep the app small
     implementation("io.agora.rtc:full-rtc-basic:$agoraVersion")

@@ -442,6 +442,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
      */
     fun logout(presence: Boolean = true) {
         if (preview.isNotEmpty()) { toast.show("→ log out"); return }
+        Push.unregister(act) // this phone stops getting this account's notifications
         val app = JSONObject.quote(Api.appId); val tok = JSONObject.quote(Api.token)
         val out = "(function(push){var o=location.origin,done=false;function out(){if(done)return;done=true;try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}" +
             "location.href=o+'/api/apps/auth/logout?from_url='+encodeURIComponent(o+'/welcome')}" +

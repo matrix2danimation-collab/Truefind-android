@@ -221,6 +221,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
             if (!r.ok || id.isEmpty()) { if (r.status == 0 || r.status >= 500) token = ""; return@me }
             meId = id
             unsub = Realtime.subscribe("Call") { ev -> onEvent(ev) }
+            pendingOpen?.let { (cid, a) -> pendingOpen = null; fromNotification(cid, a) }
             catchUp()
             findActive()
             main.removeCallbacks(check); main.postDelayed(check, CHECK_MS)
@@ -238,9 +239,35 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     fun onAppVisible(v: Boolean) {
         visible = v
         if (!v || !enabled || preview) return
+        if (incoming != null && !busy) ringer.start()
+        pendingOpen?.let { (id, a) -> pendingOpen = null; fromNotification(id, a) }
         catchUp()
         verifyPill()
         view?.session?.onAppVisible()
+    }
+
+    /** true while a call rings here or its screen is open (the app may show over the lock screen) */
+    val busyWithCall: Boolean get() = incoming != null || view != null
+
+    // ═════════════════ opened from the ringing notification (Push) ═════════════════
+    private var pendingOpen: Pair<String, String>? = null
+    /** [act]: "" (the notification itself, or the full-screen ring), "answer" */
+    fun fromNotification(id: String, a: String) {
+        if (id.isEmpty() || preview) return
+        if (meId.isEmpty()) { pendingOpen = id to a; return } // signed in first (signedIn runs it)
+        if (view?.session?.callId == id) return
+        Api.get("Call", id) { r ->
+            val c = r.data
+            if (!r.ok || Tf.s(c, "callee_id") != meId) return@get
+            // Answer was tapped on the phone's ringing screen: opening the app takes a few seconds, allow them
+            val maxAge = if (a == "answer") RING_MS else CATCH_UP_MS
+            if (Tf.s(c, "status") != "ringing" || ageOf(c) >= maxAge) {
+                markFinished(id)
+                say(if (Tf.s(c, "status") == "active") "This call was answered on another device." else "Missed call from ${Tf.s(c, "caller_name").substringBefore(' ').ifEmpty { "someone" }}.")
+                return@get
+            }
+            if (showIncoming(c, maxAge) && a == "answer") respond("accept")
+        }
     }
 
     /** the web page moved: the pill is checked again (it shows on most pages) */
@@ -271,7 +298,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
         root.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         incomingView = v
         v.setPhoto(Tf.s(c, "caller_photo"))
-        ringer.start()
+        // in the background the ringing notification (Push) rings; the app rings once it is on screen
+        if (visible || Push.token(act).isEmpty()) ringer.start()
         // while it rings: still ringing? (the caller may hang up); and a safety stop when it would have timed out
         main.removeCallbacks(ringCheck); main.postDelayed(ringCheck, RING_CHECK_MS)
         main.removeCallbacks(ringStop); main.postDelayed(ringStop, minOf(RING_MS, maxOf(5000L, RING_MS - ageOf(c))))

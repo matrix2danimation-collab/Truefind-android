@@ -46,6 +46,14 @@ jobs:
             curl -fsSL -o app/src/main/assets/fonts/Carlito-$f.ttf https://github.com/google/fonts/raw/main/ofl/carlito/Carlito-$f.ttf || echo "font $f download failed, the phone's font will be used"
           done
 
+      # notifications while the app is closed (Firebase): the app's Firebase file comes from the repo secret
+      # GOOGLE_SERVICES_JSON (Settings → Secrets → Actions). Without it the APK is built without them.
+      - name: Firebase file (notifications)
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; echo "Firebase on"; else echo "No GOOGLE_SERVICES_JSON secret: built without notifications"; fi
+
       - name: Build
         run: gradle assembleDebug --no-daemon --stacktrace
 

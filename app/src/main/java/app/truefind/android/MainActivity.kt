@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -181,6 +183,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         super.onCreate(savedInstanceState)
         Ui.init(this)
         Lite.init(this)
+        // notifications while the app is closed (Firebase, when this build has it): this phone's push token
+        Push.onToken = { _ -> runOnUiThread { if (::web.isInitialized) { web.evaluateJavascript("try{window.dispatchEvent(new Event('tf-native-token'))}catch(e){}", null); if (Api.token.isNotEmpty()) Push.register(this, Api.token.takeLast(24)) } } }
+        Push.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
@@ -234,7 +239,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         calls = CallManager(this, root, object : CallManager.Host {
             override fun path() = this@MainActivity.path + this@MainActivity.search
             override fun go(path: String) { if (callPreview.isEmpty()) pages.go(path) }
-            override fun changed() { update() }
+            override fun changed() { if (overLock && !calls.busyWithCall) showOverLock(false); update() }
             override fun askPerms(video: Boolean, done: (Boolean) -> Unit) = askCallPerms(video, done)
         })
         calls.enabled = scriptAtStart
@@ -423,7 +428,37 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             return
         }
         intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
-        if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: START_URL)
+        val pushUrl = intent?.let { pushOpen(it, true) }
+        if (web.url == null) web.loadUrl(intent?.data?.takeIf { isOurs(it) }?.toString() ?: pushUrl ?: START_URL)
+    }
+
+    // ═════════════════ opened from a notification (Push) ═════════════════
+    private var overLock = false
+    /** an incoming call may show over the lock screen (and wake the screen) while it rings / its screen is open */
+    private fun showOverLock(on: Boolean) {
+        overLock = on
+        if (Build.VERSION.SDK_INT >= 27) { setShowWhenLocked(on); setTurnScreenOn(on) }
+        else @Suppress("DEPRECATION") {
+            val f = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            if (on) window.addFlags(f) else window.clearFlags(f)
+        }
+    }
+    /** a tapped notification: a call rings / is answered here, anything else opens its page. [cold]: the app was
+     *  closed, the page address is returned for the first load instead. */
+    private fun pushOpen(i: Intent, cold: Boolean): String? {
+        val call = i.getStringExtra(Push.EXTRA_CALL).orEmpty()
+        val url = i.getStringExtra(Push.EXTRA_URL)
+        if (call.isEmpty() && url == null) return null
+        i.removeExtra(Push.EXTRA_CALL); i.removeExtra(Push.EXTRA_URL)
+        if (call.isNotEmpty()) {
+            showOverLock(true)
+            calls.fromNotification(call, i.getStringExtra(Push.EXTRA_ACT).orEmpty())
+            return null
+        }
+        val u = url.orEmpty().takeIf { it.startsWith("/") && !it.startsWith("//") } ?: "/"
+        if (cold) return START_URL.trimEnd('/') + u
+        pages.go(u)
+        return null
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -445,6 +480,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true)
         web.addJavascriptInterface(WebBridge(this), WebBridge.NAME)
+        // lib/push.js: inside this app the push token comes from here (no web push in a WebView)
+        web.addJavascriptInterface(Push.Bridge(applicationContext), Push.NAME)
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             WebViewCompat.addDocumentStartJavaScript(web, WebBridge.JS, ORIGINS)
             scriptAtStart = true
@@ -588,6 +625,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val newLogin = token != Api.token
         Api.token = token
         if (newLogin) Realtime.tokenChanged()
+        Push.keepAuth(this, origin, Api.appId, token)
+        if (newLogin && token.isNotEmpty()) Push.register(this, token.takeLast(24))
         calls.signedIn(token)
         if (newLogin && ::status.isInitialized) status.tokenChanged(token.isNotEmpty())
         if (newLogin && token.isNotEmpty()) CrashNote.sendPending(this)
@@ -1111,6 +1150,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     override fun onResume() {
         super.onResume()
+        Push.visible = true
+        Push.clearCalls(this) // the app rings it itself now
         calls.onAppVisible(true)
         explore.onAppVisible(true)
         secret.onAppVisible(true)
@@ -1125,6 +1166,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     override fun onPause() {
+        Push.visible = false
         calls.onAppVisible(false)
         explore.onAppVisible(false)
         secret.onAppVisible(false)
@@ -1148,6 +1190,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         super.onNewIntent(intent)
         val data = intent.data
         if (data != null && isAuthReturn(data)) { login.onAuthReturn(data); return }
+        if (pushOpen(intent, false) != null) return
         data?.takeIf { isOurs(it) }?.let { web.loadUrl(it.toString()) }
     }
 
