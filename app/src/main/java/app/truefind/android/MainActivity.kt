@@ -658,9 +658,21 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun uptime() = android.os.SystemClock.uptimeMillis()
 
     /** Shows the native screens that fit the page now, and moves to it the way FRND does when the page changes. */
+    private var splitSince = 0L
+    private val updateLate = Runnable { update() }
     private fun update() {
         // while the screens are still being made (onCreate), just show what fits
         if (!::dance.isInitialized || !::live.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
+        // A new page comes from the web in two reports a few ms apart (the address, then what the page shows).
+        // Acting on the first alone showed the change in two halves, and Back between pages then had no move at
+        // all (the address had "already changed" when the page did). So: wait for the second (80 ms at most).
+        if (pages.agrees(path)) splitSince = 0L
+        else {
+            val t = uptime()
+            if (splitSince == 0L) splitSince = t
+            if (t - splitSince < 80) { root.removeCallbacks(updateLate); root.postDelayed(updateLate, 81 - (t - splitSince)); return }
+        }
+        root.removeCallbacks(updateLate)
         val before = shownPage()
         val navBefore = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
         val fromPath = fxPath
@@ -728,15 +740,20 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }, delay)
     }
     /**
-     * Explore and Recent get ready in the background a moment after Home first shows (laid out and drawn off
-     * the screen, nothing loaded): their first visit then moves as smoothly as the later ones.
+     * Explore and Recent get ready in the background a moment after Home first shows: laid out and drawn off
+     * the screen, and Explore's people read once (as Recent's calls already are), so their first visit moves
+     * as smoothly as the later ones — FRND's tabs are all there from the start too.
      */
     private var tabsReadied = false
     private fun readyTabs() {
         if (tabsReadied || Api.token.isEmpty() || !(pages.onHome && pages.home.visibility == View.VISIBLE)) return
         tabsReadied = true
-        whenQuiet(2500) { explore.keepReady() }
-        whenQuiet(3600) { pages.recent.keepReady() }
+        whenQuiet(1500) {
+            explore.keepReady()
+            // (its bubbles are drawn once off the screen when the people have come)
+            if (explore.parked) explore.load { if (explore.parked) root.invalidate() }
+        }
+        whenQuiet(2400) { pages.recent.keepReady() }
     }
     /** the pages that stay ready while hidden (KeepPage) */
     private fun keptPages(): List<KeepPage> = listOf(pages.home, explore, pages.recent, wallet, secret, pages.profile)
@@ -931,7 +948,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         fun web(p: String, back: Boolean = false) {
             // what the web would report a moment after a tap (or after Back)
             if (back) backAt = uptime()
-            root.postDelayed({ val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else ""); onRoute(p) }, if (back) 0L else 120L)
+            // (in the web's own order: the address first, then the page's state, as two messages)
+            root.postDelayed({ onRoute(p); root.post { val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else "") } }, if (back) 0L else 120L)
         }
         // each move stops part of the way (45 %) for a picture ("fx frozen N"), then ends 9 s later (steps 24 s apart:
         // the test phone takes several seconds per picture)

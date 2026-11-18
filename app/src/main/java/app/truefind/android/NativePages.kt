@@ -290,6 +290,12 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         onLeadEnd()
     }
     private fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }.let { if (it == "/home") "/" else it }
+    /**
+     * true when this page's own report is for the address [p] too. The web sends two reports for a new page
+     * (where it is — WebBridge; what it shows there — the state here), a few ms apart: MainActivity changes
+     * the screens once both say the same, so a page move is decided once, with everything known.
+     */
+    fun agrees(p: String): Boolean = !gotState || preview.isNotEmpty() || norm(path) == norm(p)
     /** true while a native tap leads and [p] is another (older) address */
     fun leading(p: String): Boolean {
         val l = lead ?: return false

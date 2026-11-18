@@ -38,7 +38,7 @@ waitlog() {
   done
   echo "  (no '$1' after $2 s)" >> "$OUT/start.txt"; return 1
 }
-shot() { adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; echo "$(date +%T.%N | cut -c1-12) $1" >> "$OUT/shots.txt"; timeout 60 "$ADB" exec-out screencap -p > "$OUT/$1.png"; [ -s "$OUT/$1.png" ] || rm -f "$OUT/$1.png"; }
+shot() { echo "$(date +%T.%N | cut -c1-12) $1" >> "$OUT/shots.txt"; timeout 40 "$ADB" exec-out screencap -p > "$OUT/$1.png"; [ -s "$OUT/$1.png" ] || rm -f "$OUT/$1.png"; }
 timeout 90 "$ADB" shell am start -W -n $PKG/.MainActivity $X > "$OUT/start.txt" 2>&1
 # the slow emulator sometimes puts its home screen on top (and Android then pauses the app):
 # every 4 s, if the app is not the screen on top, bring it back (the same app, the test goes on)
@@ -57,15 +57,15 @@ waitlog "fx step start" 90
 sleep 3; shot fx-00-start
 if [ -n "$LIVE" ]; then
   for k in 1 2 3 4 5 6; do
-    alive || { echo "the test phone stopped before free move $k" >> "$OUT/problems.txt"; break; }
-    if waitlog "fx step live done $k:" 60; then sleep 2; shot fx-live-$k; fi
+    if waitlog "fx step live done $k:" 60; then sleep 2; shot fx-live-$k
+    else alive || { echo "the test phone stopped before free move $k ended" >> "$OUT/problems.txt"; break; }; fi
   done
 else
   for n in $(seq $FROM $TO); do
     N=$(printf %02d $n)
+    if waitlog "fx step frozen $n\r\?\$" 90; then sleep 1; shot fx-$N-mid
     # the test phone stopped: the rest can't be photographed (no endless waiting)
-    alive || { echo "the test phone stopped before step $n" >> "$OUT/problems.txt"; break; }
-    if waitlog "fx step frozen $n\r\?\$" 90; then sleep 1; shot fx-$N-mid; fi
+    else alive || { echo "the test phone stopped before step $n" >> "$OUT/problems.txt"; break; }; fi
     if waitlog "fx step done $n\r\?\$" 90; then sleep 2; shot fx-$N-end; fi
   done
 fi
