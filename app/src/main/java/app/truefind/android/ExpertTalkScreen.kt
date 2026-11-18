@@ -282,9 +282,11 @@ class ExpertTalkScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) 
         p.render()
         if (old != null) {
             val isBack = back ?: (p.rank < old.rank)
-            if (anim && shown && isAttachedToWindow && width > 0) PageFx.run(holder, old, p, isBack)
-            old.dispose()
-            holder.removeView(old)
+            // the page you leave stays until the move ends (no move while the app's own page move is still running)
+            val gone = { old.dispose(); holder.removeView(old) }
+            if (anim && shown && isAttachedToWindow && width > 0 && !PageFx.running)
+                PageFx.run(holder, if (isBack) PageFx.Kind.POP else PageFx.Kind.PUSH, old, p, onEnd = gone)
+            else gone()
         }
         p.shown(true)
     }
