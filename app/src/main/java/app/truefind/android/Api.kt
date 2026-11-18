@@ -89,7 +89,7 @@ object Api {
             val err = if (code in 200..299) null else
                 (json.optString("error").takeIf { it.isNotBlank() } ?: json.optString("message").takeIf { it.isNotBlank() }
                     ?: ("Something went wrong. Please try again." + tag(code, path)))
-            if (code !in 200..299) note(method, path, code, text)
+            if (code !in 200..299) { note(method, path, code, text); signal(code, json) }
             Result(code, json, err)
         } catch (e: Exception) {
             Result(0, JSONObject(), "Please check your internet and try again.")
@@ -111,6 +111,13 @@ object Api {
         val line = "$t $method ${path.substringBefore('?')} → $code: ${text.replace(Regex("\\s+"), " ").take(120)}"
         android.util.Log.w("TFApi", line)
         synchronized(log) { log.addLast(line); while (log.size > 40) log.removeFirst() }
+    }
+
+    /** the server said this account is blocked (403 "banned") or the app is in maintenance (503): the status screens show it */
+    private fun signal(code: Int, json: JSONObject) {
+        val e = json.optString("error")
+        if (code == 403 && e == "banned") AppStatusHooks.server("banned")
+        else if (code == 503 && e == "maintenance") AppStatusHooks.server("maintenance")
     }
 
     /** Runs [work] off the main thread and hands its result back on the main thread. */
@@ -159,7 +166,7 @@ object Api {
                 val text = res.body?.string() ?: ""
                 val json = try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }
                 val err = if (res.isSuccessful) null else (json.optString("error").ifBlank { json.optString("message") }.ifBlank { "Something went wrong. Please try again." + tag(res.code, path) })
-                if (!res.isSuccessful) note(method, path, res.code, text)
+                if (!res.isSuccessful) { note(method, path, res.code, text); signal(res.code, json) }
                 Result(res.code, json, err)
             }
         } catch (e: Exception) { Result(0, JSONObject(), "Please check your internet and try again.") }

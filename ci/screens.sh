@@ -66,6 +66,8 @@ shot() {
   { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
   case "$mode" in anim*) anims 0 ;; esac
 }
+# the native Control Center and status screens (their own list, from the misc-admin-native work)
+if [ "$SET" = misc ] || [ "$SET" = admin ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # the native Wallet (its own list of screens, from the Wallet work)
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native calls (their own list of screens, from the calls work)

@@ -21,6 +21,8 @@ jobs:
         id: sets
         # a work branch with its own list (ci/sets-<branch>.json) photographs only its own screens
         run: |
+          # branch misc-admin-native photographs only its own screens (Control Center + status screens)
+          if [ "${{ github.ref_name }}" = misc-admin-native ]; then echo 'list=["misc","admin"]' >> "$GITHUB_OUTPUT"; exit 0; fi
           f="ci/sets-${{ github.ref_name }}.json"; [ -f "$f" ] || f=ci/sets.json
           echo "list=$(cat "$f" 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
 
@@ -148,6 +150,7 @@ jobs:
           # a work branch with its own list keeps its pictures on its own "screens-<branch>-<set>" branch
           B=screens-all-${{ matrix.set }}
           [ -f "../ci/sets-${{ github.ref_name }}.json" ] && B="screens-${{ github.ref_name }}-${{ matrix.set }}"
+          if [ "${{ github.ref_name }}" = misc-admin-native ]; then B=screens-misc-${{ matrix.set }}; fi
           git init -q && git checkout -q -b "$B"
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"

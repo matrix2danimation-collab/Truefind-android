@@ -296,7 +296,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") ||
             // the native Wallet, Games, Live Dance, Expert Talk, Dashboard and Earnings open at the tap too
             p == "/wallet" || p == "/games" || p.startsWith("/games/") ||
-            p == "/dance" || p.startsWith("/dance/") || p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings"
+            p == "/dance" || p.startsWith("/dance/") || p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings" || p == "/admin"
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
         if (preview.isNotEmpty() || !gotState || !signedIn || cover) return
