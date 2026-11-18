@@ -677,20 +677,31 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             if (back) backAt = uptime()
             root.postDelayed({ val q = p.indexOf('?'); pages.testState(if (q >= 0) p.substring(0, q) else p, if (q >= 0) p.substring(q) else ""); onRoute(p) }, if (back) 0L else 120L)
         }
+        // each move stops part of the way (45 %) for a picture ("fx frozen N"), then ends 4 s later
+        var n = 0
+        fun frozenStep(what: String, act: () -> Unit) {
+            n++
+            val k = n
+            say("$k $what")
+            PageFx.freezeAt = 0.45f
+            act()
+            root.postDelayed({ say("frozen $k"); }, 2500)
+            root.postDelayed({ PageFx.finish(); say("done $k") }, 6000)
+        }
         val steps: List<Pair<Long, () -> Unit>> = listOf(
             1500L to { say("start"); web("/") },
-            4500L to { say("1 Home -> Explore (tab)"); pages.go("/explore"); web("/explore") },
-            7500L to { say("2 Explore -> Home (tab)"); pages.go("/"); web("/") },
-            10500L to { say("3 Home -> Profile (open)"); pages.go("/profile"); web("/profile") },
-            13500L to { say("4 Profile -> Home (back)"); web("/", back = true) },
-            16500L to { say("5 Home -> Wallet (open)"); openWeb("/wallet", null); web("/wallet") },
-            19500L to { say("6 Wallet -> Home (back)"); web("/", back = true) },
-            22500L to { say("7 Home -> Recent web page (tab)"); pages.go("/chats"); web("/chats") },
-            25500L to { say("8 Recent -> Home (tab)"); pages.go("/"); web("/") },
-            28500L to { say("9 Home -> Secret Dating (open)"); openWeb("/secret-app", null); web("/secret-app") },
-            31500L to { say("10 Secret Dating Home -> Map (tab)"); web("/dating") },
-            34500L to { say("11 Secret Dating -> Home (back)"); web("/", back = true) },
-            37500L to { say("end") },
+            6000L to { frozenStep("Home -> Explore (tab)") { pages.go("/explore"); web("/explore") } },
+            14000L to { frozenStep("Explore -> Home (tab back)") { pages.go("/"); web("/") } },
+            22000L to { frozenStep("Home -> Profile (open)") { pages.go("/profile"); web("/profile") } },
+            30000L to { frozenStep("Profile -> Home (back)") { web("/", back = true) } },
+            38000L to { frozenStep("Home -> Wallet (open)") { openWeb("/wallet", null); web("/wallet") } },
+            46000L to { frozenStep("Wallet -> Home (back)") { web("/", back = true) } },
+            54000L to { frozenStep("Home -> Recent web page (tab)") { pages.go("/chats"); web("/chats") } },
+            62000L to { frozenStep("Recent -> Home (tab back)") { pages.go("/"); web("/") } },
+            70000L to { frozenStep("Home -> Secret Dating (open)") { openWeb("/secret-app", null); web("/secret-app") } },
+            78000L to { frozenStep("Secret Dating Home -> Map (its own tab)") { web("/dating") } },
+            86000L to { frozenStep("Secret Dating -> Home (back)") { web("/", back = true) } },
+            94000L to { say("end") },
         )
         for ((at, step) in steps) root.postDelayed({ step() }, at)
     }

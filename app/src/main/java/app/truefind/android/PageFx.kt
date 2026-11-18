@@ -51,6 +51,7 @@ object PageFx {
     private var anim: ValueAnimator? = null
     private var pending: Choreographer.FrameCallback? = null
     private val held = ArrayList<View>()      // pages kept on screen until the move ends
+    private val wanted = HashMap<View, Int>() // what the app last set for each of them (shown after the move)
     private val moved = ArrayList<View>()     // views whose translation we change
     private val lifted = ArrayList<Lift>()    // views lifted above the others for the move
     private val layered = ArrayList<View>()   // views drawn from a GPU layer during the move
@@ -65,10 +66,17 @@ object PageFx {
         Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     } catch (e: Exception) { false }
 
-    val running: Boolean get() = anim != null || pending != null
+    val running: Boolean get() = anim != null || pending != null || frozen
     fun isHeld(v: View) = held.contains(v)
-    /** The app has just set which pages show: the pages still moving stay on screen. */
-    fun reassert() { if (running) for (v in held) if (v.visibility != View.VISIBLE) v.visibility = View.VISIBLE }
+    /**
+     * The app has just set which pages show: the pages still moving stay on screen until the move ends,
+     * and then get what the app set last (a screen that was told "hidden" once isn't told again).
+     */
+    fun reassert() { if (running) for (v in held) { wanted[v] = v.visibility; if (v.visibility != View.VISIBLE) v.visibility = View.VISIBLE } }
+
+    /** test runs only: the next move stops at this point (0..1) until [finish], so it can be photographed */
+    var freezeAt = -1f
+    private var frozen = false
 
     /** Ends a running move at once (every page in its final place). */
     fun finish() {
@@ -84,6 +92,9 @@ object PageFx {
         lifted.clear()
         for (v in layered) v.setLayerType(View.LAYER_TYPE_NONE, null)
         layered.clear()
+        for (v in held) wanted[v]?.let { v.visibility = it }
+        wanted.clear()
+        frozen = false
         scrim?.let { s -> (s.parent as? ViewGroup)?.removeView(s) }
         scrim = null
         overlayHost?.let { h -> for (d in overlays) h.overlay.remove(d) }
@@ -112,7 +123,7 @@ object PageFx {
         ended = onEnd
         val zUp = Ui.dp(48f)
         val zScrim = Ui.dp(40f)
-        fun hold(v: View?) { if (v != null && v !is WebView) { held.add(v); v.visibility = View.VISIBLE } }
+        fun hold(v: View?) { if (v != null && v !is WebView && !held.contains(v)) { held.add(v); wanted[v] = v.visibility; v.visibility = View.VISIBLE } }
         fun move(v: View?) { if (v != null && !moved.contains(v)) moved.add(v) }
         // (no GPU layers: moving a page only changes where it is drawn; a layer would be redrawn every frame
         // on pages that move inside — Explore's floating bubbles — and costs a full extra picture at the tap)
@@ -203,6 +214,15 @@ object PageFx {
             }
         }
         step(0f)
+        if (freezeAt in 0f..1f) {
+            // test runs only: stay at this point of the move until finish()
+            val at = ease.getInterpolation(freezeAt)
+            freezeAt = -1f
+            frozen = true
+            step(at)
+            container.postInvalidate()
+            return
+        }
 
         val a = ValueAnimator.ofFloat(0f, 1f).setDuration(ms)
         a.interpolator = ease
