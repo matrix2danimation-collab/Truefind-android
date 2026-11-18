@@ -718,7 +718,7 @@ class CallView(
             duration.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(if (v) 16f else 20f))
             duration.fontFeatureSettings = "tnum"
             dur.addView(duration)
-            left.addView(dur)
+            left.addView(dur, Tf.ll())
             row.addView(left, Tf.ll(0, Tf.W, 1f))
             val right = Tf.col(ctx, Gravity.END)
             if (!v) right.addView(label(ctx, "Balance"), Tf.ll(b = 1f))
@@ -732,7 +732,7 @@ class CallView(
                 addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.PLUS, 14f, CallKit.PURPLE)) }, LayoutParams(Ui.dpi(14f), Ui.dpi(14f), Gravity.CENTER))
             }, LayoutParams(Ui.dpi(26f), Ui.dpi(26f)))
             bal.addView(plus, Tf.ll().apply { setMargins(-Ui.dpi(9f), -Ui.dpi(9f), -Ui.dpi(9f), -Ui.dpi(9f)) })
-            right.addView(bal)
+            right.addView(bal, Tf.ll())
             row.addView(right)
             pc.addView(row, Tf.ll(Tf.M, Tf.W, b = if (v) 4f else 9f))
             val btns = Tf.row(ctx, Gravity.TOP).apply { setPadding(Ui.dpi(4f), 0, Ui.dpi(4f), 0) }
@@ -849,7 +849,8 @@ class CallView(
                 val rv = s.media?.remoteView
                 placeIn(remoteBox, rv)
                 if (s.practice) remoteBox.visibility = GONE else remoteBox.visibility = if (s.peerVideoOn) VISIBLE else INVISIBLE
-                val peerOff = !s.practice && !s.peerVideoOn
+                // (test pictures: the made-up call can show her camera off too)
+                val peerOff = (!s.practice || s.mode == CallSession.Mode.PREVIEW) && !s.peerVideoOn
                 if (s.peerVideoOn) everVideo = true
                 camOffView.visibility = if (peerOff) VISIBLE else GONE
                 if (peerOff) camOffView.bind(s.otherPhoto, s.otherName, s.peerSpeaking && !ended, connecting = !everVideo && s.seconds < 15 && !ended)
@@ -937,7 +938,7 @@ class CallView(
             val left = s.secsLeft
             if (s.isCaller && left != null && left <= 30 && (s.mode != CallSession.Mode.PRACTICE || s.previewLow)) {
                 val p = pill()
-                p.addView(CallKit.t(ctx, "Balance running low · call ends in ${left}s", 14f, Color.WHITE, 600).apply { gravity = Gravity.CENTER })
+                p.addView(CallKit.t(ctx, "Balance running low · call ends in ${left}s", 14f, Color.WHITE, 600).apply { gravity = Gravity.CENTER }, Tf.ll())
                 val b = Tf.row(ctx, Gravity.CENTER).apply {
                     background = Tf.box(CallKit.VIOLET, 12f)
                     setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
@@ -979,7 +980,7 @@ class CallView(
                 endedNote.addView(Tf.row(ctx).apply {
                     addView(ImageView(ctx).apply { setImageDrawable(CallKit.lu(CallKit.COINS, 16f, Ui.c("#FFB800"))) }, Tf.ll(Ui.dpi(16f), Ui.dpi(16f), r = 4f))
                     addView(CallKit.t(ctx, "$charged coins charged", 14f, Color.argb(204, 255, 255, 255), 400))
-                })
+                }, Tf.ll())
             }
             if (addCoins) {
                 val b = Tf.row(ctx, Gravity.CENTER).apply {
