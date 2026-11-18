@@ -330,29 +330,46 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
         super.onSizeChanged(w, h, ow, oh)
         fill = if (video) LinearGradient(0f, 0f, 0f, h.toFloat(), Ui.c("#7A0AD7"), Ui.c("#5806A3"), Shader.TileMode.CLAMP) else null
         if (video) {
-            // box-shadow: 0 8px 16px -10px rgba(88,6,163,.8) — a blurred circle of radius 11, 8 lower
-            val cx = w / 2f; val cy = h / 2f + Ui.dp(8f)
-            val r0 = w / 2f - Ui.dp(10f); val sigma = Ui.dp(8f); val reach = r0 + 2.6f * sigma
-            val n = 8
-            val cols = IntArray(n); val pos = FloatArray(n)
-            for (i in 0 until n) {
-                val f = i / (n - 1f); val r = reach * f
-                val a = 0.8f * cdf((r0 - r) / sigma)
-                cols[i] = Color.argb((a * 255).roundToInt().coerceIn(0, 255), 88, 6, 163); pos[i] = f
+            // box-shadow: 0 8px 16px -10px rgba(88,6,163,.8): a circle of radius 11, 8 lower, blurred (σ 8)
+            val cols = IntArray(GLOW.size) { i -> Color.argb((GLOW[i] * 255).roundToInt().coerceIn(0, 255), 88, 6, 163) }
+            val pos = FloatArray(GLOW.size) { i -> i / (GLOW.size - 1f) }
+            glowPaint.shader = RadialGradient(w / 2f, h / 2f + Ui.dp(8f), Ui.dp(GLOW_REACH), cols, pos, Shader.TileMode.CLAMP)
+        }
+        hole.reset(); hole.addCircle(w / 2f, h / 2f, w / 2f, android.graphics.Path.Direction.CW)
+    }
+    private val hole = android.graphics.Path()
+
+    companion object {
+        private const val GLOW_R = 11f; private const val GLOW_SIGMA = 8f
+        const val GLOW_REACH = GLOW_R + 2.6f * GLOW_SIGMA
+        /** how strong the blurred circle is at 0 … GLOW_REACH from its centre (a 2-D blur of a disc, worked out once) */
+        val GLOW: FloatArray by lazy {
+            val n = 14
+            FloatArray(n) { k ->
+                val rho = GLOW_REACH * k / (n - 1)
+                var sum = 0.0
+                val nr = 40; val nt = 72
+                for (i in 0 until nr) {
+                    val r = (i + 0.5) * GLOW_R / nr
+                    for (j in 0 until nt) {
+                        val th = (j + 0.5) * 2 * Math.PI / nt
+                        val d2 = r * r + rho * rho - 2 * r * rho * Math.cos(th)
+                        sum += exp(-d2 / (2.0 * GLOW_SIGMA * GLOW_SIGMA)) * r
+                    }
+                }
+                val area = (GLOW_R / nr) * (2 * Math.PI / nt)
+                (0.8 * sum * area / (2 * Math.PI * GLOW_SIGMA * GLOW_SIGMA)).toFloat()
             }
-            glowPaint.shader = RadialGradient(cx, cy, reach, cols, pos, Shader.TileMode.CLAMP)
         }
     }
-    private fun cdf(x: Float): Float = (1.0 / (1.0 + exp(-1.702 * x))).toFloat()
 
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
         if (video) {
             // the glow only shows outside the button
             c.save()
-            val clip = android.graphics.Path().apply { addCircle(w / 2f, h / 2f, w / 2f, android.graphics.Path.Direction.CW) }
-            if (android.os.Build.VERSION.SDK_INT >= 26) c.clipOutPath(clip) else @Suppress("DEPRECATION") c.clipPath(clip, android.graphics.Region.Op.DIFFERENCE)
-            c.drawCircle(w / 2f, h / 2f + Ui.dp(8f), w / 2f - Ui.dp(10f) + 2.6f * Ui.dp(8f), glowPaint)
+            if (android.os.Build.VERSION.SDK_INT >= 26) c.clipOutPath(hole) else @Suppress("DEPRECATION") c.clipPath(hole, android.graphics.Region.Op.DIFFERENCE)
+            c.drawCircle(w / 2f, h / 2f + Ui.dp(8f), Ui.dp(GLOW_REACH), glowPaint)
             c.restore()
             p.shader = fill; c.drawCircle(w / 2f, h / 2f, w / 2f, p); p.shader = null
         } else {

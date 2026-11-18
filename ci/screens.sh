@@ -69,24 +69,32 @@ shot() {
 # ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
 if [ "$SET" = recent ]; then
 R="--es tf_preview recent"
+T() { timeout "$@"; }   # every phone command has a time limit: one stuck command can't hold up the rest
+rwait() { local t=0; while [ $t -lt "$2" ]; do T 10 adb logcat -d -s TFDBG:I 2>/dev/null | grep -q "$1" && return 0; sleep 1; t=$((t+1)); done; echo "  (no '$1' after $2 s)" >> "$OUT/start.txt"; }
 rshot() {
   local name="$1"; local wait="$2"; shift 2
-  adb shell am force-stop $PKG
-  adb shell pm clear $PKG > /dev/null
+  T 180 adb wait-for-device || { echo "$name: phone not answering" >> "$OUT/problems.txt"; return 0; }
+  T 30 adb shell am force-stop $PKG
+  T 30 adb shell pm clear $PKG > /dev/null
   sleep 1
-  adb logcat -c
+  T 15 adb logcat -c
   echo "== $name" >> "$OUT/start.txt"
-  adb shell am start -W -n $PKG/.MainActivity $R "$@" >> "$OUT/start.txt" 2>&1
+  T 90 adb shell am start -W -n $PKG/.MainActivity $R "$@" >> "$OUT/start.txt" 2>&1
   case "$*" in
-    *tf_open*) waitlog "preview open" 60; sleep "$wait" ;;
-    *) waitlog "frames so far" 60; sleep "$wait" ;;
+    *tf_open*) rwait "preview open" 60; sleep "$wait" ;;
+    *) rwait "frames so far" 60; sleep "$wait" ;;
   esac
-  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
-  adb exec-out screencap -p > "$OUT/$name.png"
-  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  # BACKS=n: the phone's Back n times first (each closes the top pop-up)
+  for _ in $(seq 1 "${BACKS:-0}"); do T 15 adb shell input keyevent 4; sleep 1.5; done
+  T 15 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  T 60 adb exec-out screencap -p > "$OUT/$name.png" || echo "$name: no picture" >> "$OUT/problems.txt"
+  # the app must still be open (Back must never close it while a pop-up is open)
+  T 20 adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG" || echo "$name: app not on top" >> "$OUT/problems.txt"
+  T 20 adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
-  { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
-  { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
+  T 20 adb logcat -d -b crash > "$OUT/$name.crashbuf.txt"; [ -s "$OUT/$name.crashbuf.txt" ] || rm -f "$OUT/$name.crashbuf.txt"
+  { echo "== $name"; T 20 adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+  { echo "== $name"; T 20 adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
 }
 rshot r01-recent 8
 rshot r02-recent-card 3 --es tf_open card
@@ -104,6 +112,12 @@ rshot r13-recent-empty 8 --es tf_scene empty
 rshot r14-recent-error 8 --es tf_scene error
 rshot r15-recent-loading 6 --es tf_scene skeleton
 rshot r16-recent-card-error 3 --es tf_open card --es tf_scene proferror
+# the phone's Back: full profile → card → list; a message closes first
+BACKS=1 rshot r17-recent-back-full 4 --es tf_open full
+BACKS=2 rshot r18-recent-back-twice 4 --es tf_open full
+BACKS=1 rshot r19-recent-back-message 3 --es tf_open coins
+BACKS=1 rshot r20-recent-back-photo 5 --es tf_open viewer
+T 30 adb logcat -d > "$OUT/logcat-last.txt"
 exit 0
 fi
 # the native Wallet (its own list of screens, from the Wallet work)

@@ -21,8 +21,6 @@ import android.os.Looper
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextUtils
-import android.text.style.ForegroundColorSpan
-import android.text.style.UnderlineSpan
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -68,7 +66,6 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
     private var fullHead: LinearLayout? = null
     private var fullMain: LinearLayout? = null
     private var fullScroll: ScrollView? = null
-    private var gone = false
 
     companion object {
         /** user id → last loaded profile (opens at once the next time); forgotten when someone else signs in */
@@ -124,7 +121,7 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
         renderCard()
         closeCard = pages.layer.sheet(wrap, Color.argb(107, 28, 6, 60), 0.88f, 20f, { screen.calling.isNotEmpty() }) {
             closeCard = null; cardBody = null
-            if (closeFull == null) { gone = true; screen.personClosed(this) }
+            if (closeFull == null) screen.personClosed(this)
         }
         load()
     }
@@ -145,16 +142,16 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
         root.addView(sc, FrameLayout.LayoutParams(-1, -1))
         fullHead = head; fullMain = body; fullScroll = sc
         renderFull()
-        closeFull = pages.layer.page(root, 10f, { screen.calling.isNotEmpty() }) {
+        // above the small card (the card stays under it), under the messages and the photo viewer
+        closeFull = pages.layer.page(root, 25f, { screen.calling.isNotEmpty() }) {
             closeFull = null; fullHead = null; fullMain = null; fullScroll = null
-            if (closeCard == null) { gone = true; screen.personClosed(this) }
+            if (closeCard == null) screen.personClosed(this)
         }
         load()
     }
 
     /** everything of this person closes (a call is starting, the page changed …) */
     fun closeAll() {
-        gone = true
         closeAsk?.invoke(); closeViewer?.invoke(); closeFull?.invoke(); closeCard?.invoke()
     }
 
@@ -689,8 +686,6 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
 
     // ═════════════════ test screens only ═════════════════
     fun scrollFullToEnd() { fullScroll?.let { s -> s.post { s.scrollTo(0, s.getChildAt(0)?.height ?: 0) } } }
-
-    @Suppress("unused") private val keepGone get() = gone
 }
 
 /** The small card's panel: lavender at the top fading to white, round 24 at the top, a thin lavender line along the top. */
