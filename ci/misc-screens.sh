@@ -15,6 +15,16 @@ waitlog() {
   while [ $t -lt "$2" ]; do adb logcat -d -s TFDBG:I | grep -q "$1" && return 0; sleep 1; t=$((t+1)); done
   echo "  (no '$1' after $2 s)" >> "$OUT/start.txt"
 }
+# open the app on one test scene (and, if given, one of its pop-ups)
+launch() {
+  local scene="$1" open="$2"
+  if [ -n "$open" ]; then
+    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" --es tf_open "$open" >> "$OUT/start.txt" 2>&1
+  else
+    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" >> "$OUT/start.txt" 2>&1
+  fi
+}
+ontop() { adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG"; }
 # shot NAME WAIT SCENE [OPEN]
 shot() {
   local name="$1" wait="$2" scene="$3" open="$4"
@@ -23,19 +33,36 @@ shot() {
   sleep 1
   adb logcat -c
   echo "== $name" >> "$OUT/start.txt"
-  if [ -n "$open" ]; then
-    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" --es tf_open "$open" >> "$OUT/start.txt" 2>&1
-  else
-    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" >> "$OUT/start.txt" 2>&1
-  fi
+  launch "$scene" "$open"
   waitlog "preview open" 60
   sleep "$wait"
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  # the app must be the screen on top; if it is not (it closed, or the phone showed something else), write down why and open it once more
+  if ! ontop; then
+    { echo "== $name: app not on top"; adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity";
+      adb logcat -d -b main,system,crash | grep -iE "truefind|FATAL|Fatal signal|ANR in|lowmemorykiller|Killing|has died|backtrace|TFDBG" | tail -80; } > "$OUT/$name.why.txt"
+    adb shell am force-stop $PKG
+    sleep 1
+    adb logcat -c
+    echo "  (opened again)" >> "$OUT/start.txt"
+    launch "$scene" "$open"
+    waitlog "preview open" 60
+    sleep "$wait"
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  fi
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
   { echo "== $name"; adb logcat -d | grep -E "TFApi|TFDBG|AndroidRuntime" | tail -20; } >> "$OUT/debug.txt"
 }
+
+# warm-up: the very first start after installing is much slower on the test phone (its web view and
+# the app's code are prepared then); one start that is not photographed, so every picture gets a normal start
+adb logcat -c
+echo "== warm-up" >> "$OUT/start.txt"
+launch maint ""
+waitlog "preview open" 90
+{ echo "== warm-up"; ontop && echo "on top" || echo "NOT on top"; adb logcat -d -b main,system,crash | grep -iE "FATAL|Fatal signal|ANR in|lowmemorykiller|has died|TFDBG" | tail -40; } >> "$OUT/warmup.txt"
 
 if [ "$SET" = misc ]; then
   shot m01-maintenance 3 maint

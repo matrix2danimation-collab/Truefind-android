@@ -56,8 +56,8 @@ class AdSupport(a: AdminScreen) : AdTab(a) {
         mid.addView(AU.t(ctx, "${if (AF.s(last, "from") == "admin") "You: " else ""}${AF.s(last, "text").ifEmpty { AF.s(t, "subject") }}", 12.5f, AK.sub).ell())
         r.addView(mid, AU.lp(0, -2, 1f, l = 10f, r = 10f))
         val right = AU.col(ctx).apply { gravity = Gravity.END }
-        right.addView(AU.pill(ctx, AF.s(t, "status")))
-        right.addView(AU.t(ctx, AF.ago(AF.s(last, "at").ifEmpty { AF.s(t, "created_date") }), 11f, AK.faint).apply { gravity = Gravity.END }, AU.lp(-2, -2, t = 3f))
+        right.addView(AU.pill(ctx, AF.s(t, "status")), LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
+        right.addView(AU.t(ctx, AF.ago(AF.s(last, "at").ifEmpty { AF.s(t, "created_date") }), 11f, AK.faint).apply { gravity = Gravity.END }, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END; topMargin = Ui.dpi(3f) })
         r.addView(right)
         return r
     }

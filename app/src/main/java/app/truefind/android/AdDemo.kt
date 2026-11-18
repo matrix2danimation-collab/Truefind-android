@@ -42,10 +42,11 @@ class AdDemo(private val ctx: Context) : AdSrc {
                     .put("creator_selfie_uri", face(true, i + 1)).put("creator_pose", listOf("Touch your left ear", "Show a thumbs up", "Smile with both hands up")[i]).put("creator_code", listOf("4 7 2 9", "", "1 8 3 6")[i])
                     .put("creator_upi_name", if (i == 1) "Ananya V" else n).put("creator_upi_id", if (i == 2) "" else "${n.split(" ")[0].lowercase()}@okaxis")
             }
-            if (i == 3) p.put("creator_submitted_at", iso(2000.0)).put("creator_status", "approved").put("creator_reviewed_for", iso(2000.0)).put("creator_reviewed_at", iso(1900.0))
+            if (i == 3) iso(2000.0).let { at -> p.put("creator_submitted_at", at).put("creator_status", "approved").put("creator_reviewed_for", at) }
+            if (i == 3) p.put("creator_reviewed_at", iso(1900.0))
                 .put("creator_reviewed_by", "owner@truefindapp.in").put("creator_upi_name", n).put("creator_upi_id", "isha@ybl").put("creator_approved_upi_id", "isha@ybl").put("creator_selfie_uri", face(true, 4))
             if (i == 4) {
-                p.put("creator_submitted_at", iso(5000.0)).put("creator_status", "approved").put("creator_reviewed_for", iso(5000.0))
+                iso(5000.0).let { at -> p.put("creator_submitted_at", at).put("creator_status", "approved").put("creator_reviewed_for", at) }
                 p.put("host_applied_at", iso(45.0)).put("host_status", "pending").put("host_types", arr("audio_room", "video_room")).put("host_video_uri", "asset:demo-video")
                     .put("host_line", "Hi, I'm Riya and I want to host on True Find").put("host_call_seconds", 21600).put("host_about", "I love music and long talks. Evenings are best for me.")
             }
@@ -86,6 +87,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
 
     override fun fn(name: String, body: JSONObject, done: (Api.Result) -> Unit) {
         val a = body.optString("action")
+        if (name == "support" && body.has("ticket_id")) lastTicket = body.optString("ticket_id")
         val r: JSONObject = when (name) {
             "adminOps" -> ops(a, body)
             "adminUsers" -> users(a, body)
@@ -205,18 +207,22 @@ class AdDemo(private val ctx: Context) : AdSrc {
         else -> JSONObject().put("ok", true)
     }
 
-    private fun support(a: String): JSONObject = when (a) {
-        "admin_list" -> JSONObject().put("counts", JSONObject().put("open", 3)).put("tickets", arr(
+    private val tickets: List<JSONObject> by lazy {
+        listOf(
             JSONObject().put("id", "t1").put("user_id", "u-b1").put("name", "Aman Sharma").put("category", "payment").put("subject", "Coins not added").put("status", "open").put("admin_unread", true).put("created_date", iso(30.0))
-                .put("messages", arr(JSONObject().put("from", "user").put("text", "I paid ₹99 but the coins are not in my wallet").put("at", iso(30.0)))),
+                .put("messages", arr(JSONObject().put("from", "user").put("text", "I paid ₹99 but the coins are not in my wallet").put("at", iso(30.0)).put("attachment", face(false, 6)),
+                    JSONObject().put("from", "admin").put("text", "Thanks for writing to us. We are checking this and will reply soon.").put("at", iso(20.0)),
+                    JSONObject().put("from", "user").put("text", "Ok, thank you").put("at", iso(18.0)))),
             JSONObject().put("id", "t2").put("contact", "9876543210").put("category", "deletion").put("subject", "Delete my account").put("status", "open").put("admin_unread", true).put("created_date", iso(90.0))
                 .put("messages", arr(JSONObject().put("from", "user").put("text", "Please delete my True Find account and data.").put("at", iso(90.0)))),
             JSONObject().put("id", "t3").put("user_id", "u-g4").put("name", "Riya Kapoor").put("category", "payout").put("subject", "Withdrawal").put("status", "answered").put("created_date", iso(1500.0))
-                .put("messages", arr(JSONObject().put("from", "user").put("text", "When will my withdrawal come?").put("at", iso(1500.0)), JSONObject().put("from", "admin").put("text", "Your withdrawal was sent today. It can take up to 24 hours to show in your bank.").put("at", iso(1400.0))))))
-        "admin_get" -> JSONObject().put("ticket", JSONObject().put("id", "t1").put("user_id", "u-b1").put("name", "Aman Sharma").put("category", "payment").put("subject", "Coins not added").put("status", "open")
-            .put("messages", arr(JSONObject().put("from", "user").put("text", "I paid ₹99 but the coins are not in my wallet").put("at", iso(30.0)).put("attachment", face(false, 6)),
-                JSONObject().put("from", "admin").put("text", "Thanks for writing to us. We are checking this and will reply soon.").put("at", iso(20.0)),
-                JSONObject().put("from", "user").put("text", "Ok, thank you").put("at", iso(18.0)))))
+                .put("messages", arr(JSONObject().put("from", "user").put("text", "When will my withdrawal come?").put("at", iso(1500.0)), JSONObject().put("from", "admin").put("text", "Your withdrawal was sent today. It can take up to 24 hours to show in your bank.").put("at", iso(1400.0)))),
+        )
+    }
+    private var lastTicket = "t1"
+    private fun support(a: String): JSONObject = when (a) {
+        "admin_list" -> JSONObject().put("counts", JSONObject().put("open", 3)).put("tickets", JSONArray(tickets))
+        "admin_get" -> JSONObject().put("ticket", tickets.firstOrNull { it.optString("id") == lastTicket } ?: tickets[0])
         else -> JSONObject().put("ok", true)
     }
 

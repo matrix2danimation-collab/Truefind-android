@@ -536,7 +536,13 @@ class AdPayouts(a: AdminScreen) : AdTab(a) {
     private var history: AdLoad? = null
     private val utr = HashMap<String, String>()
 
+    private val filterBox = android.widget.FrameLayout(ctx)
     override fun build() { render() }
+    override fun onShared() { if (alive) drawFilters() }
+    private fun drawFilters() {
+        filterBox.removeAllViews()
+        filterBox.addView(AU.filters(ctx, listOf(Triple("waiting", "Waiting", AF.n(AF.o(a.overview, "todo"), "payouts").toInt()), Triple("paid", "Paid", 0), Triple("rejected", "Not paid", 0), Triple("export", "Download", 0)), view) { view = it; history = null; render() })
+    }
 
     private fun fyNow(): String {
         val ist = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = System.currentTimeMillis() + 19_800_000L }
@@ -549,7 +555,8 @@ class AdPayouts(a: AdminScreen) : AdTab(a) {
     private fun render() {
         if (!alive) return
         root.removeAllViews()
-        root.addView(AU.filters(ctx, listOf(Triple("waiting", "Waiting", AF.n(AF.o(a.overview, "todo"), "payouts").toInt()), Triple("paid", "Paid", 0), Triple("rejected", "Not paid", 0), Triple("export", "Download", 0)), view) { view = it; history = null; render() })
+        root.addView(filterBox, AU.lp(-1, -2))
+        drawFilters()
         root.addView(box, AU.lp(-1, -2))
         box.removeAllViews()
         when (view) {

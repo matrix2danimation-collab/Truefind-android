@@ -331,13 +331,22 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
         }
     }
 
-    /** the open section's tab in the middle of the bar */
+    /** the open section's tab in the middle of the bar (once the new tabs have their places) */
     private fun centerTab(smooth: Boolean) {
-        tabScroll.post {
-            val v = (0 until tabRow.childCount).map { tabRow.getChildAt(it) }.firstOrNull { it.tag == tab } ?: return@post
-            val x = maxOf(0, v.left + tabScroll.paddingLeft - (tabScroll.width - v.width) / 2)
+        val run = Runnable {
+            val v = (0 until tabRow.childCount).map { tabRow.getChildAt(it) }.firstOrNull { it.tag == tab } ?: return@Runnable
+            val max = maxOf(0, tabRow.width + tabScroll.paddingLeft + tabScroll.paddingRight - tabScroll.width)
+            val x = (v.left + tabScroll.paddingLeft - (tabScroll.width - v.width) / 2).coerceIn(0, max)
             if (smooth) tabScroll.smoothScrollTo(x, 0) else tabScroll.scrollTo(x, 0)
         }
+        if (tabRow.isLaidOut && !tabRow.isLayoutRequested && tabScroll.width > 0) tabScroll.post(run)
+        else tabRow.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int) {
+                if (r - l <= 0) return
+                tabRow.removeOnLayoutChangeListener(this)
+                tabScroll.post(run)
+            }
+        })
     }
 
     // ═════════════════ sections ═════════════════
