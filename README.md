@@ -23,6 +23,7 @@ Every push to `main` builds a test APK with GitHub Actions:
 | `FeedView.kt` | the moving bubbles feed and its still background |
 | `CallStageView.kt` | "Finding someone…" / "Calling …" screen |
 | `AvatarArt.kt` | drawn faces for profiles without a photo (same as web) |
+| `LiveRoomsScreen.kt`, `LiveListPages.kt`, `LiveRoomPage.kt`, `LiveRoomSheets.kt`, `LiveSheets.kt`, `LiveKit.kt`, `LiveVoice.kt`, `LiveApi.kt` | native Live Rooms (`/live`, `/live/…`, audio only): list, Leaderboard, Go Live, the room (voice, seats, Super Chat, Hearts, gifts, Join list, Follow, Block / Report, End Live); same `liveRoom` / `liveRoomToken` functions as the web page |
 | `Photos.kt`, `Api.kt`, `Person.kt`, `Ui.kt`, `Widgets.kt` | helpers |
 | `AdminScreen.kt` | native Control Center (`/admin`, admin only): black top with the section tabs, members and overview data, verification decisions |
 | `AdTabs1.kt`, `AdVerify.kt`, `AdMembers.kt`, `AdTabs2.kt`, `AdTabs3.kt` | the Control Center sections: Overview, Growth · Verify · Members + member sheet · Reports, Experts, Live, Payouts · Support, Errors, Settings, System |
