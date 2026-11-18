@@ -36,7 +36,7 @@ class ExploreScreen(
     ctx: Context,
     private val host: FrameLayout,
     private val go: (String, JSONObject?) -> Unit,
-) : FrameLayout(ctx) {
+) : KeepPage(ctx) {
 
     companion object {
         const val POLL_MS = 15000L

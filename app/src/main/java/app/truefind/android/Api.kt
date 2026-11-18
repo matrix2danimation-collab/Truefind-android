@@ -26,6 +26,11 @@ object Api {
 
     private val pool = Executors.newFixedThreadPool(3)
     private val main = Handler(Looper.getMainLooper())
+    /**
+     * An answer goes back to the screen that asked — but not in the middle of a page move: filling a page
+     * while it slides made the move stop half way. It then waits the few tenths of a second until the move ends.
+     */
+    private fun deliver(block: () -> Unit) { main.post { PageFx.whenStill(block) } }
 
     val ready: Boolean get() = Demo.on || (appId.isNotEmpty() && token.isNotEmpty())
 
@@ -34,7 +39,7 @@ object Api {
         if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
         pool.execute {
             val r = call(name, payload, timeoutMs)
-            main.post { done(r) }
+            deliver { done(r) }
         }
     }
 
@@ -48,7 +53,7 @@ object Api {
             val r = work()
             main.post {
                 if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1) }, if (tries == 0) 700L else 1800L)
-                else done(r)
+                else PageFx.whenStill { done(r) }
             }
         }
     }
@@ -122,12 +127,12 @@ object Api {
 
     /** Runs [work] off the main thread and hands its result back on the main thread. */
     fun <T> async(work: () -> T, done: (T) -> Unit) {
-        pool.execute { val r = work(); main.post { done(r) } }
+        pool.execute { val r = work(); deliver { done(r) } }
     }
 
     /** entities.X.filter(query, sort, limit) — the records as a list. */
     fun filter(entity: String, query: JSONObject, sort: String? = null, limit: Int = 0, done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Demo.filter(entity, query)) }; return }
+        if (Demo.on) { deliver { done(Demo.filter(entity, query)) }; return }
         val q = StringBuilder("?q=").append(java.net.URLEncoder.encode(query.toString(), "UTF-8"))
         if (sort != null) q.append("&sort=").append(java.net.URLEncoder.encode(sort, "UTF-8"))
         if (limit > 0) q.append("&limit=").append(limit)
@@ -136,19 +141,19 @@ object Api {
 
     /** entities.X.get(id) */
     fun get(entity: String, id: String, done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Demo.filter(entity, JSONObject().put("id", id)).let { r -> Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error) }) }; return }
+        if (Demo.on) { deliver { done(Demo.filter(entity, JSONObject().put("id", id)).let { r -> Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error) }) }; return }
         readWithRetry({ request("GET", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
     }
 
     /** entities.X.delete(id) */
     fun delete(entity: String, id: String, done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        if (Demo.on) { deliver { done(Result(200, JSONObject(), null)) }; return }
         async({ request("DELETE", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
     }
 
     /** entities.X.updateMany(query, data) — PATCH …/update-many (HttpURLConnection can't send PATCH: OkHttp does) */
     fun updateMany(entity: String, query: JSONObject, data: JSONObject, done: (Result) -> Unit = {}) {
-        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        if (Demo.on) { deliver { done(Result(200, JSONObject(), null)) }; return }
         async({ requestOk("PATCH", "/entities/$entity/update-many", JSONObject().put("query", query).put("data", data)) }, done)
     }
 
@@ -174,19 +179,19 @@ object Api {
 
     /** auth.me() — the signed-in user. */
     fun me(done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Demo.me()) }; return }
+        if (Demo.on) { deliver { done(Demo.me()) }; return }
         async({ request("GET", "/entities/User/me", null, null) }, done)
     }
 
     /** integrations.Core.X(json) */
     fun core(endpoint: String, payload: JSONObject, done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Demo.core(endpoint, payload)) }; return }
+        if (Demo.on) { deliver { done(Demo.core(endpoint, payload)) }; return }
         async({ request("POST", "/integration-endpoints/Core/$endpoint", payload.toString().toByteArray(Charsets.UTF_8), "application/json") }, done)
     }
 
     /** integrations.Core.UploadPrivateFile({ file }) — a photo from the phone. */
     fun uploadPrivate(bytes: ByteArray, fileName: String, mime: String, done: (Result) -> Unit) {
-        if (Demo.on) { main.post { done(Result(200, JSONObject().put("file_uri", "demo://story"), null)) }; return }
+        if (Demo.on) { deliver { done(Result(200, JSONObject().put("file_uri", "demo://story"), null)) }; return }
         val boundary = "----TrueFind" + System.currentTimeMillis()
         val out = java.io.ByteArrayOutputStream()
         out.write("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\nContent-Type: $mime\r\n\r\n".toByteArray())

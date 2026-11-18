@@ -42,6 +42,13 @@ for n in $(seq $FROM $TO); do
   if waitlog "fx step frozen $n\$" 90; then sleep 1; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; echo "$(date +%T.%N | cut -c1-12) fx-$N-mid" >> "$OUT/shots.txt"; timeout 60 adb exec-out screencap -p > "$OUT/fx-$N-mid.png"; fi
   if waitlog "fx step done $n\$" 90; then sleep 2; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; echo "$(date +%T.%N | cut -c1-12) fx-$N-end" >> "$OUT/shots.txt"; timeout 60 adb exec-out screencap -p > "$OUT/fx-$N-end.png"; fi
 done
+# second half: the same moves running freely; a picture of the page each one ends on
+if [ "$TO" -ge 11 ]; then
+  for k in 1 2 3 4 5 6; do
+    [ "$(timeout 10 "$ADB" get-state 2>/dev/null | tr -d '\r')" = device ] || { echo "the test phone stopped before free move $k" >> "$OUT/problems.txt"; break; }
+    if waitlog "fx step live done $k:" 60; then sleep 1; adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; timeout 60 "$ADB" exec-out screencap -p > "$OUT/fx-live-$k.png"; fi
+  done
+fi
 timeout 30 adb logcat -d -s TFDBG:I TFFX:I AndroidRuntime:E | grep -v "frames so far" > "$OUT/fx-log.txt"
 timeout 30 adb logcat -d -b crash > "$OUT/crash-log.txt"
 grep -q "FATAL EXCEPTION" "$OUT/crash-log.txt" && cp "$OUT/crash-log.txt" "$OUT/fx.crash.txt"

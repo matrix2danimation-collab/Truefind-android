@@ -64,7 +64,7 @@ object WalletNet : WalletSource {
                 val r = get("/entities/UserProfile/v2/list?q=$q&limit=1")
                 if (r == null) ok = false else prof = r.optJSONArray("items")?.optJSONObject(0)
             }
-            main.post { done(u, prof, ok) }
+            main.post { PageFx.whenStill { done(u, prof, ok) } }
         }
     }
 
@@ -109,7 +109,7 @@ class WalletScreen(
     private val webBack: () -> Unit,
     private val openCheckout: (String) -> Unit,
     private val setAddress: (String) -> Unit,
-) : FrameLayout(ctx) {
+) : KeepPage(ctx) {
 
     /** Made-up data for the emulator pictures replaces this (WalletDemo). */
     var source: WalletSource = WalletNet

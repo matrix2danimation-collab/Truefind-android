@@ -36,7 +36,7 @@ import java.util.Locale
  * Fresh every time the tab opens, every 45 s while it is on screen, and when you pull down at the top.
  */
 @SuppressLint("ViewConstructor")
-class RecentScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
+class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
     /** one row: the person and their last call with you (rowsFrom of Chats.jsx) */
     class Row(

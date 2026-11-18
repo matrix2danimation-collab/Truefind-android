@@ -187,7 +187,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             isAppearanceLightNavigationBars = true
         }
 
-        root = FrameLayout(this).apply { setBackgroundColor(Color.WHITE); clipChildren = false }
+        // (PageHost: pages that were shown once stay ready while hidden, so coming back to them is only a move)
+        root = PageHost(this).apply { setBackgroundColor(Color.WHITE); clipChildren = false }
         setContentView(root)
         // keep everything clear of the status bar, the phone's own buttons and the keyboard
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -670,6 +671,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val navAfter = pages.nav.visibility == View.VISIBLE && !PageFx.isHeld(pages.nav)
         val toPath = path
         if (Api.token.isEmpty() || preview.isNotEmpty() || walletPreviewing) { fxPath = ""; return }
+        readyTabs()
         fxPath = toPath; fxIdx = routeIdx
         if (fromPath.isEmpty()) return                       // the app just opened: no move
         val now = uptime()
@@ -691,14 +693,15 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val toV: View = after ?: web
         when (kind) {
             PageFx.Kind.TAB -> PageFx.run(root, kind, fromV, toV, dir = if (tB > tA) 1 else -1,
-                waitFrames = if (after == null) 2 else 1, onEnd = { settle() })
+                // Home ↔ Recent: Explore lies between them and passes by (as the tab between does in FRND)
+                between = if (minOf(tA, tB) == 0 && maxOf(tA, tB) == 3 && explore.parked) listOf(explore) else emptyList(),
+                onEnd = { settle() })
             PageFx.Kind.PUSH -> PageFx.run(root, kind, fromV, toV,
                 lowerExtras = if (navBefore && !navAfter) listOf(pages.nav) else emptyList(),
                 // Secret Dating's pink bar is the web page's: the web view comes in with it
                 upperExtras = if (after === secret && before != null) listOf(web) else emptyList(),
                 // a web page that opened a native one moves and darkens itself (the web's own push)
-                moveLower = before != null || nativeLed,
-                waitFrames = if (after == null) 2 else 1, onEnd = { settle() })
+                moveLower = before != null || nativeLed, onEnd = { settle() })
             PageFx.Kind.POP -> {
                 backAt = 0L
                 PageFx.run(root, kind, before, toV,
@@ -708,6 +711,21 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
         }
         if (before == null) { backShot = null }
+    }
+    /**
+     * Explore and Recent get ready in the background a moment after Home first shows (laid out and drawn off
+     * the screen, nothing loaded): their first visit then moves as smoothly as the later ones.
+     */
+    private var tabsReadied = false
+    private fun readyTabs() {
+        if (tabsReadied || Api.token.isEmpty() || !(pages.onHome && pages.home.visibility == View.VISIBLE)) return
+        tabsReadied = true
+        fun soon(ms: Long, page: KeepPage) = root.postDelayed({
+            // when the phone has nothing else to do, and never during a move
+            android.os.Looper.myQueue().addIdleHandler { if (PageFx.running) true else { page.keepReady(); false } }
+        }, ms)
+        soon(2500, explore)
+        soon(3600, pages.recent)
     }
     /** after a move: the pages that should be hidden now are hidden (no new move from here) */
     private fun settle() {
@@ -922,6 +940,27 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val (what, act) = list[k - 1]
             root.postDelayed({ frozenStep(k, what, act) }, at)
             at += 24000L
+        }
+        // then the same moves running freely (second half only): each must end on the right page with the
+        // pages it left kept ready ("parked"), and the log gets one TFFX line per move
+        if (to >= list.size) {
+            fun state(v: View) = if (v.visibility == View.VISIBLE) "shown" else if (v is KeepPage && v.parked) "parked" else "gone"
+            val live: List<Pair<String, () -> Unit>> = listOf(
+                "Home -> Explore" to { pages.go("/explore"); web("/explore") },
+                "Explore -> Home" to { pages.go("/"); web("/") },
+                "Home -> Recent (Explore passes by)" to { pages.go("/chats"); web("/chats") },
+                "Recent -> Home" to { pages.go("/"); web("/") },
+                "Home -> Wallet (open)" to { openWeb("/wallet", null); web("/wallet") },
+                "Wallet -> Home (back)" to { web("/", back = true) },
+            )
+            live.forEachIndexed { i, (what, act) ->
+                root.postDelayed({ say("live ${i + 1} $what"); act() }, at)
+                root.postDelayed({
+                    say("live done ${i + 1}: moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
+                        "x=${pages.home.translationX.toInt()},${explore.translationX.toInt()},${pages.recent.translationX.toInt()},${wallet.translationX.toInt()}")
+                }, at + 4000)
+                at += 7000L
+            }
         }
         root.postDelayed({ say("end") }, at)
     }

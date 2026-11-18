@@ -32,7 +32,7 @@ class SecretHome(
     ctx: Context,
     private val host: FrameLayout,
     private val go: (String, JSONObject?) -> Unit,
-) : FrameLayout(ctx) {
+) : KeepPage(ctx) {
 
     private val main = Handler(Looper.getMainLooper())
     val layer = SdLayer(host)

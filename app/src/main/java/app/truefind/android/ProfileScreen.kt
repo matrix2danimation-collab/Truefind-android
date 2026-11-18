@@ -30,7 +30,7 @@ import kotlin.math.min
  * Profile page, the Followers / Following page and the Settings drawer with its screens.
  */
 @SuppressLint("ViewConstructor")
-class ProfileScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
+class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     class Ph(val ref: String, val pending: Boolean, val index: Int, val own: Boolean)
 
     private val main = Handler(Looper.getMainLooper())

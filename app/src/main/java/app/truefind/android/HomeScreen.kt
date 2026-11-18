@@ -28,7 +28,7 @@ import kotlin.math.min
  * getAppConfig), same rules, same calls (startCall), same pop-ups.
  */
 @SuppressLint("ViewConstructor")
-class HomeScreen(ctx: Context, private val pages: NativePages) : FrameLayout(ctx) {
+class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
     class Streak(val day: Int, val done: Int, val bonus: Int)
     class Daily(val ready: Boolean, val nextAt: Long, val amount: Int, val streak: Streak?, val busy: Boolean = false)
