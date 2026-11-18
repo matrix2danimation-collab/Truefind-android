@@ -193,6 +193,12 @@ class GameVoice(
         var micAsker: (((Boolean) -> Unit) -> Unit)? = null
 
         /**
+         * A 1-on-1 call takes Agora's one engine (CallMedia): a game voice still in a room leaves it, and the
+         * games forget their handle on the engine, so the next game voice makes it again the way it needs it.
+         */
+        fun releaseEngine() = Engine.release()
+
+        /**
          * Test builds only (the GitHub test phone): makes Agora's voice engine and sets it up exactly like
          * a call does, without joining or calling anyone, then drops it again. Answers "ok" or what failed,
          * so a missing part of the engine shows up in the test run instead of in a player's call.
@@ -241,6 +247,12 @@ class GameVoice(
                 cfg.mEventHandler = handler
                 RtcEngine.create(cfg).also { engine = it; engineAppId = appId }
             } catch (e: Throwable) { null }
+        }
+
+        fun release() {
+            listener = null
+            try { engine?.leaveChannel() } catch (e: Throwable) { }
+            engine = null; engineAppId = ""
         }
 
         fun leave(v: GameVoice) {

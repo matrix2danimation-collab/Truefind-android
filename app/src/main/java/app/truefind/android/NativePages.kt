@@ -172,7 +172,12 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val profile = ProfileScreen(act, this)
     val builder = BuilderScreen(act, this)
     val verify = VerifyScreen(act, this)
-    private val callPill = CallPill(act) { web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null) }
+    /** the native calls (when the web page hands its calls over) */
+    var calls: CallManager? = null
+    private val callPill = CallPill(act) {
+        val c = calls
+        if (c != null && c.enabled) c.returnToCall() else web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null)
+    }
     private val screens: List<View> get() = listOf(home, profile, builder, verify)
     /** the full pages this part shows (for the move between pages) */
     val pageViews: List<View> get() = screens
@@ -328,11 +333,15 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         builder.setShown(showBuilder)
         verify.setShown(showVerify)
         if (!(showHome || showProfile || showBuilder || showVerify)) layer.closeAll()
-        // "Call in progress · Return" (the web's pill is under the native screens)
-        val pillOn = live && pill && (showHome || showNav || showProfile)
+        // "Call in progress · Return": the app's own (native calls: on every page but games, rooms and calls),
+        // else the web's pill under the native screens
+        val cm = calls
+        val nativeCalls = cm != null && cm.enabled
+        val pillOn = if (nativeCalls) live && cm!!.pillVisible(path + search) else live && pill && (showHome || showNav || showProfile)
         callPill.visibility = if (pillOn) View.VISIBLE else View.GONE
         if (pillOn) (callPill.layoutParams as FrameLayout.LayoutParams).let { lp ->
-            val b = (if (showNav) nav.barPx else 0) + Ui.dpi(if (showNav) 12f else 24f)
+            // above the bottom bar; on Profile 24 dp from the bottom (as before); on other pages where the web's pill sat (84 px)
+            val b = if (showNav) nav.barPx + Ui.dpi(12f) else if (showHome || showProfile || showBuilder || showVerify || !nativeCalls) Ui.dpi(24f) else Ui.dpi(84f)
             if (lp.bottomMargin != b) { lp.bottomMargin = b; callPill.layoutParams = lp }
         }
         return if (showNav && innerH > 0) innerH - nav.barPx else -1
@@ -438,6 +447,12 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     /** test runs only (the page moves test): what the web page would report for [path] */
     fun testState(path: String, search: String = "") {
         onState(JSONObject().put("path", path).put("search", search).put("unread", "3").toString())
+    }
+
+    /** test pictures: the "Call in progress · Return" pill over the native Home */
+    fun previewPill() {
+        callPill.visibility = View.VISIBLE
+        (callPill.layoutParams as FrameLayout.LayoutParams).let { lp -> lp.bottomMargin = nav.barPx + Ui.dpi(12f); callPill.layoutParams = lp }
     }
 
     fun startPreview(what: String, open0: String) {
