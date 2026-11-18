@@ -71,13 +71,29 @@ object Api {
             } catch (e: Exception) { JSONObject() }
             val err = if (code in 200..299) null else
                 (json.optString("error").takeIf { it.isNotBlank() } ?: json.optString("message").takeIf { it.isNotBlank() }
-                    ?: "Something went wrong. Please try again.")
+                    ?: ("Something went wrong. Please try again." + tag(code, path)))
+            if (code !in 200..299) note(method, path, code, text)
             Result(code, json, err)
         } catch (e: Exception) {
             Result(0, JSONObject(), "Please check your internet and try again.")
         } finally {
             conn?.disconnect()
         }
+    }
+
+    // ── what went wrong, for finding problems on a real phone ──
+    // A server answer without its own message used to say only "Something went wrong": the
+    // reason was lost. Now the code and the call's name go with it, e.g. "(429 · getWallet)":
+    // 401 = sign-in not accepted, 429 = too many requests, 5xx = the server failed.
+    private fun tag(code: Int, path: String) = " ($code · ${path.substringBefore('?').substringAfterLast('/')})"
+    private val log = ArrayDeque<String>()
+    /** the last failed server answers (newest last), each "time METHOD path → code: start of the answer" */
+    val failures: List<String> get() = synchronized(log) { log.toList() }
+    private fun note(method: String, path: String, code: Int, text: String) {
+        val t = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+        val line = "$t $method ${path.substringBefore('?')} → $code: ${text.replace(Regex("\\s+"), " ").take(120)}"
+        android.util.Log.w("TFApi", line)
+        synchronized(log) { log.addLast(line); while (log.size > 40) log.removeFirst() }
     }
 
     /** Runs [work] off the main thread and hands its result back on the main thread. */
@@ -125,7 +141,8 @@ object Api {
             http.newCall(req).execute().use { res ->
                 val text = res.body?.string() ?: ""
                 val json = try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }
-                val err = if (res.isSuccessful) null else (json.optString("error").ifBlank { json.optString("message") }.ifBlank { "Something went wrong. Please try again." })
+                val err = if (res.isSuccessful) null else (json.optString("error").ifBlank { json.optString("message") }.ifBlank { "Something went wrong. Please try again." + tag(res.code, path) })
+                if (!res.isSuccessful) note(method, path, res.code, text)
                 Result(res.code, json, err)
             }
         } catch (e: Exception) { Result(0, JSONObject(), "Please check your internet and try again.") }

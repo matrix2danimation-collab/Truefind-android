@@ -222,7 +222,19 @@ class SecretHome(
             liveOff()
         }
     }
+    private fun pageView(v: String): View? = when (v) { "home" -> scroll; "map" -> mapPage; "chat" -> chatPage; else -> null }
     private fun switchTo(view: String) {
+        val from = page
+        val before = pageView(from)?.takeIf { it.visibility == VISIBLE }
+        switchNow(view)
+        // the same smooth move as between the app's pages (Online Map | Home | Chat: left to right)
+        val after = pageView(view)
+        if (shown && isShown && before != null && after != null && before !== after) {
+            val order = listOf("map", "home", "chat")
+            PageFx.run(this, before, after, order.indexOf(view) < order.indexOf(from))
+        }
+    }
+    private fun switchNow(view: String) {
         page = view
         scroll.visibility = if (view == "home") VISIBLE else GONE
         if (view == "map" && mapPage == null) mapPage = SdMapPage(this).also { addView(it, indexOfChild(scroll) + 1, LayoutParams(-1, -1)) }

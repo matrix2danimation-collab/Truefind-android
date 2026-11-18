@@ -174,6 +174,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val verify = VerifyScreen(act, this)
     private val callPill = CallPill(act) { web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null) }
     private val screens: List<View> get() = listOf(home, profile, builder, verify)
+    /** the full pages this part shows (for the move between pages) */
+    val pageViews: List<View> get() = screens
     /** the Daily Free Coins pop-up while it is open */
     var dailySheet: DailyClaimSheet? = null
     fun rootView(): FrameLayout = root
@@ -344,7 +346,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     /** navigate(path, { state, replace }) of the web app */
     fun go(path: String, state: JSONObject? = null, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast.show("→ $path"); return }
-        if (!replace) lead(path, state)
+        lead(path, state)
         web.evaluateJavascript("window.__tfNav && window.__tfNav(${JSONObject.quote(path)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
     }
     /** navigate(-1), or Home when there is nothing before (the ‹ button of Profile) */

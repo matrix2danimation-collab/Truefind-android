@@ -240,6 +240,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                backAt = android.os.SystemClock.uptimeMillis()
                 if (dance.visibility == View.VISIBLE) {
                     if (!dance.onBack()) {
                         if (web.canGoBack()) web.goBack() else dance.nav.back()
@@ -253,7 +254,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
                 if (preview.isNotEmpty() || walletPreviewing) { finish(); return }
-                if (web.canGoBack()) web.goBack() else finish()
+                if (web.canGoBack()) { web.goBack(); return }
+                // Nothing behind in the web's history (a tab opened in place, or the app opened on this page):
+                // Back used to close the whole app here. Now it takes the app's own steps
+                // (Wallet → Recent → Explore → Home, Profile → Home) and leaves the app only from Home.
+                val up = stepAbove(path, search)
+                if (up != null) { pages.go(up, null, true); return }
+                if (pathOnly(path) != "/" && pathOnly(path) != "/home") { pages.go("/", null, true); return }
+                finish()
             }
         })
 
@@ -423,6 +431,16 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         update()
     }
 
+    /** The step above a page for the phone's Back (the same steps as the web's PhoneBack). */
+    private fun stepAbove(p: String, q: String): String? = when (pathOnly(p)) {
+        "/explore" -> "/"
+        "/chats" -> "/explore"
+        "/wallet" -> "/chats"
+        "/profile/edit" -> "/profile"
+        "/profile" -> if (q.isNotEmpty() && q != "?") "/profile" else "/"
+        else -> null
+    }
+
     /** the address in two parts, as the rest of the app keeps it: path and ?query */
     private fun setPath(full: String) {
         val q = full.indexOf('?')
@@ -433,7 +451,37 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun isDance(p: String): Boolean { val o = pathOnly(p); return o == "/dance" || o.startsWith("/dance/") }
     private fun webMode(p: String) = try { Uri.parse("https://x$p").getQueryParameter("web") == "1" } catch (e: Exception) { false }
 
+    // ── the move between pages (PageFx) ──
+    private var backAt = 0L
+    private var fxPath = ""
+    private fun pageViews(): List<View> = buildList {
+        add(explore); add(secret); add(wallet); add(games); add(dance)
+        chatRoom?.let { add(it) }
+        addAll(pages.pageViews)
+    }
+    private fun shownPage(): View? = pageViews().filter { it.visibility == View.VISIBLE && it.parent === root }
+        .maxByOrNull { root.indexOfChild(it) }
+    private val tabs = listOf("/", "/explore", "/secret-app", "/dating", "/chats", "/wallet")
+    private fun tabIndex(p: String) = tabs.indexOf(pathOnly(p).let { if (it == "/home") "/" else it })
+
+    /** Shows the native screens that fit the page now, with a smooth move when the full page changes. */
     private fun update() {
+        // while the screens are still being made (onCreate), just show what fits
+        if (!::dance.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
+        val before = shownPage()
+        val fromPath = fxPath
+        updateNow()
+        val after = shownPage()
+        fxPath = path
+        if (before === after) return
+        if (preview.isNotEmpty() && !intent.getBooleanExtra("tf_fx", false)) return
+        val a = tabIndex(fromPath); val b = tabIndex(path)
+        val back = android.os.SystemClock.uptimeMillis() - backAt < 800 ||
+            (a >= 0 && b >= 0 && b < a) || (a < 0 && b >= 0 && fromPath.isNotEmpty())
+        PageFx.run(root, before, after, back)
+    }
+
+    private fun updateNow() {
         if (walletPreviewing) return
         if (preview.isNotEmpty()) return
         // ── Live Dance: native when the web page hands it over (not for ?web=1 pages) ──
