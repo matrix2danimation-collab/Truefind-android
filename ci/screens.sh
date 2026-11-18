@@ -255,6 +255,7 @@ if [ "$SET" = sd ]; then
 shot 01-explore home --es tf_preview explore
 shot 02-secret-free home --es tf_preview secret
 shot 03-secret-premium home --es tf_preview secret --ez tf_premium true
+shot 03b-secret-join home --es tf_preview secret --ez tf_notjoined true   # not a member yet: the Join card
 shot 04-secret-scroll-mid open --es tf_preview secret --ez tf_premium true --es tf_open scrollmid
 shot 05-secret-scroll-end open --es tf_preview secret --es tf_open scroll
 shot 06-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile

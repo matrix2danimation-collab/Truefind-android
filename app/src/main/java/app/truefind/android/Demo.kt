@@ -15,6 +15,7 @@ object Demo {
     var girl = false              // the made-up user is a girl (sees boys)
     var noBlur = false            // test runs only: compare speed without the side-card blur
     var noChats = false           // test runs only: no chats yet (the empty Chats page)
+    var notJoined = false         // test runs only: not a member of Secret Dating yet (the Join card)
 
     private val girls = listOf("Anvi" to "Rohtak", "Simran" to "Delhi", "Kavya" to "Jaipur", "Riya" to "Hisar", "Meher" to "Chandigarh", "Ishita" to "Noida", "Pooja" to "Panipat")
     private val boys = listOf("Aarav" to "Rohtak", "Rohan" to "Delhi", "Kabir" to "Jaipur", "Arjun" to "Hisar", "Karan" to "Chandigarh")
@@ -146,7 +147,7 @@ object Demo {
             "getOnlineNow" -> JSONObject().put("me", JSONObject().put("gender", if (girl) "female" else "male").put("city", "Rohtak").put("state", "Haryana")).put("profiles", JSONArray()).put("online", 0).put("poll_ms", 15000)
             "getWallet" -> JSONObject().put("wallet", JSONObject().put("coins", 120))
             "getAppConfig" -> JSONObject().put("config", JSONObject().put("rates", JSONObject().put("voice", 10).put("video", 40)))
-            "getDiscoverProfiles" -> JSONObject().put("profiles", people())
+            "getDiscoverProfiles" -> if (notJoined) JSONObject().put("needs_membership", "secret").put("profiles", org.json.JSONArray()) else JSONObject().put("profiles", people())
             "getMapProfiles" -> JSONObject().put("profiles", mapPeople()).put("premium", premium).put("premium_until", if (premium) iso(-3 * 24 * 60) else "")
                 .put("me", JSONObject().put("gender", if (girl) "female" else "male").put("city", "Rohtak").put("state", "Haryana"))
             "getRequestCredits" -> JSONObject().put("credits", JSONObject().put("available_request_credits", if (premium) 5 else 0))

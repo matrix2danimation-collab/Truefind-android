@@ -1370,6 +1370,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
         Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
+        Demo.notJoined = intent.getBooleanExtra("tf_notjoined", false)
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
