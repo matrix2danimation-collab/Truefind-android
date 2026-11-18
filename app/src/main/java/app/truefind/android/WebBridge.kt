@@ -54,6 +54,38 @@ class WebBridge(private val listener: Listener) {
   // This app draws Live Dance itself (the web page then stays empty under it) — but only when
   // this script ran before the page's own code; otherwise the web page keeps doing it all.
   window.TFNativeDance = document.readyState === 'loading';
+  // Live Rooms (/live …) are drawn by this app too. The web page under them must stay quiet: it would
+  // join the same room a second time, ask the server every 2 s and play the voice twice. So its own
+  // calls to the room functions fail at once here (as a lost connection, which the page ignores).
+  // ?web=1 pages and pages this script reached too late keep working as before.
+  window.TFNativeLive = document.readyState === 'loading';
+  (function(){
+    function liveQuiet(u){
+      try {
+        if (!window.TFNativeLive) return false;
+        var p = location.pathname || '/';
+        while (p.length > 1 && p.charAt(p.length - 1) === '/') p = p.slice(0, -1);
+        if (p !== '/live' && p.indexOf('/live/') !== 0) return false;
+        if (/[?&]web=1(&|#|${'$'})/.test(location.search || '')) return false;
+        return /\/functions\/liveRoom(Token)?(\?|\/|#|${'$'})/.test(String((u && u.url) || u || ''));
+      } catch(e){ return false; }
+    }
+    window.__tfLiveQuiet = liveQuiet;
+    var XP = window.XMLHttpRequest && XMLHttpRequest.prototype;
+    if (XP) {
+      var xOpen = XP.open, xSend = XP.send;
+      XP.open = function(m, u){ this.__tfQuiet = liveQuiet(u); return xOpen.apply(this, arguments); };
+      XP.send = function(){
+        if (!this.__tfQuiet) return xSend.apply(this, arguments);
+        var x = this;
+        setTimeout(function(){ try { x.dispatchEvent(new ProgressEvent('error')); x.dispatchEvent(new ProgressEvent('loadend')); } catch(e){} }, 0);
+      };
+    }
+    if (window.fetch) {
+      var f0 = window.fetch;
+      window.fetch = function(i){ if (liveQuiet(i)) return Promise.reject(new TypeError('Failed to fetch')); return f0.apply(this, arguments); };
+    }
+  })();
   var B = window.$NAME; if (!B) return;
   var css = document.createElement('style');
   css.textContent = 'html.tfnx .tfc-stage,html.tfnx .tfc-top,html.tfnx .tfc-acts{display:none!important}html.tfsd #root .sd{visibility:hidden!important}html.tfcr .cr{visibility:hidden!important}'

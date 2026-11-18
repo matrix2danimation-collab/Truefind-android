@@ -100,7 +100,9 @@ jobs:
 
   screens:
     needs: apk
-    if: github.ref != 'refs/heads/main'
+    # liveroom-native: its screens are checked by "Native screens test" (the Home / Map / Chat /
+    # Wallet / Games pictures of this job would only overwrite the other branches' "screens-all-…")
+    if: github.ref != 'refs/heads/main' && github.ref_name != 'liveroom-native'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     strategy:

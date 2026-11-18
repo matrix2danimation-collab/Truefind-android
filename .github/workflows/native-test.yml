@@ -1,11 +1,11 @@
 name: Native screens test (no release)
 
-# Test branches only (claude/...): builds the app, opens every native Live Dance
-# screen on an Android emulator with a pretend server and saves pictures of them.
+# Test branches only (claude/..., all-native, liveroom-native): builds the app, opens every native
+# Live Dance and Live Rooms screen on an Android emulator with a pretend server and saves pictures of them.
 # Nothing is published: the phone's Update button and the Releases page are not touched.
 on:
   push:
-    branches: ["claude/**", "all-native"]
+    branches: ["claude/**", "all-native", "liveroom-native"]
   workflow_dispatch:
 
 permissions:

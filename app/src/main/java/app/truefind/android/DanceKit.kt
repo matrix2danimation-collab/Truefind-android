@@ -642,7 +642,7 @@ class DanceSheet(
                 MotionEvent.ACTION_DOWN -> { downY = e.rawY; dragging = false }
                 MotionEvent.ACTION_MOVE -> {
                     val dy = e.rawY - downY
-                    val atTop = scrollView?.canScrollVertically(-1) != true
+                    val atTop = (scrollView ?: scrollTarget)?.canScrollVertically(-1) != true
                     if (dy > Ui.dp(10f) && atTop) { dragging = true; return true }
                 }
             }
@@ -663,6 +663,8 @@ class DanceSheet(
     }
     val body: LinearLayout = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
     private var scrollView: android.widget.ScrollView? = null
+    /** a sheet without its own scroll area (scroll = false): the list inside it, so pulling it down scrolls the list first */
+    var scrollTarget: View? = null
     private var closing = false
     var isOpen = false
         private set

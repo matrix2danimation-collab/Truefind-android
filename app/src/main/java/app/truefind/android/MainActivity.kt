@@ -74,6 +74,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var dance: LiveDanceScreen
     private var danceGate = false   // the published web page leaves Live Dance to this app
     private var danceOn = false
+    private lateinit var live: LiveRoomsScreen
+    private var liveOn = false
     private var cover = false
     private var navTopCss = -1f
     private var scriptAtStart = false
@@ -239,6 +241,43 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         dance.visibility = View.GONE
         root.addView(dance, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
+        // native Live Rooms (/live …): the web page under it stays quiet (WebBridge)
+        live = LiveRoomsScreen(this, object : LiveRoomsScreen.Nav {
+            override fun go(path: String) {
+                if (isLive(path)) { setPath(path); update() }
+                openWeb(path, null)
+            }
+            override fun replace(path: String) {
+                if (isLive(path)) { setPath(path); update() }
+                web.evaluateJavascript("window.__tfReplace && window.__tfReplace(${JSONObject.quote(path)});", null)
+            }
+            override fun back() {
+                if (web.canGoBack()) { web.goBack(); return }
+                // opened straight on this page: a room / the list / the Leaderboard → Live Room page → Home
+                val atTop = pathOnly(this@MainActivity.path) == "/live" && !search.contains("m=")
+                replace(if (atTop) "/" else "/live")
+            }
+            override fun askMic(done: (Boolean) -> Unit) {
+                if (has(Manifest.permission.RECORD_AUDIO)) { done(true); return }
+                micDone?.invoke(false)
+                micDone = done
+                try { askMic.launch(Manifest.permission.RECORD_AUDIO) } catch (e: Exception) { micDone = null; done(false) }
+            }
+            override fun share(title: String, text: String) {
+                try {
+                    val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, title); putExtra(Intent.EXTRA_TEXT, text) }
+                    startActivity(Intent.createChooser(i, title))
+                } catch (e: Exception) { }
+            }
+            override fun pickImage(done: (ByteArray?, String) -> Unit) {
+                pickDone?.invoke(null, "")
+                pickDone = done
+                try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; done(null, "") }
+            }
+        })
+        live.visibility = View.GONE
+        root.addView(live, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 backAt = android.os.SystemClock.uptimeMillis()
@@ -246,6 +285,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                     if (!dance.onBack()) {
                         if (web.canGoBack()) web.goBack() else dance.nav.back()
                     }
+                    return
+                }
+                if (live.visibility == View.VISIBLE) {
+                    if (!live.onBack()) live.nav.back()
                     return
                 }
                 chatRoom?.let { r -> if (r.visibility == View.VISIBLE) { if (!r.back()) chatBack(); return } }
@@ -450,13 +493,14 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
     private fun pathOnly(p: String) = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }
     private fun isDance(p: String): Boolean { val o = pathOnly(p); return o == "/dance" || o.startsWith("/dance/") }
+    private fun isLive(p: String): Boolean { val o = pathOnly(p); return o == "/live" || o.startsWith("/live/") }
     private fun webMode(p: String) = try { Uri.parse("https://x$p").getQueryParameter("web") == "1" } catch (e: Exception) { false }
 
     // ── the move between pages (PageFx) ──
     private var backAt = 0L
     private var fxPath = ""
     private fun pageViews(): List<View> = buildList {
-        add(explore); add(secret); add(wallet); add(games); add(dance)
+        add(explore); add(secret); add(wallet); add(games); add(dance); add(live)
         chatRoom?.let { add(it) }
         addAll(pages.pageViews)
     }
@@ -468,7 +512,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     /** Shows the native screens that fit the page now, with a smooth move when the full page changes. */
     private fun update() {
         // while the screens are still being made (onCreate), just show what fits
-        if (!::dance.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
+        if (!::dance.isInitialized || !::live.isInitialized || !::wallet.isInitialized || !::games.isInitialized) { updateNow(); return }
         val before = shownPage()
         val fromPath = fxPath
         updateNow()
@@ -494,6 +538,18 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         } else if (danceOn) {
             danceOn = false
             dance.leave()
+        }
+        // ── Live Rooms: native (not for ?web=1 pages); the web page's own room calls are stopped (WebBridge) ──
+        if (::live.isInitialized) {
+            val wantLive = isLive(path + search) && !webMode(path + search) && scriptAtStart && Api.token.isNotEmpty()
+            if (wantLive) {
+                liveOn = true
+                live.route(path + search)
+                live.setShown(!cover)
+            } else if (liveOn) {
+                liveOn = false
+                live.leave()
+            }
         }
 
         val navTop = pages.update(Api.token.isNotEmpty())
@@ -661,6 +717,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         wallet.onAppVisible(true)
         if (preview.isEmpty() && !walletPreviewing && !previewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
         dance.onAppVisible(true)
+        live.onAppVisible(true)
     }
 
     override fun onPause() {
@@ -670,6 +727,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         chatRoom?.onAppVisible(false)
         wallet.onAppVisible(false)
         dance.onAppVisible(false)
+        live.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }
@@ -687,6 +745,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onDestroy() {
         games.shutdown()
         dance.leave()
+        live.leave()
         DanceVideo.destroyAll()
         root.removeView(web)
         web.destroy()

@@ -8,5 +8,12 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.TrueFind"
             android:windowSoftInputMode="adjustResize" />
+        <!-- test builds only: the native Live Rooms screens alone, for the automatic screen checks -->
+        <activity
+            android:name=".LiveTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TrueFind"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>
