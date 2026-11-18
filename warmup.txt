@@ -1,0 +1,13 @@
+== warm-up
+on top
+11-18 08:48:07.902   523  4366 E ActivityManager: ANR in com.google.android.gms.persistent
+11-18 08:48:10.103  4154  4460 I TFDBG   : slow frame #1 total=5140ms anim=0 layout=432 draw=39 sync=4 issue=168 swap=294 gpu=293
+11-18 08:48:10.682  4154  4154 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-18 08:48:11.147  4154  4460 I TFDBG   : slow frame #2 total=1975ms anim=0 layout=4 draw=0 sync=0 issue=192 swap=262 gpu=237
+11-18 08:48:11.643  4154  4154 I TFDBG   : frames so far 2 (slow >100ms: 2, worst 5140ms)
+11-18 08:48:17.380  4154  4460 I TFDBG   : slow frame #3 total=6728ms anim=7 layout=332 draw=157 sync=4 issue=5625 swap=185 gpu=184
+11-18 08:48:17.586  4154  4460 I TFDBG   : slow frame #4 total=5954ms anim=22 layout=234 draw=138 sync=52 issue=43 swap=89 gpu=96
+11-18 08:48:17.864  4154  4154 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6728ms)
+11-18 08:48:17.875  4154  4154 I TFDBG   : preview open 
+11-18 08:48:18.307  4154  4460 I TFDBG   : slow frame #5 total=4851ms anim=3 layout=23 draw=24 sync=0 issue=116 swap=282 gpu=293
+11-18 08:48:19.006  4154  4154 I TFDBG   : preview open 
