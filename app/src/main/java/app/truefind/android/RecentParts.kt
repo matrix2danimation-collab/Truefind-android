@@ -359,7 +359,9 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
             val pos = FloatArray(GLOW.size) { i -> i / (GLOW.size - 1f) }
             glowPaint.shader = RadialGradient(w / 2f, h / 2f + Ui.dp(8f), Ui.dp(GLOW_REACH), cols, pos, Shader.TileMode.CLAMP)
         }
+        hole.reset(); hole.addCircle(w / 2f, h / 2f, w / 2f, android.graphics.Path.Direction.CW)
     }
+    private val hole = android.graphics.Path()
 
     companion object {
         private const val GLOW_R = 11f; private const val GLOW_SIGMA = 8f
@@ -388,10 +390,11 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
         if (video) {
-            // The glow only shows outside the button: the button itself (a solid circle, drawn after it) covers
-            // the part inside. Before, that part was cut out of the glow first — the same picture, but a cut-out
-            // on every row is slow to draw again and again while the page moves (the test phone stopped on it).
+            // the glow only shows outside the button
+            c.save()
+            if (android.os.Build.VERSION.SDK_INT >= 26) c.clipOutPath(hole) else @Suppress("DEPRECATION") c.clipPath(hole, android.graphics.Region.Op.DIFFERENCE)
             c.drawCircle(w / 2f, h / 2f + Ui.dp(8f), Ui.dp(GLOW_REACH), glowPaint)
+            c.restore()
             p.shader = fill; c.drawCircle(w / 2f, h / 2f, w / 2f, p); p.shader = null
         } else {
             p.color = RC.softLine; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
