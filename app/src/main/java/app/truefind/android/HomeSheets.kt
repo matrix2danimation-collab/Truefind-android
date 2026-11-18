@@ -357,7 +357,8 @@ object JoinCard {
                 else Tf.box(Color.argb(179, 22, 31, 44), 24f, 1f, Color.argb(102, 255, 92, 97))
             setPadding(Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f))
         }
-        card.addView(Tf.t(ctx, if (secret) "Secret Dating" else "True Find", 18f, if (secret) Ui.c("#FDE68A") else Color.WHITE))
+        // (Secret Dating's card is new here — the web's card is centred, title included; Home's own card is left as it was)
+        card.addView(Tf.t(ctx, if (secret) "Secret Dating" else "True Find", 18f, if (secret) Ui.c("#FDE68A") else Color.WHITE).apply { if (secret) gravity = Gravity.CENTER })
         card.addView(Tf.t(ctx, if (secret) "A separate private membership with its own map, requests, chat, premium and wallet. Joining does not touch your True Find account."
             else "Friendship discovery with its own likes, chats, calls and wallet. Joining does not touch your Secret Dating account.", 14f, Color.argb(153, 255, 255, 255), false).apply { gravity = Gravity.CENTER; setLineSpacing(Ui.dp(14f) * 0.6f, 1f) }, Tf.ll(t = 8f))
         val err = Tf.t(ctx, "", 14f, Ui.c("#FCA5A5"), false).apply { gravity = Gravity.CENTER; visibility = View.GONE }
