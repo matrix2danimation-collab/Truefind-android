@@ -60,7 +60,8 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
             val m = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(text) ?: return Dob(false, "Enter date as DD/MM/YYYY.")
             val d = m.groupValues[1].toInt(); val mo = m.groupValues[2].toInt(); val y = m.groupValues[3].toInt()
             val c = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { clear(); isLenient = true; set(y, mo - 1, d) }
-            if (c.get(Calendar.YEAR) != y || c.get(Calendar.MONTH) != mo - 1 || c.get(Calendar.DAY_OF_MONTH) != d) return Dob(false, "Please enter a real date.")
+            // (JavaScript's Date.UTC reads the years 0–99 as 1900–1999: such a date never matches what was typed)
+            if (y < 100 || c.get(Calendar.YEAR) != y || c.get(Calendar.MONTH) != mo - 1 || c.get(Calendar.DAY_OF_MONTH) != d) return Dob(false, "Please enter a real date.")
             val (ty, tm, td) = todayInIndia()
             val future = y > ty || (y == ty && (mo > tm || (mo == tm && d > td)))
             var age = ty - y
@@ -71,7 +72,7 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
         }
         private val NAME_RE = Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$")
         fun checkName(name: String): String {
-            val n = name.trim().replace(Regex("\\s+"), " ")
+            val n = name.trim().replace(Regex("[\\s\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]+"), " ")
             if (n.isEmpty()) return "Please enter your name."
             if (n.length < 2) return "Name is too short."
             if (n.length > 40) return "Name is too long (max 40 letters)."

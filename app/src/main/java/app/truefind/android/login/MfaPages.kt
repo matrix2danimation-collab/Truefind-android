@@ -303,7 +303,7 @@ internal class MfaMethodSetup(
                 }, LK.lp(-1, -2, t = 12f))
                 val copy = ABtn(ctx, "Copy key", "outline", 44f, bold = false)
                 copy.setOnClickListener {
-                    try { (ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("key", key.replace(Regex("\\s"), ""))) } catch (e: Exception) { }
+                    try { (ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("key", key.replace(Regex("[\\s\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]"), ""))) } catch (e: Exception) { }
                     copy.setLabel("Copied"); main.postDelayed({ copy.setLabel("Copy key") }, 2000)
                 }
                 box.addView(copy, LK.lp(-1, -2, t = 12f))

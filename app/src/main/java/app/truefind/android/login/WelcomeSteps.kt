@@ -578,7 +578,7 @@ internal class ProfileStep(ctx: Context, private val page: WelcomePage) : Welcom
 
         nameIn.put(page.fName); dobIn.put(page.fDob)
         nameIn.onText = { v -> page.fName = v; draw() }
-        nameIn.setOnFocusChangeListener { _, f -> if (!f) { val t = page.fName.replace(Regex("\\s+"), " ").trim(); page.fName = t; nameIn.put(t); touched.add("name") }; draw() }
+        nameIn.setOnFocusChangeListener { _, f -> if (!f) { val t = page.fName.replace(Regex("[\\s\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]+"), " ").trim(); page.fName = t; nameIn.put(t); touched.add("name") }; draw() }
         dobIn.onText = { v -> val m = WelcomePage.maskDob(v); if (m != v) dobIn.put(m); page.fDob = m; draw() }
         dobIn.setOnFocusChangeListener { _, f -> if (!f) touched.add("dob"); draw() }
         dobIn.setOnEditorActionListener { _, _, _ -> LK.hideKeyboard(dobIn); false }
@@ -647,7 +647,7 @@ internal class ProfileStep(ctx: Context, private val page: WelcomePage) : Welcom
         if (!ready || page.profileBusy) return
         if (page.gender != "male" && page.gender != "female") { page.go("gender", -1); return }
         LK.hideKeyboard(this)
-        val payload = JSONObject().put("full_name", page.fName.trim().replace(Regex("\\s+"), " ")).put("date_of_birth", dob.iso)
+        val payload = JSONObject().put("full_name", page.fName.trim().replace(Regex("[\\s\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF]+"), " ")).put("date_of_birth", dob.iso)
             .put("gender", page.gender).put("state", page.fState).put("city", page.fCity).put("phone", page.phone)
         page.saveFromForm(payload)
     }

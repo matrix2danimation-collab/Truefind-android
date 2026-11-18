@@ -72,6 +72,7 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
   function tok(){ try { var t = localStorage.getItem('base44_access_token') || localStorage.getItem('token') || ''; if (t && t.charAt(0) === '"') { try { t = JSON.parse(t); } catch(e){} } return String(t || ''); } catch(e){ return ''; } }
   function ours(){
     var p = (location.pathname || '/').replace(/\/+${'$'}/, '') || '/', s = location.search || '';
+    if (p !== '/mfa') window.__tfMfaWeb = false;
     if (p === '/mfa' && (/[?&]mfa_code=/.test(s) || window.__tfMfaWeb)) { window.__tfMfaWeb = true; return false; }
     if (PUB.test(p)) return true;
     if (PROT.test(p)) return !!tok();
