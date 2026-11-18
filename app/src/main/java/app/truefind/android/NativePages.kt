@@ -20,6 +20,7 @@ import org.json.JSONObject
  * native screen shows whenever its address is open:
  *   /, /home            → Home              /profile[?…]          → Profile
  *   /profile/edit       → Edit your profile  /register/verification → Verification
+ *   /chats              → Recent (RecentScreen)
  *   /, /home, /explore, /chats → the bottom bar (the web's own bar is hidden there)
  * The web page under a native screen is hidden (not removed), and any web
  * pop-up that must be seen (incoming call, after-call sheet, a dialog on
@@ -48,6 +49,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
   css.textContent = 'html.tfnn nav.tfnav{display:none!important}'
     + 'html.tfhn .tf-tab[data-tab="home"]{visibility:hidden!important}html.tfhn .tfdc{display:none!important}'
     + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}'
+    + 'html.tfrn .tf-tab[data-tab="chats"]{visibility:hidden!important}'
     // In the app a tab switch is instant (as in other Android apps): the web's 0.3 s tab slide
     // stuttered on phones and showed half-moved pages; the page going out is simply hidden.
     + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}';
@@ -108,6 +110,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     if (h.contains('tfpn') && el.closest('.tfp-root')) return true;
     if (h.contains('tfbn') && el.closest('.tfb')) return true;
     if (h.contains('tfvn') && el.closest('.tfv')) return true;
+    if (h.contains('tfrn') && el.closest('.tf-tab[data-tab="chats"]')) return true;
     return false;
   }
   function covered(){
@@ -172,8 +175,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val profile = ProfileScreen(act, this)
     val builder = BuilderScreen(act, this)
     val verify = VerifyScreen(act, this)
+    val recent = RecentScreen(act, this)
     private val callPill = CallPill(act) { web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null) }
-    private val screens: List<View> get() = listOf(home, profile, builder, verify)
+    private val screens: List<View> get() = listOf(home, profile, builder, verify, recent)
     /** the full pages this part shows (for the move between pages) */
     val pageViews: List<View> get() = screens
     /** the Daily Free Coins pop-up while it is open */
@@ -265,7 +269,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
     private fun shownNatively(p: String, q: String): Boolean =
         p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
-            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") || p == "/wallet" ||
+            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") || p == "/wallet" || p == "/chats" ||
             p == "/dance" || p.startsWith("/dance/")
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
@@ -287,6 +291,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val onProfile: Boolean get() = p() == "/profile"
     val onBuilder: Boolean get() = p() == "/profile/edit"
     val onVerify: Boolean get() = p() == "/register/verification"
+    val onRecent: Boolean get() = p() == "/chats"
 
     /** the bottom bar is on screen */
     var navShown = false; private set
@@ -304,12 +309,14 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val showProfile = live && onProfile && !cover
         val showBuilder = live && onBuilder && !cover
         val showVerify = live && onVerify && !cover
+        val showRecent = live && onRecent && !cover
         // the web's own pages under the native ones stay hidden (not removed)
         setClass("tfnn", live && NAV_ON.contains(p()))
         setClass("tfhn", live && onHome)
         setClass("tfpn", live && onProfile)
         setClass("tfbn", live && onBuilder)
         setClass("tfvn", live && onVerify)
+        setClass("tfrn", live && onRecent)
         navShown = showNav
         nav.visibility = if (showNav) View.VISIBLE else View.GONE
         nav.current = when (p()) { "/", "/home" -> "home"; "/explore" -> "explore"; "/chats" -> "recent"; else -> "" }
@@ -321,7 +328,10 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         profile.setShown(showProfile, search, usr)
         builder.setShown(showBuilder)
         verify.setShown(showVerify)
-        if (!(showHome || showProfile || showBuilder || showVerify)) layer.closeAll()
+        recent.setShown(showRecent)
+        // the Recent list is loaded once in the background after sign-in (the first visit shows it at once)
+        if (live) recent.warm()
+        if (!(showHome || showProfile || showBuilder || showVerify || showRecent)) layer.closeAll()
         // "Call in progress · Return" (the web's pill is under the native screens)
         val pillOn = live && pill && (showHome || showNav || showProfile)
         callPill.visibility = if (pillOn) View.VISIBLE else View.GONE
@@ -400,7 +410,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val here = nav.current
         if (key == here) {
             // the tab you are on: back to its top
-            when (key) { "home" -> home.scrollTop(); "explore" -> {}; else -> web.evaluateJavascript("window.__tfTop && window.__tfTop()", null) }
+            when (key) { "home" -> home.scrollTop(); "explore" -> {}; "recent" -> recent.scrollTop(); else -> web.evaluateJavascript("window.__tfTop && window.__tfTop()", null) }
             return
         }
         go(path)
@@ -415,6 +425,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         if (profile.visibility == View.VISIBLE && profile.onBack()) return true
         if (verify.visibility == View.VISIBLE && verify.onBack()) return true
         if (builder.visibility == View.VISIBLE && builder.onBack()) return true
+        if (recent.visibility == View.VISIBLE && recent.onBack()) return true
         return false
     }
 
@@ -423,6 +434,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         home.onAppVisible(v)
         profile.onAppVisible(v)
         verify.onAppVisible(v)
+        recent.onAppVisible(v)
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
@@ -448,6 +460,11 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             }
             what.startsWith("builder") -> { path = "/profile/edit"; builder.setShown(true) }
             what.startsWith("verify") -> { path = "/register/verification"; verify.setShown(true) }
+            what.startsWith("recent") -> {
+                DemoHome.recentScene = act.intent?.getStringExtra("tf_scene").orEmpty()
+                path = "/chats"; nav.visibility = View.VISIBLE; nav.current = "recent"; nav.unread = 3
+                recent.setShown(true)
+            }
         }
         // "?settings=apply|form": the address, then a test action on that screen
         val action = if (open.startsWith("?")) open.substringAfter("|", "") else open
@@ -458,6 +475,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
                 what.startsWith("profile") -> profile.previewOpen(action)
                 what.startsWith("verify") -> verify.previewOpen(action)
                 what.startsWith("builder") -> builder.previewOpen(action)
+                what.startsWith("recent") -> recent.previewOpen(action)
             }
         }, 3500)
     }

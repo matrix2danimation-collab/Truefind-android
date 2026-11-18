@@ -49,6 +49,8 @@ import org.json.JSONObject
  *    is /wallet (True Find and Secret Dating wallets, Earnings, payments).
  *  - Games are native too (GamesLayer): the Games page, Heart Chase Boxes, Mood Changer,
  *    ClueMe and Dress Code, whenever the address is /games or a game's address.
+ *  - Recent is native too (RecentScreen, inside NativePages) whenever the address is /chats:
+ *    the recent calls, a person's small card and full profile, calling again.
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -576,7 +578,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
     private fun startPreview() {
-        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify")) {
+        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify") || preview.startsWith("recent")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             web.loadUrl("about:blank")
             watchFrames()

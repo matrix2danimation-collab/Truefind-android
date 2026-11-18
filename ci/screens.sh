@@ -66,6 +66,46 @@ shot() {
   { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
   case "$mode" in anim*) anims 0 ;; esac
 }
+# ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
+if [ "$SET" = recent ]; then
+R="--es tf_preview recent"
+rshot() {
+  local name="$1"; local wait="$2"; shift 2
+  adb shell am force-stop $PKG
+  adb shell pm clear $PKG > /dev/null
+  sleep 1
+  adb logcat -c
+  echo "== $name" >> "$OUT/start.txt"
+  adb shell am start -W -n $PKG/.MainActivity $R "$@" >> "$OUT/start.txt" 2>&1
+  case "$*" in
+    *tf_open*) waitlog "preview open" 60; sleep "$wait" ;;
+    *) waitlog "frames so far" 60; sleep "$wait" ;;
+  esac
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  adb exec-out screencap -p > "$OUT/$name.png"
+  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+  { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
+}
+rshot r01-recent 8
+rshot r02-recent-card 3 --es tf_open card
+rshot r03-recent-card-busy 3 --es tf_open cardbusy
+rshot r04-recent-full 4 --es tf_open full
+rshot r05-recent-full-end 5 --es tf_open fullscroll
+rshot r06-recent-photo 5 --es tf_open viewer
+rshot r07-recent-coins 3 --es tf_open coins
+rshot r08-recent-busy 3 --es tf_open busy --es tf_scene busy
+rshot r09-recent-unfollow 4 --es tf_open unfollow
+rshot r10-recent-follow-toast 2 --es tf_open follow
+rshot r11-recent-picked 3 --es tf_open picked
+rshot r12-recent-end 3 --es tf_open scroll
+rshot r13-recent-empty 8 --es tf_scene empty
+rshot r14-recent-error 8 --es tf_scene error
+rshot r15-recent-loading 6 --es tf_scene skeleton
+rshot r16-recent-card-error 3 --es tf_open card --es tf_scene proferror
+exit 0
+fi
 # the native Wallet (its own list of screens, from the Wallet work)
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native games (their own list of screens, from the Games work)
