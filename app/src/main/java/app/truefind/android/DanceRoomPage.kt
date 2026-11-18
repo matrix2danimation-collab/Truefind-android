@@ -698,7 +698,7 @@ class DanceRoomPage(ctx: Context, private val screen: LiveDanceScreen, val roomI
         private val chat = object : RecyclerView(context) { override fun getBottomFadingEdgeStrength() = 0f } // fade only at the top
         private val chatAdapter = ChatAdapter()
         private val side = LinearLayout(context)
-        private val emojiPanel = FlowRow(context)
+        private val emojiPanel = DanceFlowRow(context)
         private val input: EditText
         private val sendBtn: FrameLayout
         private val toolRow = LinearLayout(context)
@@ -1628,7 +1628,7 @@ class CoinSpan : android.text.style.ReplacementSpan() {
 }
 
 /** a row that wraps its children to new lines (chips, emoji) */
-class FlowRow(ctx: Context) : ViewGroup(ctx) {
+class DanceFlowRow(ctx: Context) : ViewGroup(ctx) {
     var gap = Ui.dpi(7f)
     override fun onMeasure(ws: Int, hs: Int) {
         val maxW = MeasureSpec.getSize(ws) - paddingLeft - paddingRight

@@ -322,7 +322,7 @@ object DanceSheets {
         val s = sheet(screen, "Report ${u.optString("name")}".trim())
         val ctx = s.context
         var reason = ""
-        val chips = FlowRow(ctx)
+        val chips = DanceFlowRow(ctx)
         val views = ArrayList<TextView>()
         DK.REASONS.forEach { rs ->
             val c = DK.chip(ctx, rs, false, 36f, 13f)
@@ -380,7 +380,7 @@ object DanceSheets {
             val t = SpannableStringBuilder(title)
             if (opt) { val a = t.length; t.append(" (optional)"); t.setSpan(android.text.style.ForegroundColorSpan(DK.SUB), a, t.length, 0); t.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.NORMAL), a, t.length, 0) }
             s.body.addView(DK.t(ctx, t, 14.5f, DK.INK), DK.llp(t = if (s.body.childCount == 0) 2f else 14f, b = 8f))
-            val flow = FlowRow(ctx)
+            val flow = DanceFlowRow(ctx)
             val chips = ArrayList<TextView>()
             list.forEach { v ->
                 val c = DK.chip(ctx, "${icons[v] ?: fallback} $v", false, 38f, 13.5f)
@@ -653,7 +653,7 @@ object DanceSheets {
                 box.addView(row, DK.llp(b = 6f))
             }
             box.addView(DK.t(ctx, "Dance styles", 14.5f, DK.INK), DK.llp(t = 12f, b = 6f))
-            val flow = FlowRow(ctx)
+            val flow = DanceFlowRow(ctx)
             DK.arr(d.optJSONArray("styles")).forEach { st ->
                 val n = st.optInt("count")
                 val sb = SpannableStringBuilder("${DK.STYLE_ICON[st.optString("name")] ?: "💃"} ${st.optString("name")} ")
