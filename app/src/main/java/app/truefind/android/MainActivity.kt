@@ -504,6 +504,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val shot = backShot?.takeIf { now - backShotAt < 1500 }
         val webToWeb = before == null && after == null
         if (before === after && !webToWeb) return            // the same native page
+        if (pathOnly(fromPath) == pathOnly(toPath) && shot == null) return // same address (the app opening, a sheet)
         if (webToWeb && (pathOnly(fromPath) == pathOnly(toPath) || shot == null)) return // the web moves its own pages
         val tA = tabIndex(fromPath); val tB = tabIndex(toPath)
         val goingBack = now - backAt < 1500 || (routeIdx >= 0 && fromIdx >= 0 && routeIdx < fromIdx)
@@ -666,7 +667,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var fxTest = false
     private fun startFxTest() {
         fxTest = true
-        Demo.on = true; DemoHome.on = true
+        Demo.on = true; DemoHome.on = true; DemoHome.dailyTaken = true
         Api.origin = "https://true-find.base44.app"; Api.appId = "demo"; Api.token = "demo"
         web.loadUrl("about:blank")
         watchFrames()
@@ -685,23 +686,23 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             say("$k $what")
             PageFx.freezeAt = 0.45f
             act()
-            root.postDelayed({ say("frozen $k"); }, 2500)
-            root.postDelayed({ PageFx.finish(); say("done $k") }, 6000)
+            root.postDelayed({ say("frozen $k"); }, 3000)
+            root.postDelayed({ PageFx.finish(); say("done $k") }, 8000)
         }
         val steps: List<Pair<Long, () -> Unit>> = listOf(
             1500L to { say("start"); web("/") },
             6000L to { frozenStep("Home -> Explore (tab)") { pages.go("/explore"); web("/explore") } },
-            14000L to { frozenStep("Explore -> Home (tab back)") { pages.go("/"); web("/") } },
-            22000L to { frozenStep("Home -> Profile (open)") { pages.go("/profile"); web("/profile") } },
-            30000L to { frozenStep("Profile -> Home (back)") { web("/", back = true) } },
-            38000L to { frozenStep("Home -> Wallet (open)") { openWeb("/wallet", null); web("/wallet") } },
-            46000L to { frozenStep("Wallet -> Home (back)") { web("/", back = true) } },
-            54000L to { frozenStep("Home -> Recent web page (tab)") { pages.go("/chats"); web("/chats") } },
-            62000L to { frozenStep("Recent -> Home (tab back)") { pages.go("/"); web("/") } },
-            70000L to { frozenStep("Home -> Secret Dating (open)") { openWeb("/secret-app", null); web("/secret-app") } },
-            78000L to { frozenStep("Secret Dating Home -> Map (its own tab)") { web("/dating") } },
-            86000L to { frozenStep("Secret Dating -> Home (back)") { web("/", back = true) } },
-            94000L to { say("end") },
+            18000L to { frozenStep("Explore -> Home (tab back)") { pages.go("/"); web("/") } },
+            30000L to { frozenStep("Home -> Profile (open)") { pages.go("/profile"); web("/profile") } },
+            42000L to { frozenStep("Profile -> Home (back)") { web("/", back = true) } },
+            54000L to { frozenStep("Home -> Wallet (open)") { openWeb("/wallet", null); web("/wallet") } },
+            66000L to { frozenStep("Wallet -> Home (back)") { web("/", back = true) } },
+            78000L to { frozenStep("Home -> Recent web page (tab)") { pages.go("/chats"); web("/chats") } },
+            90000L to { frozenStep("Recent -> Home (tab back)") { pages.go("/"); web("/") } },
+            102000L to { frozenStep("Home -> Secret Dating (open)") { openWeb("/secret-app", null); web("/secret-app") } },
+            114000L to { frozenStep("Secret Dating Home -> Map (its own tab)") { web("/dating") } },
+            126000L to { frozenStep("Secret Dating -> Home (back)") { web("/", back = true) } },
+            138000L to { say("end") },
         )
         for ((at, step) in steps) root.postDelayed({ step() }, at)
     }

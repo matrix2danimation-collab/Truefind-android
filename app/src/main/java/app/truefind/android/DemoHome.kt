@@ -10,6 +10,8 @@ import org.json.JSONObject
  */
 object DemoHome {
     @Volatile var on = false
+    /** test runs only: the daily coins are already taken today (no pop-up over the pages) */
+    @Volatile var dailyTaken = false
     private val girl get() = Demo.girl
 
     private fun iso(minAgo: Long) = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
@@ -68,7 +70,7 @@ object DemoHome {
         if (!on) return null
         val d: JSONObject = when (name) {
             "getWallet" -> JSONObject().put("wallet", JSONObject().put("coins", 1250).put("earned_coins", 0))
-            "claimDailyCoins" -> if (payload.optBoolean("peek")) JSONObject().put("ready", true).put("amount", 10).put("streak", JSONObject().put("day", 3).put("done", 2).put("bonus_amount", 50))
+            "claimDailyCoins" -> if (payload.optBoolean("peek")) JSONObject().put("ready", !dailyTaken).put("amount", 10).put("streak", JSONObject().put("day", 3).put("done", 2).put("bonus_amount", 50))
                 else JSONObject().put("claimed", 10).put("amount", 10).put("next_at", iso(-24 * 60)).put("streak", JSONObject().put("day", 4).put("done", 3).put("bonus_amount", 50)).put("wallet", JSONObject().put("coins", 1260))
             "getDiscoverProfiles", "getOnlineNow" -> JSONObject().put("profiles", people())
             "getAppConfig" -> JSONObject().put("config", JSONObject().put("rates", JSONObject().put("voice", 10).put("video", 40)))
