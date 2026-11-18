@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- test builds only: the native Live Dance screens alone, for the automatic screen checks -->
+        <activity
+            android:name=".DanceTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.TrueFind"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+</manifest>

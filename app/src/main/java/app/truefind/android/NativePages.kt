@@ -261,7 +261,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     }
     private fun shownNatively(p: String, q: String): Boolean =
         p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
-            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") || p == "/wallet"
+            p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") || p == "/wallet" ||
+            p == "/dance" || p.startsWith("/dance/")
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
         if (preview.isNotEmpty() || !gotState || !signedIn || cover) return

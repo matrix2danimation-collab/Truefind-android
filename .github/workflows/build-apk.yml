@@ -47,6 +47,7 @@ jobs:
       - name: Name the file (+ version.json for the app's Update button)
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk
+          ls -la TrueFind-test.apk
           echo "{\"versionCode\": ${{ github.run_number }}, \"apk\": \"https://github.com/${{ github.repository }}/releases/download/test-build/TrueFind-test.apk\"}" > version.json
           cat version.json
 
@@ -54,6 +55,19 @@ jobs:
         with:
           name: TrueFind-test-apk
           path: TrueFind-test.apk
+
+      # the phone APK above carries the call/video engine (Agora) for phones only (ARM); the
+      # GitHub test phone is x86_64, so it gets its own copy with that part added too
+      - name: Build the test-phone copy (x86_64 added)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          gradle assembleDebug -PtfAllAbis=true --no-daemon -q
+          cp app/build/outputs/apk/debug/app-debug.apk TrueFind-emu.apk
+      - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/main'
+        with:
+          name: TrueFind-emu-apk
+          path: TrueFind-emu.apk
 
       # branch home-native only: the jars the Kotlin code is compiled against, kept
       # on the branch "cp-home" so the code can be checked before each push
@@ -86,6 +100,7 @@ jobs:
 
   screens:
     needs: apk
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     strategy:
@@ -97,6 +112,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: TrueFind-test-apk
+      - uses: actions/download-artifact@v4
+        with:
+          name: TrueFind-emu-apk
       - name: Enable KVM (fast emulator)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -111,7 +129,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash ci/screens.sh TrueFind-test.apk shots ${{ matrix.set }}
+          script: bash ci/screens.sh TrueFind-emu.apk shots ${{ matrix.set }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

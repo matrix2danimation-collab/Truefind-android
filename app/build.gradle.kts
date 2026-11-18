@@ -18,9 +18,21 @@ android {
         // test builds: the app checks this file and offers the newer APK (Update button)
         buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/test-build/version.json\"")
         buildConfigField("boolean", "SELF_UPDATE", "true")
-        // the games' voice (Agora) has phone code for each kind of processor: keep the phones'
-        // (arm) and the GitHub test phone's (x86_64)
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Live Dance video (Agora) ships for phones (ARM) only; the emulator tests add x86_64
+        ndk {
+            abiFilters += (project.findProperty("tfAbis") as String?)?.split(",")?.map { it.trim() }
+                ?: if (project.findProperty("tfAllAbis") == "true") listOf("arm64-v8a", "armeabi-v7a", "x86_64") else listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+
+    // Live Dance video libraries are stored compressed in the APK: about half the download
+    // (measured: 36.4 MB instead of 66.6 MB for the phone APK). -PtfPackedLibs=false turns it off.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = project.findProperty("tfPackedLibs") != "false"
+        }
     }
 
     // Test builds are always signed with the same key (in this repo), so a new
@@ -69,8 +81,18 @@ android {
     }
 }
 
+val agoraVersion = (project.findProperty("agoraVersion") as String?) ?: "4.5.2"
+
 dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    // Live Dance video: Agora's Android engine, basic part only (no extensions) to keep the app small
+    implementation("io.agora.rtc:full-rtc-basic:$agoraVersion")
+
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("androidx.webkit:webkit:1.14.0")
     // Profile → Become a Host / Creator: the live selfie video (camera only)
@@ -82,5 +104,4 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // native games: the web's SVG pictures drawn by the phone, and the games' voice room
     implementation("com.caverock:androidsvg-aar:1.4")
-    implementation("io.agora.rtc:voice-sdk:4.5.0")
 }
