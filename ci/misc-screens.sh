@@ -54,6 +54,7 @@ shot() {
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
   { echo "== $name"; adb logcat -d | grep -E "TFApi|TFDBG|AndroidRuntime" | tail -20; } >> "$OUT/debug.txt"
+  { echo "== $name"; adb logcat -d -s TFDBG:I | grep tabbar | tail -12; } >> "$OUT/tabbar.txt"
 }
 
 # warm-up: the very first start after installing is much slower on the test phone (its web view and

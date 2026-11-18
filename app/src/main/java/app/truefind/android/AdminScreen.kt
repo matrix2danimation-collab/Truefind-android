@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.view.animation.LinearInterpolator
@@ -75,7 +76,28 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
     private val emailLine = AU.t(act, "True Find · only you can see this", 12f, AK.onBlack).ell()
     private val refreshIcon = ImageView(act).apply { setImageDrawable(Tf.lu(AdIc.RefreshCw, Color.WHITE, 17f)) }
     private var spin: ObjectAnimator? = null
-    private val tabScroll = HorizontalScrollView(act)
+    /** the section tabs; the open one is kept in the middle each time the bar is laid out
+     *  (also when the counts arrive and the tabs get wider), until the bar is touched */
+    private val tabScroll = object : HorizontalScrollView(act) {
+        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+            super.onLayout(changed, l, t, r, b)
+            if (centerKey != null) applyCenter()
+        }
+        override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+            if (ev.actionMasked == MotionEvent.ACTION_DOWN) centerKey = null
+            return super.dispatchTouchEvent(ev)
+        }
+        override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+            super.onScrollChanged(l, t, oldl, oldt)
+            // test pictures only: who moved the bar back to the start
+            if (preview && l == 0 && oldl > 0) android.util.Log.i("TFDBG", "tabbar back to start from $oldl: " +
+                Throwable().stackTrace.drop(1).take(14).joinToString(" < ") { "${it.className.substringAfterLast('.')}.${it.methodName}:${it.lineNumber}" })
+        }
+    }
+    private var centerKey: String? = null
+    private var centerSmooth = false
+    private var centerTarget = -1
+    private var centerAt = 0L
     private val tabRow = AU.row(act)
     private val scroll = ScrollView(act)
     private val body = AU.col(act)
@@ -331,22 +353,30 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
         }
     }
 
-    /** the open section's tab in the middle of the bar (once the new tabs have their places) */
+    /** the open section's tab in the middle of the bar (done when the bar is laid out: the new tabs then have their places) */
     private fun centerTab(smooth: Boolean) {
-        val run = Runnable {
-            val v = (0 until tabRow.childCount).map { tabRow.getChildAt(it) }.firstOrNull { it.tag == tab } ?: return@Runnable
-            val max = maxOf(0, tabRow.width + tabScroll.paddingLeft + tabScroll.paddingRight - tabScroll.width)
-            val x = (v.left + tabScroll.paddingLeft - (tabScroll.width - v.width) / 2).coerceIn(0, max)
-            if (smooth) tabScroll.smoothScrollTo(x, 0) else tabScroll.scrollTo(x, 0)
-        }
-        if (tabRow.isLaidOut && !tabRow.isLayoutRequested && tabScroll.width > 0) tabScroll.post(run)
-        else tabRow.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
-            override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int) {
-                if (r - l <= 0) return
-                tabRow.removeOnLayoutChangeListener(this)
-                tabScroll.post(run)
-            }
-        })
+        centerKey = tab
+        centerSmooth = smooth
+        centerTarget = -1
+        if (preview) android.util.Log.i("TFDBG", "tabbar center $tab smooth=$smooth laidOut=${tabScroll.isLaidOut}")
+        tabScroll.requestLayout()
+    }
+
+    private fun applyCenter() {
+        val key = centerKey ?: return
+        val v = (0 until tabRow.childCount).map { tabRow.getChildAt(it) }.firstOrNull { it.tag == key } ?: return
+        val inner = tabScroll.width - tabScroll.paddingLeft - tabScroll.paddingRight
+        if (inner <= 0 || v.width <= 0 || tabRow.width <= 0) return
+        val x = (v.left + v.width / 2 - inner / 2).coerceIn(0, maxOf(0, tabRow.width - inner))
+        if (preview) android.util.Log.i("TFDBG", "tabbar place $key left=${v.left} w=${v.width} row=${tabRow.width} bar=${tabScroll.width} x=$x now=${tabScroll.scrollX}")
+        if (x == tabScroll.scrollX) { centerSmooth = true; return }
+        val now = android.os.SystemClock.uptimeMillis()
+        // already gliding there: let it finish (a new call within the glide would jump)
+        if (x == centerTarget && now - centerAt < 400) return
+        centerTarget = x; centerAt = now
+        if (centerSmooth && tabScroll.isShown) tabScroll.smoothScrollTo(x, 0) else tabScroll.scrollTo(x, 0)
+        // later moves (counts arriving, wider tabs) glide
+        centerSmooth = true
     }
 
     // ═════════════════ sections ═════════════════
