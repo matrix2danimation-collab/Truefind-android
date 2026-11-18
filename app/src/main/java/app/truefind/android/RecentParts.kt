@@ -381,27 +381,23 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
 
 /**
  * A loading block (the web's .tfr-sk / .tfpp-sk): a soft colour with a light band sweeping right to left
- * every 0.75 s — still when the phone's animations are off.
+ * every 0.75 s — still when the phone's animations are off. (The web's band: twice the block wide,
+ * base · light in the middle · base, moving one tile to the left per loop; only one band is ever in view.)
  */
 class RecentShimmer(ctx: Context, private val radiusDp: Float, private val base: Int, private val light: Int) : LoopView(ctx, 750) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val r = RectF()
-    private val m = Matrix()
-    private var band: Shader? = null
     init { importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO }
-    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
-        super.onSizeChanged(w, h, ow, oh)
-        // one tile is twice as wide as the block: base · light (at the middle) · base
-        band = LinearGradient(0f, 0f, 2f * w, 0f, intArrayOf(base, base, light, base, base), floatArrayOf(0f, .25f, .5f, .75f, 1f), Shader.TileMode.REPEAT)
-    }
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
+        if (w <= 0f || h <= 0f) return
         r.set(0f, 0f, w, h)
         val rad = min(Ui.dp(radiusDp), h / 2f)
         val f = if (Lite.reducedMotion) 0f else t
-        m.setTranslate(-2f * w * f, 0f)
-        band?.setLocalMatrix(m)
-        p.shader = band ?: run { p.color = base; null }
+        // the band's middle: from the right edge, one tile (2 × the width) to the left per loop
+        var mid = w - 2f * w * f
+        if (mid < -0.5f * w) mid += 2f * w
+        p.shader = LinearGradient(mid - 0.5f * w, 0f, mid + 0.5f * w, 0f, intArrayOf(base, light, base), floatArrayOf(0f, .5f, 1f), Shader.TileMode.CLAMP)
         c.drawRoundRect(r, rad, rad, p)
         p.shader = null
     }

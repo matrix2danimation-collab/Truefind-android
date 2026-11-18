@@ -72,7 +72,9 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
         private val cache = HashMap<String, JSONObject>()
         private var cacheToken = ""
         fun cached(id: String): JSONObject? { if (cacheToken != Api.token) { cache.clear(); cacheToken = Api.token }; return cache[id] }
-        private fun keep(id: String, p: JSONObject) { if (cacheToken != Api.token) { cache.clear(); cacheToken = Api.token }; cache[id] = p }
+        fun keep(id: String, p: JSONObject) { if (cacheToken != Api.token) { cache.clear(); cacheToken = Api.token }; cache[id] = p }
+        /** test screens only: the small card on a plain white panel (to see which drawing a test phone can't take) */
+        @Volatile var testPlain = false
 
         // components/PersonProfile.jsx N (the Profile page colours)
         val HEAD = Ui.c("#4C1D95"); val HEAD_BTN = Ui.c("#5E31AD"); val DEEP = Ui.c("#3A1478"); val ON_HEAD = Ui.c("#DCCFF5"); val DASH = Ui.c("#B9A3E6")
@@ -111,7 +113,7 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
     fun openCard() {
         val wrap = FrameLayout(ctx)
         val panel = RecentMaxWidth(ctx, 480f).apply {
-            background = SheetBg()
+            background = if (testPlain) Tf.topRound(Color.WHITE, 24f) else SheetBg()
             setPadding(Ui.dpi(18f), Ui.dpi(11f), Ui.dpi(18f), Ui.dpi(18f))
             isClickable = true
             contentDescription = row.name

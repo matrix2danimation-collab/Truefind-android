@@ -527,7 +527,17 @@ class RecentScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         val list = calls.orEmpty()
         when (what) {
             "card" -> list.firstOrNull()?.let { pick(it) }
+            // test runs: the card with its profile already there (no loading blocks); "cardplain" also without the lavender panel
+            "cardready", "cardplain" -> list.firstOrNull()?.let { r ->
+                RecentPerson.testPlain = what == "cardplain"
+                Api.invoke("follow", JSONObject().put("action", "profile").put("user_id", r.otherId)) { res ->
+                    res.data.optJSONObject("profile")?.let { RecentPerson.keep(r.otherId, it) }
+                    pick(r)
+                }
+            }
             "cardbusy" -> list.firstOrNull { it.busy }?.let { pick(it) }
+            // test runs: just the dim + a plain white panel (is it the sheet itself the test phone can't draw?)
+            "sheetonly" -> pages.layer.sheet(View(context).apply { setBackgroundColor(Color.WHITE); minimumHeight = Ui.dpi(240f) }, Color.argb(107, 28, 6, 60), 0.88f, 20f)
             "full" -> list.firstOrNull()?.let { pick(it); main.postDelayed({ person?.openFull() }, 700) }
             "fullscroll" -> list.firstOrNull()?.let { pick(it); main.postDelayed({ person?.openFull(); main.postDelayed({ person?.scrollFullToEnd() }, 900) }, 700) }
             "viewer" -> list.firstOrNull()?.let { pick(it); main.postDelayed({ person?.openFull(); main.postDelayed({ person?.openViewer(0) }, 900) }, 700) }
