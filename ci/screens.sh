@@ -171,7 +171,8 @@ if [ "$SET" = calls ]; then bash ci/calls-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = et ] || [ "$SET" = etx ]; then bash ci/expert-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # the native games (their own list of screens, from the Games work)
 if [ "$SET" = games ]; then bash ci/games-screens.sh "$APK" "$OUT"; exit 0; fi
-if [ "$SET" = fx ]; then bash ci/fx-test.sh "$APK" "$OUT"; exit 0; fi
+if [ "$SET" = fx ]; then bash ci/fx-test.sh "$APK" "$OUT" 1 6; exit 0; fi
+if [ "$SET" = fx2 ]; then bash ci/fx-test.sh "$APK" "$OUT" 7 11; exit 0; fi
 # the native sign-in pages (their own list of screens, from the Login work)
 if [ "$SET" = login ]; then bash ci/login-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then
