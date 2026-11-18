@@ -443,7 +443,8 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
         if (s == "intro" || s == "boot") {
             if (top?.onBack() == true) return true
             // nothing before Get Started: Back leaves the app (as the browser would)
-            if (!layer.host.canWebBack() && layer.preview.isEmpty()) { layer.host.finishApp(); return true }
+            // (opened from a page of the app — "Complete my profile": back to that page)
+            if (!layer.host.canWebBack() && layer.preview.isEmpty()) { if (!layer.host.backToApp()) layer.host.finishApp(); return true }
             return false
         }
         if (top?.onBack() == true) return true

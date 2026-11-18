@@ -440,6 +440,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             return
         }
         intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
+        // test runs only (ci/session-test.sh): a made-up sign-in stays, to try the change between the two modes
+        SessionWork.skipCheck = BuildConfig.SELF_UPDATE && intent?.getBooleanExtra("tf_test_nocheck", false) == true
         val pushPath = intent?.let { pushOpen(it, true) }
         val linkPath = intent?.data?.takeIf { isOurs(it) }?.let { u -> (u.encodedPath ?: "/").ifEmpty { "/" } + (u.encodedQuery?.let { "?$it" } ?: "") }
         startSession(pushPath ?: linkPath, savedInstanceState)
@@ -573,7 +575,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         note("the server no longer accepts this sign-in")
         when {
             // on the sign-in pages already: only what this phone keeps is forgotten (the page handles its own)
-            !native -> Session.clear(this)
+            !native -> { Session.clear(this); work.stop(false) }
             !leaving -> signOut(false)
             // on the way to a sign-in page (Finish profile …): that becomes the log-out
             !signingOut -> {
@@ -965,9 +967,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 webSynced = true
                 if (signingOut) {
                     // logging out: a page that still holds the old sign-in forgets it and starts again
+                    note("the web page still held the sign-in: it forgets it")
                     w.evaluateJavascript("(function(){try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}location.replace('/welcome')})()", null)
                 } else {
                     // the page lost its copy of the sign-in: it gets the app's, and opens the page again with it
+                    note("the web page gets the app's sign-in")
                     val t = JSONObject.quote(Api.token)
                     w.evaluateJavascript("(function(){try{localStorage.setItem('base44_access_token',$t);localStorage.setItem('token',$t)}catch(e){}location.reload()})()", null)
                 }

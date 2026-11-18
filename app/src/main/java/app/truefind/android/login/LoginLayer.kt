@@ -297,6 +297,8 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
     fun back() {
         backAt = SystemClock.uptimeMillis()
         if (preview.isNotEmpty()) { host.finishApp(); return }
+        // (the first sign-in page, opened from a page of the app: that page again)
+        if (!host.canWebBack() && host.backToApp()) return
         host.webBack()
     }
 

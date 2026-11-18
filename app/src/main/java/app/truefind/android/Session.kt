@@ -112,6 +112,8 @@ class SessionWork(private val ctx: Context, private val host: Host) {
     companion object {
         private const val BEAT_MS = 60_000L
         private val RETRY_WAITS = longArrayOf(700, 1500, 3000, 5000)   // about 10 s in all, as the web
+        /** test runs only (ci/session-test.sh): "who am I" is not asked, so a made-up sign-in is not thrown out */
+        @Volatile var skipCheck = false
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -188,6 +190,7 @@ class SessionWork(private val ctx: Context, private val host: Host) {
     fun retry() { if (running) check(0) }
 
     private fun check(attempt: Int) {
+        if (skipCheck) return
         val tok = token
         Api.me { r ->
             if (!running || tok != token) return@me
