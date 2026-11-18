@@ -9,7 +9,8 @@ APK="$1"; OUT="$2"; PKG=app.truefind.android
 FROM="${3:-1}"; TO="${4:-11}"; X="--es tf_preview fx --ei tf_fx_from $FROM --ei tf_fx_to $TO"
 mkdir -p "$OUT"
 # every phone command has a time limit (a stopped test phone must never hold the test up)
-adb() { timeout 120 command adb "$@"; }
+ADB="$(command -v adb)"
+adb() { timeout 120 "$ADB" "$@"; }
 timeout 240 adb install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
 adb shell settings put global hide_error_dialogs 1
