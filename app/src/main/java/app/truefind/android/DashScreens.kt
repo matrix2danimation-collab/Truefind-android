@@ -37,6 +37,16 @@ object DashK {
     fun plain(v: Any?): String { val n = num(v); return if (abs(n) >= 100) inFmt(0).format(floor(n)) else inFmt(2).format(Math.round(n * 100) / 100.0) }
     fun inr(v: Any?) = "₹ ${plain(v)}"
 
+    private const val ST = "fill=\"none\" stroke=\"#6C2BD9\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
+    val ICON_CALL = "<svg viewBox=\"0 0 24 24\"><path d=\"M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15.5 15.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z\" $ST/></svg>"
+    val ICON_VIDEO = "<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"6.5\" width=\"12.5\" height=\"11\" rx=\"2.5\" $ST/><path d=\"M15.5 10.5l5-3v9l-5-3\" $ST/></svg>"
+    val ICON_TIME = "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8.5\" $ST/><path d=\"M12 7.5V12l3 2\" $ST/></svg>"
+    val ICON_GIFT = "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"10.5\" width=\"16\" height=\"9.5\" rx=\"1.5\" $ST/><path d=\"M3 7.5h18v3H3zM12 7.5V20M12 7.5c-1.5-4-6-3.5-5-1 .5 1 2.5 1 5 1zm0 0c1.5-4 6-3.5 5-1-.5 1-2.5 1-5 1z\" $ST/></svg>"
+
+
+    /** stroke style of Secret Dating Earning's icons */
+    const val SE = "fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
+
     /** zoomed text */
     fun t(ctx: Context, m: Zm, s: CharSequence, size: Float, color: Int, bold: Boolean = false, lh: Float = 0f): TextView = EtText(ctx).apply {
         text = s; includeFontPadding = false
@@ -136,7 +146,6 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         wrap.addView(column, FrameLayout.LayoutParams(m.pi(390f), -2, Gravity.CENTER_HORIZONTAL))
         scroll.addView(wrap, FrameLayout.LayoutParams(-1, -2))
         addView(scroll, LayoutParams(-1, -1))
-        render()
     }
 
     fun setShown(on: Boolean) {
@@ -144,6 +153,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         shown = on
         visibility = if (on) VISIBLE else GONE
         if (on && !was) {
+            render()
             if (!pages.signedIn) return
             load()
             listen()
@@ -314,12 +324,6 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         layoutParams = LinearLayout.LayoutParams(-2, m.pi(22f))
     }
 
-    private val S = "fill=\"none\" stroke=\"#6C2BD9\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
-    private val ICON_CALL get() = "<svg viewBox=\"0 0 24 24\"><path d=\"M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15.5 15.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z\" $S/></svg>"
-    private val ICON_VIDEO get() = "<svg viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"6.5\" width=\"12.5\" height=\"11\" rx=\"2.5\" $S/><path d=\"M15.5 10.5l5-3v9l-5-3\" $S/></svg>"
-    private val ICON_TIME get() = "<svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"8.5\" $S/><path d=\"M12 7.5V12l3 2\" $S/></svg>"
-    private val ICON_GIFT get() = "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"10.5\" width=\"16\" height=\"9.5\" rx=\"1.5\" $S/><path d=\"M3 7.5h18v3H3zM12 7.5V20M12 7.5c-1.5-4-6-3.5-5-1 .5 1 2.5 1 5 1zm0 0c1.5-4 6-3.5 5-1-.5 1-2.5 1-5 1z\" $S/></svg>"
-
     private fun talkTime(sec: Double): String { val mm = floor(sec / 60).toLong(); return if (mm >= 60) "${mm / 60}h ${mm % 60}m" else "${mm}m" }
 
     private fun stats(data: JSONObject?, loading: Boolean, creator: Boolean): View {
@@ -327,9 +331,9 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         val st = data?.optJSONObject("stats")
         val n = if (loading || creator) 4 else 3
         val g = EtGrid(ctx, n, m.pi(8f))
-        val items = mutableListOf(Triple(ICON_CALL, DashK.plain(st?.opt("voice_calls")), "Calls"), Triple(ICON_VIDEO, DashK.plain(st?.opt("video_calls")), "Video"),
-            Triple(ICON_TIME, talkTime(DashK.num(st?.opt("talk_seconds"))), "Talk time"))
-        if (loading || creator) items.add(Triple(ICON_GIFT, DashK.plain(st?.opt("gifts")), "Gifts"))
+        val items = mutableListOf(Triple(DashK.ICON_CALL, DashK.plain(st?.opt("voice_calls")), "Calls"), Triple(DashK.ICON_VIDEO, DashK.plain(st?.opt("video_calls")), "Video"),
+            Triple(DashK.ICON_TIME, talkTime(DashK.num(st?.opt("talk_seconds"))), "Talk time"))
+        if (loading || creator) items.add(Triple(DashK.ICON_GIFT, DashK.plain(st?.opt("gifts")), "Gifts"))
         for ((ic, v, l) in items) {
             val c = DashK.col(ctx, m, 2f, Gravity.CENTER).apply { background = DashK.box(m, Color.WHITE, 16f, DashK.LINE) }
             c.addView(DashK.svg(ctx, m, ic, 22f))
@@ -550,12 +554,11 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
         }
     }
 
-    private val S = "fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
     private fun icon(kind: String, c: String) = "<svg viewBox=\"0 0 24 24\">" + when (kind) {
-        "heart" -> "<path d=\"M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z\" stroke=\"$c\" $S/>"
-        "renew" -> "<path d=\"M19.5 12a7.5 7.5 0 0 1-13 5.1M4.5 12a7.5 7.5 0 0 1 13-5.1\" stroke=\"$c\" $S/><path d=\"M17.5 3.5v3.5H14M6.5 20.5V17H10\" stroke=\"$c\" $S/>"
-        "gift" -> "<rect x=\"4\" y=\"10.5\" width=\"16\" height=\"9.5\" rx=\"1.5\" stroke=\"$c\" $S/><path d=\"M3 7.5h18v3H3zM12 7.5V20M12 7.5c-1.5-4-6-3.5-5-1 .5 1 2.5 1 5 1zm0 0c1.5-4 6-3.5 5-1-.5 1-2.5 1-5 1z\" stroke=\"$c\" $S/>"
-        else -> "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2\" stroke=\"$c\" $S/><path d=\"M8 10.5V8a4 4 0 0 1 8 0v2.5\" stroke=\"$c\" $S/>"
+        "heart" -> "<path d=\"M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z\" stroke=\"$c\" ${DashK.SE}/>"
+        "renew" -> "<path d=\"M19.5 12a7.5 7.5 0 0 1-13 5.1M4.5 12a7.5 7.5 0 0 1 13-5.1\" stroke=\"$c\" ${DashK.SE}/><path d=\"M17.5 3.5v3.5H14M6.5 20.5V17H10\" stroke=\"$c\" ${DashK.SE}/>"
+        "gift" -> "<rect x=\"4\" y=\"10.5\" width=\"16\" height=\"9.5\" rx=\"1.5\" stroke=\"$c\" ${DashK.SE}/><path d=\"M3 7.5h18v3H3zM12 7.5V20M12 7.5c-1.5-4-6-3.5-5-1 .5 1 2.5 1 5 1zm0 0c1.5-4 6-3.5 5-1-.5 1-2.5 1-5 1z\" stroke=\"$c\" ${DashK.SE}/>"
+        else -> "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2\" stroke=\"$c\" ${DashK.SE}/><path d=\"M8 10.5V8a4 4 0 0 1 8 0v2.5\" stroke=\"$c\" ${DashK.SE}/>"
     } + "</svg>"
     private fun hex(c: Int) = String.format("#%06X", 0xFFFFFF and c)
 
