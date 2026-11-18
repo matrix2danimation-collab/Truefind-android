@@ -302,7 +302,9 @@ class LiveScreensTest {
         back(); pause(600)
 
         // ── header ──
-        tap("Copy Room ID"); pause(500)
+        // (no "Copy Room ID" tap here: the test emulator runs without a window, and both runs that copied
+        // to its clipboard lost the emulator at about that moment; copying is checked on a real phone)
+        check(has("Copy Room ID"), "Copy Room ID missing")
         tap("Share room"); pause(300)
         check(a.shared.any { it.contains("TF-482913") }, "share text has no Room ID")
         tap("Follow room"); pause(900)
