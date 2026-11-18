@@ -41,6 +41,8 @@ import org.json.JSONObject
  *  - Secret Dating is drawn natively too: Home (/secret-app), Online Map (/dating)
  *    and Chats (/secret-app?tab=chat) in SecretHome, above the web's own Secret
  *    Dating bar; one chat (/chat/:id) in ChatRoom, over the whole screen.
+ *  - The Wallet is native too (WalletScreen), full screen, whenever the address
+ *    is /wallet (True Find and Secret Dating wallets, Earnings, payments).
  */
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
@@ -55,6 +57,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var secret: SecretHome
     private lateinit var pages: NativePages
     private var chatRoom: ChatRoom? = null
+    private lateinit var wallet: WalletScreen
+    private var walletPreviewing = false
     private var path = "/"
     private var search = ""
     /** an address the web sent while a native tap was leading (applied when the lead ends) */
@@ -166,18 +170,26 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         var lastH = 0
         root.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ -> val h = bottom - top; if (h != lastH) { lastH = h; root.post { update() } } }
 
+        wallet = WalletScreen(this, { p, state -> openWeb(p, state) }, { walletBack() }, { url -> openWalletCheckout(url) }, { app -> walletAddress(app) })
+        wallet.visibility = View.GONE
+        root.addView(wallet, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 chatRoom?.let { r -> if (r.visibility == View.VISIBLE) { if (!r.back()) chatBack(); return } }
+                if (wallet.visibility == View.VISIBLE && wallet.onBack()) return
                 if (pages.onBack()) return
                 if (explore.visibility == View.VISIBLE && explore.onBack()) return
                 if (secret.visibility == View.VISIBLE && secret.back()) return
-                if (preview.isNotEmpty()) { finish(); return }
+                if (preview.isNotEmpty() || walletPreviewing) { finish(); return }
                 if (web.canGoBack()) web.goBack() else finish()
             }
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
+        // test mode (emulator pictures on GitHub only): the native Wallet with made-up data
+        val walletScene = intent?.getStringExtra("tf_wallet").orEmpty()
+        if (walletScene.isNotEmpty() && BuildConfig.SELF_UPDATE) { startWalletPreview(walletScene); return }
         // test mode (emulator screenshots on GitHub only): a native screen with made-up data, no web page
         preview = intent?.getStringExtra("tf_preview").orEmpty()
         if (preview.isNotEmpty() && BuildConfig.SELF_UPDATE) { startPreview(); return }
@@ -314,6 +326,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val q = path.indexOf('?')
         this.path = if (q >= 0) path.substring(0, q) else path
         this.search = if (q >= 0) path.substring(q) else ""
+        wallet.wantsWeb = false // back in the app after the plan payment page
         update()
     }
 
@@ -329,6 +342,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     private fun update() {
+        if (walletPreviewing) return
         if (preview.isNotEmpty()) return
         val navTop = pages.update(Api.token.isNotEmpty())
         val p = path.trimEnd('/')
@@ -363,6 +377,44 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }
         if (showSecret != (secret.visibility == View.VISIBLE)) web.evaluateJavascript("document.documentElement.classList.${if (showSecret) "add" else "remove"}('tfsd')", null)
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
+        // native Wallet: full screen (the web hides its bottom bar on /wallet)
+        val showWallet = path.trimEnd('/') == "/wallet" && !cover && Api.token.isNotEmpty() && !wallet.wantsWeb
+        if (showWallet != (wallet.visibility == View.VISIBLE)) web.evaluateJavascript(walletCss(showWallet), null)
+        wallet.setShown(showWallet, search.removePrefix("?"))
+    }
+
+    /** While the native Wallet is on screen, the web page's own Wallet (.tfw) is not drawn. */
+    private fun walletCss(on: Boolean) = "(function(){var d=document;if(!d.getElementById('tfwl-css')){var s=d.createElement('style');s.id='tfwl-css';" +
+        "s.textContent='html.tfwl .tfw{display:none!important}';(d.head||d.documentElement).appendChild(s);}" +
+        "d.documentElement.classList.toggle('tfwl',$on);})();"
+
+    /** The Wallet's back arrow: the web's navigate(-1), or Home when the Wallet was the first page. */
+    private fun walletBack() {
+        web.evaluateJavascript("(function(){var s=history.state||{};if(s.key&&s.key!=='default'){history.back();}else if(window.__tfGo){window.__tfGo('/',null);}})();", null)
+    }
+
+    /** Keeps ?app=secret in the address when the Wallet switches (as the web page does). */
+    private fun walletAddress(app: String) {
+        web.evaluateJavascript("(function(){try{if(location.pathname.replace(/\\/+$/,'')!=='/wallet')return;var u=new URL(location.href);" +
+            "if(${JSONObject.quote(app)}==='secret')u.searchParams.set('app','secret');else u.searchParams.delete('app');" +
+            "history.replaceState(history.state,'',u.pathname+u.search+u.hash);}catch(e){}})();", null)
+    }
+
+    /** Secret Dating plan payment: the payment page opens in the web view; back in the app it returns to /wallet. */
+    private fun openWalletCheckout(url: String) {
+        wallet.wantsWeb = true
+        update()
+        web.loadUrl(url)
+    }
+
+    /** Test mode: the native Wallet with made-up data (WalletDemo), no web page, no login. */
+    private fun startWalletPreview(scene: String) {
+        walletPreviewing = true
+        web.loadUrl("about:blank")
+        wallet.source = WalletDemo(scene)
+        wallet.setShown(true, if (scene.startsWith("secret")) "app=secret" else "")
+        val open = intent.getStringExtra("tf_open").orEmpty()
+        if (open.isNotEmpty()) root.postDelayed({ wallet.previewOpen(open) }, 2500)
     }
 
     /** Test mode: open a native screen with made-up data (Demo) and, after a moment, one of its pop-ups. */
@@ -427,7 +479,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret.onAppVisible(true)
         pages.onAppVisible(true)
         chatRoom?.onAppVisible(true)
-        if (preview.isEmpty()) updater.check() // test builds: "Update available" when GitHub has a newer APK
+        wallet.onAppVisible(true)
+        if (preview.isEmpty() && !walletPreviewing) updater.check() // test builds: "Update available" when GitHub has a newer APK
     }
 
     override fun onPause() {
@@ -435,6 +488,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret.onAppVisible(false)
         pages.onAppVisible(false)
         chatRoom?.onAppVisible(false)
+        wallet.onAppVisible(false)
         CookieManager.getInstance().flush()
         super.onPause()
     }

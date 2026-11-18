@@ -66,6 +66,8 @@ shot() {
   { echo "== $name"; adb shell dumpsys gfxinfo $PKG | grep -E "Total frames|Janky|percentile|Number "; } >> "$OUT/frames.txt"
   case "$mode" in anim*) anims 0 ;; esac
 }
+# the native Wallet (its own list of screens, from the Wallet work)
+if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"
