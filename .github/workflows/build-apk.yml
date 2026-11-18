@@ -19,7 +19,10 @@ jobs:
       # which emulator photo sets to take this time (ci/sets.json, e.g. ["home","chat"])
       - name: Photo sets
         id: sets
-        run: echo "list=$(cat ci/sets.json 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
+        # a work branch with its own list (ci/sets-<branch>.json) photographs only its own screens
+        run: |
+          f="ci/sets-${{ github.ref_name }}.json"; [ -f "$f" ] || f=ci/sets.json
+          echo "list=$(cat "$f" 2>/dev/null || echo '["home","chat"]')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
         with:
@@ -141,9 +144,10 @@ jobs:
         if: always()
         run: |
           cd shots
-          if [ "${{ matrix.set }}" = home ] && [ "${{ github.ref_name }}" != calls-native ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-all-native.apk; fi
-          # the calls work branch keeps its own pictures (screens-calls-…), so the combined branch's stay as they are
-          B=screens-all-${{ matrix.set }}; [ "${{ github.ref_name }}" = calls-native ] && B=screens-calls-${{ matrix.set }}
+          if [ "${{ matrix.set }}" = home ] && [ -f ../TrueFind-test.apk ]; then cp ../TrueFind-test.apk ./TrueFind-all-native.apk; fi
+          # a work branch with its own list keeps its pictures on its own "screens-<branch>-<set>" branch
+          B=screens-all-${{ matrix.set }}
+          [ -f "../ci/sets-${{ github.ref_name }}.json" ] && B="screens-${{ github.ref_name }}-${{ matrix.set }}"
           git init -q && git checkout -q -b "$B"
           echo "${{ github.ref_name }} ${{ github.sha }}" > FROM.txt
           git add -A && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "screens ${{ github.ref_name }} ${{ github.sha }}"

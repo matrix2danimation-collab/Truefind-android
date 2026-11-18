@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- the incoming call's buzz (with the phone's ringtone) -->
+    <!-- the phone buzzes: an incoming call (with the ringtone), a member calling an expert -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Secret Dating map / nearby -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

@@ -21,6 +21,8 @@ import org.json.JSONObject
  *   /, /home            → Home              /profile[?…]          → Profile
  *   /profile/edit       → Edit your profile  /register/verification → Verification
  *   /, /home, /explore, /chats → the bottom bar (the web's own bar is hidden there)
+ *   /expert-talk        → Expert Talk (member side or the expert's panel)
+ *   /dashboard          → My Dashboard        /secret-earnings      → Secret Dating Earning
  * The web page under a native screen is hidden (not removed), and any web
  * pop-up that must be seen (incoming call, after-call sheet, a dialog on
  * Recent, maintenance …) puts the native screens aside until it closes.
@@ -50,8 +52,25 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     + 'html.tfpn .tfp-root{visibility:hidden!important}html.tfbn .tfb{visibility:hidden!important}html.tfvn .tfv{visibility:hidden!important}'
     // In the app a tab switch is instant (as in other Android apps): the web's 0.3 s tab slide
     // stuttered on phones and showed half-moved pages; the page going out is simply hidden.
-    + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}';
+    + '.tf-pg-in,.tf-pg-out{animation:none!important}.tf-pg-out{visibility:hidden!important}'
+    // Expert Talk, My Dashboard and Secret Dating Earning are drawn by the app: the web's own pages stay hidden
+    + 'html.tfetn .et{display:none!important}html.tfdbn .tfd{display:none!important}html.tfsen .tfs{display:none!important}';
   (document.head || document.documentElement).appendChild(css);
+  // While the app draws one of those pages, the hidden web page under it must not ask the server too
+  // (and Expert Talk's hidden web page must never open a second voice call): its requests are held.
+  var HELD = { expertTalk: 'tfetn', getDashboard: 'tfdbn', getSecretEarnings: 'tfsen' };
+  function held(u){
+    try { var m = /\/functions\/([A-Za-z0-9_]+)/.exec(String(u || '')); var c = m && HELD[m[1]]; return !!c && document.documentElement.classList.contains(c); } catch(e){ return false; }
+  }
+  try {
+    var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+    // the hidden web Dashboard, whose held requests time out, would report "Dashboard load failed" as an error: not sent
+    function falseReport(u, b){ return /\/functions\/logClientError/.test(String(u || '')) && typeof b === 'string' && b.indexOf('Dashboard load failed') >= 0 && document.documentElement.classList.contains('tfdbn'); }
+    XMLHttpRequest.prototype.open = function(m, u){ this.__tfHeld = held(u); this.__tfUrl = u; return xo.apply(this, arguments); };
+    XMLHttpRequest.prototype.send = function(b){ if (this.__tfHeld || falseReport(this.__tfUrl, b)) return; return xs.apply(this, arguments); };
+    var f0 = window.fetch;
+    if (f0) window.fetch = function(i, o){ var u = typeof i === 'string' ? i : (i && i.url) || ''; if (held(u) || falseReport(u, o && o.body)) return new Promise(function(){}); return f0.apply(this, arguments); };
+  } catch(e){}
   // The app's own router (React Router's navigator), so a native tap opens a page
   // exactly like a tap in the web app (push / replace, with its state).
   var navCache = null;
@@ -172,13 +191,16 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val profile = ProfileScreen(act, this)
     val builder = BuilderScreen(act, this)
     val verify = VerifyScreen(act, this)
+    val expert = ExpertTalkScreen(act, this)
+    val dash = DashboardScreen(act, this)
+    val earn = SecretEarningsScreen(act, this)
     /** the native calls (when the web page hands its calls over) */
     var calls: CallManager? = null
     private val callPill = CallPill(act) {
         val c = calls
         if (c != null && c.enabled) c.returnToCall() else web.evaluateJavascript("window.__tfReturnCall && window.__tfReturnCall()", null)
     }
-    private val screens: List<View> get() = listOf(home, profile, builder, verify)
+    private val screens: List<View> get() = listOf(home, profile, builder, verify, expert, dash, earn)
     /** the full pages this part shows (for the move between pages) */
     val pageViews: List<View> get() = screens
     /** the Daily Free Coins pop-up while it is open */
@@ -272,9 +294,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     private fun shownNatively(p: String, q: String): Boolean =
         p == "/" || p == "/profile" || p == "/profile/edit" || p == "/register/verification" || p == "/explore" ||
             p == "/secret-app" || p == "/dating" || p.startsWith("/chat/") ||
-            // the native Wallet and Games open at the tap too (the web catches up underneath)
-            p == "/wallet" || p == "/games" || p.startsWith("/games/") || p == "/wallet" ||
-            p == "/dance" || p.startsWith("/dance/")
+            // the native Wallet, Games, Live Dance, Expert Talk, Dashboard and Earnings open at the tap too
+            p == "/wallet" || p == "/games" || p.startsWith("/games/") ||
+            p == "/dance" || p.startsWith("/dance/") || p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings"
     /** Switches the native screens to [target] now (only when a native screen shows it). */
     fun lead(target: String, state: JSONObject?) {
         if (preview.isNotEmpty() || !gotState || !signedIn || cover) return
@@ -295,6 +317,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     val onProfile: Boolean get() = p() == "/profile"
     val onBuilder: Boolean get() = p() == "/profile/edit"
     val onVerify: Boolean get() = p() == "/register/verification"
+    val onExpert: Boolean get() = p() == "/expert-talk"
+    val onDash: Boolean get() = p() == "/dashboard"
+    val onEarn: Boolean get() = p() == "/secret-earnings"
 
     /** the bottom bar is on screen */
     var navShown = false; private set
@@ -312,12 +337,18 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val showProfile = live && onProfile && !cover
         val showBuilder = live && onBuilder && !cover
         val showVerify = live && onVerify && !cover
+        val showExpert = live && onExpert && !cover
+        val showDash = live && onDash && !cover
+        val showEarn = live && onEarn && !cover
         // the web's own pages under the native ones stay hidden (not removed)
         setClass("tfnn", live && NAV_ON.contains(p()))
         setClass("tfhn", live && onHome)
         setClass("tfpn", live && onProfile)
         setClass("tfbn", live && onBuilder)
         setClass("tfvn", live && onVerify)
+        setClass("tfetn", live && onExpert)
+        setClass("tfdbn", live && onDash)
+        setClass("tfsen", live && onEarn)
         navShown = showNav
         nav.visibility = if (showNav) View.VISIBLE else View.GONE
         nav.current = when (p()) { "/", "/home" -> "home"; "/explore" -> "explore"; "/chats" -> "recent"; else -> "" }
@@ -332,7 +363,10 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         profile.setShown(showProfile, search, usr)
         builder.setShown(showBuilder)
         verify.setShown(showVerify)
-        if (!(showHome || showProfile || showBuilder || showVerify)) layer.closeAll()
+        expert.setShown(showExpert)
+        dash.setShown(showDash)
+        earn.setShown(showEarn, search)
+        if (!(showHome || showProfile || showBuilder || showVerify || showExpert || showDash || showEarn)) layer.closeAll()
         // "Call in progress · Return": the app's own (native calls: on every page but games, rooms and calls),
         // else the web's pill under the native screens
         val cm = calls
@@ -433,6 +467,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         if (profile.visibility == View.VISIBLE && profile.onBack()) return true
         if (verify.visibility == View.VISIBLE && verify.onBack()) return true
         if (builder.visibility == View.VISIBLE && builder.onBack()) return true
+        if (expert.visibility == View.VISIBLE && expert.onBack()) return true
         return false
     }
 
@@ -441,6 +476,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         home.onAppVisible(v)
         profile.onAppVisible(v)
         verify.onAppVisible(v)
+        expert.onAppVisible(v)
+        dash.onAppVisible(v)
     }
 
     // ═════════════════ test mode (emulator screenshots on GitHub only) ═════════════════
@@ -477,6 +514,14 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             }
             what.startsWith("builder") -> { path = "/profile/edit"; builder.setShown(true) }
             what.startsWith("verify") -> { path = "/register/verification"; verify.setShown(true) }
+            what.startsWith("et") -> {
+                path = "/expert-talk"; signedIn = true; gotState = true
+                app.truefind.android.games.GameApi.demo = true
+                EtDemo.on = true; EtDemo.expert = what == "et-expert"
+                expert.setShown(true)
+            }
+            what.startsWith("dash") -> { path = "/dashboard"; signedIn = true; EtDemo.on = true; EtDemo.creator = what == "dash-creator"; dash.setShown(true) }
+            what.startsWith("earn") -> { path = "/secret-earnings"; signedIn = true; EtDemo.on = true; earn.setShown(true, if (what == "earn-admin") "?creator=demo-c1" else "") }
         }
         // "?settings=apply|form": the address, then a test action on that screen
         val action = if (open.startsWith("?")) open.substringAfter("|", "") else open
@@ -487,6 +532,9 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
                 what.startsWith("profile") -> profile.previewOpen(action)
                 what.startsWith("verify") -> verify.previewOpen(action)
                 what.startsWith("builder") -> builder.previewOpen(action)
+                what.startsWith("et") -> expert.previewOpen(action)
+                what.startsWith("dash") -> dash.previewOpen(action)
+                what.startsWith("earn") -> earn.previewOpen(action)
             }
         }, 3500)
     }

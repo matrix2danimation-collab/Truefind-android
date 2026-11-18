@@ -751,7 +751,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     private fun startPreview() {
         if (preview == "fx") { startFxTest(); return }
-        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify")) {
+        if (preview.startsWith("home") || preview.startsWith("nav") || preview.startsWith("profile") || preview.startsWith("builder") || preview.startsWith("verify") ||
+            preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             web.loadUrl("about:blank")
             watchFrames()
