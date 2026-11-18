@@ -2,16 +2,16 @@
 # Signed out ⇄ signed in, on the test phone against the real server. No account is used: the "sign-in" is a
 # made-up one the server does not know (the app is told not to ask the server about it, except in part 5).
 #  1. a fresh install opens: no sign-in on the phone → the sign-in web page is made (hidden) and the app's
-#     own "Get Started" page shows over it                                             → s01-get-started.png
-#  2. a sign-in is put on the phone: the app opens straight into its own pages, no web page → s02-own-pages.png
-#  3. a sign-in page is opened from inside the app (as "Complete my profile" does): the web page is made and
-#     gets the app's sign-in, the native sign-in page shows                            → s03-sign-in-page.png
-#     Back: the app's page again, the web page goes                                    → s04-back-in-the-app.png
-#  4. the sign-in is kept in the web page's storage only (as on every phone signed in before this version):
-#     the app opens, takes it over from the web page, shows its own pages, the web page goes → s05-taken-over.png
+#     own "Get Started" page shows over it                                               → s01-get-started.png
+#  2. signing in ends: the web page gets a sign-in and opens Home (what a finished sign-in does, and what a
+#     phone signed in before this version looks like when it opens): the app takes the sign-in over, shows
+#     its own pages and the web page goes                                                → s02-taken-over.png
+#  3. opened again: the sign-in is kept by the app → straight into its own pages, no web page → s03-own-pages.png
+#  4. a sign-in page is opened from inside the app (as "Complete my profile" does): the web page is made
+#     with the app's sign-in and the native sign-in page shows                           → s04-sign-in-page.png
 #  5. opened normally: the server answers "not signed in" → the app signs out by itself (the web page is
-#     made, the server's log-out runs, "Get Started" shows)                            → s06-signed-out.png
-#  6. opened once more: nothing is kept anywhere → "Get Started" again                 → s07-opened-again.png
+#     made, the server's log-out runs, "Get Started" shows)                              → s05-signed-out.png
+#  6. opened once more: nothing is kept anywhere → "Get Started" again                   → s06-opened-again.png
 # session-log.txt: what the app wrote about each change ("mode: …"); problems.txt: what did not happen.
 APK="$1"; OUT="$2"; PKG=app.truefind.android
 mkdir -p "$OUT"
@@ -42,7 +42,7 @@ open() {
   adb shell am start -W -n $PKG/.MainActivity "$@" >> "$OUT/start.txt" 2>&1
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
 }
-# what the app keeps on the phone (its private file), with the sign-in itself left out of the copy
+# what the app keeps on the phone (its private file); the copies for reading leave the sign-in itself out
 kept() { adb shell run-as $PKG cat shared_prefs/tf_session.xml 2>&1 | tr -d '\r'; }
 copy_kept() { kept | sed 's#\(name="token">\)[^<]*#\1(a sign-in)#' > "$OUT/$1"; }
 put() {   # stdin: the file's new text
@@ -54,6 +54,16 @@ put() {   # stdin: the file's new text
   fi
   rm -f "$OUT/.put.xml"
 }
+# one line of JavaScript in the app's web page (debug builds let the test phone's tools reach it)
+in_page() {
+  local pid; pid=$(adb shell pidof $PKG | tr -d '\r ')
+  [ -n "$pid" ] || { echo "(the app is not running)"; return 1; }
+  adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null 2>&1 || { echo "(no way into the web page)"; return 1; }
+  timeout 60 python3 "$(dirname "$0")/devtools.py" 9222 "$1" 2>&1
+  local r=$?
+  adb forward --remove tcp:9222 > /dev/null 2>&1
+  return $r
+}
 
 # ── 1. a fresh install ──
 PART=1
@@ -64,64 +74,64 @@ waitlog "mode: sign-in page shown" 150 && sleep 6
 shot s01-get-started
 keep
 
-# ── 2. a sign-in on the phone: straight into the app's own pages ──
+# ── 2. a sign-in ends in the web page: the app takes it over ──
 PART=2
 adb shell am force-stop $PKG
 sleep 1
 copy_kept kept-1-after-first-open.txt
-if ! kept | grep -q 'name="app_id"'; then
-  echo "part 2: the app did not keep the app's id from the sign-in page (kept-1-after-first-open.txt)" >> "$OUT/problems.txt"
-  exit 0
+kept | grep -q 'name="app_id"' || echo "part 2: the app did not keep the app's id from the sign-in page (kept-1-after-first-open.txt)" >> "$OUT/problems.txt"
+open $NOCHECK
+waitlog "mode: sign-in page shown" 150 && sleep 3
+{ echo "== where the web page is"; in_page "location.pathname + ' · sign-in kept: ' + !!localStorage.getItem('base44_access_token')"; } >> "$OUT/web-page.txt" 2>&1
+{ echo "== the sign-in is given to the web page, which opens Home"
+  in_page "(function(){try{localStorage.setItem('base44_access_token','$TOKEN');localStorage.setItem('token','$TOKEN')}catch(e){return 'storage: '+e}setTimeout(function(){location.replace('/home')},50);return 'given'})()"; } >> "$OUT/web-page.txt" 2>&1
+TOOK=no
+if waitlog "mode: signed in on the web page" 90; then
+  TOOK=yes
+  waitlog "mode: native" 20
+  waitlog "mode: web page gone" 20 && sleep 4
 fi
-kept | sed "s#</map>#    <string name=\"token\">$TOKEN</string>\n</map>#" | put
-if ! kept | grep -q 'name="token"'; then echo "part 2: the test sign-in could not be put on the phone" >> "$OUT/problems.txt"; exit 0; fi
+shot s02-taken-over
+keep
+adb shell am force-stop $PKG
+sleep 1
+copy_kept kept-2-after-take-over.txt
+if [ $TOOK = yes ]; then
+  kept | grep -q 'name="token"' || echo "part 2: the app did not keep the sign-in it took over from the web page" >> "$OUT/problems.txt"
+fi
+# (the next parts need a sign-in on the phone either way)
+if ! kept | grep -q 'name="token"'; then
+  kept | sed "s#</map>#    <string name=\"token\">$TOKEN</string>\n</map>#" | put
+fi
+if ! kept | grep -q 'name="token"'; then echo "part 3: the test sign-in could not be put on the phone" >> "$OUT/problems.txt"; exit 0; fi
+
+# ── 3. opened again: the app's own sign-in, no web page ──
+PART=3
 open $NOCHECK
 waitlog "mode: start: sign-in kept on this phone" 60
 waitlog "mode: native" 20 && sleep 4
-said "mode: web page made" && echo "part 2: a web page was made although the phone had a sign-in" >> "$OUT/problems.txt"
-shot s02-own-pages
+said "mode: web page made" && echo "part 3: a web page was made although the phone had a sign-in" >> "$OUT/problems.txt"
+shot s03-own-pages
 keep
 
-# ── 3. a sign-in page opened from inside the app, and Back ──
-PART=3
+# ── 4. a sign-in page opened from inside the app ──
+PART=4
 adb logcat -c
 adb shell am start -n $PKG/.MainActivity -a android.intent.action.VIEW -d "https://true-find.base44.app/welcome" >> "$OUT/start.txt" 2>&1
 waitlog "mode: leaving for the sign-in page /welcome" 30
 waitlog "mode: web page made" 30
-waitlog "mode: the web page gets the app's sign-in" 90
-waitlog "mode: the sign-in pages lead" 150 && sleep 6
-shot s03-sign-in-page
-for i in 1 2 3; do
-  adb shell input keyevent 4
-  waitlog "mode: Back on the sign-in page" 8 quiet && break
-done
-waitlog "mode: Back on the sign-in page: the app's page again" 3
-waitlog "mode: web page gone" 20 && sleep 4
-shot s04-back-in-the-app
+waitlog "mode: the sign-in pages lead" 150 && sleep 5
+shot s04-sign-in-page
 keep
-
-# ── 4. the sign-in only in the web page's storage: the app takes it over ──
-PART=4
-sleep 12   # (the web page's storage is written to the phone a few seconds after it changes)
-adb shell am force-stop $PKG
-sleep 1
-kept | grep -v 'name="token"' | put
-if kept | grep -q 'name="token"'; then echo "part 4: the app's own copy of the sign-in could not be taken away" >> "$OUT/problems.txt"; fi
-open $NOCHECK
-waitlog "mode: start: no sign-in on this phone" 60
-waitlog "mode: web page made" 30
-waitlog "mode: signed in on the web page" 150
-waitlog "mode: native" 20
-waitlog "mode: web page gone" 20 && sleep 4
-shot s05-taken-over
-keep
-adb shell am force-stop $PKG
-sleep 1
-copy_kept kept-4-after-take-over.txt
-kept | grep -q 'name="token"' || echo "part 4: the app did not keep the sign-in it took over from the web page" >> "$OUT/problems.txt"
 
 # ── 5. opened normally: the server does not know this sign-in → the app signs out by itself ──
 PART=5
+adb shell am force-stop $PKG
+sleep 1
+# (the web page has thrown the made-up sign-in away by now, and the app with it: it is put back for this part)
+if ! kept | grep -q 'name="token"'; then
+  kept | sed "s#</map>#    <string name=\"token\">$TOKEN</string>\n</map>#" | put
+fi
 open
 waitlog "mode: start: sign-in kept on this phone" 60
 waitlog "mode: the server no longer accepts this sign-in" 90
@@ -129,7 +139,7 @@ waitlog "mode: signing out" 30
 waitlog "mode: web page made" 30
 waitlog "mode: the sign-in pages lead" 150
 waitlog "mode: sign-in page shown" 60 && sleep 6
-shot s06-signed-out
+shot s05-signed-out
 keep
 adb shell am force-stop $PKG
 sleep 1
@@ -142,7 +152,7 @@ open
 waitlog "mode: start: no sign-in on this phone" 60
 waitlog "mode: sign-in page shown" 150 && sleep 6
 said "mode: signed in on the web page" && echo "part 6: the web page still held the sign-in after signing out" >> "$OUT/problems.txt"
-shot s07-opened-again
+shot s06-opened-again
 keep
 
 timeout 30 "$ADB" logcat -d -b crash > "$OUT/crash-log.txt" 2>/dev/null

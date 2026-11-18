@@ -982,7 +982,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Api.token = token
         if (newLogin) returnTo = null
         // signed out on a sign-in page (Log out there, the server's log-out): this phone forgets the sign-in too
-        if (token.isEmpty() && (newLogin || Session.has(this))) { Session.clear(this); work.stop(false) }
+        if (token.isEmpty() && (newLogin || Session.has(this))) { note("the web page says: signed out"); Session.clear(this); work.stop(false) }
         tokenChanged()
         calls.signedIn(token)
         this.navTopCss = navTopCss
