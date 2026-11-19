@@ -154,6 +154,11 @@ class WalletScreen(
     private var tfCoins: Double? = null
     private var claimingIntro = false
     private var me: JSONObject? = null
+    // What the page was last drawn from (per wallet, and the own profile). Coming back to the Wallet asks the
+    // server again; when the answer is the very same, nothing is built again. (Before, the whole page was built
+    // twice on every visit — the owner's phone, 19 Nov: 14 of the Wallet's 51 frames late, the longest 262 ms.)
+    private val drawnFrom = HashMap<String, String>()
+    private var drawnMe: String? = null
     private var isAdmin = false
     private var tab = "coins"
     private var reqId = 0
@@ -384,7 +389,7 @@ class WalletScreen(
     }
 
     /** getWallet for the wallet on screen. A slow answer for the other wallet is dropped. */
-    private fun load(initial: Boolean = false, done: ((Boolean) -> Unit)? = null) {
+    private fun load(initial: Boolean = false, quiet: Boolean = false, done: ((Boolean) -> Unit)? = null) {
         val id = ++reqId
         val forApp = app
         source.fn("getWallet", JSONObject().put("app", forApp)) { r ->
@@ -392,11 +397,15 @@ class WalletScreen(
             if (!r.ok) {
                 if (initial) note = axiosMessage(r).ifEmpty { "Could not load wallet." }
                 if (loading) { loading = false }
+                drawnFrom.remove(forApp)
                 renderAll()
                 done?.invoke(false)
                 return@fn
             }
             val d = r.data
+            val sig = try { d.toString() } catch (e: Exception) { "" }
+            // (only the quiet look after coming back: every other load draws the page as it always did)
+            val same = quiet && !loading && sig.isNotEmpty() && drawnFrom[forApp] == sig
             wallet = d.optJSONObject("wallet")
             transactions = list(d.optJSONArray("transactions"))
             accountType = d.str("account_type").ifEmpty { "user" }
@@ -407,18 +416,23 @@ class WalletScreen(
             firstOffer = forApp == "truefind" && d.opt("first_offer") == true
             cache[forApp] = Cached(wallet, transactions, accountType, profileId, rate, firstOffer)
             loading = false
-            renderAll()
+            if (sig.isNotEmpty()) drawnFrom[forApp] = sig else drawnFrom.remove(forApp)
+            if (!same) renderAll()
             done?.invoke(true)
         }
     }
 
     /** Own profile: creator / host verification and the withdraw request fields. */
-    private fun loadProfile(done: (() -> Unit)? = null) {
+    private fun loadProfile(quiet: Boolean = false, done: (() -> Unit)? = null) {
         source.me { user, prof, ok ->
+            val wasAdmin = isAdmin
             if (user != null) isAdmin = user.str("role") == "admin"
             if (ok) {
+                val sig = try { prof?.toString().orEmpty() } catch (e: Exception) { "" }
+                val same = quiet && sig.isNotEmpty() && sig == drawnMe && wasAdmin == isAdmin
                 me = prof
-                renderBody(); renderPayBar()
+                drawnMe = sig.ifEmpty { null }
+                if (!same) { renderBody(); renderPayBar() }
             }
             done?.invoke()
         }
@@ -455,8 +469,8 @@ class WalletScreen(
     }
 
     private fun refreshQuietly() {
-        load()
-        loadProfile()
+        load(quiet = true)
+        loadProfile(quiet = true)
         if (app == "secret") loadCredits()
     }
 
@@ -1401,6 +1415,7 @@ class WalletScreen(
                 m.put("payout_request_amount", d.opt("payout_request_amount"))
                 m.put("payout_requested_at", d.opt("payout_requested_at"))
                 me = m
+                drawnMe = null
                 amountEdit.setText("")
                 earnMsg = "Withdrawal requested. ₹${wRupees(WData.breakdown(amt, m.str("payout_fy"), m.num("payout_fy_share_paid")).net)} will be sent to $upi."
             } else {
@@ -1709,7 +1724,7 @@ class WalletScreen(
             if (app != forApp) { topUpBusy = false; return@fn }
             val d = r.data
             if (r.ok) {
-                d.optJSONObject("wallet")?.let { wallet = it }
+                d.optJSONObject("wallet")?.let { wallet = it; drawnFrom.remove(forApp) }
                 // after a first purchase the offer card goes away (load() checks with the server)
                 sel = null
                 load { _ ->
