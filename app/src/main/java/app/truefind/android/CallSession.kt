@@ -103,7 +103,9 @@ class CallSession(
 
     // ───────── what the screen reads ─────────
     val status: String get() = Tf.s(call, "status")
-    val type: String get() = if (Tf.s(call, "type") == "video") "video" else "voice"
+    // before the call's record has come, the type the caller's screen already knew (the hint): the screen says
+    // "Video call" from the first moment instead of "Voice call" that turns into "Video call" (owner, 19 Nov)
+    val type: String get() = if ((call?.let { Tf.s(it, "type") } ?: hint?.optString("type").orEmpty()) == "video") "video" else "voice"
     val video: Boolean get() = type == "video"
     val isVoice: Boolean get() = !video
     val isCaller: Boolean get() = role == "caller"

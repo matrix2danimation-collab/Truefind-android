@@ -13,7 +13,9 @@ import org.json.JSONObject
  *  - go(address, state, true)     in place of the page on screen     (navigate(path, { replace: true }))
  *  - back(n)                      n pages back                       (navigate(-n)), with the fixed Back steps of
  *                                 the web's PhoneBack.jsx: Wallet → Recent → Explore → Home, a screen inside
- *                                 Profile → the Profile page → Home
+ *                                 Profile → the Profile page → Home. The Wallet's step (→ Recent) is for the Wallet
+ *                                 opened from the bottom bar only: opened from a button on a page (Home's coins +,
+ *                                 Explore's coins, a call's +) Back goes back to that page (owner, 19 Nov)
  * An address is a path with an optional ?query ("/profile?settings=1"); [state] is what the web kept in
  * history.state.usr (Profile's tfDepth, a chat's openChat …).
  */
@@ -48,6 +50,17 @@ class Router {
             val query = if (q >= 0) u.substring(q + 1) else ""
             return (if (p == "/") HOME else p) + (if (query.isNotEmpty()) "?$query" else "")
         }
+
+        /** the state a bottom-bar tab puts on the page it opens (the Wallet's fixed Back step needs to know) */
+        const val TAB = "tfTab"
+        fun openedFromBar(state: JSONObject?): Boolean = state?.optBoolean(TAB, false) == true
+
+        /**
+         * The fixed step above a page that Back leaves ([state]: what it was opened with). The Wallet goes back to
+         * Recent only when the bottom bar opened it; opened from a button on a page it goes back to that page.
+         */
+        fun stepAboveFor(path: String, search: String, state: JSONObject?): String? =
+            if (pathOnly(path) == "/wallet" && !openedFromBar(state)) null else stepAbove(path, search)
 
         /** The fixed step above a page for Back (PhoneBack.jsx). null: Back goes where you came from. */
         fun stepAbove(path: String, search: String): String? = when (pathOnly(path)) {
@@ -126,7 +139,7 @@ class Router {
         while (guard++ < 8) {
             val cur = stack.last()
             if (same(prev.url, cur.url)) break                       // the same address: nothing to fix
-            val target = stepAbove(prev.path, prev.search) ?: break   // the page left has no fixed step
+            val target = stepAboveFor(prev.path, prev.search, prev.state) ?: break   // the page left has no fixed step
             if (same(target, cur.url)) break                         // Back landed on its step already
             // Inside Profile the screens are stacked on the Profile page (tfDepth = how deep): step back
             // through them to that same page instead of putting a second copy of it on top.

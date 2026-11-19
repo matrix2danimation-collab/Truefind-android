@@ -941,6 +941,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Perf.page(e.path, e.search)
         pages.setRoute(e.path, e.search, e.state, router.idx)
         moveHint = move
+        lastMove = move
         if (move == Router.Move.POP) backAt = uptime()
         update()
         calls.routeChanged()
@@ -1031,6 +1032,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private var fxIdx = -1         // the history position at the last move check
     private var routeIdx = -1      // the history position now
     private var moveHint: Router.Move? = null   // what the app's own history just did (read once by the next move check)
+    private var lastMove: Router.Move? = null   // the same, kept: a page opened afresh starts at its top, a page gone back to stays where it was
     private fun pageViews(): List<View> = buildList {
         add(explore); add(secret); add(wallet); add(games); add(dance); add(live)
         if (::login.isInitialized) add(login)
@@ -1214,13 +1216,17 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val innerH = root.height - root.paddingTop - root.paddingBottom
         sizeTo(explore, if (pages.navShown && navTop > 0) navTop else ViewGroup.LayoutParams.MATCH_PARENT)
         sizeTo(secret, if (innerH > 0) innerH - sdNav.barPx else ViewGroup.LayoutParams.MATCH_PARENT)
-        if (show != (explore.visibility == View.VISIBLE)) explore.setShown(show)
+        // (its own "open" state counts too: a page move may hold its view visible or hidden for a moment, and the
+        // two must never be left disagreeing — that left Explore on screen with its bubbles stopped. While Explore
+        // is open, every screen update also makes sure its bubbles are moving: setShown(true) again only checks that.)
+        if (show || explore.visibility == View.VISIBLE || explore.isOn) explore.setShown(show)
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
         if (secretView.isNotEmpty()) sdNav.current = secretView
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp
-        wallet.setShown(showWallet, search.removePrefix("?"))
+        // opened afresh (a tap, not Back): the Wallet starts at its top on the tab its address asks for (owner, 19 Nov)
+        wallet.setShown(showWallet, search.removePrefix("?"), fresh = lastMove != Router.Move.POP)
         if (!previewing) games.setRoute(path, inApp, false)
         // the Control Center (/admin, admins only), maintenance / announcement / blocked / error screens, "Never miss a call"
         if (::admin.isInitialized) {
@@ -1322,7 +1328,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             "Explore -> Home (tab back)" to { navigate("/") },
             "Home -> Profile (open)" to { navigate("/profile") },
             "Profile -> Home (back)" to { goBack() },
-            "Home -> Wallet (open)" to { navigate("/wallet") },
+            "Home -> Wallet (open)" to { navigate("/wallet", JSONObject().put(Router.TAB, true)) },
             "Wallet -> Recent (back: the fixed step above the Wallet)" to { goBack() },
             "Recent -> Home (tab)" to { navigate("/") },
             "Home -> Recent (tab)" to { navigate("/chats") },
@@ -1342,7 +1348,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val live: List<Pair<String, () -> Unit>> = listOf(
                 "Home -> Explore" to { navigate("/explore") },
                 "Explore -> Home" to { navigate("/") },
-                "Home -> Wallet (open)" to { navigate("/wallet") },
+                "Home -> Wallet (open)" to { navigate("/wallet", JSONObject().put(Router.TAB, true)) },
                 "Wallet -> Recent (back)" to { goBack() },
                 "Recent -> Home (back: Explore is the step above Recent, then Home)" to { goBack(); goBack() },
                 "Home -> Recent (Explore passes by)" to { navigate("/chats") },

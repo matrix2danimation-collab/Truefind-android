@@ -170,6 +170,7 @@ class ChatRoom(
         val g = gen
         other = null; otherPhotoRaw = ""; messages.clear(); pending.clear(); held = readHeld(id)
         loading = true; error = ""; sendFailed = false; balance = null; lowCoins = false; chatApp = "secret"; otherTyping = false
+        failedKey = ""; failedText = ""
         blockRow = null; story = null; storyPremium = false; gifOpen = false; gifTab = "sweet"; input.setText(""); shownKeys = emptyList()
         listCol.removeAllViews(); tailCol.removeAllViews()
         shownNow = true
@@ -417,13 +418,50 @@ class ChatRoom(
             "profile_incomplete" -> say(d.optString("message").ifEmpty { "Add your name, age, state and city to chat." }, "err")
             else -> when {
                 isPrivacyError(d) -> say(d.optString("reason").ifEmpty { d.optString("message") }.ifEmpty { "For your safety, numbers, links, IDs and abusive words can't be sent." }, "err")
-                restore -> { sendFailed = true; failBtn.visibility = VISIBLE }
+                restore -> { sendFailed = true; failBtn.text = failText(r); failBtn.visibility = VISIBLE }
                 else -> say(d.optString("message").ifEmpty { d.optString("error") }.ifEmpty { "Couldn't send. Check your internet and try again." }, "err")
             }
         }
     }
-    private fun deliver(payload: JSONObject, price: Int, done: (Api.Result) -> Unit) {
-        Api.invoke("sendMessage", JSONObject(payload.toString()).put("match_id", matchId)) { r ->
+    /**
+     * Sends, and when the answer is a passing failure (no answer from the server, the server busy for a moment —
+     * the platform's read limit — or failing for a moment) asks again by itself, 1.2 s and then 3 s later (busy: as
+     * long as the server says, up to 8 s), with the message's one-time key, so the server answers with the message
+     * it already saved instead of a second copy (owner, 19 Nov:
+     * "Message didn't send. Check your internet" while the internet was fine, and it worked after going out and back).
+     */
+    private fun deliver(payload: JSONObject, price: Int, key: String = newKey(), again: Boolean = false, done: (Api.Result) -> Unit) {
+        // one key per message: every retry of this message (by itself, or "tap to try again" with the same words)
+        // carries it, so the server finds the copy it may already have saved instead of saving a second one
+        payload.put("client_key", key)
+        if (again) payload.put("retry", true)
+        deliverTry(payload, price, 0, done)
+    }
+    private fun newKey() = "m" + java.util.UUID.randomUUID().toString().replace("-", "")
+    /** the message that did not send (its words are back in the box): "tap to try again" sends it as the same message */
+    private var failedKey = ""
+    private var failedText = ""
+    private fun passingFailure(r: Api.Result): Boolean = !r.ok && (r.status == 0 || r.status == 408 || r.status in 500..599 ||
+        (r.status == 429 && r.data.optString("error").let { it == "busy" || it == "rate_limited" || it.isEmpty() }))
+    private fun deliverTry(payload: JSONObject, price: Int, attempt: Int, done: (Api.Result) -> Unit) {
+        val forMatch = matchId
+        val body = JSONObject(payload.toString()).put("match_id", forMatch)
+        if (attempt > 0) body.put("retry", true)
+        Api.invoke("sendMessage", body) { r ->
+            if (!r.ok && attempt < 2 && passingFailure(r) && forMatch == matchId) {
+                val err = r.data.optString("error")
+                val wait = when {
+                    r.status == 429 && err == "rate_limited" -> 900L     // sent too fast: just after the 0.6 s gap
+                    // the chat busy (the platform's read limit): as long as the server said, up to 8 s — asking
+                    // sooner would only be told "busy" again
+                    r.status == 429 && err == "busy" -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1200L, 8000L)
+                    attempt == 0 -> 1200L
+                    else -> 3000L
+                }
+                main.postDelayed({ if (forMatch == matchId) deliverTry(payload, price, attempt + 1, done) else done(r) }, wait)
+                return@invoke
+            }
+            if (forMatch != matchId) { done(r); return@invoke }
             if (r.ok) {
                 val w = r.data.optJSONObject("wallet")
                 if (w != null) balance = w.optInt("coins") else if (price > 0) balance = balance?.let { max(0, it - price) }
@@ -435,6 +473,14 @@ class ChatRoom(
             done(r)
         }
     }
+    /** the red note under the chat when a message could not be sent: the real reason (only "no connection" names the internet) */
+    private fun failText(r: Api.Result): String = when {
+        r.status == 0 -> "Message didn't send. Check your internet and tap to try again."
+        r.status == 429 && r.data.optString("error") == "rate_limited" -> "You're sending messages too fast. Tap to send again."
+        r.status == 429 || r.data.optString("error") == "busy" -> "Message didn't send — the chat was busy for a moment. Tap to try again."
+        r.status >= 500 -> "Message didn't send — something went wrong on our side. Tap to try again. (${r.status})"
+        else -> "Message didn't send. Tap to try again." + (if (r.status > 0) " (${r.status})" else "")
+    }
     private fun send() {
         val t = input.text.toString().trim()
         if (t.isEmpty() || other == null || sending || blockRow != null) return
@@ -443,11 +489,18 @@ class ChatRoom(
         val problem = ChatSafety.problem(t)
         if (problem.isNotEmpty()) { holdBack(t, problem); return }
         sending = true; renderSendState()
-        deliver(JSONObject().put("text", t).put("kind", "text"), 0) { r ->
+        val again = failedKey.isNotEmpty() && t == failedText
+        val key = if (again) failedKey else newKey()
+        failedKey = ""; failedText = ""
+        val forMatch = matchId
+        deliver(JSONObject().put("text", t).put("kind", "text"), 0, key, again) { r ->
             sending = false
             if (!r.ok) {
                 if (isPrivacyError(r.data)) holdBack(t, r.data.optString("reason").ifEmpty { r.data.optString("message") }.ifEmpty { "Numbers, links, IDs and abusive words aren't allowed." })
-                else { handleSendError(r, true); input.setText(t); input.setSelection(t.length) }
+                else {
+                    handleSendError(r, true); input.setText(t); input.setSelection(t.length)
+                    if (forMatch == matchId) { failedKey = key; failedText = t }
+                }
             }
             renderSendState()
         }

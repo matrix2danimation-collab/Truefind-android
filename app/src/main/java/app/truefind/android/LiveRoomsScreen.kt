@@ -63,7 +63,8 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
     var homeErr = ""; private set
     private var homeLoading = false
     private var homeAt = 0L
-    private val homePoll = Runnable { loadHome(); scheduleHome() }
+    // (the 10 s refresh never wipes an error that is showing: it just asks again quietly)
+    private val homePoll = Runnable { if (homeTries == 0) loadHome(auto = true); scheduleHome() }
 
     init {
         setBackgroundColor(Color.WHITE)
@@ -147,14 +148,44 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
         if (shown && appVisible && (current === homePage || current === listPage)) main.postDelayed(homePoll, 10_000)
     }
 
-    fun loadHome() {
+    /**
+     * The live rooms list ("home"). A failure that passes (the server busy for a moment — the platform's read
+     * limit — or a weak network) is asked again by itself, 1.5 s, 4 s and 8 s later, while the page keeps showing
+     * the loading outline (owner, 19 Nov: the page showed "Something went wrong · Try again", and Try again too).
+     * Only when that fails as well does the error show; a list that was already there stays on screen.
+     */
+    private var homeTries = 0
+    private val homeWaits = longArrayOf(1500L, 4000L, 8000L)
+    private val homeRetry = Runnable { if (shown && appVisible) loadHome(auto = true) }
+    fun loadHome() = loadHome(auto = false)
+    private fun loadHome(auto: Boolean) {
+        if (!auto) { homeTries = 0; main.removeCallbacks(homeRetry); if (home == null && homeErr.isNotEmpty()) { homeErr = ""; homePage?.render(); listPage?.render() } }
         if (homeLoading) return
         homeLoading = true
         LiveApi.call("home") { r ->
             homeLoading = false
-            if (r.ok) { home = r.data; homeErr = ""; homeAt = System.currentTimeMillis() } else if (home == null) homeErr = r.text("Could not load live rooms.")
+            if (r.ok) { home = r.data; homeErr = ""; homeAt = System.currentTimeMillis(); homeTries = 0 }
+            else if (home == null) {
+                if (passing(r) && homeTries < homeWaits.size) {
+                    // asked again by itself; the loading outline stays meanwhile (a busy server says how long to
+                    // wait: then it is that long, up to 10 s — asking sooner would only be told "busy" again)
+                    val said = (r.data.optDouble("retry_after", 0.0) * 1000).toLong().coerceIn(0L, 10_000L)
+                    main.removeCallbacks(homeRetry); main.postDelayed(homeRetry, maxOf(homeWaits[homeTries++], said))
+                    return@call
+                }
+                homeTries = 0
+                homeErr = homeError(r)
+            }
             homePage?.render(); listPage?.render()
         }
+    }
+    /** a failure that passes by itself: no answer, the server busy, or the server failing for a moment */
+    private fun passing(r: LiveApi.Res): Boolean = r.status == 0 || r.status == 408 || r.status == 429 || r.status in 500..599 || r.code == "busy"
+    /** what the page says when the list could not be loaded (with the server's short code, to find the cause) */
+    private fun homeError(r: LiveApi.Res): String = when {
+        r.status == 0 -> "Please check your internet and try again."
+        r.status == 429 || r.code == "busy" -> "Live Rooms are busy right now. Please try again in a moment."
+        else -> r.text("Could not load live rooms.").let { t -> if (r.status >= 400) "$t (${r.status})" else t }
     }
 
     private fun show(v: View, forward: Boolean) {
@@ -217,6 +248,7 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
         current?.let { if (it is LiveRoomPage) pages.removeView(it) else it.visibility = View.GONE }
         current = null
         main.removeCallbacks(homePoll)
+        main.removeCallbacks(homeRetry); homeTries = 0
         setShown(false)
     }
 

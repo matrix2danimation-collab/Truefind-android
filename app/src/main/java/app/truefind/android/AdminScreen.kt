@@ -505,9 +505,11 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
             if (status == "approved") {
                 fun srcOf(x: Any?): String = when (x) { is String -> x; is JSONObject -> AF.s(x, "url").ifEmpty { AF.s(x, "uri") }.ifEmpty { AF.s(x, "src") }; else -> "" }
                 val main0 = AF.s(fresh, "profile_picture")
-                val pic = if (main0.isNotEmpty() && main0 != uri) main0 else ""
+                // a photo sent to replace another one (the member's "Replace"): the old one goes now
+                val gone = AF.s(entry, "replaces")
+                val pic = if (main0.isNotEmpty() && main0 != uri && main0 != gone) main0 else ""
                 val imgs = fresh.optJSONArray("images")
-                val others = (0 until (imgs?.length() ?: 0)).map { srcOf(imgs!!.opt(it)) }.filter { it.isNotEmpty() && it != uri && it != pic }
+                val others = (0 until (imgs?.length() ?: 0)).map { srcOf(imgs!!.opt(it)) }.filter { it.isNotEmpty() && it != uri && it != pic && it != gone }
                 val makeMain = AF.b(entry, "main") || pic.isEmpty()
                 val list = ArrayList<String>()
                 if (makeMain) { list.add(uri); if (pic.isNotEmpty()) list.add(pic); list.addAll(others) } else { list.add(pic); list.addAll(others); list.add(uri) }

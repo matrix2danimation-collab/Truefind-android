@@ -100,9 +100,9 @@ class ExploreScreen(
 
         // ── header: True Find · coins, then the filter chips ──
         header.orientation = LinearLayout.VERTICAL
+        // no outline: the white top flows straight out of the phone's white status bar (one piece, owner 19 Nov)
         header.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.WHITE, Ui.c("#F8F3FF"))).apply {
             cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f))
-            setStroke(Ui.dpi(1f), Ui.c("#E6D9FA"))
         }
         header.elevation = Ui.dp(10f)
         header.isClickable = true // touches on the bar stay on the bar (pull to refresh)
@@ -147,9 +147,9 @@ class ExploreScreen(
 
         // ── Voice / Video / Random ──
         actions.orientation = LinearLayout.HORIZONTAL
+        // no outline: the panel flows into the white bottom bar under it (the bar drops its own line here too)
         actions.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F8F3FF"), Color.WHITE, Color.WHITE)).apply {
             cornerRadii = floatArrayOf(Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), 0f, 0f, 0f, 0f)
-            setStroke(Ui.dpi(1f), Ui.c("#E6D9FA"))
         }
         actions.elevation = Ui.dp(10f)
         actions.isClickable = true
@@ -332,8 +332,15 @@ class ExploreScreen(
     }
 
     // ═════════════════ shown / hidden (follows the web address) ═════════════════
+    /** the app has Explore open (its own state, not the view's visibility, which a page move can hold for a moment) */
+    val isOn: Boolean get() = shown
     fun setShown(on: Boolean) {
-        if (on == shown) return
+        if (on == shown) {
+            // asked again while it is open (e.g. after a page move): it stays shown and its bubbles keep moving —
+            // without starting the drift again (a second tap on Explore must not)
+            if (on) { if (visibility != View.VISIBLE) visibility = View.VISIBLE; if (appOn) feed.keepRunning() }
+            return
+        }
         shown = on
         if (on) {
             visibility = View.VISIBLE
@@ -359,7 +366,9 @@ class ExploreScreen(
     }
 
     /** The app came back to the screen (or went away). */
+    private var appOn = true
     fun onAppVisible(visible: Boolean) {
+        appOn = visible
         if (!shown) return
         feed.running = visible
         if (visible) { load(); schedulePoll() } else main.removeCallbacks(pollTick)
@@ -542,8 +551,8 @@ class ExploreScreen(
             if (r.ok && id.isNotEmpty()) {
                 closeSheet()
                 coinsAt = 0L
-                // the call screen knows who is being called at once (name, photo)
-                go("/call/$id", JSONObject().put("peer", peerJson(p)))
+                // the call screen knows who is being called at once (name, photo) and whether it is a video call
+                go("/call/$id", JSONObject().put("peer", peerJson(p)).put("type", type))
                 main.postDelayed({ hideStage() }, 400)
                 return@invoke
             }
@@ -620,7 +629,7 @@ class ExploreScreen(
             if (r.ok && id.isNotEmpty()) {
                 lastMatch = p.callId
                 coinsAt = 0L
-                go("/call/$id", JSONObject().put("peer", peerJson(p)))
+                go("/call/$id", JSONObject().put("peer", peerJson(p)).put("type", type))
                 main.postDelayed({ hideStage() }, 400)
                 return@invoke
             }

@@ -115,6 +115,13 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     // ── the call screen ──
     var view: CallView? = null; private set
+    /**
+     * The call screen is put aside for a moment while the call goes on: the coin Wallet opened from the call's "+"
+     * (owner, 19 Nov: the call must not end there, and Back must come back to the call). The screen stays where it
+     * is (hidden, its sound and video keep going); "Call in progress · Return" shows on the Wallet; leaving the
+     * Wallet (Back, its own back arrow) or tapping Return brings the call screen back.
+     */
+    var minimized = false; private set
 
     // ── the incoming call ──
     private var incoming: JSONObject? = null
@@ -158,7 +165,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     fun openCall(id: String, hint: JSONObject?, search: String) {
         if (preview) return
         view?.let { v ->
-            if (v.session.callId == id) return
+            if (v.session.callId == id) { if (minimized) restore(); return }
             closeCall(v, null)
         }
         if (Tf.s(incoming, "id") == id) clearIncoming("")
@@ -175,10 +182,34 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     private fun show(v: CallView) {
         view = v
+        minimized = false
         v.elevation = Ui.dp(100f)
         v.outlineProvider = null
         root.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         v.start()
+        host.changed()
+    }
+
+    /** The call goes on with its screen put aside, and [path] opens (the coin Wallet). */
+    fun minimizeTo(path: String) {
+        val v = view ?: return
+        if (minimized) return
+        minimized = true
+        // INVISIBLE, not removed: the call's sound goes on and its video pictures keep their surfaces
+        v.animate().cancel()
+        v.visibility = View.INVISIBLE
+        host.go(path)
+        host.changed()
+    }
+
+    /** The call screen comes back (Back from the Wallet, its back arrow, or "Return"). */
+    fun restore() {
+        val v = view ?: return
+        if (!minimized) return
+        minimized = false
+        v.alpha = 0f
+        v.visibility = View.VISIBLE
+        v.animate().alpha(1f).setDuration(180).start()
         host.changed()
     }
 
@@ -189,8 +220,14 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     }
 
     /** The call screen closes; then [to] opens (Recent, the Wallet …) unless the app is already there. */
-    fun closeCall(v: CallView, to: String?) {
-        if (view === v) view = null
+    fun closeCall(v: CallView, to0: String?) {
+        var to = to0
+        if (view === v) {
+            view = null
+            // the call ended while its screen was put aside (they hung up, the coins ran out): the member stays
+            // on the page they are on (the Wallet) and is told
+            if (minimized) { minimized = false; to = null; say("Call ended.") }
+        }
         v.dispose()
         v.animate().alpha(0f).setDuration(220).withEndAction { (v.parent as? ViewGroup)?.removeView(v) }.start()
         if (to != null && !preview) {
@@ -248,6 +285,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     /** true while a call rings here or its screen is open (the app may show over the lock screen) */
     val busyWithCall: Boolean get() = incoming != null || view != null
+    /** the call screen is on screen (not put aside) */
+    val callShown: Boolean get() = view != null && !minimized
 
     // ═════════════════ opened from the ringing notification (Push) ═════════════════
     private var pendingOpen: Pair<String, String>? = null
@@ -270,8 +309,11 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
         }
     }
 
-    /** the web page moved: the pill is checked again (it shows on most pages) */
-    fun routeChanged() { if (pillCall != null) verifyPill() }
+    /** the app moved to another page: the pill is checked again (it shows on most pages); leaving the Wallet brings a put-aside call back */
+    fun routeChanged() {
+        if (minimized && !host.path().substringBefore('?').trimEnd('/').equals("/wallet")) restore()
+        if (pillCall != null) verifyPill()
+    }
 
     // ═════════════════ the incoming call ═════════════════
     private fun ageOf(c: JSONObject?): Long { val t = utcMs(Tf.s(c, "created_date")); return if (t > 0) System.currentTimeMillis() - t else 0L }
@@ -468,6 +510,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     /** the pill shows on this page now */
     fun pillVisible(path: String): Boolean {
+        // a call whose screen is put aside (the coin Wallet opened from it): "Call in progress · Return"
+        if (minimized && view != null && incomingView == null) return true
         val c = pillCall ?: return false
         if (!enabled || view != null || incomingView != null || !liveActive(c)) return false
         val p = path.substringBefore('?')
@@ -475,12 +519,16 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     }
 
     /** tap on the pill: back to that call's screen */
-    fun returnToCall() { pillCall?.let { openCall(Tf.s(it, "id"), null, "") } }
+    fun returnToCall() {
+        if (minimized) { restore(); return }
+        pillCall?.let { openCall(Tf.s(it, "id"), null, "") }
+    }
 
     // ═════════════════ the phone's Back, closing ═════════════════
-    /** Back: the incoming screen waits for Accept / Decline; the call screen handles its own Back */
+    /** Back: the incoming screen waits for Accept / Decline; the call screen handles its own Back (not while it is put aside: the Wallet's Back leads back to it) */
     fun onBack(): Boolean {
         if (incomingView != null) return true
+        if (minimized) return false
         return view?.onBack() ?: false
     }
 

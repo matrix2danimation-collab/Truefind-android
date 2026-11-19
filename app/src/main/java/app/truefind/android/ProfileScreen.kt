@@ -371,6 +371,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
     fun changeAvatar() {
         if (uploadingAvatar) return
+        // an approved profile photo is replaced (it shows until the new one is approved, then it goes)
+        mainPhoto()?.let { m -> if (m.own) { replacePhoto(m); return } }
         pick { bytes, type ->
             if (profile == null) return@pick
             if (!type.startsWith("image/")) { say("Please choose a photo.", true); return@pick }
@@ -402,19 +404,91 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         }
     }
 
+    /** the server's photo_action (updateMyProfile): delete / main / replace — on approved photos and on photos still in review */
+    private fun photoAction(action: JSONObject, done: (JSONObject?, Api.Result?) -> Unit) {
+        Api.invoke("updateMyProfile", JSONObject().put("photo_action", action)) { r ->
+            val next = r.data.optJSONObject("profile")
+            if (!r.ok || next == null) { done(null, r); return@invoke }
+            profile = next
+            renderPage(); drawer?.refresh(); edit?.profileChanged()
+            done(next, null)
+        }
+    }
+    /** a server from before 19 Nov does not know "replace" / deleting a photo in review */
+    private fun oldServer(r: Api.Result?): Boolean = r != null && r.status == 400 && PR.s(r.data, "error") == "Invalid photo action."
+
+    /**
+     * Delete a photo (owner, 19 Nov): an approved one leaves the profile; one still in review leaves the review
+     * (before, a photo in review could not be removed at all).
+     */
     private fun removePhoto(ph: Ph) {
-        if (!ph.own) { say("This photo is being checked. You can remove it after the check.", true); return }
-        PConfirm(pages.layer, "Remove this photo?", "It will be removed from your profile.", "Remove", danger = true, onConfirm = { box ->
-            val cur = currentList()
-            val a = JSONArray(); for (i in 0 until cur.length()) if (i != ph.index) a.put(cur.opt(i))
-            val updates = JSONObject().put(photoField, a)
-            val pic = PR.s(profile, "profile_picture")
-            if (pic.isNotEmpty() && pic == ph.ref) updates.put("profile_picture", if (a.length() > 0) PR.srcOf(a.opt(0)) else "")
-            saveUpdates(updates) { _, err ->
+        val isMain = ph.ref == PR.s(profile, "profile_picture")
+        PConfirm(pages.layer, "Delete this photo?",
+            if (ph.pending) "It is still being checked. It will be removed and never shown." else if (isMain) "It will be removed from your profile. Your next photo becomes your profile photo." else "It will be removed from your profile.",
+            "Delete", danger = true, onConfirm = { box ->
+            photoAction(JSONObject().put("type", "delete").put("uri", ph.ref)) { _, err ->
+                if (err == null) { box.close(); viewerClose?.invoke(); viewerClose = null; say("Photo deleted."); return@photoAction }
+                if (ph.own && oldServer(err)) {
+                    // (an older server: an approved photo is removed the way it was before)
+                    val cur = currentList()
+                    val a = JSONArray(); for (i in 0 until cur.length()) if (i != ph.index) a.put(cur.opt(i))
+                    val updates = JSONObject().put(photoField, a)
+                    if (isMain) updates.put("profile_picture", if (a.length() > 0) PR.srcOf(a.opt(0)) else "")
+                    saveUpdates(updates) { _, e2 ->
+                        box.close()
+                        if (e2 == null) { viewerClose?.invoke(); viewerClose = null; say("Photo deleted.") } else say(PR.errText(e2, "Could not delete the photo."), true)
+                    }
+                    return@photoAction
+                }
                 box.close()
-                if (err == null) { viewerClose?.invoke(); viewerClose = null; say("Photo removed.") } else say(PR.errText(err, "Could not remove the photo."), true)
+                say(PR.errText(err, "Could not delete the photo. Please try again."), true)
             }
         })
+    }
+
+    /**
+     * Replace a photo with a new one from the phone (owner, 19 Nov). The new photo is checked by the team first,
+     * like every new photo. The main photo keeps showing until its replacement is approved (then it goes); any other
+     * photo makes room at once; a photo still in review is simply swapped.
+     */
+    private var replacing = ""
+    fun replacePhoto(ph: Ph) {
+        if (uploading || uploadingAvatar) return
+        pick { bytes, type ->
+            if (profile == null) return@pick
+            if (!type.startsWith("image/")) { say("Please choose a photo.", true); return@pick }
+            if (bytes.size > 15 * 1024 * 1024) { say("This photo is too big. Please choose another one.", true); return@pick }
+            val isMain = ph.ref == PR.s(profile, "profile_picture")
+            uploading = true; replacing = ph.ref; if (isMain) uploadingAvatar = true
+            renderPage(); edit?.profileChanged()
+            fun end() { uploading = false; uploadingAvatar = false; replacing = ""; renderPage(); edit?.profileChanged() }
+            PUp.photoAndThumb(bytes, type) { up ->
+                if (up.url.isEmpty()) { end(); say(PR.errText(up.error?.data, "Could not upload the photo. Please try again."), true); return@photoAndThumb }
+                val act = JSONObject().put("type", "replace").put("uri", ph.ref).put("new_uri", up.url)
+                if (up.thumb.isNotEmpty()) act.put("thumb", up.thumb)
+                photoAction(act) { _, err ->
+                    if (err == null) { end(); viewerClose?.invoke(); viewerClose = null; say("New photo sent for review. It shows after our team approves it."); return@photoAction }
+                    if (ph.own && oldServer(err)) {
+                        // (an older server: the new photo goes in for review in the old photo's place, the old way)
+                        val cur = currentList()
+                        val a = JSONArray()
+                        if (isMain) { a.put(makeItem(up.url)); for (i in 0 until cur.length()) a.put(cur.opt(i)) }
+                        else { for (i in 0 until cur.length()) if (i != ph.index) a.put(cur.opt(i)); a.put(makeItem(up.url)) }
+                        val updates = JSONObject().put(photoField, a)
+                        if (isMain) updates.put("profile_picture", up.url)
+                        thumbsOf(up.url, up.thumb)?.let { updates.put("photo_thumbs", it) }
+                        saveUpdates(updates) { _, e2 ->
+                            end()
+                            if (e2 == null) { viewerClose?.invoke(); viewerClose = null; say("New photo sent for review. It shows after our team approves it.") }
+                            else say(PR.errText(e2, "Could not replace the photo."), true)
+                        }
+                        return@photoAction
+                    }
+                    end()
+                    say(PR.errText(err, "Could not replace the photo. Please try again."), true)
+                }
+            }
+        }
     }
 
     fun saveEdit(d: PEditPage.Draft, done: () -> Unit) {
@@ -494,22 +568,56 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     }
 
     // ═════════════════ sheets & the photo viewer ═════════════════
+    /** the profile photo (the round one): View, Change (Edit) and Remove (owner, 19 Nov: the profile photo could not be removed) */
     private fun avatarSheet() {
         val ctx = context
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
         val hasPhoto = avatarRaws.isNotEmpty()
+        val main0 = mainPhoto()
         if (hasPhoto) col.addView(PUi.btn(ctx, "View photo", "light", Lu.Eye, 17f) { sheetClose?.invoke(); main.postDelayed({ viewAvatar() }, 10) }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { bottomMargin = Ui.dpi(10f) })
         col.addView(PUi.btn(ctx, "Change photo", "primary", Lu.Camera, 17f) { sheetClose?.invoke(); changeAvatar() }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)))
+        if (main0 != null) col.addView(PUi.btn(ctx, "Remove photo", "danger", Lu.Trash2, 17f) { sheetClose?.invoke(); removePhoto(main0) }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { topMargin = Ui.dpi(10f) })
         sheetClose = PUi.sheet(pages.layer, "Profile photo", null, col) { sheetClose = null }
+    }
+    /** the approved main photo as a grid photo (null: none yet) */
+    private fun mainPhoto(): Ph? {
+        val pic = PR.s(profile, "profile_picture")
+        if (pic.isEmpty()) return null
+        return photos.firstOrNull { it.ref == pic && !it.pending } ?: Ph(pic, false, -1, false)
+    }
+
+    /** Long press on the profile photo: a pencil shows on top of it; the pencil opens Change / Remove (owner, 19 Nov). */
+    private fun showPencil(av: FrameLayout) {
+        if (av.findViewWithTag<View>("pencil") != null) return
+        val ctx = context
+        val pen = FrameLayout(ctx).apply {
+            tag = "pencil"; contentDescription = "Edit profile photo"
+            background = Tf.circle(PC.head, 2f, Color.WHITE)
+            elevation = Ui.dp(6f)
+            addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Pencil, Color.WHITE, 15f, 2.2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+            setOnClickListener { hidePencil(av); avatarSheet() }
+            Ui.pressable(this, .95f)
+        }
+        av.addView(pen, FrameLayout.LayoutParams(Ui.dpi(34f), Ui.dpi(34f), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = -Ui.dpi(14f) })
+        pen.scaleX = 0.4f; pen.scaleY = 0.4f; pen.alpha = 0f
+        pen.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(180).start()
+        main.postDelayed({ hidePencil(av) }, 5000)
+    }
+    private fun hidePencil(av: FrameLayout) {
+        val pen = av.findViewWithTag<View>("pencil") ?: return
+        pen.tag = null
+        pen.animate().alpha(0f).scaleX(0.6f).scaleY(0.6f).setDuration(150).withEndAction { av.removeView(pen) }.start()
     }
     private fun viewAvatar() {
         viewerClose = PViewer.open(pages.layer, avatarRaws, "Profile photo", emptyList()) { viewerClose = null }
     }
+    /** a photo full screen with what can be done with it: every photo — main, other, still in review — can be replaced or deleted */
     private fun viewPhoto(ph: Ph) {
         val acts = ArrayList<PViewer.Action>()
         if (ph.own && !ph.pending && ph.ref != PR.s(profile, "profile_picture")) acts.add(PViewer.Action("Make main", Lu.Star, false) { makeMain(ph) })
-        if (ph.own) acts.add(PViewer.Action("Remove", Lu.Trash2, true) { removePhoto(ph) })
-        viewerClose = PViewer.open(pages.layer, listOf(ph.ref), "Photo", acts) { viewerClose = null }
+        acts.add(PViewer.Action("Replace", Lu.RefreshCw, false) { replacePhoto(ph) })
+        acts.add(PViewer.Action("Delete", Lu.Trash2, true) { removePhoto(ph) })
+        viewerClose = PViewer.open(pages.layer, listOf(ph.ref), if (ph.pending) "Photo in review" else "Photo", acts) { viewerClose = null }
     }
     private fun bioSheet() {
         val ctx = context
@@ -620,6 +728,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         else cam.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Camera, PC.head, 14f, 2.1f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         av.addView(cam, FrameLayout.LayoutParams(Ui.dpi(28f), Ui.dpi(28f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -Ui.dpi(2f); bottomMargin = -Ui.dpi(2f) })
         av.setOnClickListener { avatarSheet() }
+        av.setOnLongClickListener { showPencil(av); true }
+        av.isHapticFeedbackEnabled = false
         Ui.pressable(av, .97f)
         sec.addView(av, LinearLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(84f)).apply { rightMargin = Ui.dpi(16f) })
         val who = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
@@ -715,6 +825,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         pc.addView(View(ctx).apply { setBackgroundColor(Ui.c("#EEE8F7")) }, LinearLayout.LayoutParams(-1, Ui.dpi(1f)).apply { topMargin = Ui.dpi(12f) })
         pc.addView(note)
         body.addView(pc, gap())
+        // the places for an avatar (instead of a real photo) and for templates (frames); what goes in them comes later
+        body.addView(avatarSpace(), gap())
+        body.addView(templateSpace(), gap())
         // Interests
         val ic = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
         val editI = Tf.t(ctx, "Edit", 14f, PC.head).apply {
@@ -785,6 +898,53 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         return c
     }
 
+    // ═════════════════ Avatar and Templates: their places (owner, 19 Nov — the avatars and frames come later) ═════════════════
+    private fun soonPill(): TextView = Tf.t(context, "Coming soon", 12f, PC.head).apply {
+        gravity = Gravity.CENTER; background = Tf.box(PC.tint, 8f); setPadding(Ui.dpi(9f), 0, Ui.dpi(9f), 0)
+        layoutParams = LinearLayout.LayoutParams(-2, Ui.dpi(24f))
+    }
+    /** a row of [n] empty dashed places (round for avatars, rounded squares for templates) */
+    private fun emptySlots(n: Int, round: Boolean, onTap: () -> Unit): LinearLayout {
+        val ctx = context
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        for (i in 0 until n) {
+            val cell = FrameLayout(ctx).apply {
+                background = if (round) Tf.dashedBox(Ui.c("#FBF9FE"), 999f, 1.5f, PC.dashSoft) else Tf.dashedBox(Ui.c("#FBF9FE"), 12f, 1.5f, PC.dashSoft)
+                contentDescription = if (round) "Avatar (coming soon)" else "Template (coming soon)"
+                setOnClickListener { onTap() }
+                Ui.pressable(this, .97f)
+            }
+            cell.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(if (round) Lu.User else Lu.Crown, PC.dash, 18f, 2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+            row.addView(cell, LinearLayout.LayoutParams(0, Ui.dpi(56f), 1f).apply { if (i > 0) leftMargin = Ui.dpi(8f) })
+        }
+        return row
+    }
+    /** Profile picture: a real photo (now) or an avatar (the avatars come later) */
+    private fun avatarSpace(): View {
+        val ctx = context
+        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
+        c.addView(PUi.secHead(ctx, Lu.User, "Avatar", soonPill()))
+        // the two kinds of profile picture: Real photo (on) · Avatar (soon)
+        val seg = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; background = Tf.box(PC.faint, 12f, 1f, PC.line); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
+        val real = Tf.t(ctx, "Real photo", 13.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = Tf.box(PC.head, 10f) }
+        val ava = Tf.t(ctx, "Avatar · soon", 13.5f, PC.sub).apply { gravity = Gravity.CENTER; setOnClickListener { say("Avatars are coming soon.") } }
+        seg.addView(real, LinearLayout.LayoutParams(0, Ui.dpi(36f), 1f))
+        seg.addView(ava, LinearLayout.LayoutParams(0, Ui.dpi(36f), 1f))
+        c.addView(seg, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
+        c.addView(PUi.para(ctx, "Use your real photo, or pick an avatar instead. Avatars are coming soon.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
+        c.addView(emptySlots(5, true) { say("Avatars are coming soon.") }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
+        return c
+    }
+    /** Templates: frames around the profile photo (the templates come later) */
+    private fun templateSpace(): View {
+        val ctx = context
+        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
+        c.addView(PUi.secHead(ctx, Lu.Crown, "Templates", soonPill()))
+        c.addView(PUi.para(ctx, "Premium frames for your profile photo will show here.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
+        c.addView(emptySlots(4, false) { say("Templates are coming soon.") }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
+        return c
+    }
+
     private fun photoCell(ph: Ph?, i: Int, count: Int): View {
         val ctx = context
         val big = i == 0
@@ -798,7 +958,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 setOnClickListener { if (!uploading) addPhoto() }
                 Ui.pressable(this, .97f)
             }
-            val busy = uploading && next
+            val busy = uploading && next && replacing.isEmpty()
             if (big) {
                 val t = FrameLayout(ctx).apply { background = Tf.box(PC.head, 12f) }
                 if (busy) t.addView(TfLoader(ctx, 18f, Color.WHITE), FrameLayout.LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
@@ -815,16 +975,17 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         val cell = FrameLayout(ctx).apply {
             background = Tf.box(PC.tint, r); clipToOutline = true
             contentDescription = if (big) "Main photo" else "Photo ${i + 1}"
-            setOnClickListener { viewPhoto(ph) }
+            setOnClickListener { if (!uploading) viewPhoto(ph) }
             Ui.pressable(this, .97f)
         }
-        val img = PImg(ctx, r).apply { empty = "none"; alpha = if (ph.pending) 0.6f else 1f }
+        val swapping = replacing.isNotEmpty() && replacing == ph.ref
+        val img = PImg(ctx, r).apply { empty = "none"; alpha = if (ph.pending || swapping) 0.6f else 1f }
         val spin = TfLoader(ctx, 18f, PC.wine)
         cell.addView(img, FrameLayout.LayoutParams(-1, -1))
         cell.addView(spin, FrameLayout.LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
-        img.onLoaded = { ok -> spin.visibility = if (ok) GONE else spin.visibility }
+        img.onLoaded = { ok -> spin.visibility = if (ok && !swapping) GONE else spin.visibility }
         img.set(listOf(ph.ref))
-        if (img.hasPhoto) spin.visibility = GONE
+        if (img.hasPhoto && !swapping) spin.visibility = GONE
         if (ph.pending) {
             val badge = Tf.t(ctx, "In review", if (big) 10.5f else 10f, PC.amber).apply {
                 gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 6f); maxLines = 1

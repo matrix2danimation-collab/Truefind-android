@@ -72,6 +72,37 @@ abstract class EtPage(val et: ExpertTalkScreen, bg: Int = Et.PAGE) : FrameLayout
         timers.add(r); main.postDelayed(r, ms)
     }
 
+    /**
+     * Back at this screen: put it where it was scrolled ([y]). It is measured and laid out at once (the size of
+     * the area it fills: [w] × [h]) so the place is right before it moves in; if the column is still shorter (a
+     * picture or a list arriving), it tries again for a moment — until the finger moves it.
+     */
+    fun restoreScroll(y: Int, w: Int, h: Int) {
+        if (y <= 0) return
+        if (w > 0 && h > 0) {
+            measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY))
+            layout(0, 0, w, h)
+        }
+        scroll.scrollTo(0, y)
+        var tries = 0
+        val again = object : Runnable {
+            override fun run() {
+                // a finger on the screen (anywhere on it) since: the place is theirs to change now, never pulled back
+                if (disposed || touched) return
+                if (scroll.scrollY < y) scroll.scrollTo(0, y)
+                if (scroll.scrollY < y && ++tries < 20) main.postDelayed(this, 50)
+            }
+        }
+        main.post(again)
+        timers.add(again)
+    }
+    /** the finger went down somewhere on this screen (its buttons and cards included) */
+    private var touched = false
+    override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) touched = true
+        return super.dispatchTouchEvent(e)
+    }
+
     /** rebuild the column, keeping where it was scrolled */
     fun rebuild(fill: (LinearLayout) -> Unit) {
         val y = scroll.scrollY

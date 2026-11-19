@@ -276,6 +276,41 @@ object CallSheets {
         return { close() }
     }
 
+    // ═════════════════ the phone's Back during a call ═════════════════
+    /**
+     * "End this call?" — Back (a swipe or the phone's back button) during a call asks first instead of hanging up
+     * (owner, 19 Nov). "Stay on call" (or Back again, or a tap outside) keeps the call; "End call" ends it. Returns close().
+     */
+    fun endCall(host: CallView, ringing: Boolean, onStay: () -> Unit, onEnd: () -> Unit): () -> Unit {
+        val ctx = host.context
+        val p = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = Tf.topRound(Color.WHITE, 24f)
+            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f))
+            isClickable = true
+        }
+        p.addView(CallKit.t(ctx, if (ringing) "Stop calling?" else "End this call?", 18f, CallKit.INK, 700))
+        p.addView(CallKit.t(ctx, if (ringing) "They haven't picked up yet. Do you want to stop this call?" else "Your call is still going on. Do you want to end it?",
+            14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
+        val row = Tf.row(ctx)
+        var close: () -> Unit = {}
+        var ending = false
+        val stay = CallKit.t(ctx, "Stay on call", 15f, CallKit.INK, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#E9E6EE")); contentDescription = "Stay on call"
+            setOnClickListener { close() }
+        }
+        val end = CallKit.t(ctx, "End call", 15f, Color.WHITE, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#E5484D"), 16f); contentDescription = "End call"
+            setOnClickListener { ending = true; close(); onEnd() }
+        }
+        Ui.pressable(stay, .97f); Ui.pressable(end, .97f)
+        row.addView(stay, Tf.ll(0, Ui.dpi(44f), 1f, r = 12f))
+        row.addView(end, Tf.ll(0, Ui.dpi(44f), 1f))
+        p.addView(row, Tf.ll(Tf.M, Tf.W, t = 16f))
+        close = host.layer.sheet(p, Color.argb(128, 0, 0, 0), onClose = { if (!ending) onStay() })
+        return { close() }
+    }
+
     // ═════════════════ the "+" after the balance ═════════════════
     /** "The Wallet opens on its own page, so this call will end." Returns close(). */
     fun addCoins(host: CallView, onKeep: () -> Unit, onEnd: () -> Unit): () -> Unit {

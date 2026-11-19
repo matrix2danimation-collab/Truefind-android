@@ -38,6 +38,7 @@ import kotlin.math.roundToInt
  *  - Moves up on its own (25 per second) each time Explore is opened; once you
  *    touch it, it stops drifting until Explore is opened again.
  *  - Drag up or down; it glides on after you let go (the phone's own fling).
+ *  - Its own clock ([clock]) moves it: one tick per screen frame while Explore shows.
  *  - A bubble shrinks and fades as it reaches the top, fades in at the bottom.
  *  - Tap a bubble → [onTap].
  * Every frame is drawn by the phone's graphics chip; photos are decoded once,
@@ -74,7 +75,6 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     private var downY = 0f
     private var lastY = 0f
     private var moved = 0f
-    private var lastFrame = 0L
     private val scroller = OverScroller(ctx)
     private var tracker: VelocityTracker? = null
     private val slop = ViewConfiguration.get(ctx).scaledTouchSlop.toFloat()
@@ -82,12 +82,58 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
 
     /** A sheet, dialog or call screen is on top: no drift. */
     var blocked = false
-    /** Explore is on screen: draw frames. */
+    /** Explore is on screen: the feed's clock runs (drift, glide, the pulsing rings). */
     var running = false
-        set(v) { field = v; if (v) { lastFrame = 0L; postInvalidateOnAnimation() } }
+        set(v) { field = v; if (v) startClock() else stopClock() }
 
     /** Explore was opened again (tab tap): the drift plays once more. */
-    fun reopened() { auto = true; scroller.forceFinished(true); running = true }
+    fun reopened() { auto = true; scroller.forceFinished(true); running = true; startClock() }
+
+    /** Explore is (still) on screen: make sure the clock runs, without starting the drift again. */
+    fun keepRunning() { if (!running) running = true else startClock() }
+
+    // ── the feed's own clock ──
+    // One tick per screen frame while Explore shows: each tick moves the bubbles (the drift, or the glide after
+    // a swipe) and asks for one new picture. Until 19 Nov the next frame was only asked for from inside the
+    // drawing itself, and while a page move ran it waited for one "the move has ended" call to start again. When
+    // that call didn't come (or the drawing wasn't asked for), nothing asked for a frame any more: the bubbles
+    // stood still — no drift, no glide after a swipe — until the app was closed. The clock asks for its next
+    // tick itself, every frame, whatever happens around it, so the feed can no longer stop on its own.
+    private var clockOn = false
+    private var lastTick = 0L
+    private val clock = object : android.view.Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!clockOn) return
+            if (!running || !isAttachedToWindow) { clockOn = false; return }
+            tick(frameTimeNanos / 1_000_000L)
+            android.view.Choreographer.getInstance().postFrameCallback(this)
+        }
+    }
+    private fun startClock() {
+        if (!running || clockOn || !isAttachedToWindow) return
+        clockOn = true
+        lastTick = 0L
+        android.view.Choreographer.getInstance().postFrameCallback(clock)
+    }
+    private fun stopClock() {
+        clockOn = false
+        android.view.Choreographer.getInstance().removeFrameCallback(clock)
+    }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); startClock() }
+    override fun onDetachedFromWindow() { stopClock(); super.onDetachedFromWindow() }
+
+    /** one frame of the clock: move (unless pages are moving: then the bubbles hold still), then a new picture */
+    private fun tick(nowMs: Long) {
+        val dt = if (lastTick == 0L) 0f else min(0.05f, (nowMs - lastTick) / 1000f)
+        lastTick = nowMs
+        // While pages are moving the bubbles hold still: for the move this page is one finished picture, and
+        // drawing the bubbles again in each of its frames made the slide into Explore stutter (19 Nov). The
+        // clock keeps ticking meanwhile, so they go on by themselves on the first frame after the move.
+        if (PageFx.running && !dragging) return
+        if (scroller.computeScrollOffset()) y = scroller.currY.toFloat()
+        else if (auto && !dragging && !blocked && pool.isNotEmpty()) y += AUTO * dt
+        invalidate()
+    }
 
     fun setPool(list: List<Person>, all: List<Person>, reset: Boolean) {
         pool = list
@@ -193,14 +239,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     // ── frame ──
     override fun onDraw(canvas: Canvas) {
         val now = SystemClock.uptimeMillis()
-        val dt = if (lastFrame == 0L) 0f else min(0.05f, (now - lastFrame) / 1000f)
-        lastFrame = now
-
-        if (scroller.computeScrollOffset()) {
-            y = scroller.currY.toFloat()
-        } else if (auto && !dragging && !blocked && pool.isNotEmpty() && running) {
-            y += AUTO * dt
-        }
+        // (the bubbles are moved by the clock and by the finger; drawing only draws where they are)
 
         bg?.let { canvas.drawBitmap(it, 0f, 0f, null) }
 
@@ -221,15 +260,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
             if (!born.containsKey(v)) born[v] = now
             drawBubble(canvas, v, p, slotX(v), top, now)
         }
-        // While pages are moving the bubbles hold still: for the move this page is one finished picture, and
-        // drawing the bubbles again in each of its frames made the slide into Explore stutter on the owner's
-        // phone (19 Nov: a fifth of those frames late). They go on right after the move.
-        if (running) {
-            if (!PageFx.running) postInvalidateOnAnimation()
-            else if (!waiting) { waiting = true; PageFx.whenStill { waiting = false; if (running) postInvalidateOnAnimation() } }
-        }
     }
-    private var waiting = false
 
     private fun drawBubble(c: Canvas, v: Int, p: Person, cx: Float, top: Float, now: Long) {
         val gone = !inPool.contains(p.id)
@@ -374,6 +405,8 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
             MotionEvent.ACTION_DOWN -> {
                 auto = false
                 scroller.forceFinished(true)
+                // a finger on the feed means it is on screen: its clock must run (it can never be left stopped)
+                if (isShown && windowVisibility == VISIBLE) keepRunning()
                 downY = e.y; lastY = e.y; moved = 0f; dragging = false
                 parent?.requestDisallowInterceptTouchEvent(true)
             }

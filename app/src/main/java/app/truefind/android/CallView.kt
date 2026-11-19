@@ -65,6 +65,7 @@ class CallView(
     private var seenTheirs = false
     private var reportClose: (() -> Unit)? = null
     private var addCoinsClose: (() -> Unit)? = null
+    private var endAskClose: (() -> Unit)? = null
     private var ratingOpen = false
 
     init {
@@ -98,6 +99,8 @@ class CallView(
     // ═════════════════ drawing (a re-render after every change) ═════════════════
     private fun render() {
         val s = session
+        // the call ended while its screen was put aside (the coin Wallet is open): it closes there, the member stays
+        if (mgr.minimized && mgr.view === this && s.screenState == "ended") { leave(null); return }
         if (s.loadError.isNotEmpty() && s.call == null) { showError(s.loadError); return }
         if (s.showConnected) {
             if (!shownConnected) {
@@ -117,8 +120,8 @@ class CallView(
             ratingOpen = true
             CallSheets.rating(this, s, s.otherName) { ratingOpen = false; s.afterRating() }
         }
-        // the call is over: the in-call report sheet closes (as setReportOpen(false))
-        if (s.settled != null || s.ended) { reportClose?.invoke(); reportClose = null }
+        // the call is over: the in-call report sheet closes (as setReportOpen(false)), and so does "End this call?"
+        if (s.settled != null || s.ended) { reportClose?.invoke(); reportClose = null; endAskClose?.invoke(); endAskClose = null }
     }
 
     private fun showError(msg: String) {
@@ -143,18 +146,30 @@ class CallView(
     }
 
     // ═════════════════ the phone's Back ═════════════════
-    /** Back: a sheet closes first, then Go to Chat goes back to the call; on the call itself it hangs up (as leaving the web page did). */
+    /**
+     * Back: a sheet closes first, then Go to Chat goes back to the call; on the call itself it asks first —
+     * "End this call?" (owner, 19 Nov: one Back, a swipe or the phone's back button, used to cut the call without
+     * End being pressed). A second Back closes the question and the call goes on.
+     */
     fun onBack(): Boolean {
         if (layer.back()) return true
         peerPage?.let { if (it.back()) return true; if (!session.ended) { closePeer(); return true } }
         val s = session
         if (errorPage != null) { leave(null); return true }
         val st = s.screenState
-        if (s.practice) { if (st == "ended") leave(null) else s.hangUp(); return true }
         if (st == "ended" || s.settled != null) { leave(null); return true }
-        // ringing / connecting / talking: leaving the call screen ends the call (the web's endOnLeave)
-        s.hangUp()
+        // ringing / connecting / talking (a practice call too): ask before ending it
+        askEnd()
         return true
+    }
+
+    private fun askEnd() {
+        if (endAskClose != null) return
+        val ringing = session.screenState == "ringing" || session.screenState == "connecting"
+        endAskClose = CallSheets.endCall(this, ringing, onStay = { endAskClose = null }) {
+            endAskClose = null
+            session.hangUp()
+        }
     }
 
     // ═════════════════ toasts and the heart ═════════════════
@@ -227,10 +242,14 @@ class CallView(
     }
 
     // ═════════════════ sheets and the Go to Chat page ═════════════════
+    /**
+     * "+" after the balance (and "Add coins" on the low-balance note): the coin Wallet opens and the call goes on
+     * (owner, 19 Nov — before, the call ended and Back then led to Recent). The call screen is put aside while the
+     * Wallet is open; Back there (or "Return") comes back to this call.
+     */
     private fun openAddCoins() {
-        val s = session
-        if (s.practice) { leave("/wallet"); return }
-        addCoinsClose = CallSheets.addCoins(this, onKeep = { addCoinsClose = null }) { addCoinsClose = null; s.endAndGo("/wallet") }
+        // the Wallet of the app this call is paid from (the balance on this screen is that one too)
+        mgr.minimizeTo("/wallet?app=${session.callApp}&tab=coins")
     }
 
     private fun openReport() {
@@ -943,8 +962,9 @@ class CallView(
                     background = Tf.box(CallKit.VIOLET, 12f)
                     setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
                     addView(ImageView(ctx).apply { setImageDrawable(CallKit.lu(Lu.Wallet, 16f, Color.WHITE)) }, Tf.ll(Ui.dpi(16f), Ui.dpi(16f), r = 6f))
-                    addView(CallKit.t(ctx, "End & add coins", 14f, Color.WHITE, 700))
-                    setOnClickListener { s.endAndGo("/wallet") }
+                    addView(CallKit.t(ctx, "Add coins", 14f, Color.WHITE, 700))
+                    // the call goes on while coins are added (owner, 19 Nov)
+                    setOnClickListener { openAddCoins() }
                 }
                 Ui.pressable(b)
                 p.addView(b, Tf.ll(Tf.W, Ui.dpi(36f), t = 8f))

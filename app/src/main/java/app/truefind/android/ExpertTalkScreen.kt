@@ -109,6 +109,7 @@ class ExpertTalkScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) 
 
     private fun tearDown() {
         active = false
+        scrollMemo.clear()
         page?.let { it.dispose(); holder.removeView(it) }
         page = null
         panel = null
@@ -167,9 +168,18 @@ class ExpertTalkScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) 
     }
 
     // ═════════════════ the member's screens ═════════════════
+    /**
+     * Where each screen was scrolled when it was left for a screen further in (owner, 19 Nov: back from a topic's
+     * experts the Expert Talk page opened at its top instead of where he had tapped). Going back to a screen puts
+     * it at that same place; opening a screen afresh starts it at its top.
+     */
+    private val scrollMemo = HashMap<String, Int>()
+
     /** setNav({ ...n, ...extra, screen }) of MemberApp.jsx (going "home" asks the server again) */
     fun go(screen: String, back: Boolean? = null, set: EtNav.() -> Unit = {}) {
         if (screen == "home") loadHome()
+        val from = nav.screen
+        val old = page
         nav.set()
         nav.screen = screen
         val p: EtPage = when (screen) {
@@ -184,7 +194,13 @@ class ExpertTalkScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) 
             "call" -> EtCallPage(this, nav.callId.orEmpty(), "member", nav.callName.orEmpty(), nav.callPhoto.orEmpty(), null) { st -> go("sessions") { after = st; callId = null } }
             else -> EtHome(this)
         }
-        showPage(p, back)
+        val isBack = back ?: (old != null && p.rank < old.rank)
+        if (old != null && from != screen) {
+            if (isBack) scrollMemo.remove(from)            // left backwards: that screen starts fresh next time
+            else scrollMemo[from] = old.scroll.scrollY     // left for a screen further in: remember the place
+        }
+        val keepY = if (isBack) scrollMemo.remove(screen) ?: 0 else { scrollMemo.remove(screen); 0 }
+        showPage(p, back, keepY = keepY)
     }
 
     // ═════════════════ the expert's panel ═════════════════
@@ -275,11 +291,14 @@ class ExpertTalkScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) 
     }
 
     // ═════════════════ showing a screen ═════════════════
-    private fun showPage(p: EtPage, back: Boolean? = null, anim: Boolean = true) {
+    private fun showPage(p: EtPage, back: Boolean? = null, anim: Boolean = true, keepY: Int = 0) {
         val old = page
         page = p
         holder.addView(p, LayoutParams(-1, -1))
         p.render()
+        // back at a screen that was scrolled: it is laid out now and put at that place before it moves in, so it
+        // slides in already where it was (not at its top first)
+        if (keepY > 0) p.restoreScroll(keepY, holder.width, holder.height)
         if (old != null) {
             val isBack = back ?: (p.rank < old.rank)
             // the page you leave stays until the move ends (no move while the app's own page move is still running)

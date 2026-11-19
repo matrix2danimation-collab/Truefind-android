@@ -11,19 +11,21 @@ import android.graphics.Paint
 import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
-import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 
 /**
  * True Find bottom bar — native copy of components/BottomNav.jsx:
  * Home · Explore · Find (Secret Dating, purple heart with a white T and the
- * blinking red count of new Secret Dating notifications) · Recent · Wallet.
+ * red count of new Secret Dating notifications) · Recent · Wallet.
  * Same sizes (the web's f(n, min) on a 853 design), colours, icons, the lit
  * tab's soft glow and underline, and the .94 press.
  * It shows on Home, Explore and Recent only (NativePages decides).
  * The view is [shadowPx] taller than the bar: that top strip only draws the
  * bar's soft shadow and lets touches through.
+ * Owner's rules (19 Nov): a tap on the bar never vibrates the phone; the count on Find is only the
+ * number in its red badge (no growing "live" ring, no blinking); on Explore the bar has no top line or
+ * shadow, so Explore's Voice / Video / Random panel and the bar read as one piece ([seamless]).
  */
 @SuppressLint("ViewConstructor")
 class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Unit) : View(ctx) {
@@ -48,6 +50,9 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
     private var touched: String? = null   // a finger is on this tab: lit from the moment it touches (as FRND's bar answers a touch)
     var unread = 0
         set(v) { if (field != v) { val was = field; field = v; if (v > 0 && was == 0) popBadge() else invalidate() } }
+    /** Explore: no top line and no shadow, so the panel above and the bar are one piece */
+    var seamless = false
+        set(v) { if (field != v) { field = v; invalidate() } }
 
     // icons (SVG markup of the web)
     private val homeOn = Svg.of("<svg viewBox=\"0 0 24 24\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7d0ade\"/><stop offset=\"1\" stop-color=\"#52049a\"/></linearGradient></defs><path d=\"M3 10.6 12 3l9 7.6V20a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H4.5A1.5 1.5 0 0 1 3 20z\" fill=\"url(#g)\" stroke=\"none\" stroke-width=\"1.9\" stroke-linejoin=\"round\"/></svg>")
@@ -63,33 +68,18 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
     private var scale = FloatArray(5) { 1f }
-    private var badgeT = 0f     // 0..1 over 1.1 s (blink + ring), after the .32 s pop
-    private var badgePop = 1f
-    private val badgeAnim = ValueAnimator.ofFloat(0f, 1f).apply {
-        duration = 1100; repeatCount = ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator()
-        addUpdateListener { badgeT = it.animatedValue as Float; if (unread > 0) invalidate() }
-    }
+    private var badgePop = 1f   // the count pops in once when it first appears (.32 s); nothing else moves
 
     init {
         isClickable = true
         contentDescription = "True Find"
+        // a tap on the bar never vibrates (owner, 19 Nov) — not even where the phone's own touch vibration is on
+        isHapticFeedbackEnabled = false
     }
 
     override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), barPx + shadowPx)
-    override fun onAttachedToWindow() { super.onAttachedToWindow(); if (unread > 0) badgeAnim.start() }
-    override fun onDetachedFromWindow() { badgeAnim.cancel(); super.onDetachedFromWindow() }
-    override fun onVisibilityChanged(changedView: View, visibility: Int) {
-        super.onVisibilityChanged(changedView, visibility)
-        if (visibility == VISIBLE && isShown && unread > 0 && windowVisibility == VISIBLE) { if (!badgeAnim.isStarted) badgeAnim.start() } else badgeAnim.cancel()
-    }
-    // the badge stops blinking while the app is in the background
-    override fun onWindowVisibilityChanged(visibility: Int) {
-        super.onWindowVisibilityChanged(visibility)
-        if (visibility == VISIBLE && isShown && unread > 0) { if (!badgeAnim.isStarted) badgeAnim.start() } else badgeAnim.cancel()
-    }
 
     private fun popBadge() {
-        if (!badgeAnim.isStarted && isShown) badgeAnim.start()
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 320
             addUpdateListener { val f = it.animatedFraction; badgePop = if (f < .6f) .4f + (1.18f - .4f) * (f / .6f) else 1.18f - .18f * ((f - .6f) / .4f); invalidate() }
@@ -102,12 +92,14 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
     override fun onDraw(c: Canvas) {
         val top = shadowPx.toFloat()
         val w = width.toFloat(); val h = barPx.toFloat()
-        // soft shadow above the bar: 0 -4px 16px rgba(91,33,182,.06)
-        p.shader = LinearGradient(0f, 0f, 0f, top, Color.argb(0, 91, 33, 182), Color.argb(14, 91, 33, 182), Shader.TileMode.CLAMP)
-        c.drawRect(0f, 0f, w, top, p); p.shader = null
+        if (!seamless) {
+            // soft shadow above the bar: 0 -4px 16px rgba(91,33,182,.06)
+            p.shader = LinearGradient(0f, 0f, 0f, top, Color.argb(0, 91, 33, 182), Color.argb(14, 91, 33, 182), Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, w, top, p); p.shader = null
+        }
         p.color = Color.WHITE; c.drawRect(0f, top, w, top + h, p)
-        // top line: 1.5 (on the 853 design) #f1ebfc
-        p.color = Ui.c("#f1ebfc"); c.drawRect(0f, top, w, top + maxOf(1f, Ui.dp(u(1.5f))), p)
+        // top line: 1.5 (on the 853 design) #f1ebfc — not on Explore, where the white panel above flows into the bar
+        if (!seamless) { p.color = Ui.c("#f1ebfc"); c.drawRect(0f, top, w, top + maxOf(1f, Ui.dp(u(1.5f))), p) }
         val contentW = minOf(w, Ui.dp(480f)); val x0 = (w - contentW) / 2f
         val cell = contentW / items.size
         val iconPx = Ui.dp(f(40f, 22f)); val gap = Ui.dp(f(6f, 3f)); val labelPx = Ui.dp(f(27f, 12f))
@@ -159,7 +151,7 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         }
     }
 
-    /** red count at the heart's top-right: blinking, with a red ring growing and fading behind it */
+    /** red count at the heart's top-right: only the number in its red badge (white edge), steady — no ring, no blinking */
     private fun drawBadge(c: Canvas, right: Float, top: Float) {
         val txt = if (unread > 99) "99+" else unread.toString()
         val hb = Ui.dp(f(34f, 17f)); val pad = Ui.dp(f(8f, 4f)); val border = Ui.dp(f(3.5f, 2f))
@@ -168,20 +160,10 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         val r0 = right + Ui.dp(f(18f, 10f)); val t0 = top - Ui.dp(f(10f, 6f))
         rect.set(r0 - bw, t0, r0, t0 + hb)
         val cx = rect.centerX(); val cy = rect.centerY()
-        // ring: scale 1 → 1.94 and fade at 55 %
-        val f = badgeT
-        val k = if (f < .55f) f / .55f else 1f - (f - .55f) / .45f
-        val ringScale = 1f + .94f * k; val ringA = 1f - k
-        c.save(); c.scale(ringScale * badgePop, ringScale * badgePop, cx, cy)
-        p.color = Color.argb((ringA * .75f * 255).toInt(), 255, 31, 61)
-        c.drawRoundRect(rect, hb / 2f, hb / 2f, p); c.restore()
-        // badge: blink to .6 at 55 %
-        val blink = if (f < .55f) 1f - .4f * (f / .55f) else .6f + .4f * ((f - .55f) / .45f)
         c.save(); c.scale(badgePop, badgePop, cx, cy)
-        p.color = Color.WHITE; p.alpha = (blink * 255).toInt(); c.drawRoundRect(rect, hb / 2f, hb / 2f, p)
+        p.color = Color.WHITE; c.drawRoundRect(rect, hb / 2f, hb / 2f, p)
         val inner = RectF(rect.left + border, rect.top + border, rect.right - border, rect.bottom - border)
-        p.color = Ui.c("#FF1F3D"); p.alpha = (blink * 255).toInt(); c.drawRoundRect(inner, inner.height() / 2f, inner.height() / 2f, p)
-        tp.alpha = (blink * 255).toInt()
+        p.color = Ui.c("#FF1F3D"); c.drawRoundRect(inner, inner.height() / 2f, inner.height() / 2f, p)
         val fm = tp.fontMetrics
         c.drawText(txt, cx, cy - (fm.ascent + fm.descent) / 2f, tp)
         c.restore()
@@ -217,7 +199,7 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
     }
 
     private fun tap(it: Item) {
-        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        // (no vibration on a tab tap: owner, 19 Nov)
         if (it.key == current) { pressed = null; invalidate(); onTab(it.key, it.path); return }
         if (pressed != null && System.currentTimeMillis() - pressedAt < 1500) return // a page is already on its way
         pressed = it.key; pressedAt = System.currentTimeMillis()

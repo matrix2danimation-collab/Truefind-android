@@ -274,14 +274,15 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             background = Tf.boxPx(Color.WHITE, m.px(23f), m.px(1.5f), Ui.c("#6C2BD9"))
             compoundDrawablePadding = m.pi(7f)
             setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.MIC_PURPLE16), 16f * m.z), null, null, null)
-            setOnClickListener { sheets.confirm("voice") }
+            // a tap starts the call straight away — no "Random Voice Call" pop-up first (owner, 19 Nov); the rate is under the button
+            setOnClickListener { startRandom("voice") }
         }
         val video = Tf.tpx(ctx, "Video Call", m.px(14.5f), Color.WHITE).apply {
             gravity = Gravity.CENTER
             background = Tf.boxPx(Ui.c("#6C2BD9"), m.px(23f))
             compoundDrawablePadding = m.pi(7f)
             setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.VIDEO_WHITE16), 16f * m.z), null, null, null)
-            setOnClickListener { sheets.confirm("video") }
+            setOnClickListener { startRandom("video") }
         }
         // the text + icon sit centred in the pill
         for (b in listOf(voice, video)) { Ui.pressable(b, 0.97f) }
@@ -678,14 +679,23 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         sheets.dialog("Add coins to call", "${if (type == "video") "Video" else "Voice"} calls cost $rate coins per minute. Your balance is ${Tf.inr(bal)} coins.", "Add coins") { pages.go("/wallet") }
     }
 
-    /** Call one person (Weekly Top Creators / the person sheet). Server busy (read limit): wait as asked (≤ 12 s) and try once more. */
+    /**
+     * Call one person (Weekly Top Creators / the person sheet). Server busy (read limit): wait as asked (≤ 12 s) and try once more.
+     * The "Calling …" screen shows at the first tap (owner, 19 Nov: the call screen came only seconds later, so he tapped
+     * "Video Call" again and again); Cancel there (or Back) stops it, and a call that was already made then is ended.
+     */
+    private var callRun = 0
     fun callPerson(p: JSONObject, type: String) {
         if (calling.isNotEmpty()) return
         calling = type
+        val run = ++callRun
         sheets.refreshPerson()
+        sheets.showMatching(type, "direct", HomeRules.firstName(p)) { cancelCall() }
         val body = JSONObject().put("to_user_id", HomeRules.idOf(p)).put("type", type).put("app", "truefind")
         fun fail(r: Api.Result) {
+            if (run != callRun) return
             calling = ""
+            sheets.hideMatching()
             sheets.closePersonAndAll()
             val d = r.data
             val st = r.status
@@ -703,23 +713,36 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         fun ok(r: Api.Result): Boolean {
             val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
             if (r.ok && id.isNotEmpty()) {
+                // cancelled while it was being made: the call is ended at once (it must not ring on their phone)
+                if (run != callRun) { Api.invoke("endCall", JSONObject().put("call_id", id)) { }; return true }
                 calling = ""
+                sheets.hideMatching()
                 sheets.closeAll()
-                // the call screen knows who is being called at once (name, photo)
-                pages.go("/call/$id", peerHint(p))
+                // the call screen knows at once who is being called (name, photo) and whether it is a video call
+                pages.go("/call/$id", peerHint(p).put("type", type))
                 return true
             }
             return false
         }
         Api.invoke("startCall", body) { r ->
             if (ok(r)) return@invoke
+            if (run != callRun) return@invoke
             if (!r.ok && r.data.optBoolean("rate_limited")) {
                 val wait = (min(12.0, HomeRules.num(r.data.opt("retry_after")).takeIf { it > 0 } ?: 8.0) * 1000).toLong()
-                main.postDelayed({ Api.invoke("startCall", body) { r2 -> if (!ok(r2)) fail(r2) } }, wait)
+                main.postDelayed({ if (run == callRun) Api.invoke("startCall", body) { r2 -> if (!ok(r2)) fail(r2) } }, wait)
                 return@invoke
             }
             fail(r)
         }
+    }
+
+    /** Cancel on the "Calling …" screen of a direct call (or Back): nothing rings */
+    fun cancelCall() {
+        if (calling.isEmpty()) return
+        callRun += 1
+        calling = ""
+        sheets.hideMatching()
+        sheets.refreshPerson()
     }
 
     /** Random Match: find someone online and free (the other gender only), then call them (up to 4 tries). */
@@ -768,7 +791,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             if (r.ok && id.isNotEmpty()) {
                 lastMatch = HomeRules.idOf(p)
                 sheets.hideMatching()
-                pages.go("/call/$id", peerHint(p))
+                pages.go("/call/$id", peerHint(p).put("type", type))
                 return@invoke
             }
             val err = r.data.optString("error")

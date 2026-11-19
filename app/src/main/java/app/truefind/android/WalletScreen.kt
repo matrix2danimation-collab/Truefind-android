@@ -280,8 +280,14 @@ class WalletScreen(
 
     // ═════════════════ shown / hidden (follows the web address) ═════════════════
 
-    /** [query] = the address's ?… part: app=secret, tab=earnings, premium=success|cancelled */
-    fun setShown(on: Boolean, query: String) {
+    /**
+     * [query] = the address's ?… part: app=secret, tab=earnings|coins, premium=success|cancelled.
+     * [fresh]: opened afresh (a tap), not come back to with Back. A fresh Wallet starts at its top, on the tab its
+     * address asks for — Coins unless it says tab=earnings (owner, 19 Nov: it opened where it was left last time,
+     * and a call's "+" opened the Earnings tab left over from an earlier visit instead of the coin packs).
+     * Coming back with Back keeps the place and the tab.
+     */
+    fun setShown(on: Boolean, query: String, fresh: Boolean = true) {
         if (on == shown) return
         shown = on
         if (!on) {
@@ -294,6 +300,14 @@ class WalletScreen(
         val q = parseQuery(query)
         val first = !everShown
         everShown = true
+        if (fresh && !first) {
+            val want = if (q["tab"] == "earnings") "earnings" else "coins"
+            if (tab != want) { tab = want; renderBody(); renderPayBar() }
+            scroll.scrollTo(0, 0)
+            // (and a glide still running from the last visit is replaced by a still one from the top: a ScrollView
+            // otherwise finishes an old glide on its first frame back and puts the page where that glide ended)
+            scroll.fling(0)
+        }
         // back from the plan payment page: that tap is over
         if (buyingCredits) { buyingCredits = false; renderPayBar() }
         // ?app=secret opens the Secret Dating wallet, a plain /wallet the True Find wallet
@@ -1523,8 +1537,11 @@ class WalletScreen(
             val p = planPicked!!
             val off = buyingCredits || sdMustVerify
             val lead: View? = if (buyingCredits) WSpinner(ctx, 18f, Color.WHITE) else null
-            bar = WV.button(ctx, "${if (sdPlan?.opt("active") == true) "Add" else "Get"} ${p.name} · ₹${p.price} · ${p.credits} credits", t.accent, Color.WHITE, 56f, 16f, 17f, lead)
-            bar.alpha = if (off) 0.7f else 1f
+            // never see-through (owner, 19 Nov: the plans showed through it): a bar that can't be tapped yet is a
+            // solid lighter shade of the same colour instead of a faded one
+            val fill = if (off) androidx.core.graphics.ColorUtils.blendARGB(t.accent, Color.WHITE, 0.3f) else t.accent
+            bar = WV.button(ctx, "${if (sdPlan?.opt("active") == true) "Add" else "Get"} ${p.name} · ₹${p.price} · ${p.credits} credits", fill, Color.WHITE, 56f, 16f, 17f, lead)
+            bar.alpha = 1f
             bar.setOnClickListener { if (!off) buyPlan(p.key) }
         } else {
             val p = picked!!

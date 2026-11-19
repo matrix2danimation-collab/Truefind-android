@@ -34,14 +34,16 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
     fun closeAll() {
         closeDialogFn?.invoke(); closePersonFn?.invoke(); closeAllFn?.invoke(); closeConfirmFn?.invoke()
         if (stage?.stageName == "search") home.cancelRandom()
+        else if (stage?.stageName == "direct") home.cancelCall()
     }
     fun closeConfirm() { closeConfirmFn?.invoke() }
     fun closePersonAndAll() { closePersonFn?.invoke(); closeAllFn?.invoke() }
 
-    /** Back: the matching screen (search: cancel; connecting: wait), else the layer closes its top pop-up */
+    /** Back: the matching screen (search: cancel; a direct call being made: cancel; connecting: wait), else the layer closes its top pop-up */
     fun onBack(): Boolean {
         val s = stage ?: return false
         if (s.stageName == "search") home.cancelRandom()
+        else if (s.stageName == "direct") home.cancelCall()
         return true
     }
 
@@ -257,8 +259,10 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
             st.elevation = Ui.dp(95f)
             pages.rootView().addView(st, FrameLayout.LayoutParams(-1, -1))
         }
+        // "direct": one person is being called from Home (Weekly Top Creators / a person's sheet) — it can be cancelled
+        val cancellable = stageName == "search" || stageName == "direct"
         s.show(if (stageName == "search") "search" else "calling", type, home.rateOf(type), home.myPhotoRaws(), name,
-            if (stageName == "search") "Finding someone for you…" else null, if (stageName == "search") onCancel else null)
+            if (stageName == "search") "Finding someone for you…" else null, if (cancellable) onCancel else null)
         s.stageName = stageName
     }
     fun hideMatching() {

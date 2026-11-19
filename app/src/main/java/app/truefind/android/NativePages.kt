@@ -140,6 +140,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         navShown = showNav
         nav.visibility = if (showNav) View.VISIBLE else View.GONE
         nav.current = when (p()) { "/", "/home" -> "home"; "/explore" -> "explore"; "/chats" -> "recent"; else -> "" }
+        // Explore: its white Voice / Video / Random panel and the bar are one piece (no line, no shadow between them)
+        nav.seamless = p() == "/explore"
         val innerH = root.height - root.paddingTop - root.paddingBottom
         val pageH = if (showNav && innerH > 0) innerH - nav.barPx else ViewGroup.LayoutParams.MATCH_PARENT
         sizeTo(home, pageH)
@@ -162,8 +164,12 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         val pillOn = live && cm != null && cm.enabled && cm.pillVisible(path + search)
         callPill.visibility = if (pillOn) View.VISIBLE else View.GONE
         if (pillOn) (callPill.layoutParams as FrameLayout.LayoutParams).let { lp ->
-            // above the bottom bar; on Profile 24 dp from the bottom (as before); on other pages where the web's pill sat (84 px)
-            val b = if (showNav) nav.barPx + Ui.dpi(12f) else if (showHome || showProfile || showBuilder || showVerify) Ui.dpi(24f) else Ui.dpi(84f)
+            // above the bottom bar; on Profile 24 dp from the bottom (as before); on the Wallet above its Pay bar (a call put
+            // aside while coins are added); on other pages where the web's pill sat (84 px)
+            val onWallet = p() == "/wallet"
+            val b = if (showNav) nav.barPx + Ui.dpi(12f)
+                else if (onWallet) Ui.dpi(WData.payLiftDp((if (root.width > 0) root.width else act.resources.displayMetrics.widthPixels) / Ui.density) + 56f + 14f)
+                else if (showHome || showProfile || showBuilder || showVerify) Ui.dpi(24f) else Ui.dpi(84f)
             if (lp.bottomMargin != b) { lp.bottomMargin = b; callPill.layoutParams = lp }
         }
         return if (showNav && innerH > 0) innerH - nav.barPx else -1
@@ -215,7 +221,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             when (key) { "home" -> home.scrollTop(); "recent" -> recent.scrollTop(); else -> {} }
             return
         }
-        go(path)
+        // the Wallet opened from the bar keeps its fixed Back step (→ Recent); opened from a button it goes back to that page
+        go(path, if (key == "wallet") JSONObject().put(Router.TAB, true) else null)
     }
 
     // ═════════════════ phone Back / app on screen ═════════════════

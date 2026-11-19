@@ -28,8 +28,8 @@ import java.util.Locale
 /**
  * True Find · RECENT (the bottom-bar tab "Recent", address /chats) — native copy of pages/Chats.jsx.
  * Only your recent voice and video calls: one row per person (getRecentActivity), each with
- * Online · Free / Online · Busy / Offline · last seen, what the last call was, and Voice / Video
- * buttons that call again at once. Tap a person → the small profile card (Follow, Voice / Video Call);
+ * what the last call was and when, and Voice / Video buttons that call again at once (no
+ * Online / Offline on the rows: owner, 19 Nov). Tap a person → the small profile card (Follow, Voice / Video Call);
  * tap its round photo → the full profile (RecentPerson). The last tapped row keeps a purple outline.
  * Calls start with startCall and open the web's call screen (/call/:id); no coins → "Add coins" (Wallet),
  * busy / not available / failed → the same messages as the web. "Couldn't load" → Try again.
@@ -378,12 +378,12 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             box.setPicked(picked == r.otherId, false)
             // the content sits 11 in from the box edge (13 on the left), in both looks (the web pads 1 less when the line is 2)
             setPadding(Ui.dpi(13f), Ui.dpi(11f), Ui.dpi(11f), Ui.dpi(11f))
-            val st = statusOf(r.online, r.busy, r.lastSeen)
             val k = kindOf(r)
             val nm = r.name.ifEmpty { "Someone" }
-            contentDescription = "$nm, ${st.label}. ${k.full}. Tap to see profile"
+            // Recent never shows whether someone is online or offline (owner, 19 Nov): no status words, no status dot
+            contentDescription = "$nm. ${k.full}. Tap to see profile"
 
-            val face = RecentFace(ctx, 54f).apply { dot = st.dot; setPhoto(listOf(r.photo, r.full)) }
+            val face = RecentFace(ctx, 54f).apply { setPhoto(listOf(r.photo, r.full)) }
             addView(face, LayoutParams(Ui.dpi(54f), Ui.dpi(54f)))
 
             val col = LinearLayout(ctx).apply { orientation = VERTICAL }
@@ -398,13 +398,10 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 .add(ImageView(ctx).apply { setImageDrawable(Tf.lu(k.icon, k.color, 14f, 2.3f)) }, 0f, Ui.dpi(14f), Ui.dpi(14f))
                 .add(kindT, 4f, shrinks = true)
             col.addView(l2, LayoutParams(-1, Ui.dpi(20.25f)).apply { topMargin = Ui.dpi(2f) })
-            // ● Online · Free ………… 3:05 PM
-            val stT = Tf.t(ctx, st.label, 13f, st.color).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
-            val timeT = Tf.t(ctx, timeText(r.time), 12.5f, RC.gray, false).apply { maxLines = 1 }
+            // the time of the call (no "Online · Free" / "Offline · …" before it)
+            val timeT = Tf.t(ctx, timeText(r.time), 12.5f, RC.gray, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
             val l3 = RecentLine(ctx, Ui.dpi(19.5f))
-                .add(View(ctx).apply { background = Tf.circle(st.dot) }, 0f, Ui.dpi(7f), Ui.dpi(7f))
-                .add(stT, 6f, shrinks = true)
-                .add(timeT, 6f, atEnd = true)
+                .add(timeT, 0f, shrinks = true)
             col.addView(l3, LayoutParams(-1, Ui.dpi(19.5f)).apply { topMargin = Ui.dpi(3f) })
             addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = Ui.dpi(12f) })
 
@@ -464,7 +461,8 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             refreshCalls()
             if (res.ok && id.isNotEmpty()) {
                 person?.closeAll(); person = null
-                pages.go("/call/$id")
+                // the call screen knows at once who is being called and whether it is a video call
+                pages.go("/call/$id", JSONObject().put("type", type).put("peer", JSONObject().put("name", r.name).put("photo", r.photo.ifEmpty { r.full })))
                 return@invoke
             }
             val st = res.status

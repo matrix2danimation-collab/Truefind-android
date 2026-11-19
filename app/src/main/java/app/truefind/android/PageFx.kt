@@ -152,8 +152,15 @@ object PageFx {
         if (ticker == null) { main.removeCallbacks(flush); main.post(flush) }
     }
 
+    /**
+     * A move whose frames stop coming (the phone stopped drawing for the app for a while) still ends: the app
+     * must never be left "moving" — the bubbles, the globe and the answers from the server all wait for that.
+     */
+    private val watchdog = Runnable { if (ticker != null) { android.util.Log.w("TFFX", "a move's frames stopped: ended by the watchdog"); finish() } }
+
     /** Ends a running move at once (every page in its final place). */
     fun finish() {
+        main.removeCallbacks(watchdog)
         ticker?.let { Choreographer.getInstance().removeFrameCallback(it) }
         ticker = null
         Perf.moveEnd()
@@ -428,5 +435,7 @@ object PageFx {
         }
         ticker = cb
         Choreographer.getInstance().postFrameCallback(cb)
+        // (a move ends by itself at its time + 0.5 s at the latest; this only catches frames that never come)
+        main.removeCallbacks(watchdog); main.postDelayed(watchdog, (ms + 2500f).toLong())
     }
 }
