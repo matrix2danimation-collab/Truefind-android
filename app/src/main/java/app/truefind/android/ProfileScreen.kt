@@ -40,6 +40,14 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     var profile: JSONObject? = null; private set
     var notifications: List<JSONObject> = emptyList()
     var blocked: List<JSONObject> = emptyList()
+    /** Avatar / Templates shop: what is for sale (the server's list), my True Find coins */
+    var shopItems: List<ShopItemV> = emptyList(); private set
+    var shopCoins: Long? = null; private set
+    private var shopSeq = 0
+    private val shopBoxes = HashMap<String, LinearLayout>()
+    private var shopPage: ShopAllPage? = null
+    private var shopPageClose: (() -> Unit)? = null
+    private var shopSheetClose: (() -> Unit)? = null
     var premium: JSONObject? = null
     /** followers, following (from the server) */
     var followCounts: LongArray? = null
@@ -145,11 +153,14 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         this.search = search; this.usr = usr
         if (profile == null) { restoreSaved(); if (profile != null) renderPage() }
         if (!was && !loading) load()
+        if (!was && profile != null) loadShop()
         applyAddress()
     }
 
     private fun tearDown() {
         sheetClose?.invoke(); sheetClose = null
+        shopSheetClose?.invoke(); shopSheetClose = null
+        shopPageClose?.invoke(); shopPageClose = null; shopPage = null
         viewerClose?.invoke(); viewerClose = null
         edit?.let { removeView(it) }; edit = null
         people?.let { removeView(it) }; people = null
@@ -158,6 +169,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     }
     private fun clearData() {
         me = null; profile = null; notifications = emptyList(); blocked = emptyList(); premium = null; followCounts = null
+        shopItems = emptyList(); shopCoins = null
         loadError = ""; loadSeq++; loading = false
         pageCol.removeAllViews()
         saved.edit().clear().apply()
@@ -166,6 +178,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     private fun q(name: String): String? = try { Uri.parse("tf://x/" + (if (search.startsWith("?")) search else "?$search")).getQueryParameter(name) } catch (e: Exception) { null }
     val depth: Int get() = PR.firstNum(usr, listOf("tfDepth"))?.toInt() ?: 0
     val fromList: Boolean get() = PR.truthy(usr?.opt("fromList"))
+    /** this settings screen was opened from another page (an ?open= link), not from Profile itself */
+    val fromOutside: Boolean get() = PR.truthy(usr?.opt("fromOutside"))
     val panelId: String? get() { val s = q("settings"); return if (!s.isNullOrEmpty() && s != "1") s else null }
 
     private fun applyAddress() {
@@ -182,7 +196,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 "verification", "notifications", "privacy", "blocked", "memberships", "help", "security" -> open
                 else -> null
             }
-            if (target != null) { replaceQuery("?settings=$target"); return }
+            // (opened from another page — Home's Verification bar, Secret Dating, a Wallet button: its back arrow goes
+            // back to that page, like the phone's Back; owner, 19 Nov evening)
+            if (target != null) { replaceQuery("?settings=$target", JSONObject().put("fromOutside", true)); return }
         }
         if (p == null) { renderCenter(); return }
         center.visibility = GONE
@@ -216,9 +232,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     fun openEdit() = pushQuery("?edit=1")
     fun openPeople(kind: String) = pushQuery("?people=$kind")
     fun openDrawer(startPanel: String?) = pushQuery(if (startPanel != null) "?settings=$startPanel" else "?settings=1")
-    fun closeDrawer() = backToPage()
+    fun closeDrawer() { if (fromOutside && pages.canGoBack && pages.preview.isEmpty()) pages.backBy(1) else backToPage() }
     fun openPanel(id: String) = pushQuery("?settings=$id", JSONObject().put("fromList", true))
-    fun panelBack() { if (pages.preview.isNotEmpty()) { previewGo("?settings=1"); return }; if (fromList) pages.backBy(1) else replaceQuery("?settings=1") }
+    fun panelBack() { if (pages.preview.isNotEmpty()) { previewGo("?settings=1"); return }; if (fromList || (fromOutside && pages.canGoBack)) pages.backBy(1) else replaceQuery("?settings=1") }
     fun leaveTo(path: String) { backToPage(); main.postDelayed({ pages.go(path) }, 260) }
     fun go(path: String) = pages.go(path)
     /** test screens only: there is no web page, so the address changes here */
@@ -264,6 +280,13 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             if (p != null) gotProfile(p, failed, seq, uid) else findProfile(tries, i + 1, failed, seq, uid)
         }
     }
+    /** the Blocked users list again (after a Block from the Followers list) */
+    fun reloadBlocked() {
+        val uid = PR.s(me, "id")
+        if (uid.isEmpty()) return
+        val seq = loadSeq
+        Api.filter("Block", JSONObject().put("blocker_id", uid)) { r -> if (seq == loadSeq && r.ok) { blocked = PR.list(r); drawer?.refresh() } }
+    }
     private fun gotProfile(p: JSONObject?, failed: Int, seq: Int, uid: String) {
         // no internet is not the same as "no profile yet": one failed lookup is enough to be unsure
         if (p == null && failed > 0) { loadFailed(seq); return }
@@ -273,6 +296,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         if (p != null) saved.edit().putString("k", signKey()).putString("me", me?.toString()).putString("p", p.toString()).apply()
         if (p != null) {
             Api.filter("Block", JSONObject().put("blocker_id", uid)) { r -> if (seq == loadSeq) { blocked = if (r.ok) PR.list(r) else emptyList(); drawer?.refresh() } }
+            if (firstTime) loadShop()
             Api.filter("Notification", JSONObject().put("user_id", uid)) { r -> if (seq == loadSeq) { notifications = if (r.ok) PR.sortNew(PR.list(r)).take(40) else emptyList(); drawer?.refresh() } }
             Api.filter("PremiumAccess", JSONObject().put("user_id", uid).put("app", "secret")) { r -> if (seq == loadSeq) { premium = if (r.ok) PR.sortNew(PR.list(r)).firstOrNull() else null; drawer?.refresh() } }
             if (firstTime || followCounts == null) loadCounts()
@@ -598,7 +622,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             setOnClickListener { hidePencil(av); avatarSheet() }
             Ui.pressable(this, .95f)
         }
-        av.addView(pen, FrameLayout.LayoutParams(Ui.dpi(34f), Ui.dpi(34f), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = -Ui.dpi(14f) })
+        // inside the photo's own square, at its top: nothing around it can cut it (owner, 19 Nov: it showed half cut)
+        av.addView(pen, FrameLayout.LayoutParams(Ui.dpi(32f), Ui.dpi(32f), Gravity.TOP or Gravity.CENTER_HORIZONTAL))
         pen.scaleX = 0.4f; pen.scaleY = 0.4f; pen.alpha = 0f
         pen.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(180).start()
         main.postDelayed({ hidePencil(av) }, 5000)
@@ -818,14 +843,14 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         pc.addView(PUi.secHead(ctx, Lu.Image, "Photos", countPill))
         val grid = PhotoGrid(ctx)
         for (i in 0 until PR.MAX_PHOTOS) grid.addView(photoCell(ph.getOrNull(i), i, ph.size))
-        pc.addView(grid, LinearLayout.LayoutParams(-1, Ui.dpi(156f)))
+        pc.addView(grid, LinearLayout.LayoutParams(-1, -2))
         val note = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, Ui.dpi(12f), 0, 0) }
         note.addView(PUi.icon(ctx, PUi.lu(Lu.ShieldCheck, PC.nGreen, 16f), 16f), LinearLayout.LayoutParams(Ui.dpi(16f), Ui.dpi(16f)).apply { rightMargin = Ui.dpi(10f); topMargin = Ui.dpi(1f) })
         note.addView(PUi.para(ctx, "Only real photos of you. Our team checks every new photo before others can see it. AI-made or fake photos are rejected.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(0, -2, 1f))
         pc.addView(View(ctx).apply { setBackgroundColor(Ui.c("#EEE8F7")) }, LinearLayout.LayoutParams(-1, Ui.dpi(1f)).apply { topMargin = Ui.dpi(12f) })
         pc.addView(note)
         body.addView(pc, gap())
-        // the places for an avatar (instead of a real photo) and for templates (frames); what goes in them comes later
+        // Avatar and Templates: to buy with coins (the shop)
         body.addView(avatarSpace(), gap())
         body.addView(templateSpace(), gap())
         // Interests
@@ -898,51 +923,64 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         return c
     }
 
-    // ═════════════════ Avatar and Templates: their places (owner, 19 Nov — the avatars and frames come later) ═════════════════
-    private fun soonPill(): TextView = Tf.t(context, "Coming soon", 12f, PC.head).apply {
-        gravity = Gravity.CENTER; background = Tf.box(PC.tint, 8f); setPadding(Ui.dpi(9f), 0, Ui.dpi(9f), 0)
-        layoutParams = LinearLayout.LayoutParams(-2, Ui.dpi(24f))
+    // ═════════════════ Avatar and Templates (owner, 19 Nov evening) ═════════════════
+    // Only "Avatar" on the box (no "Real photo / Avatar · soon", no "soon" anywhere); both rows scroll sideways,
+    // "See all" opens a page with all of them, tapping one opens the Buy sheet (Wallet-like, "Buy for N coins").
+    // What is for sale comes from the server (the shop function); with nothing for sale yet the empty places show.
+    private fun avatarSpace(): View = shopSpace("avatar")
+    private fun templateSpace(): View = shopSpace("template")
+    private fun shopSpace(kind: String): View {
+        val c = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
+        shopBoxes[kind] = c
+        fillShopBox(kind, c)
+        return c
     }
-    /** a row of [n] empty dashed places (round for avatars, rounded squares for templates) */
-    private fun emptySlots(n: Int, round: Boolean, onTap: () -> Unit): LinearLayout {
+    private fun fillShopBox(kind: String, c: LinearLayout) {
         val ctx = context
-        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        for (i in 0 until n) {
-            val cell = FrameLayout(ctx).apply {
-                background = if (round) Tf.dashedBox(Ui.c("#FBF9FE"), 999f, 1.5f, PC.dashSoft) else Tf.dashedBox(Ui.c("#FBF9FE"), 12f, 1.5f, PC.dashSoft)
-                contentDescription = if (round) "Avatar (coming soon)" else "Template (coming soon)"
-                setOnClickListener { onTap() }
-                Ui.pressable(this, .97f)
-            }
-            cell.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(if (round) Lu.User else Lu.Crown, PC.dash, 18f, 2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-            row.addView(cell, LinearLayout.LayoutParams(0, Ui.dpi(56f), 1f).apply { if (i > 0) leftMargin = Ui.dpi(8f) })
+        c.removeAllViews()
+        val list = shopItems.filter { it.kind == kind }
+        val avatar = kind == "avatar"
+        c.addView(PUi.secHead(ctx, if (avatar) Lu.User else Lu.Crown, if (avatar) "Avatar" else "Templates", if (list.isNotEmpty()) ShopUi.seeAll(ctx) { openShopAll(kind) } else null))
+        if (!avatar && list.isEmpty()) c.addView(PUi.para(ctx, "Premium frames for your profile photo will show here.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
+        c.addView(ShopUi.row(ctx, kind, list) { openShopBuy(it) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(if (list.isEmpty()) 10f else 4f) })
+    }
+    private fun refreshShop() {
+        for ((k, c) in shopBoxes) if (c.isAttachedToWindow) fillShopBox(k, c)
+        shopPage?.refresh()
+    }
+    /** what is for sale + my coins (on the first load and on every visit: coins may have been added in the Wallet) */
+    fun loadShop() {
+        val my = ++shopSeq
+        Api.invoke("shop", JSONObject().put("action", "list")) { r ->
+            if (my != shopSeq || !r.ok || !r.data.optBoolean("ok")) return@invoke
+            shopItems = ShopData.items(r.data)
+            shopCoins = ShopData.coins(r.data)
+            refreshShop()
         }
-        return row
     }
-    /** Profile picture: a real photo (now) or an avatar (the avatars come later) */
-    private fun avatarSpace(): View {
-        val ctx = context
-        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
-        c.addView(PUi.secHead(ctx, Lu.User, "Avatar", soonPill()))
-        // the two kinds of profile picture: Real photo (on) · Avatar (soon)
-        val seg = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; background = Tf.box(PC.faint, 12f, 1f, PC.line); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
-        val real = Tf.t(ctx, "Real photo", 13.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = Tf.box(PC.head, 10f) }
-        val ava = Tf.t(ctx, "Avatar · soon", 13.5f, PC.sub).apply { gravity = Gravity.CENTER; setOnClickListener { say("Avatars are coming soon.") } }
-        seg.addView(real, LinearLayout.LayoutParams(0, Ui.dpi(36f), 1f))
-        seg.addView(ava, LinearLayout.LayoutParams(0, Ui.dpi(36f), 1f))
-        c.addView(seg, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
-        c.addView(PUi.para(ctx, "Use your real photo, or pick an avatar instead. Avatars are coming soon.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
-        c.addView(emptySlots(5, true) { say("Avatars are coming soon.") }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
-        return c
+    private fun openShopAll(kind: String) {
+        shopPageClose?.invoke()
+        val page = ShopAllPage(context, kind, { shopItems }, { shopCoins }, { openShopBuy(it) }) { shopPageClose?.invoke() }
+        shopPage = page
+        shopPageClose = pages.layer.page(page, z = 12f) { shopPage = null; shopPageClose = null }
     }
-    /** Templates: frames around the profile photo (the templates come later) */
-    private fun templateSpace(): View {
-        val ctx = context
-        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
-        c.addView(PUi.secHead(ctx, Lu.Crown, "Templates", soonPill()))
-        c.addView(PUi.para(ctx, "Premium frames for your profile photo will show here.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
-        c.addView(emptySlots(4, false) { say("Templates are coming soon.") }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
-        return c
+    private fun openShopBuy(item: ShopItemV) {
+        shopSheetClose?.invoke()
+        shopSheetClose = ShopBuySheet.open(pages.layer, item, shopCoins,
+            buy = { tap, done ->
+                Api.invoke("shop", JSONObject().put("action", "buy").put("item_id", item.id).put("client_buy_id", tap)) { r ->
+                    val res = ShopData.buy(r.status, r.data)
+                    if (res is ShopData.Buy.Short) shopCoins = res.coins ?: shopCoins
+                    done(res)
+                }
+            },
+            addCoins = { pages.go("/wallet") },
+            bought = { got, coins ->
+                shopItems = shopItems.map { x -> if (x.id == got.id) ShopItemV(x.id, x.kind, x.name, x.art, x.price, true) else x }
+                if (coins != null) shopCoins = coins
+                refreshShop()
+                say("Bought! It's yours now.")
+            })
     }
 
     private fun photoCell(ph: Ph?, i: Int, count: Int): View {
@@ -1004,12 +1042,16 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         return cell
     }
 
-    /** the 1 big + 4 small photo grid: columns 1.9fr 1fr 1fr, two rows, gap 8 */
+    /**
+     * the 1 big + 4 small photo grid, two rows, gap 8. Every place is a square (owner, 19 Nov: the main photo's
+     * circle was cut at its sides — the big place was taller than wide): the big one is as tall as the two rows.
+     */
     private class PhotoGrid(ctx: Context) : ViewGroup(ctx) {
         private val g = Ui.dpi(8f)
-        private fun cols(w: Int): IntArray { val a = w - 2 * g; val c0 = (a * 1.9f / 3.9f).toInt(); val c = (a - c0) / 2; return intArrayOf(c0, c, a - c0 - c) }
+        private fun cols(w: Int): IntArray { val a = w - 2 * g; val c = (a - g) / 4; val c0 = a - 2 * c; return intArrayOf(c0, c, a - c0 - c) }
         override fun onMeasure(ws: Int, hs: Int) {
-            val w = MeasureSpec.getSize(ws); val h = MeasureSpec.getSize(hs)
+            val w = MeasureSpec.getSize(ws)
+            val h = if (MeasureSpec.getMode(hs) == MeasureSpec.EXACTLY) MeasureSpec.getSize(hs) else cols(w)[0]
             val c = cols(w); val rh = (h - g) / 2
             for (i in 0 until childCount) {
                 val cw = when (i) { 0 -> c[0]; 1, 3 -> c[1]; else -> c[2] }

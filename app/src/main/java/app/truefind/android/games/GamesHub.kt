@@ -23,6 +23,11 @@ import org.json.JSONObject
 /** Native Games page — port of Games.jsx (header, Top Games card, the four games, coming soon). */
 @SuppressLint("ViewConstructor")
 class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
+    // pull down to refresh (owner, 19 Nov evening): the coins in the header come again
+    private lateinit var pull: app.truefind.android.PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
 
     private object TG {
         val ink = G.c("#1f0a3d"); val dark = G.c("#120a24"); val purple = G.c("#5c12b8"); val vivid = G.c("#6411c9")
@@ -119,6 +124,7 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         toast = Toast(this, G.round(G.ca("#1e0a3c", 0.92f), 99f), Color.WHITE, 14.5f, false, 24f).padding(18f, 11f, 18f, 11f)
 
         refreshWallet()
+        pull = app.truefind.android.PagePull(this, canPull = { isShown && !scroll.canScrollVertically(-1) && sheet == null }) { done -> refreshWallet(done) }
     }
 
     fun onShown(v: Boolean) {
@@ -127,8 +133,9 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
     }
 
     /** Wallet balance in the header (same wallet as Home). */
-    fun refreshWallet() {
+    fun refreshWallet(done: (() -> Unit)? = null) {
         GameApi.call("getWallet", JSONObject().put("app", "truefind")) { r ->
+            done?.invoke()
             if (!r.ok) return@call
             val w = r.data.obj("wallet") ?: return@call
             if (w.hasNum("coins")) {

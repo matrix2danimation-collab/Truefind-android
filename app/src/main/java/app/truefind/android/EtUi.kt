@@ -40,6 +40,16 @@ abstract class EtPage(val et: ExpertTalkScreen, bg: Int = Et.PAGE) : FrameLayout
         addView(frame, LayoutParams(-1, -1))
     }
 
+    // ── pull down to refresh (owner, 19 Nov evening): every screen of Expert Talk ──
+    /** false: this screen is not refreshed by a pull (the call screen) */
+    open val pullable: Boolean get() = true
+    /** what a pull loads again: by default Expert Talk's first answer (every screen draws from it) */
+    open fun pullRefresh(done: () -> Unit) = et.loadHome(done)
+    private val pull = PagePull(this, canPull = { pullable && !disposed && isShown && sheetClose == null && !scroll.canScrollVertically(-1) }) { done -> pullRefresh(done) }
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = pull.intercept(e) || super.onInterceptTouchEvent(e)
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = pull.touch(e) || super.onTouchEvent(e)
+
     /** where the screen sits in the page order (a lower one slides in from the left) */
     open val rank: Int = 0
     /** builds the screen (again) from the current data */

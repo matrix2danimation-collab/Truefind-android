@@ -29,6 +29,7 @@ class EtCallPage(et: ExpertTalkScreen, private val bookingId: String, private va
                  initial: JSONObject?, private val onDone: (JSONObject?) -> Unit) : EtPage(et, Color.WHITE), EtPreviewable {
     override fun preview(what: String) { when (what) { "end" -> endSheet(); "report" -> reportSheet(); "ureport" -> userReportSheet() } }
     companion object { val OVER = listOf("completed", "user_no_show", "refunded", "expert_no_show", "expert_left", "cut_by_report") }
+    override val pullable: Boolean get() = false
     override val rank = 7
     private var s: JSONObject? = initial
     private var done = false

@@ -97,7 +97,10 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
 
     // ═════════════ data: getChats (all), live ═════════════
     private var loadingNow = false
-    fun load(retried: Boolean = false) {
+    /** pulled down to refresh: told when the list is back */
+    private val waiting = ArrayList<() -> Unit>()
+    fun load(retried: Boolean = false, done: (() -> Unit)? = null) {
+        done?.let { waiting.add(it) }
         if (loadingNow && !retried) return
         loadingNow = true
         Api.invoke("getChats", JSONObject()) { r ->
@@ -106,14 +109,18 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
                 // one quiet retry first (right after opening the app the first call can fail), then show the error
                 if (!retried) { postDelayed({ load(true) }, 2500); return@invoke }
                 loadingNow = false
-                failed = true; if (chats == null) chats = emptyList(); render(); return@invoke
+                failed = true; if (chats == null) chats = emptyList(); render(); told(); return@invoke
             }
             loadingNow = false
             chats = list(arr).map { norm(it) }.filter { it.id.isNotEmpty() }.sortedByDescending { SdRules.ms(it.time) }
             failed = false
             render()
+            told()
         }
     }
+    private fun told() { val w = ArrayList(waiting); waiting.clear(); w.forEach { it() } }
+    /** the list is at its top (pull down to refresh) */
+    fun atTop(): Boolean = !scroll.canScrollVertically(-1)
     private var unsub: (() -> Unit)? = null
     private val soon = Runnable { load() }
     private val poll = object : Runnable { override fun run() { load(); postDelayed(this, 30_000) } }

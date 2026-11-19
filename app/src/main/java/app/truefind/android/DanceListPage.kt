@@ -24,6 +24,11 @@ import org.json.JSONObject
  */
 @SuppressLint("ViewConstructor")
 class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
     private val main = Handler(Looper.getMainLooper())
     private var home: JSONObject? = null
     private var err = ""
@@ -82,6 +87,8 @@ class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLa
         }
         addView(goLive, DK.flp(DK.WRAP, Ui.dpi(56f), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, b = 18f))
         render()
+        // (the circle comes down under the 56 dp top bar)
+        pull = PagePull(this, topDp = 60f, canPull = { isShown && !rv.canScrollVertically(-1) }) { done -> load(done) }
     }
 
     fun setMode(m: String, animate: Boolean) {
@@ -109,13 +116,17 @@ class DanceListPage(ctx: Context, private val screen: LiveDanceScreen) : FrameLa
     private fun schedule() { main.removeCallbacks(poll); if (active) main.postDelayed(poll, 10_000) }
 
     private var loadedAt = 0L
-    fun load() {
+    /** pulled down to refresh: told when the list is back */
+    private val waiting = ArrayList<() -> Unit>()
+    fun load(done: (() -> Unit)? = null) {
+        done?.let { waiting.add(it) }
         if (loading) return
         loading = true
         DanceApi.call("home") { r ->
             loading = false
             if (r.ok) { home = r.data; err = ""; loadedAt = System.currentTimeMillis() } else if (home == null) err = r.text("Could not load Live Dance.")
             render()
+            val w = ArrayList(waiting); waiting.clear(); w.forEach { it() }
         }
     }
 

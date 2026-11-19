@@ -65,13 +65,12 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
     private val verifyBar: VerifyBarView
     private val dailyBox: DailyBox
     private var rmOnline: TextView? = null
-    private var rmVoice: TextView? = null
-    private var rmVideo: TextView? = null
     private val body = ArrayList<View>()      // everything under the greeting (hidden behind the join card)
     private var joinCard: View? = null
     private val onlineBox = LinearLayout(ctx)
     private val onlineCount: TextView
     private val onlineRow: CardRow
+    private val onlineEmpty: TextView
     private val creatorsBox = FrameLayout(ctx)
     private val creatorsRow: CardRow
     private val creatorsEmpty: TextView
@@ -142,10 +141,9 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
         // ── Random Match ──
         addBody(randomMatch(ctx))
-        // ── Live Rooms ──
-        addBody(sectionHead(ctx, "Live Rooms", liveDot(ctx), "All rooms") { pages.go("/live") }, m.pi(24f))
-        addBody(HomeTiles.grid(ctx, m, { p -> pages.go(p) }, { goEarn() }), m.pi(202f))
-        // ── Online now (only when someone is) ──
+        // ── Online (owner, 19 Nov evening): moved up from under Live Rooms to right under Random Match, and made like
+        //    the Weekly Top Creators box — the same card size (three on the screen, more to the side), always shown
+        //    (a line when no one is online). Tap → the Voice / Video sheet, as before. ──
         onlineBox.orientation = LinearLayout.VERTICAL
         onlineBox.clipChildren = false
         val oh = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -157,9 +155,9 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         pingWrap.addView(ping, LayoutParams(m.pi(36f), m.pi(36f), Gravity.CENTER))
         oh.addView(pingWrap, LinearLayout.LayoutParams(m.pi(10f), m.pi(10f)).apply { rightMargin = m.pi(8f) })
         oh.clipChildren = false
-        oh.addView(Tf.tpx(ctx, "Online now", m.px(18f), Ui.c("#1F1235")).apply { letterSpacing = -0.2f / 18f })
+        oh.addView(Tf.tpx(ctx, "Online", m.px(17f), Ui.c("#1F1235")).apply { letterSpacing = -0.1f / 17f })
         onlineCount = Tf.tpx(ctx, "0", m.px(13f), Ui.c("#15803D")).apply {
-            background = Tf.boxPx(Ui.c("#DCFCE7"), m.px(10f)); setPadding(m.pi(8f), m.pi(1f), m.pi(8f), m.pi(1f))
+            background = Tf.boxPx(Ui.c("#DCFCE7"), m.px(10f)); setPadding(m.pi(8f), m.pi(1f), m.pi(8f), m.pi(1f)); visibility = GONE
         }
         oh.addView(onlineCount, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = m.pi(8f) })
         oh.addView(View(ctx), LinearLayout.LayoutParams(0, 1, 1f))
@@ -171,11 +169,20 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         }
         oh.addView(seeAll, LinearLayout.LayoutParams(-2, m.pi(32f)))
         onlineBox.addView(oh, LinearLayout.LayoutParams(-1, m.pi(24f)))
-        onlineRow = CardRow(ctx, { m.pi(108f) + m.pi(10f) }, glide = false)
+        onlineRow = CardRow(ctx, { m.pi(113f) + m.pi(10f) }, glide = true)
         onlineRow.setPadding(m.pi(16f), m.pi(2f), m.pi(16f), m.pi(4f))
         onlineBox.addView(onlineRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m.pi(14f); leftMargin = -m.pi(16f); rightMargin = -m.pi(16f) })
-        onlineBox.visibility = GONE
+        onlineEmpty = Tf.tpx(ctx, "No one is online right now. Check back in a minute!", m.px(13f), Ui.c("#6B6478"), false).apply {
+            gravity = Gravity.CENTER
+            background = Tf.boxPx(Color.WHITE, m.px(16f), max(1f, m.px(1f)), Ui.c("#EEE9F5"))
+            setPadding(m.pi(14f), m.pi(18f), m.pi(14f), m.pi(18f))
+            visibility = GONE
+        }
+        onlineBox.addView(onlineEmpty, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m.pi(14f) })
         addBody(onlineBox)
+        // ── Live Rooms ──
+        addBody(sectionHead(ctx, "Live Rooms", liveDot(ctx), "All rooms") { pages.go("/live") }, m.pi(24f))
+        addBody(HomeTiles.grid(ctx, m, { p -> pages.go(p) }, { goEarn() }), m.pi(202f))
         // ── Serious Single ──
         addBody(HomeTiles.serious(ctx, m) { pages.go("/secret-app") }, m.pi(236f))
         // ── Weekly Top Creators ──
@@ -274,7 +281,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             background = Tf.boxPx(Color.WHITE, m.px(23f), m.px(1.5f), Ui.c("#6C2BD9"))
             compoundDrawablePadding = m.pi(7f)
             setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.MIC_PURPLE16), 16f * m.z), null, null, null)
-            // a tap starts the call straight away — no "Random Voice Call" pop-up first (owner, 19 Nov); the rate is under the button
+            // a tap starts the call straight away — no "Random Voice Call" pop-up first (owner, 19 Nov)
             setOnClickListener { startRandom("voice") }
         }
         val video = Tf.tpx(ctx, "Video Call", m.px(14.5f), Color.WHITE).apply {
@@ -289,16 +296,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         btns.addView(centered(ctx, voice), LinearLayout.LayoutParams(0, m.pi(46f), 1f).apply { rightMargin = m.pi(5f) })
         btns.addView(centered(ctx, video), LinearLayout.LayoutParams(0, m.pi(46f), 1f).apply { leftMargin = m.pi(5f) })
         box.addView(btns, LinearLayout.LayoutParams(-1, m.pi(46f)).apply { topMargin = m.pi(12f) })
-        val rr = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        fun rate(): TextView = Tf.tpx(ctx, "", m.px(12.5f), Ui.c("#4B4458")).apply {
-            gravity = Gravity.CENTER
-            compoundDrawablePadding = m.pi(5f)
-            setCompoundDrawablesWithIntrinsicBounds(CoinPicDrawable(ctx, 14f * m.z), null, null, null)
-        }
-        rmVoice = rate(); rmVideo = rate()
-        rr.addView(centered(ctx, rmVoice!!), LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = m.pi(5f) })
-        rr.addView(centered(ctx, rmVideo!!), LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = m.pi(5f) })
-        box.addView(rr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m.pi(12f - 4f) })
+        // (no "10 coins / min · 40 coins / min" under the buttons: owner, 19 Nov evening)
         return box
     }
 
@@ -520,7 +518,6 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         val others = others()
         val onlineList = others.filter { HomeRules.isFree(it) }
         rmOnline?.text = if (profiles == null) "Checking who is online…" else if (onlineList.isNotEmpty()) "${onlineList.size} online now" else "Tap a call to start"
-        rmVoice?.text = "${rates[0]} coins / min"; rmVideo?.text = "${rates[1]} coins / min"
         // join card instead of the page body (not a member of this app yet)
         if (needsApp.isNotEmpty()) {
             if (joinCard == null) { joinCard = sheets.joinCard(needsApp) { needsApp = ""; render(); loadAllNow() }; column.addView(joinCard, 3, gapLp()) }
@@ -528,7 +525,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             return
         } else {
             joinCard?.let { column.removeView(it) }; joinCard = null
-            body.forEach { if (it !== onlineBox) it.visibility = VISIBLE }
+            body.forEach { it.visibility = VISIBLE }
         }
         renderOnline(others)
         renderCreators()
@@ -536,13 +533,15 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
     private fun loadAllNow() { loadMe(); loadWallet(); loadPeople(); loadDaily() }
 
-    /** Online now: only people online right now (free first), up to 20, the other gender; 3D faces, two neighbours never the same. */
+    /** Online: only people online right now (free first), up to 20, the other gender; 3D faces, two neighbours never the same. */
     private fun renderOnline(others: List<JSONObject>) {
         val myG = myGender()
         val list = others.filter { HomeRules.isOnline(it) && (myG.isEmpty() || HomeRules.genderOf(it).isEmpty() || HomeRules.genderOf(it) != myG) }
             .sortedWith(compareByDescending<JSONObject> { if (HomeRules.isFree(it)) 1 else 0 }).take(20)
         val keys = list.joinToString("|") { (HomeRules.idOf(it).ifEmpty { it.optString("id") }) + ":" + HomeRules.isFree(it) + ":" + HomeRules.firstName(it) + HomeRules.ageOf(it) + HomeRules.cityOf(it) }
-        onlineBox.visibility = if (list.isEmpty()) GONE else VISIBLE
+        onlineEmpty.visibility = if (list.isEmpty()) VISIBLE else GONE
+        onlineRow.visibility = if (list.isEmpty()) GONE else VISIBLE
+        onlineCount.visibility = if (list.isEmpty()) GONE else VISIBLE
         onlineCount.text = list.size.toString()
         if (keys == onlineKeys) return
         onlineKeys = keys
@@ -555,7 +554,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
             if (n == lastFace) n = (n + 1) % set.size
             lastFace = n
             row.addView(HomeTiles.onlineCard(context, m, p, set[n]) { sheets.person(p) },
-                LinearLayout.LayoutParams(m.pi(108f), m.pi(184f)).apply { if (i > 0) leftMargin = m.pi(10f) })
+                LinearLayout.LayoutParams(m.pi(113f), m.pi(188f)).apply { if (i > 0) leftMargin = m.pi(10f) })
         }
     }
 
@@ -949,25 +948,40 @@ class CoinPicDrawable(private val ctx: Context, private val sizeDp: Float) : and
 
 /** Pull down at the top of a page to refresh (the child decides when it is at the top). */
 class PullHost(ctx: Context) : FrameLayout(ctx) {
+    private val g = PullGesture(ctx)
+    var canPull: () -> Boolean get() = g.canPull; set(v) { g.canPull = v }
+    var onPull: (Float) -> Unit get() = g.onPull; set(v) { g.onPull = v }
+    var onRelease: (Float) -> Unit get() = g.onRelease; set(v) { g.onRelease = v }
+    override fun onInterceptTouchEvent(e: MotionEvent): Boolean = g.intercept(e)
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: MotionEvent): Boolean = g.touch(e)
+}
+
+/**
+ * The pull-down gesture itself, for any page (a page passes its onInterceptTouchEvent / onTouchEvent here).
+ * It starts at the same distance the page's own scrolling does (never later), and a page sees a touch before
+ * its scroll does, so a pull at the top is always the pull — before 19 Nov the scroll could take it first.
+ */
+class PullGesture(ctx: Context) {
     var canPull: () -> Boolean = { false }
     var onPull: (Float) -> Unit = {}
     var onRelease: (Float) -> Unit = {}
-    private val slop = Ui.dp(10f)
+    private val slop = min(Ui.dp(10f), android.view.ViewConfiguration.get(ctx).scaledTouchSlop.toFloat())
     private var track = false; private var pulling = false
     private var x0 = 0f; private var y0 = 0f; private var d = 0f
     private fun travel(dy: Float): Float { val v = ((dy - slop) / Ui.density).coerceAtLeast(0f) * 0.55f; return if (v <= 60f) v else min(112f, 60f + (v - 60f) * 0.4f) }
-    override fun onInterceptTouchEvent(e: MotionEvent): Boolean {
+    fun intercept(e: MotionEvent): Boolean {
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> { pulling = false; track = canPull(); x0 = e.x; y0 = e.y; d = 0f }
             MotionEvent.ACTION_MOVE -> if (track && !pulling) {
                 val dx = e.x - x0; val dy = e.y - y0
                 if (abs(dx) >= slop || abs(dy) >= slop) { if (dy > 0 && dy > abs(dx) * 1.4f && canPull()) pulling = true else track = false }
             }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (!pulling) track = false
         }
         return pulling
     }
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(e: MotionEvent): Boolean {
+    fun touch(e: MotionEvent): Boolean {
         if (!pulling) return false
         when (e.actionMasked) {
             MotionEvent.ACTION_MOVE -> { d = travel(e.y - y0); onPull(d) }

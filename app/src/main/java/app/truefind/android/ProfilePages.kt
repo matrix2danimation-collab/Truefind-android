@@ -269,7 +269,7 @@ class PPeoplePage(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx
         }
         if (rows != null && rows.isNotEmpty()) {
             val b = box()
-            rows.forEachIndexed { i, p -> b.addView(row(p, i == 0)) }
+            rows.forEachIndexed { i, p -> b.addView(row(p, i == 0, menu = kind == "followers")) }
             body.addView(b)
         }
         if (suggestions.isNotEmpty()) {
@@ -284,8 +284,8 @@ class PPeoplePage(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx
         }
     }
 
-    /** one member: photo (+ online dot), name (+ tick), "Follows you · City", and the button */
-    private fun row(p: JSONObject, first: Boolean): View {
+    /** one member: photo (+ online dot), name (+ tick), "Follows you · City", the button, and (a follower) ⋮ */
+    private fun row(p: JSONObject, first: Boolean, menu: Boolean = false): View {
         val ctx = context
         val r = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(64f); setPadding(Ui.dpi(12f), 0, Ui.dpi(6f), 0) }
         val wrap = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
@@ -325,7 +325,82 @@ class PPeoplePage(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx
         btnBox.setOnClickListener { if (busyId.isEmpty()) press(p) }
         Ui.pressable(btnBox, .97f)
         r.addView(btnBox, LinearLayout.LayoutParams(-2, Ui.dpi(44f)))
+        // a follower: ⋮ → Remove follower · Block (owner, 19 Nov evening)
+        if (menu) {
+            val dots = FrameLayout(ctx).apply {
+                contentDescription = "More for $name"
+                addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.EllipsisVertical, PC.fSub, 20f, 2.6f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+                setOnClickListener { if (busyId.isEmpty()) more(p) }
+                Ui.pressable(this, .95f)
+            }
+            r.setPadding(r.paddingLeft, 0, Ui.dpi(2f), 0)
+            r.addView(dots, LinearLayout.LayoutParams(Ui.dpi(34f), Ui.dpi(44f)))
+        }
         return wrap
+    }
+
+    /** ⋮ on a follower: Remove follower (they stop following me; they are not told) or Block */
+    private fun more(p: JSONObject) {
+        val ctx = context
+        val name = PR.s(p, "name").ifEmpty { "Member" }
+        val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        var close: () -> Unit = {}
+        fun item(icon: String, title: String, sub: String, color: Int, go: () -> Unit): View {
+            val r = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(60f)
+                background = Tf.box(PC.faint, 14f); setPadding(Ui.dpi(14f), Ui.dpi(10f), Ui.dpi(14f), Ui.dpi(10f))
+                contentDescription = title
+                setOnClickListener { close(); go() }
+                Ui.pressable(this, .98f)
+            }
+            r.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(icon, color, 20f, 2.2f)) }, LinearLayout.LayoutParams(Ui.dpi(20f), Ui.dpi(20f)).apply { rightMargin = Ui.dpi(12f) })
+            val t = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+            t.addView(Tf.t(ctx, title, 15f, color).lineH(20f))
+            t.addView(PUi.para(ctx, sub, 12.5f, PC.sub, 17f))
+            r.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
+            return r
+        }
+        col.addView(item(Lu.UserMinus, "Remove follower", "They are taken off your Followers. They won't be told.", PC.ink) { askRemove(p) })
+        col.addView(item(Lu.Ban, "Block", "No calls or messages from them, and you won't see each other.", PC.red) { askBlock(p) },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(8f) })
+        val tie = if (PR.truthy(p.opt("i_follow"))) "You follow each other" else "Follows you"
+        close = PUi.sheet(ps.pages.layer, name, tie, col)
+    }
+
+    private fun askRemove(p: JSONObject) {
+        val name = PR.s(p, "name").ifEmpty { "Member" }
+        PConfirm(ps.pages.layer, "Remove $name?", "$name will be taken off your Followers list. They won't be told.", "Remove",
+            danger = true, dark = true, onConfirm = { box -> box.close(); act(p, "remove_follower") })
+    }
+
+    private fun askBlock(p: JSONObject) {
+        val name = PR.s(p, "name").ifEmpty { "Member" }
+        PConfirm(ps.pages.layer, "Block $name?", "$name won't be able to call or message you, and you won't see each other in True Find. You can unblock in Settings → Blocked users.", "Block",
+            danger = true, dark = true, onConfirm = { box -> box.close(); act(p, "block") })
+    }
+
+    /** Remove follower / Block on the server, then the lists and counts as they are now */
+    private fun act(p: JSONObject, action: String) {
+        if (busyId.isNotEmpty()) return
+        val uid = PR.s(p, "user_id")
+        if (uid.isEmpty()) return
+        busyId = uid; render()
+        follow(JSONObject().put("action", action).put("user_id", uid)) { d, r ->
+            if (!alive) return@follow
+            busyId = ""
+            if (d == null) { render(); ps.say(PR.errText(r, "Could not update. Please try again."), true); return@follow }
+            ps.setCounts(PR.firstNum(d, listOf("followers"))?.toLong() ?: 0, PR.firstNum(d, listOf("following"))?.toLong() ?: 0)
+            lists["followers"] = lists["followers"]?.filter { PR.s(it, "user_id") != uid }
+            if (action == "block") {
+                lists["following"] = lists["following"]?.filter { PR.s(it, "user_id") != uid }
+                suggestions = suggestions.filter { PR.s(it, "user_id") != uid }
+                ps.reloadBlocked()
+            }
+            render()
+            val name = PR.s(p, "name").ifEmpty { "Member" }
+            ps.say(if (action == "block") "You blocked $name." else "$name was removed from your followers.")
+            load(kind, true)
+        }
     }
 
     private fun press(p: JSONObject) {

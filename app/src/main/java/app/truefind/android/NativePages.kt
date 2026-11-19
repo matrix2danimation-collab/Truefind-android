@@ -332,6 +332,53 @@ class CallPill(ctx: android.content.Context, onTap: () -> Unit) : android.widget
         setOnClickListener { onTap() }
         Ui.pressable(this, 0.97f)
     }
+
+    // ── hold and move it anywhere: top, bottom, left, right (owner, 19 Nov evening: on the Wallet it covered the
+    //    packs while paying). A tap still returns to the call; a move never does. It stays where it was put. ──
+    private val slop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop.toFloat()
+    private var downX = 0f; private var downY = 0f; private var fromX = 0f; private var fromY = 0f
+    private var dragging = false
+    /** where it was put (its top-left inside the screen); null: its own place above the bar */
+    private var placedX = Float.NaN; private var placedY = Float.NaN
+    private val edge get() = Ui.dp(8f)
+    private fun clampX(x: Float): Float { val pw = (parent as? View)?.width ?: return x; return x.coerceIn(edge, maxOf(edge, pw - width - edge)) }
+    private fun clampY(y: Float): Float {
+        val pv = parent as? View ?: return y
+        val top = pv.paddingTop + edge
+        return y.coerceIn(top, maxOf(top, pv.height - height - pv.paddingBottom - edge))
+    }
+    override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { downX = e.rawX; downY = e.rawY; fromX = left + translationX; fromY = top + translationY; dragging = false }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val dx = e.rawX - downX; val dy = e.rawY - downY
+                if (!dragging && dx * dx + dy * dy > slop * slop) {
+                    dragging = true
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                    // the tap is off: the press and the click are cancelled
+                    val c = android.view.MotionEvent.obtain(e).apply { action = android.view.MotionEvent.ACTION_CANCEL }
+                    super.dispatchTouchEvent(c); c.recycle()
+                    animate().scaleX(1.05f).scaleY(1.05f).setDuration(120).start()
+                }
+                if (dragging) { placeAt(fromX + dx, fromY + dy); return true }
+            }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> if (dragging) {
+                dragging = false
+                animate().scaleX(1f).scaleY(1f).setDuration(140).start()
+                return true
+            }
+        }
+        return super.dispatchTouchEvent(e)
+    }
+    private fun placeAt(x: Float, y: Float) {
+        placedX = clampX(x); placedY = clampY(y)
+        translationX = placedX - left; translationY = placedY - top
+    }
+    // the page under it changes its own place (above the bar, above the Pay bar …): where it was put stays
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        super.onLayout(changed, l, t, r, b)
+        if (!placedX.isNaN()) placeAt(placedX, placedY)
+    }
 }
 
 /** a small dot blinking 1 → .35 → 1 every 1.2 s */

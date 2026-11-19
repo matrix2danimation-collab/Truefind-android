@@ -77,6 +77,7 @@ class EtPanel(val et: ExpertTalkScreen) {
 // ═══════════════════════════ dashboard ═══════════════════════════
 @SuppressLint("ViewConstructor")
 class EtXDash(et: ExpertTalkScreen, private val panel: EtPanel) : EtPage(et), EtPreviewable {
+    override fun pullRefresh(done: () -> Unit) = panel.load(done)
     override fun preview(what: String) {
         val b = Et.objs(panel.d?.optJSONArray("bookings"))
         when (what) {

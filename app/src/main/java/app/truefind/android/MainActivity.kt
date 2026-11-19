@@ -66,6 +66,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     private lateinit var root: FrameLayout
+    private lateinit var edgeGlow: EdgeGlow
+    // every touch passes the glow first (it only looks; the screen gets the touch as before)
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (::edgeGlow.isInitialized) try { edgeGlow.feed(ev) } catch (e: Exception) { }
+        return super.dispatchTouchEvent(ev)
+    }
     /** the sign-in web page: only there while signing in or out (never while the app's own pages lead) */
     private var web: WebView? = null
     private lateinit var explore: ExploreScreen
@@ -376,6 +382,15 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             update(); checkLeave(); maybeEnterNative()
         }
         root.addView(login, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+        // the soft glow at a list's top / bottom end (owner, 19 Nov evening): True Find's blue, Secret Dating's pink.
+        // It sits over the pages (under the call screen) and never takes a touch.
+        edgeGlow = EdgeGlow(this) {
+            val p = pathOnly(path)
+            if (p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p)) K.rose else PullSpinner.BLUE
+        }
+        edgeGlow.elevation = Ui.dp(99f)
+        root.addView(edgeGlow, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
         // what the web page did in the background for a signed-in member (online / offline, the number on Find …)
         work = SessionWork(this, object : SessionWork.Host {
@@ -1079,6 +1094,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // the app's own history says which way it went; on the sign-in pages: a Back a moment ago, or an earlier place in the history
         val goingBack = if (native && hint != null) hint == Router.Move.POP else (now - backAt < 1500 || (routeIdx >= 0 && fromIdx >= 0 && routeIdx < fromIdx))
         val kind = when {
+            // Back goes the Claude app's way everywhere, between the bar's pages too (owner, 19 Nov evening: Wallet →
+            // Recent dissolved, but Recent → Explore → Home still slid sideways like a tab tap). A tab tap still slides.
+            native && hint == Router.Move.POP -> PageFx.Kind.POP
             tA >= 0 && tB >= 0 && tA != tB -> PageFx.Kind.TAB
             goingBack -> PageFx.Kind.POP
             tA < 0 && tB >= 0 -> PageFx.Kind.POP

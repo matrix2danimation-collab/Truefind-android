@@ -71,6 +71,12 @@ internal fun liveGoLiveButton(ctx: Context): TextView = DK.button(ctx, "Go Live"
 /** The Live Room page (LiveRooms.jsx without ?m): the big Audio Room box, "You are live", Go Live. */
 @SuppressLint("ViewConstructor")
 class LiveHomePage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
+    private val sv = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS; clipToPadding = false }
     private val box = AudioBox(ctx)
     private val mineBox = FrameLayout(ctx)
     private val errBox = FrameLayout(ctx)
@@ -80,7 +86,6 @@ class LiveHomePage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLay
     init {
         background = LiveBg.page()
         isClickable = true
-        val sv = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS; clipToPadding = false }
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, Ui.dpi(110f)) }
         sv.addView(col)
         // header: back · (nothing in the middle: no "True Find", owner rule Nov 17) · Leaderboard
@@ -98,6 +103,7 @@ class LiveHomePage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLay
         addView(goLive, DK.flp(DK.WRAP, Ui.dpi(54f), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, b = 18f))
         box.setOnClickListener { screen.nav.go("/live?m=audio") }
         render()
+        pull = PagePull(this, canPull = { isShown && !sv.canScrollVertically(-1) }) { done -> screen.refreshHome(done) }
         box.fadeUpIn()
     }
 
@@ -224,6 +230,11 @@ class LiveHomePage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLay
  */
 @SuppressLint("ViewConstructor")
 class LiveListPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
     private var chip = "All"
     private val chipViews = ArrayList<TextView>()
     private val sub: TextView
@@ -275,6 +286,8 @@ class LiveListPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLay
         addView(goLive, DK.flp(DK.WRAP, Ui.dpi(54f), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, b = 18f))
         paintChips()
         render()
+        // (the circle comes down under the white app bar)
+        pull = PagePull(this, topDp = 60f, canPull = { isShown && !rv.canScrollVertically(-1) }) { done -> screen.refreshHome(done) }
     }
 
     private fun paintChips() {
@@ -450,6 +463,11 @@ class LiveListPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLay
 /** The hosts' Leaderboard (Leaderboard in LiveRooms.jsx): Weekly / Monthly / All Time, by gifts received. */
 @SuppressLint("ViewConstructor")
 class LiveBoardPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
     private var period = "week"
     private var data: JSONObject? = null
     private var err = ""
@@ -483,6 +501,7 @@ class LiveBoardPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLa
         col.addView(body, DK.llp())
         addView(sv, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         paintTabs()
+        pull = PagePull(this, canPull = { isShown && !sv.canScrollVertically(-1) }) { done -> load(done) }
     }
 
     fun onShown() { if (data == null || err.isNotEmpty()) load() }
@@ -496,13 +515,14 @@ class LiveBoardPage(ctx: Context, private val screen: LiveRoomsScreen) : FrameLa
         }
     }
 
-    private fun load() {
+    private fun load(done: (() -> Unit)? = null) {
         val my = ++seq
-        data = null; err = ""; all = false
-        render()
+        // pulled down to refresh: the board stays on screen until the new one is here
+        if (done == null) { data = null; err = ""; all = false; render() }
         LiveApi.call("leaderboard", JSONObject().put("period", period)) { r ->
+            done?.invoke()
             if (my != seq) return@call
-            if (r.ok) data = r.data else err = r.text("Could not load the leaderboard.")
+            if (r.ok) { data = r.data; err = "" } else if (done == null || data == null) err = r.text("Could not load the leaderboard.")
             render()
         }
     }

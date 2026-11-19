@@ -295,20 +295,42 @@ class SecretHome(
         renderNotice()
     }
 
-    fun loadAll() {
-        if (!Api.ready) { main.postDelayed({ if (shown) loadAll() }, 700); return }
+    fun loadAll(done: (() -> Unit)? = null) {
+        if (!Api.ready) { main.postDelayed({ if (shown) loadAll(done) else done?.invoke() }, 700); return }
         // a plan remembered on this phone counts until the server answers (it is only what's SHOWN)
         if (access == null) prefs.getString("sd_plan_until", "")?.let { u -> if (u.isNotEmpty() && SdRules.ms(u) > System.currentTimeMillis()) access = true to u }
-        loadPeople(); loadStories(); loadActivity()
+        var left = 3
+        val one: () -> Unit = { left -= 1; if (left == 0) done?.invoke() }
+        loadPeople(one); loadStories(one); loadActivity(one)
     }
 
-    private fun loadPeople() {
+    // ── pull down to refresh (owner, 19 Nov evening): the home page and the chats, in Secret Dating's own pink ──
+    private val pull: PagePull = run {
+        PagePull(this, PullSpinner.PINK, PullSpinner.PINK_RING, canPull = {
+            shown && !layer.open && when (page) {
+                "home" -> scroll.isShown && !scroll.canScrollVertically(-1)
+                "chat" -> chatPage?.let { it.isShown && it.atTop() } == true
+                else -> false   // the map moves under the finger
+            }
+        }) { done ->
+            if (page == "chat") { var left = 2; val one = { left -= 1; if (left == 0) done() }; loadAll(one); chatPage?.load(done = one) ?: one() }
+            else loadAll(done)
+        }
+    }
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = pull.intercept(e) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = pull.touch(e) || super.onTouchEvent(e)
+
+    private fun loadPeople(done: (() -> Unit)? = null) {
+        var left = if (page != "map") 2 else 1
+        val one: () -> Unit = { left -= 1; if (left == 0) done?.invoke() }
         if (page != "map") Api.invoke("getDiscoverProfiles", JSONObject().put("intent", "dating")) { r ->
             if (r.ok) {
                 needSecret = r.data.optString("needs_membership") == "secret"
                 discover = list(r.data.optJSONArray("profiles"))
             } else if (discover == null) discover = emptyList()
             render()
+            one()
         }
         Api.invoke("getMapProfiles", JSONObject().put("include_offline", true)) { r ->
             if (r.ok) {
@@ -319,6 +341,7 @@ class SecretHome(
                 if (mapPremium == true && mapUntil.isNotEmpty()) prefs.edit().putString("sd_plan_until", mapUntil).apply()
             } else if (online == null) online = emptyList()
             render()
+            one()
         }
         Api.invoke("getRequestCredits") { r ->
             if (r.ok) {
@@ -352,8 +375,9 @@ class SecretHome(
         }
     }
 
-    private fun loadStories() {
+    private fun loadStories(done: (() -> Unit)? = null) {
         Api.invoke("getStories") { r ->
+            done?.invoke()
             if (r.ok) {
                 storiesState = "ready"
                 storiesMine = r.data.optJSONObject("mine")
@@ -365,8 +389,9 @@ class SecretHome(
         }
     }
 
-    private fun loadActivity() {
+    private fun loadActivity(done: (() -> Unit)? = null) {
         Api.invoke("getSecretActivity") { r ->
+            done?.invoke()
             val items = r.data.optJSONArray("items")
             if (!r.ok || items == null) { if (activity == null) { activity = JSONObject().put("items", JSONArray()).put("counts", JSONObject()).put("can_see", false); renderActivity() }; return@invoke }
             val all = list(items)

@@ -1345,6 +1345,7 @@ class EtSessions(et: ExpertTalkScreen) : EtPage(et), EtPreviewable {
     override fun back(): Boolean { et.go("home"); return true }
     override fun tick() { for (t in tickers) t() }
 
+    override fun pullRefresh(done: () -> Unit) { var left = 2; val one = { left -= 1; if (left == 0) done() }; load(one); et.loadHome(one) }
     private fun load(done: (() -> Unit)? = null) {
         Et.call("sessions") { r ->
             if (disposed) return@call

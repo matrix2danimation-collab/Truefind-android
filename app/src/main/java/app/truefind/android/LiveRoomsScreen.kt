@@ -158,6 +158,10 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
     private val homeWaits = longArrayOf(1500L, 4000L, 8000L)
     private val homeRetry = Runnable { if (shown && appVisible) loadHome(auto = true) }
     fun loadHome() = loadHome(auto = false)
+    /** pulled down to refresh: [done] when the list is back (or its reason shows) */
+    private val homeWaiters = ArrayList<() -> Unit>()
+    fun refreshHome(done: () -> Unit) { homeWaiters.add(done); loadHome(auto = false) }
+    private fun homeTold() { val w = ArrayList(homeWaiters); homeWaiters.clear(); w.forEach { it() } }
     private fun loadHome(auto: Boolean) {
         if (!auto) { homeTries = 0; main.removeCallbacks(homeRetry); if (home == null && homeErr.isNotEmpty()) { homeErr = ""; homePage?.render(); listPage?.render() } }
         if (homeLoading) return
@@ -177,6 +181,7 @@ class LiveRoomsScreen(ctx: Context, val nav: Nav) : FrameLayout(ctx) {
                 homeErr = homeError(r)
             }
             homePage?.render(); listPage?.render()
+            homeTold()
         }
     }
     /** a failure that passes by itself: no answer, the server busy, or the server failing for a moment */

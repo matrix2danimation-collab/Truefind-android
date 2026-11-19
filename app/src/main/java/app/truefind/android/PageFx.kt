@@ -38,6 +38,11 @@ import android.widget.FrameLayout
  *     to full size (92 → 97 → 99.4 → 99.8 → 100 %); all is still after about 290 ms.
  *   Both pages turn around the middle of the screen. (Until 19 Nov: FRND's way — the page slid away over
  *   300 ms and the page under it stood still: 2 · 12 · 34 · 51 · 73 · 90 · 98 %.)
+ *   Checked again on 19 Nov evening against a second recording of the Claude app (Billing → Settings): the
+ *   leaving page 17.5 → 35 % to the right at 96 → 92 % size, seen 63 → 22 %; the page under seen 52 → 77 → 92
+ *   → 100 %, from −7.3 → −3.6 → −1.6 → −0.5 % at 92 → 92 → 96 → 98 % size — within a few hundredths of this
+ *   move. Every Back goes this way, between the bar's pages too (before that evening Recent → Explore → Home
+ *   still slid sideways like a tab tap; a tab tap still does).
  *
  *   FRND has a second way too, for the pages that are separate screens of it (its room lists): Android's own
  *   screen change — 450 ms, the old page a quarter of the width to the left and darkened to half. This app

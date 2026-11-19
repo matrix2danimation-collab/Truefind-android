@@ -108,41 +108,16 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
     }
 
     // ═════════════════ Weekly Top Creators: everyone ═════════════════
+    /**
+     * Weekly Top Creators → See all: a page of its own (owner, 19 Nov evening) — the first three on top (1 in the
+     * middle, 2 and 3 on its sides), "Your rank", then 4 to 30 (TopCreatorsPage).
+     */
     fun allCreators() {
         closeAllFn?.invoke()
-        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
-        val h = Tf.row(ctx)
-        h.addView(View(ctx).apply { background = SvgDrawable(Svg.of(CROWN), 22f, 17f, Ui.c("#5b16b0")) }, Tf.ll(Ui.dpi(22f), Ui.dpi(17f), r = 8f))
-        val title = SpannableStringBuilder("Weekly Top Creators").apply { setSpan(ForegroundColorSpan(Ui.c("#5c12b8")), 7, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
-        h.addView(Tf.t(ctx, title, 20f, C_INK))
-        c.addView(h, Tf.ll(Tf.M, Tf.W, b = 14f))
-        val list = home.creators().take(60)
-        val cols = 3
-        val gapX = Ui.dpi(12f); val gapY = Ui.dpi(16f)
-        val avail = (min(pages.rootView().width, Ui.dpi(480f)) - Ui.dpi(36f)).coerceAtLeast(Ui.dpi(200f))
-        val cw = (avail - gapX * (cols - 1)) / cols
-        val chh = (cw / 0.88f).toInt()
-        var row: LinearLayout? = null
-        list.forEachIndexed { i, p ->
-            if (i % cols == 0) { row = Tf.row(ctx, Gravity.TOP); c.addView(row, Tf.ll(Tf.M, Tf.W).apply { if (i > 0) topMargin = gapY }) }
-            val free = HomeRules.isFree(p); val busy = HomeRules.isBusy(p); val mins = HomeRules.weekMins(p); val age = HomeRules.ageOf(p)
-            val cell = Tf.col(ctx, Gravity.CENTER_HORIZONTAL).apply { setOnClickListener { person(p) } }
-            val box = FrameLayout(ctx).apply { background = RingBox(Color.WHITE, Ui.dp(16f), Color.WHITE, Ui.dp(3f), Ui.c("#d9c9f3"), Ui.dp(1.5f)); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
-            val full = HomeRules.photoOf(p)
-            val pic = RectPhoto(ctx, Ui.dp(13f)).apply { set(listOf(HomeRules.listPhoto(p, full), full)) }
-            box.addView(pic, FrameLayout.LayoutParams(-1, -1))
-            if (i < 3 && mins > 0) box.addView(Tf.t(ctx, "#${i + 1}", 11f, Color.WHITE).apply {
-                background = Tf.box(Ui.c(listOf("#f5b301", "#9ca3af", "#c2763a")[i]), 99f); setPadding(Ui.dpi(7f), Ui.dpi(2f), Ui.dpi(7f), Ui.dpi(2f))
-            }, FrameLayout.LayoutParams(-2, -2).apply { leftMargin = Ui.dpi(3f); topMargin = Ui.dpi(3f) })
-            if (free || busy) box.addView(View(ctx).apply { background = Tf.circle(if (free) Ui.c("#1a9a50") else Ui.c("#ef4444"), 2f, Color.WHITE) },
-                FrameLayout.LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.END).apply { topMargin = Ui.dpi(3f); rightMargin = Ui.dpi(3f) })
-            cell.addView(box, Tf.ll(cw, chh))
-            cell.addView(Tf.t(ctx, "${HomeRules.firstName(p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}", 13.5f, C_DARK).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }, Tf.ll(Tf.M, Tf.W, t = 7f))
-            cell.addView(Tf.t(ctx, if (mins > 0) "📞 ${HomeRules.hoursText(mins)}" else HomeRules.cityOf(p).ifEmpty { "India" }, 12f, if (mins > 0) Ui.c("#5c12b8") else Ui.c("#5d5670"), false).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }, Tf.ll(Tf.M, Tf.W, t = 2f))
-            Ui.pressable(cell, 0.97f)
-            row?.addView(cell, Tf.ll(cw, Tf.W).apply { if (i % cols > 0) leftMargin = gapX })
-        }
-        closeAllFn = sheet("Weekly Top Creators", c) { closeAllFn = null }
+        var close: () -> Unit = {}
+        val page = TopCreatorsPage(ctx, home, this) { close() }
+        close = pages.layer.page(page, z = 12f) { closeAllFn = null }
+        closeAllFn = close
     }
 
     // ═════════════════ a person: Voice or Video (price shown first) ═════════════════

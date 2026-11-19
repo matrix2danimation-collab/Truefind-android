@@ -113,6 +113,11 @@ fun dashZoom(ctx: Context): Zm { val dm = ctx.resources.displayMetrics; return Z
  */
 @SuppressLint("ViewConstructor")
 class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
     private val main = Handler(Looper.getMainLooper())
     private val m = dashZoom(ctx)
     private val scroll = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; isFillViewport = true; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS }
@@ -146,7 +151,11 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         wrap.addView(column, FrameLayout.LayoutParams(m.pi(390f), -2, Gravity.CENTER_HORIZONTAL))
         scroll.addView(wrap, FrameLayout.LayoutParams(-1, -2))
         addView(scroll, LayoutParams(-1, -1))
+        pull = PagePull(this, canPull = { shown && isShown && !scroll.canScrollVertically(-1) }) { done -> pullDone.add(done); main.removeCallbacks(retryRun); refresh(); if (!inFlight) told() }
     }
+    /** pulled down to refresh: told when the numbers are back */
+    private val pullDone = ArrayList<() -> Unit>()
+    private fun told() { val w = ArrayList(pullDone); pullDone.clear(); w.forEach { it() } }
 
     fun setShown(on: Boolean) {
         val was = shown
@@ -248,6 +257,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         render()
         inFlight = false
         if (again) { again = false; refresh() }
+        if (!inFlight) told()
     }
 
     private fun go(path: String) = pages.go(path)
@@ -503,6 +513,11 @@ class DashChart(ctx: Context, private val m: Zm, private val vals0: List<Double>
  */
 @SuppressLint("ViewConstructor")
 class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
+    // pull down to refresh (owner, 19 Nov evening)
+    private lateinit var pull: PagePull
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.intercept(e)) || super.onInterceptTouchEvent(e)
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean = (::pull.isInitialized && pull.touch(e)) || super.onTouchEvent(e)
     private val m = dashZoom(ctx)
     private val scroll = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; isFillViewport = true; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS }
     private val column = DashK.col(ctx, m, 14f)
@@ -522,6 +537,7 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
         wrap.addView(column, FrameLayout.LayoutParams(m.pi(390f), -2, Gravity.CENTER_HORIZONTAL))
         scroll.addView(wrap, FrameLayout.LayoutParams(-1, -2))
         addView(scroll, LayoutParams(-1, -1))
+        pull = PagePull(this, canPull = { shown && isShown && !scroll.canScrollVertically(-1) }) { done -> load(done) }
     }
 
     fun setShown(on: Boolean, search: String) {
@@ -541,11 +557,12 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
     /** test mode: "bottom" (scrolled down) */
     fun previewOpen(what: String) { if (what == "bottom") scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
 
-    private fun load() {
+    private fun load(done: (() -> Unit)? = null) {
         val s = ++seq
         busy = true
         if (err.isNotEmpty() && d == null) render()
         Api.invoke("getSecretEarnings", if (creatorId.isNotEmpty()) JSONObject().put("creator_id", creatorId) else JSONObject(), 30000) { r ->
+            done?.invoke()
             if (s != seq) return@invoke
             busy = false
             if (r.ok && r.data.optJSONObject("total") != null) { d = r.data; dFor = creatorId; err = "" }

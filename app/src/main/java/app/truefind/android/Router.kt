@@ -15,7 +15,9 @@ import org.json.JSONObject
  *                                 the web's PhoneBack.jsx: Wallet → Recent → Explore → Home, a screen inside
  *                                 Profile → the Profile page → Home. The Wallet's step (→ Recent) is for the Wallet
  *                                 opened from the bottom bar only: opened from a button on a page (Home's coins +,
- *                                 Explore's coins, a call's +) Back goes back to that page (owner, 19 Nov)
+ *                                 Explore's coins, a call's +) Back goes back to that page (owner, 19 Nov). The same for a
+ *                                 screen inside Profile opened from another page (Home's Verification bar): Back
+ *                                 goes back to that page, not to the Profile page (owner, 19 Nov evening)
  * An address is a path with an optional ?query ("/profile?settings=1"); [state] is what the web kept in
  * history.state.usr (Profile's tfDepth, a chat's openChat …).
  */
@@ -59,8 +61,16 @@ class Router {
          * The fixed step above a page that Back leaves ([state]: what it was opened with). The Wallet goes back to
          * Recent only when the bottom bar opened it; opened from a button on a page it goes back to that page.
          */
-        fun stepAboveFor(path: String, search: String, state: JSONObject?): String? =
-            if (pathOnly(path) == "/wallet" && !openedFromBar(state)) null else stepAbove(path, search)
+        fun stepAboveFor(path: String, search: String, state: JSONObject?, under: Entry? = null): String? = when {
+            pathOnly(path) == "/wallet" && !openedFromBar(state) -> null
+            // a screen inside Profile opened from another page (Home's Verification bar, a Wallet button …) goes back
+            // to that page, not to the Profile page (owner, 19 Nov evening); opened inside Profile: to the Profile page
+            under != null && insideProfile(path, search) && pathOnly(under.path) != "/profile" -> null
+            else -> stepAbove(path, search)
+        }
+        /** a screen inside Profile (its edit page, settings, followers …), not the Profile page itself */
+        fun insideProfile(path: String, search: String): Boolean =
+            pathOnly(path) == "/profile/edit" || (pathOnly(path) == "/profile" && search.isNotEmpty() && search != "?")
 
         /** The fixed step above a page for Back (PhoneBack.jsx). null: Back goes where you came from. */
         fun stepAbove(path: String, search: String): String? = when (pathOnly(path)) {
@@ -139,7 +149,7 @@ class Router {
         while (guard++ < 8) {
             val cur = stack.last()
             if (same(prev.url, cur.url)) break                       // the same address: nothing to fix
-            val target = stepAboveFor(prev.path, prev.search, prev.state) ?: break   // the page left has no fixed step
+            val target = stepAboveFor(prev.path, prev.search, prev.state, cur) ?: break   // the page left has no fixed step
             if (same(target, cur.url)) break                         // Back landed on its step already
             // Inside Profile the screens are stacked on the Profile page (tfDepth = how deep): step back
             // through them to that same page instead of putting a second copy of it on top.

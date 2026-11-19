@@ -172,7 +172,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
         val TX_LABEL = mapOf(
             "topup" to "Recharge", "call_spend" to "Call", "call_earn" to "Call earning", "chat_spend" to "Chat", "chat_earn" to "Chat earning", "chat_media" to "Chat photo",
             "chat_gift" to "Chat gift", "live_gift" to "Live gift", "live_cohost" to "Co-host", "live_earning" to "Live earning", "live_refund" to "Live refund",
-            "dress_buy" to "Dress Code", "dress_earn" to "Dress Code earning", "game_entry" to "Game entry", "game_win" to "Game win", "game_earn" to "Game earning",
+            "dress_buy" to "Dress Code", "dress_earn" to "Dress Code earning", "shop_buy" to "Avatar / Template", "game_entry" to "Game entry", "game_win" to "Game win", "game_earn" to "Game earning",
             "game_gift" to "Game gift", "game_gift_earn" to "Game gift earning", "admin_adjust" to "By admin", "admin_earn_adjust" to "Earnings by admin",
         )
         val SD_PLANS = listOf(Triple("daily", "Daily", "1 day · 3 credits"), Triple("starter", "Starter", "7 days · 5 credits"), Triple("pro", "Pro", "7 days · 8 credits"), Triple("elite", "Elite", "30 days · 10 credits"))
