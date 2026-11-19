@@ -1,0 +1,85 @@
+== h01-home
+11-19 07:15:05.669   519   612 D ActivityManager: Kill app due to repeated failure to freeze binder: 1732 com.google.android.youtube
+11-19 07:15:05.698   519   548 I ActivityManager: Killing 1732:com.google.android.youtube/u0a139 (adj 915): excessive binder traffic during cached
+11-19 07:15:07.579   519   572 I ActivityManager: Killing 3730:com.android.intentresolver/u0a92 (adj 0): change com.android.intentresolver
+11-19 07:15:07.949   519   572 I ActivityManager: Killing 3769:com.android.nfc/1027 (adj 0): change com.android.nfc
+11-19 07:15:09.510   519   572 I ActivityManager: Killing 2447:com.google.android.gm/u0a140 (adj 0): change com.google.android.gm
+11-19 07:15:09.515   519   572 W ActivityManager: Scheduling restart of crashed service com.google.android.gm/androidx.work.impl.background.systemjob.SystemJobService in 1000ms for connection
+11-19 07:15:10.745   519   572 I ActivityManager: Killing 3950:com.google.android.settings.intelligence/u0a118 (adj 0): change com.google.android.settings.intelligence
+11-19 07:15:41.750   519   539 I ActivityManager: Killing 1099:com.google.android.apps.nexuslauncher/u0a169 (adj 100): user request after error
+11-19 07:15:42.531   519  2183 W ActivityManager: Scheduling restart of crashed service com.google.android.apps.nexuslauncher/com.android.launcher3.notification.NotificationListener in 1000ms for connection
+11-19 07:15:42.534   519  2183 W ActivityManager: Scheduling restart of crashed service com.google.android.apps.nexuslauncher/com.android.quickstep.TouchInteractionService in 10974ms for connection
+== h02-home-girl
+11-19 07:16:02.710   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.deviceconnection.service.DeviceConnectionWatcherService in 270945ms for start-requested
+11-19 07:16:02.710   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/com.google.android.location.reporting.service.ReportingAndroidService in 280945ms for connection
+11-19 07:16:02.711   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.gcm.nts.SchedulerService in 290945ms for start-requested
+11-19 07:16:02.711   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.nearby.exposurenotification.service.ExposureNotificationInternalService in 300945ms for start-requested
+11-19 07:16:02.711   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/com.google.android.location.fused.FusedLocationService in 310944ms for connection
+11-19 07:16:02.711   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.chimera.PersistentDirectBootAwareApiService in 320944ms for connection
+11-19 07:16:02.711   519   595 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.nearby.messages.service.NearbyMessagesService in 330944ms for start-requested
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.chimera.GmsIntentOperationService in 880ms for other
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.chimera.container.ExternalFileApkService in 10880ms for other
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.icing.service.IndexService in 20880ms for other
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.wallet.service.PaymentService in 30880ms for other
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.chimera.GmsBoundBrokerService in 40880ms for other
+11-19 07:16:02.776   519   548 W ActivityManager: Rescheduling restart of crashed service com.google.android.gms/.chimera.GmsApiService in 50880ms for other
+11-19 07:16:03.961   519  2161 I ActivityManager: Process com.google.android.gms.ui (pid 4482) has died: fg  SVC 
+11-19 07:16:03.962   519  2161 W ActivityManager: Scheduling restart of crashed service com.google.android.gms/.chimera.UiIntentOperationService in 1000ms for start-requested
+== h03-home-scroll1
+11-19 07:16:07.807   519   594 I ActivityManager: Process com.android.externalstorage (pid 5374) has died: cch+75 CEM 
+== h04-home-scroll2
+11-19 07:16:31.376   134   134 I lowmemorykiller: lmkd data connection established
+11-19 07:16:31.405   134   134 I lowmemorykiller: Using psi monitors for memory pressure detection
+11-19 07:16:31.405   134   134 I lowmemorykiller: Properties reinitilized
+11-19 07:16:31.405  6370  6370 I lowmemorykiller: lmkd updated properties successfully
+11-19 07:16:31.406   134   134 I lowmemorykiller: lmkd data connection dropped
+11-19 07:16:31.406   134   134 I lowmemorykiller: closing lmkd data connection
+== h05-home-scroll3
+== h06-home-daily
+== h07-home-confirm
+== h08-home-person
+== h09-home-all
+== h10-home-match
+== h11-home-dialog
+== h12-home-toast
+== n01-nav-explore
+== n02-nav-recent
+== p01-profile
+== p02-profile-girl
+== p03-profile-scroll
+== p04-edit
+== p05-edit-state
+== p06-followers
+== p07-following
+== p08-unfollow
+== p09-settings
+== p09b-settings-search
+== p09c-settings-search-none
+== p10-notifications
+== p11-apply-host
+11-19 07:23:23.998   519  2074 I ActivityManager: Process com.google.android.dialer (pid 2901) has died: cch+65 CEM 
+== p12-apply-form
+== p13-apply-creator
+== p14-verification
+== p15-memberships
+== p16-privacy
+11-19 07:24:48.978   519  2203 I ActivityManager: Process com.google.android.contacts (pid 2149) has died: cch+65 CEM 
+== p17-blocked
+== p18-security
+== p19-refer
+== p20-help
+== p21-help-new
+== p22-help-thread
+== p23-avatar
+== p24-bio
+== p25-interests
+== p26-viewer
+== p27-logout
+== p28-delete
+== p29-toast
+== b01-builder
+== b02-builder-error
+== b03-builder-uploading
+== v01-verify-girl
+== v02-verify-boy
+== v03-verify-pending
