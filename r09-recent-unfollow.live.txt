@@ -1,0 +1,184 @@
+--------- beginning of system
+11-19 10:16:25.499   512  1733 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 W ActivityTaskManager: callingPackage for (uid=2000, pid=5015) has no WPC
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 265464455; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 265452344; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 266124927; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 265451093; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 265456536; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 255940284; UID 10192; state: DISABLED
+11-19 10:16:25.500   512  1733 D CompatibilityChangeReporter: Compat change id reported: 236283604; UID 10192; state: DISABLED
+11-19 10:16:25.501   512  1733 D CompatibilityChangeReporter: Compat change id reported: 263959004; UID 10192; state: DISABLED
+11-19 10:16:25.501   512  1733 D CompatibilityChangeReporter: Compat change id reported: 264304459; UID 10192; state: DISABLED
+11-19 10:16:25.501   512  1733 D CompatibilityChangeReporter: Compat change id reported: 264301586; UID 10192; state: DISABLED
+11-19 10:16:25.501   512  1733 D CompatibilityChangeReporter: Compat change id reported: 254631730; UID 10192; state: DISABLED
+11-19 10:16:25.501   512  1733 D CompatibilityChangeReporter: Compat change id reported: 273509367; UID 10192; state: DISABLED
+11-19 10:16:25.502   512  1733 D CompatibilityChangeReporter: Compat change id reported: 263259275; UID 10192; state: DISABLED
+11-19 10:16:25.503   512  1733 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10192; state: DISABLED
+11-19 10:16:25.503   512  1733 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10192; state: DISABLED
+11-19 10:16:25.503   512  1733 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10192; state: DISABLED
+11-19 10:16:25.504   512  1733 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10192; state: ENABLED
+11-19 10:16:25.509   512  1733 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+11-19 10:16:25.509   512  1733 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10192; state: ENABLED
+11-19 10:16:25.513   512  1733 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=app.truefind.android/.MainActivity (has extras)} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+11-19 10:16:25.515   713   750 V WindowManagerShell: Transition requested: android.os.BinderProxy@ac081c4 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=27 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=124676 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@d1928ad} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{e937e2 app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-19 10:16:25.517   512   532 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10192; state: DISABLED
+11-19 10:16:25.519   512   540 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10192; state: ENABLED
+--------- beginning of main
+11-19 10:16:25.527   329   329 D Zygote  : Forked child process 5019
+11-19 10:16:25.534   713   806 D SplashScreenView: Build android.window.SplashScreenView{d1fd773 V.E...... ......ID 0,0-0,0}
+11-19 10:16:25.534   713   806 D SplashScreenView: Icon: view: android.widget.ImageView{25f630 V.ED..... ......I. 0,0-0,0 #10204f0 android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@a4ca2a9 size: 420
+11-19 10:16:25.534   713   806 D SplashScreenView: Branding: view: android.view.View{3e6f02e G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-19 10:16:25.539   512   540 I ActivityManager: Start proc 5019:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-19 10:16:25.540   392   392 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+11-19 10:16:25.556   512   582 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10192; state: ENABLED
+11-19 10:16:25.564   512   692 D CoreBackPreview: Window{e8b9d15 u0 Splash Screen app.truefind.android}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8e8261b, mPriority=0, mIsAnimationCallback=false}
+11-19 10:16:25.582  5019  5019 I ruefind.android: Late-enabling -Xcheck:jni
+11-19 10:16:25.652  5019  5019 I ruefind.android: Using CollectorTypeCC GC.
+11-19 10:16:25.653  5019  5019 W ruefind.android: Unexpected CPU variant for x86: x86_64.
+11-19 10:16:25.653  5019  5019 W ruefind.android: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-19 10:16:25.701  1214  1499 D EGL_emulation: app_time_stats: avg=617.42ms min=111.70ms max=1535.66ms count=3
+11-19 10:16:25.749   713   750 V WindowManagerShell: onTransitionReady android.os.BinderProxy@ac081c4: {id=17 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@82971d} m=OPEN f=NONE leash=Surface(name=Task=27)/@0x2d0d706 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f135d92} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x91391c7 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-19 10:16:25.749   713   750 V WindowManagerShell: Playing animation for (#17)android.os.BinderProxy@ac081c4@0
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@39c1a5c
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@8a77165
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@cf63e3a
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@6aa5aeb
+11-19 10:16:25.749   713   750 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@afe8048
+11-19 10:16:25.749   713   750 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@922bee1
+11-19 10:16:25.750   713   750 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@cfa0406
+11-19 10:16:25.750   713   750 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=17 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@82971d} m=OPEN f=NONE leash=Surface(name=Task=27)/@0x2d0d706 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f135d92} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x91391c7 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-19 10:16:25.750   713   750 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@651bac7, appThread = android.app.IApplicationThread$Stub$Proxy@49f58f4, debugName = LauncherToDream }}
+11-19 10:16:25.750   713   750 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@5ab681d, appThread = android.app.IApplicationThread$Stub$Proxy@7225a92, debugName = QuickstepLaunchHome }}
+11-19 10:16:25.750   713   750 V WindowManagerShell:  Delegate animation for #17 to null
+11-19 10:16:25.750   713   750 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@253c63
+11-19 10:16:25.750   713   750 V WindowManagerShell: start default transition animation, info = {id=17 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@82971d} m=OPEN f=NONE leash=Surface(name=Task=27)/@0x2d0d706 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f135d92} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x91391c7 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-19 10:16:25.750   713   750 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@37b4b60 animAttr=0x13 type=OPEN isEntrance=false
+11-19 10:16:25.750   713   750 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@39bd8c animAttr=0x12 type=OPEN isEntrance=true
+11-19 10:16:25.751   713   750 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@253c63
+11-19 10:16:25.762   512   529 V WindowManager: Sent Transition #17 createdAt=11-19 10:16:25.504 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=27 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=124676 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{7ae4364 Task{7c160a0 #27 type=standard A=10192:app.truefind.android}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{11359cd app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-19 10:16:25.766   408   420 I adbd    : jdwp connection from 5019
+11-19 10:16:25.772   512   529 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+11-19 10:16:25.772   512   529 V WindowManager:     info={id=17 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{7ae4364 Task{7c160a0 #27 type=standard A=10192:app.truefind.android}}} m=OPEN f=NONE leash=Surface(name=Task=27)/@0xa56a3b8 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{5b47e48 Task{35bf5b6 #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x12198a sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-19 10:16:25.788   713   750 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#17)android.os.BinderProxy@ac081c4@0
+11-19 10:16:25.880   713   817 D EGL_emulation: app_time_stats: avg=847.47ms min=51.60ms max=1643.33ms count=2
+11-19 10:16:25.976   512   529 V WindowManager: Finish Transition #17: created at 11-19 10:16:25.504 collect-started=0.13ms request-sent=7.915ms started=12.339ms ready=241.65ms sent=244.618ms finished=471.692ms
+11-19 10:16:26.091   713   817 D EGL_emulation: app_time_stats: avg=1752.72ms min=1752.72ms max=1752.72ms count=1
+11-19 10:16:26.106   713   750 V WindowManagerShell: Track 0 became idle
+11-19 10:16:26.106   713   750 V WindowManagerShell: All active transition animations finished
+11-19 10:16:26.106   713   750 W Looper  : Slow dispatch took 318ms wmshell.main h=android.os.Handler c=com.android.wm.shell.transition.DefaultTransitionHandler$$ExternalSyntheticLambda0@31c818d m=0
+11-19 10:16:26.106   713   750 W Looper  : Slow delivery took 326ms wmshell.main h=android.os.Handler c=android.window.TaskOrganizer$1$$ExternalSyntheticLambda5@2aa4f42 m=0
+11-19 10:16:26.120   713   750 W Looper  : Drained
+11-19 10:16:26.123  5019  5019 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+11-19 10:16:26.123  5019  5019 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+11-19 10:16:26.150   512   844 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10192; state: ENABLED
+11-19 10:16:26.154  5019  5019 W ziparchive: Unable to open '/data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/base.dm': No such file or directory
+11-19 10:16:26.155  5019  5019 W ziparchive: Unable to open '/data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/base.dm': No such file or directory
+11-19 10:16:26.173  1214  1223 I s.nexuslauncher: NativeAlloc concurrent copying GC freed 40010(2785KB) AllocSpace objects, 2(32KB) LOS objects, 49% free, 5511KB/10MB, paused 19us,17us total 162.007ms
+11-19 10:16:26.356  5019  5019 D nativeloader: Configuring clns-6 for other apk /data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/lib/x86_64:/data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/app.truefind.android
+11-19 10:16:26.366  5019  5019 V GraphicsEnvironment: Currently set values for:
+11-19 10:16:26.366  5019  5019 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-19 10:16:26.366  5019  5019 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-19 10:16:26.368  5019  5019 V GraphicsEnvironment: ANGLE GameManagerService for app.truefind.android: false
+11-19 10:16:26.369  5019  5019 V GraphicsEnvironment: app.truefind.android is not listed in per-application setting
+11-19 10:16:26.370  5019  5019 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-19 10:16:26.377  5019  5019 W FirebaseApp: Default FirebaseApp failed to initialize because no default options were found. This usually means that com.google.gms:google-services was not applied to your gradle project.
+11-19 10:16:26.378  5019  5019 I FirebaseInitProvider: FirebaseApp initialization unsuccessful
+11-19 10:16:26.383   512   844 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 5019
+11-19 10:16:26.390  5019  5039 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-19 10:16:26.393  5019  5039 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-19 10:16:26.396  5019  5039 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-19 10:16:26.468  5019  5019 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+11-19 10:16:26.478  5019  5019 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+11-19 10:16:26.544  5019  5019 W PathParser: Points are too far apart 31.78436539531708
+11-19 10:16:26.709  5019  5019 W PathParser: Points are too far apart 4.000000000000002
+11-19 10:16:26.724  5019  5019 W PathParser: Points are too far apart 4.000003365909959
+11-19 10:16:26.888  5019  5019 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+11-19 10:16:26.888  5019  5019 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-19 10:16:26.894  5019  5019 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+11-19 10:16:26.898  5019  5019 W OpenGLRenderer: Unknown dataspace 0
+11-19 10:16:26.904  5019  5019 I Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
+11-19 10:16:26.960   512  1732 D CoreBackPreview: Window{4e9af00 u0 app.truefind.android/app.truefind.android.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@fc0e2df, mPriority=0, mIsAnimationCallback=false}
+11-19 10:16:26.994  5019  5037 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-19 10:16:27.033   136   136 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-19 10:16:27.035  5019  5037 I Gralloc4: mapper 4.x is not supported
+11-19 10:16:27.180   512   529 W ziparchive: Unable to open '/data/app/~~6nSy4fa53YSmvLeTEMMzRw==/app.truefind.android-2lcajABWvX9MGSYNxl0zaA==/base.dm': No such file or directory
+11-19 10:16:27.181   512   529 I ActivityTaskManager: Displayed app.truefind.android/.MainActivity for user 0: +1s680ms
+11-19 10:16:27.183   512  1732 D ConnectivityService: requestNetwork for uid/pid:10192/5019 activeRequest: null callbackRequest: 155 [NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-19 10:16:27.186   512   636 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-19 10:16:27.186   512   636 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-19 10:16:27.187   512   643 D ConnectivityService: NetReassign [156 : null → 101] [c 1] [a 0] [i 2]
+11-19 10:16:27.188  5019  5019 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-19 10:16:27.196   713   789 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda17@823c065
+11-19 10:16:27.196   512  1733 D CoreBackPreview: Window{e8b9d15 u0 Splash Screen app.truefind.android EXITING}: Setting back callback null
+11-19 10:16:27.196   512  1733 W InputManager-JNI: Input channel object 'e8b9d15 Splash Screen app.truefind.android (client)' was disposed without first being removed with the input manager!
+11-19 10:16:27.201  5019  5034 I OpenGLRenderer: Davey! duration=799ms; Flags=1, FrameTimelineVsyncId=31683, IntendedVsync=125554811246, Vsync=126054811226, InputEventId=0, HandleInputStart=126069604465, AnimationStart=126069609000, PerformTraversalsStart=126069711935, DrawStart=126225959427, FrameDeadline=125571477912, FrameInterval=126069399415, FrameStartTime=16666666, SyncQueued=126229124852, SyncStart=126229410327, IssueDrawCommandsStart=126229789370, SwapBuffers=126238688980, FrameCompleted=126354964342, DequeueBufferDuration=6847, QueueBufferDuration=413532, GpuCompleted=126354964342, SwapBuffersCompleted=126340556536, DisplayPresentTime=0, CommandSubmissionCompleted=126238688980, 
+11-19 10:16:27.211   512   636 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-19 10:16:27.211   512   636 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-19 10:16:27.215  1214  1239 I ImeTracker: com.google.android.apps.nexuslauncher:91c79f97: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-19 10:16:27.215   512   525 I ImeTracker: com.google.android.apps.nexuslauncher:91c79f97: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-19 10:16:27.216  1214  1688 D OneSearchSuggestProvider: Shut down the binder channel
+11-19 10:16:27.220  5019  5046 I TFDBG   : slow frame #1 total=800ms anim=0 layout=156 draw=3 sync=0 issue=8 swap=101 gpu=116
+11-19 10:16:27.226  1214  1236 I IPCThreadState: oneway function results for code 2 on binder at 0x7239ca221b00 will be dropped but finished with status UNKNOWN_TRANSACTION
+11-19 10:16:27.242   883  1050 D BtGatt.ScanManager: uid 10131 isForeground true scanMode 1
+11-19 10:16:27.242   883  1050 D BtGatt.ScanManager: uid 10131 isForeground true scanMode -1
+11-19 10:16:27.373   713   713 D StatusBarIconController: ignoring old pipeline callback because the new wifi icon is enabled
+11-19 10:16:27.404   512  1732 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10192; state: ENABLED
+11-19 10:16:27.405   512  1732 I ImeTracker: app.truefind.android:18cb7ca8: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-19 10:16:27.405   512  1732 I ImeTracker: app.truefind.android:18cb7ca8: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-19 10:16:27.408  1336  1336 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3227 
+11-19 10:16:27.409  1336  1336 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 0, unlocked = true
+11-19 10:16:27.410  1336  1336 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=app.truefind.android fieldId=0 fieldName=null extras=null}, false)
+11-19 10:16:27.410  1336  1336 I GoogleInputMethodService: GoogleInputMethodService.shouldHideHeaderOnInitialState():4008 ShouldHideHeaderOnInitialState = false
+11-19 10:16:27.410  1336  1336 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 2, unlocked = true
+11-19 10:16:27.685   713   817 D EGL_emulation: app_time_stats: avg=859.21ms min=2.89ms max=1715.53ms count=2
+11-19 10:16:28.204   512  1733 W ProcessStats: Tracking association SourceState{837b306 com.google.android.googlequicksearchbox:search/10132 BFgs #3410} whose proc state 4 is better than process ProcessState{a4b8450 com.google.android.gms/10131 pkg=com.google.android.gms} proc state 6 (426 skipped)
+11-19 10:16:28.248  1108  4281 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.droidguard.DroidGuardGcmTaskService started execution. cause:7 exec_start_elapsed_seconds: 127 [CONTEXT service_id=218 ]
+11-19 10:16:28.253  1108  4932 I NetworkScheduler.Stats: Task com.google.android.gms/com.google.android.gms.droidguard.DroidGuardGcmTaskService finished executing. cause:7 result: 1 elapsed_millis: 14 uptime_millis: 14 exec_start_elapsed_seconds: 127 [CONTEXT service_id=218 ]
+11-19 10:16:28.284   328  5057 I resolv  : GetAddrInfoHandler::run: {101 786533 101 983141 10131 0}
+11-19 10:16:28.285   328  5058 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-19 10:16:28.285   328  5058 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x70cb38629850
+11-19 10:16:28.285   328  5058 I resolv  : doQuery: rcode=0, ancount=8, return value=260
+11-19 10:16:28.286   328  5059 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-19 10:16:28.286   328  5059 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x70cc5862b270
+11-19 10:16:28.286   328  5059 I resolv  : doQuery: rcode=0, ancount=8, return value=164
+11-19 10:16:28.292  2872  3157 D TrafficStats: tagSocket(105) with statsTag=0x1803, statsUid=10131
+11-19 10:16:28.387   512   844 I RemoteProvisionSysSvc: getRegistration(android.hardware.security.keymint.IRemotelyProvisionedComponent/default)
+11-19 10:16:28.393   512   512 I RegistrationProxy: onServiceConnected: com.android.rkpdapp.service.RemoteProvisioningService
+11-19 10:16:28.398   512   844 I RegistrationProxy: IGetRegistrationCallback.onSuccess
+11-19 10:16:28.400   512  1732 I RemoteProvisionSysSvc: Fetching key 10131 for client 185368933
+11-19 10:16:28.400   512  1732 I RegistrationProxy: getKeyAsync operation started with callback 215879226
+11-19 10:16:28.400  3491  3578 I RkpdRegistrationBinder: Key requested for : android.hardware.security.keymint.IRemotelyProvisionedComponent/default, clientUid: 1017, keyId: 10131, callback: 126732811
+11-19 10:16:28.401  3491  3578 I RkpdRegistrationBinder: Key successfully assigned to client
+11-19 10:16:28.401   512   512 I RemoteProvisionSysSvc: Successfully fetched key for client 185368933
+11-19 10:16:28.408   512   844 D BiometricService: Sensor ID(4), oemStrength: 15, updatedStrength: 15, modality 8, state: 0, cookie: 0, sensorId 4, hasEnrollments: false cannot participate in Keystore operations
+11-19 10:16:28.409   512   844 D BiometricService: Sensor ID(0), oemStrength: 15, updatedStrength: 15, modality 2, state: 0, cookie: 0, sensorId 0, hasEnrollments: false cannot participate in Keystore operations
+11-19 10:16:28.514   512  1490 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-19 10:16:28.742   328  5064 I resolv  : GetAddrInfoHandler::run: {101 786533 101 983141 10131 0}
+11-19 10:16:28.743  2872  5056 D TrafficStats: tagSocket(122) with statsTag=0x1809, statsUid=-1
+11-19 10:16:28.748  2872  5056 D TrafficStats: tagSocket(122) with statsTag=0x1809, statsUid=-1
+11-19 10:16:28.749  2872  5056 D TrafficStats: tagSocket(122) with statsTag=0x1809, statsUid=-1
+11-19 10:16:28.832   512   532 D OomAdjuster: Not killing cached processes
+11-19 10:16:28.882  2872  5056 W SystemServiceRegistry: No service published for: persistent_data_block
+11-19 10:16:28.904  2872  5056 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-19 10:16:28.904  2872  5056 W libc    : Access denied finding property "service.adb.tls.port"
+11-19 10:16:28.903  2872  2872 W IntentService[D: type=1400 audit(0.0:24): avc:  denied  { read } for  name="u:object_r:system_adbd_prop:s0" dev="tmpfs" ino=292 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:system_adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
+11-19 10:16:28.903  2872  2872 W IntentService[D: type=1400 audit(0.0:25): avc:  denied  { read } for  name="u:object_r:adbd_prop:s0" dev="tmpfs" ino=60 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
+11-19 10:16:28.935  5019  5019 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 800ms)
+11-19 10:16:29.012  2872  3340 D CompatibilityChangeReporter: Compat change id reported: 160794467; UID 10131; state: ENABLED
+11-19 10:16:29.251  1574  2738 E WakeLock: DG:service ** IS FORCE-RELEASED ON TIMEOUT **
+11-19 10:16:29.299   713   713 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-19 10:16:29.449  5019  5032 I OpenGLRenderer: Davey! duration=1883ms; Flags=0, FrameTimelineVsyncId=31713, IntendedVsync=126121477890, Vsync=126371477880, InputEventId=0, HandleInputStart=126385833710, AnimationStart=126385837071, PerformTraversalsStart=126386133959, DrawStart=126410913935, FrameDeadline=126388144546, FrameInterval=126385731759, FrameStartTime=16666666, SyncQueued=126557888485, SyncStart=126557961790, IssueDrawCommandsStart=126560197062, SwapBuffers=127917807689, FrameCompleted=128004993123, DequeueBufferDuration=4284, QueueBufferDuration=478310, GpuCompleted=128004993123, SwapBuffersCompleted=127995120293, DisplayPresentTime=0, CommandSubmissionCompleted=127917807689, 
+11-19 10:16:29.453  5019  5046 I TFDBG   : slow frame #2 total=1883ms anim=0 layout=24 draw=146 sync=2 issue=1357 swap=77 gpu=87
+11-19 10:16:29.553  5019  5032 I OpenGLRenderer: Davey! duration=1146ms; Flags=0, FrameTimelineVsyncId=31893, IntendedVsync=126738144532, Vsync=127038144520, InputEventId=0, HandleInputStart=127053132464, AnimationStart=127053136267, PerformTraversalsStart=127053176775, DrawStart=127166816298, FrameDeadline=128038144480, FrameInterval=127053024037, FrameStartTime=16666666, SyncQueued=127174575279, SyncStart=127995203718, IssueDrawCommandsStart=127999073762, SwapBuffers=128614699895, FrameCompleted=128705092994, DequeueBufferDuration=5536, QueueBufferDuration=302433, GpuCompleted=128705092994, SwapBuffersCompleted=128692252508, DisplayPresentTime=0, CommandSubmissionCompleted=128614699895, 
+11-19 10:16:29.561  5019  5046 I TFDBG   : slow frame #3 total=1966ms anim=0 layout=113 draw=7 sync=3 issue=615 swap=77 gpu=90
+11-19 10:16:29.988   328   368 I netd    : tetherGetStats() -> {[]} <0.47ms>
+11-19 10:16:29.993   328   368 I netd    : bandwidthSetGlobalAlert(2097152) <0.13ms>
+11-19 10:16:29.996   328   368 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.67ms>
+11-19 10:16:29.997   328   368 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.50ms>
+11-19 10:16:30.002   512   712 D NetworkStatsObservers: Unregistering RequestInfo from pid/uid:512/1000(android) for DataUsageRequest [ requestId=7, networkTemplate=NetworkTemplate: matchRule=MOBILE, matchSubscriberIds=[310260...], matchWifiNetworkKeys=[], metered=YES, defaultNetwork=NO, thresholdInBytes=3499037 ] accessLevel:3
+11-19 10:16:30.002   512   634 D NetworkStatsObservers: Registering observer for RequestInfo from pid/uid:512/1000(android) for DataUsageRequest [ requestId=8, networkTemplate=NetworkTemplate: matchRule=MOBILE, matchSubscriberIds=[310260...], matchWifiNetworkKeys=[], metered=YES, defaultNetwork=NO, thresholdInBytes=3495803 ] accessLevel:3
+11-19 10:16:30.020   328   368 I netd    : tetherGetStats() -> {[]} <0.41ms>
+11-19 10:16:30.378   713   713 D StatusBarIconController: ignoring old pipeline callback because the new wifi icon is enabled
+11-19 10:16:30.690  5019  5019 I TFDBG   : preview open unfollow
