@@ -38,8 +38,8 @@ import app.truefind.android.games.GamesLayer
 import app.truefind.android.login.LoginLayer
 import org.json.JSONObject
 
-/** Ask the phone for its quickest screen mode (see MainActivity.askFastScreen). Off until the owner's phone has shown it can keep up. */
-private const val FAST_SCREEN = false
+/** Ask the phone for its quickest screen mode (see MainActivity.askFastScreen). On since 19 Nov (the owner's choice); false turns it off again. */
+private const val FAST_SCREEN = true
 
 /**
  * True Find for Android — every screen is drawn by the phone itself; the backend stays on Base44
@@ -1473,10 +1473,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
      * then nothing changes. Page moves and the app's animations go by the clock, so they take just as long
      * and only show more pictures on the way.
      *
-     * Not switched on yet ([FAST_SCREEN]): at 90 a second the phone has 11 ms for each picture instead of
+     * Switched by [FAST_SCREEN] (on since 19 Nov, the owner's choice): at 90 a second the phone has 11 ms for each picture instead of
      * 17. A page whose pictures take 12–16 ms keeps a steady 60 on a 60 screen, but on a 90 screen it would
      * miss every other tick and look worse than before. The page speed report's "typical frame" per page
-     * (build 97 on) says which it is on the owner's phone; this is switched on only if that fits.
+     * (build 97 on) shows how it goes on the owner's phone; if pages stutter, set it back to false.
      */
     private fun askFastScreen() {
         if (!FAST_SCREEN) return
