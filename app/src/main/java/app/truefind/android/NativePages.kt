@@ -100,6 +100,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
 
     /** Settings → Check for update (MainActivity asks GitHub) */
     var checkUpdate: () -> Unit = {}
+    /** Settings → Page speed report (test builds) */
+    var speedReport: () -> Unit = {}
     private var profilePrefetched = false
 
     // ═════════════════ which screen shows ═════════════════

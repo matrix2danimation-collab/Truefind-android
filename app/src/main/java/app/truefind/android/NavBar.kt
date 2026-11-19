@@ -45,6 +45,7 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         set(v) { if (field != v) { field = v; pressed = null; invalidate() } }
     private var pressed: String? = null   // tapped, lit at once while its page opens
     private var pressedAt = 0L
+    private var touched: String? = null   // a finger is on this tab: lit from the moment it touches (as FRND's bar answers a touch)
     var unread = 0
         set(v) { if (field != v) { val was = field; field = v; if (v > 0 && was == 0) popBadge() else invalidate() } }
 
@@ -96,7 +97,7 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         }
     }
 
-    private fun lit(): String = pressed?.takeIf { System.currentTimeMillis() - pressedAt < 1500 } ?: current
+    private fun lit(): String = touched ?: pressed?.takeIf { System.currentTimeMillis() - pressedAt < 1500 } ?: current
 
     override fun onDraw(c: Canvas) {
         val top = shadowPx.toFloat()
@@ -194,13 +195,15 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         val contentW = minOf(width.toFloat(), Ui.dp(480f)); val x0 = (width - contentW) / 2f
         val idx = ((e.x - x0) / (contentW / items.size)).toInt().coerceIn(0, items.size - 1)
         when (e.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { downIdx = idx; press(idx, true) }
-            MotionEvent.ACTION_MOVE -> if (idx != downIdx || e.y < shadowPx - Ui.dp(20f)) { if (downIdx >= 0) press(downIdx, false); downIdx = -1 }
+            MotionEvent.ACTION_DOWN -> { downIdx = idx; touched = items[idx].key; press(idx, true) }
+            MotionEvent.ACTION_MOVE -> if (idx != downIdx || e.y < shadowPx - Ui.dp(20f)) { if (downIdx >= 0) press(downIdx, false); downIdx = -1; touched = null; invalidate() }
             MotionEvent.ACTION_UP -> {
-                if (downIdx >= 0) { press(downIdx, false); if (idx == downIdx) tap(items[idx]) }
-                downIdx = -1
+                val was = downIdx
+                downIdx = -1; touched = null
+                if (was >= 0) { press(was, false); if (idx == was) tap(items[idx]) }
+                invalidate()
             }
-            MotionEvent.ACTION_CANCEL -> { if (downIdx >= 0) press(downIdx, false); downIdx = -1 }
+            MotionEvent.ACTION_CANCEL -> { if (downIdx >= 0) press(downIdx, false); downIdx = -1; touched = null; invalidate() }
         }
         return true
     }

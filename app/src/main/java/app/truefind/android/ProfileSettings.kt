@@ -85,6 +85,8 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         val g2 = listOfNotNull(
             // the app's own updates (test builds from GitHub): ask now instead of waiting for the box
             if (BuildConfig.SELF_UPDATE) Item("update", "Check for update", "Version ${BuildConfig.VERSION_NAME} · tap to look for a new one", Lu.RefreshCw, PC.tHelp, action = { ps.pages.checkUpdate() }) else null,
+            // test builds: how smoothly the pages really move on this phone (numbers to copy)
+            if (BuildConfig.SELF_UPDATE && Perf.on) Item("speed", "Page speed report", "Test build · how smoothly pages move on this phone", Lu.Clock, PC.tHelp, action = { ps.pages.speedReport() }) else null,
             Item("privacy", "Privacy", if (ps.profile?.opt("location_visible") == false) "Location hidden" else "Location visible", Lu.Eye, PC.tPrivacy),
             Item("blocked", "Blocked users", "${ps.blocked.size} blocked", Lu.Ban, PC.tBlocked),
             Item("security", "Security & guidelines", "Stay safe on the app", Lu.Lock, PC.tSecurity),

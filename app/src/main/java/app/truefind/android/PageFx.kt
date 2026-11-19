@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Handler
@@ -14,7 +13,6 @@ import android.provider.Settings
 import android.view.Choreographer
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.PathInterpolator
 import android.webkit.WebView
 import android.widget.FrameLayout
 
@@ -26,11 +24,18 @@ import android.widget.FrameLayout
  *   whole screen width; nothing fades, the bottom bar stays still. FRND's pages were 35 % of the way on the
  *   first screen frame, then 60 · 76 · 87 · 93 · 97 · 99 %: exactly Android's ViewPager (200 ms, curve
  *   1 − (1 − t)⁵). Two tabs apart takes 300 ms and the page in between passes by, as in FRND.
+ *   (Checked again on 19 Nov: the app's own tab moves land on the same places, frame for frame.)
  * - PUSH (opening a page: Profile, Wallet, Games, a chat …): the new page slides in from the right over the
- *   old one; the old page slides a quarter of the width to the left and darkens to half.
- *   (FRND: 5 · 48 · 79 · 89 · 94 · 97 · 99 % at 24 pictures a second = 360 ms on the curve (0.3, 0, 0.1, 1);
- *   the old page 0.25 × as far, its brightness 1 − 0.5 × as far.)
- * - POP (Back): the same in reverse, 420 ms on the same curve (FRND: 1 · 22 · 48 · 68 · 82 · 90 · 94 %).
+ *   old one. The old page does not move and does not darken — the way FRND opens its Profile:
+ *   12 · 59 · 89 · 100 % and 26 · 76 · 98 · 100 % at 24 pictures a second, which is 150 ms on Android's
+ *   plain ease-in-out curve (½ − ½ cos πt), exactly on the screen's frames (33 · 83 · 117 ms / 50 · 100 · 133 ms).
+ * - POP (Back): the page slides away to the right, 300 ms on the same curve; the page under it is still and
+ *   fully bright all the way (FRND: 2 · 12 · 34 · 51 · 73 · 90 · 98 % and 4 · 23 · 45 · 59 · 82 · 96 %).
+ *
+ *   FRND has a second way too, for the pages that are separate screens of it (its room lists): Android's own
+ *   screen change — 450 ms, the old page a quarter of the width to the left and darkened to half. This app
+ *   used that one until 19 Nov (360 / 420 ms); the owner chose FRND's quicker, lighter Profile way for every
+ *   page: nothing is blended over the whole screen and only one page moves, so each frame is cheaper too.
  *
  * How it stays smooth:
  * - Only where a page is drawn changes (its drawing is not made again), and the part of the lower page that
@@ -49,11 +54,10 @@ object PageFx {
     enum class Kind { TAB, PUSH, POP }
 
     private const val TAB_MS = 200f        // + 100 ms for each page in between (ViewPager)
-    private const val PUSH_MS = 360f
-    private const val POP_MS = 420f
-    private const val UNDER = 0.25f        // how far the lower page moves left
-    private const val DIM = 0.5f           // how dark the lower page gets
-    private val slide = PathInterpolator(0.3f, 0f, 0.1f, 1f)
+    private const val PUSH_MS = 150f
+    private const val POP_MS = 300f
+    /** Android's plain ease-in-out (AccelerateDecelerateInterpolator) */
+    private fun inOut(t: Float): Float = (0.5 - 0.5 * Math.cos(Math.PI * t)).toFloat()
     /** ViewPager's curve */
     private fun pager(t: Float): Float { val u = t - 1f; return u * u * u * u * u + 1f }
 
@@ -63,7 +67,6 @@ object PageFx {
     private val moved = ArrayList<View>()     // views whose translation we change
     private val lifted = ArrayList<Lift>()    // views lifted above the others for the move
     private val clipped = ArrayList<View>()   // views drawn only where the upper page doesn't cover them
-    private var scrim: View? = null
     private var overlayHost: ViewGroup? = null
     private val overlays = ArrayList<Drawable>()
     private var ended: (() -> Unit)? = null
@@ -111,6 +114,7 @@ object PageFx {
     fun finish() {
         ticker?.let { Choreographer.getInstance().removeFrameCallback(it) }
         ticker = null
+        Perf.moveEnd()
         for (v in moved) v.translationX = 0f
         moved.clear()
         for (l in lifted) {
@@ -123,8 +127,6 @@ object PageFx {
         for (v in held) wanted[v]?.let { v.visibility = it }
         wanted.clear()
         frozen = false
-        scrim?.let { s -> (s.parent as? ViewGroup)?.removeView(s) }
-        scrim = null
         overlayHost?.let { h -> for (d in overlays) h.overlay.remove(d) }
         overlays.clear(); overlayHost = null
         held.clear()
@@ -140,7 +142,7 @@ object PageFx {
      * [lowerExtras]: views that move with the lower page (the bottom bar of a tab page).
      * [upperExtras]: views that move with the upper page, just under it (Secret Dating's own bottom bar).
      * [snapshot]: for POP when the page you leave is already gone (a web page): its picture.
-     * [moveLower]: false when the web page moves and darkens its own lower page.
+     * [moveLower]: false when the lower page is not one of the app's own (the sign-in web page): it is left alone.
      * [onEnd]: after the move (the app then hides the pages that should be hidden).
      */
     fun run(
@@ -153,7 +155,6 @@ object PageFx {
         if (w <= 0f || off(container.context) || (from == null && to == null && snapshot == null) || (from != null && from === to)) { onEnd?.invoke(); return }
         ended = onEnd
         val zUp = Ui.dp(48f)
-        val zScrim = Ui.dp(40f)
         fun hold(v: View?) { if (v != null && v !is WebView && !held.contains(v)) { held.add(v); wanted[v] = v.visibility; v.visibility = View.VISIBLE } }
         fun move(v: View?) { if (v != null && !moved.contains(v)) moved.add(v) }
         fun lift(v: View, z: Float) {
@@ -174,16 +175,6 @@ object PageFx {
             clip.set(0, 0, r.coerceAtLeast(0), maxOf(v.height, container.height, 1))
             v.clipBounds = clip
         }
-        fun addScrim(alpha: Float): View = View(container.context).apply {
-            setBackgroundColor(Color.BLACK)
-            this.alpha = alpha
-            outlineProvider = null
-            isClickable = false
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            translationZ = zScrim
-            container.addView(this, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        }.also { scrim = it }
-
         val ms: Float
         val ease: (Float) -> Float
         val step: (Float) -> Unit
@@ -205,7 +196,7 @@ object PageFx {
             }
             Kind.PUSH -> {
                 ms = PUSH_MS
-                ease = { slide.getInterpolation(it) }
+                ease = ::inOut
                 val upper = to
                 if (upper == null) { ended = null; onEnd?.invoke(); return }
                 hold(from); lowerExtras.forEach { hold(it) }
@@ -213,58 +204,51 @@ object PageFx {
                 move(upper)
                 val ups = upperExtras.filter { it !== upper && it !== from }
                 ups.forEach { lift(it, zUp - Ui.dp(1f)); move(it) }
+                // the old page stays where it is, as bright as it is: only what the new page covers is not drawn
                 val lowers = if (moveLower) listOfNotNull(from) + lowerExtras else emptyList()
-                lowers.forEach { move(it) }
-                val sc = if (moveLower) addScrim(0f) else null
                 step = { t ->
                     val x = w * (1f - t)
                     val edge = upper.left + x
                     upper.translationX = x
                     for (u in ups) u.translationX = x
-                    for (l in lowers) { l.translationX = -UNDER * w * t; cut(l, edge) }
-                    sc?.let { it.alpha = DIM * t; cut(it, edge) }
+                    for (l in lowers) cut(l, edge)
                 }
             }
             Kind.POP -> {
                 ms = POP_MS
-                ease = { slide.getInterpolation(it) }
+                ease = ::inOut
                 val lowers = listOfNotNull(to) + lowerExtras
-                lowers.forEach { move(it) }
                 if (from != null) {
-                    // the page you leave is still a view: it slides away on top
+                    // the page you leave is still a view: it slides away on top; the page under it is still
                     hold(from)
                     lift(from, zUp)
                     move(from)
                     val ups = upperExtras.filter { it !== from && it !== to }
                     // (they leave with the page: on screen until the move ends, as that page is)
                     ups.forEach { hold(it); lift(it, zUp - Ui.dp(1f)); move(it) }
-                    val sc = addScrim(DIM)
                     step = { t ->
                         val x = w * t
                         val edge = from.left + x
                         from.translationX = x
                         for (u in ups) u.translationX = x
-                        for (l in lowers) { l.translationX = -UNDER * w * (1f - t); cut(l, edge) }
-                        sc.alpha = DIM * (1f - t); cut(sc, edge)
+                        for (l in lowers) cut(l, edge)
                     }
                 } else {
                     // the page you leave is gone (a web page): its picture slides away on top
-                    val dim = ColorDrawable(Color.BLACK).apply { setBounds(0, 0, container.width, container.height); alpha = (DIM * 255).toInt() }
-                    container.overlay.add(dim); overlays.add(dim)
                     val shot = snapshot?.let { BitmapDrawable(container.resources, it).apply { setBounds(0, 0, container.width, container.height) } }
-                    shot?.let { container.overlay.add(it); overlays.add(it) }
+                    if (shot == null) { ended = null; onEnd?.invoke(); return }
+                    container.overlay.add(shot); overlays.add(shot)
                     overlayHost = container
                     step = { t ->
                         val x = (w * t).toInt()
-                        for (l in lowers) { l.translationX = -UNDER * w * (1f - t); if (shot != null) cut(l, x.toFloat()) }
-                        dim.alpha = (DIM * 255 * (1f - t)).toInt()
-                        dim.setBounds(0, 0, if (shot != null) x + 2 else container.width, container.height)
-                        shot?.setBounds(x, 0, x + container.width, container.height)
+                        for (l in lowers) cut(l, x.toFloat())
+                        shot.setBounds(x, 0, x + container.width, container.height)
                         container.invalidate()
                     }
                 }
             }
         }
+        Perf.moveStart(kind.name, ms.toInt())
         step(0f)
         if (freezeAt in 0f..1f) {
             // test runs only: stay at this point of the way (0..1) until finish()

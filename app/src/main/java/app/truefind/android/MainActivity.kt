@@ -243,6 +243,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             override fun logout(presence: Boolean) = signOut(presence)
         }
         pages.checkUpdate = { updater.checkNow() }
+        // test builds: how smoothly the app draws on this phone (Settings → Page speed report)
+        pages.speedReport = { Perf.show(this) }
+        if (BuildConfig.SELF_UPDATE) Perf.start(this)
         pages.onWallet = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offer(d) }
         pages.askCamera = { cb ->
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
@@ -929,6 +932,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (::work.isInitialized && work.isExpert && !expertAllowed(pathOnly(e.path))) { router.go("/expert-talk", null, true); return }
         path = e.path; search = e.search
         routeIdx = router.idx
+        Perf.page(e.path, e.search)
         pages.setRoute(e.path, e.search, e.state, router.idx)
         moveHint = move
         if (move == Router.Move.POP) backAt = uptime()
@@ -1076,6 +1080,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // (the sign-in web page counts as a page only while it leads)
         val fromV: View? = before ?: if (native) null else web
         val toV: View? = after ?: if (native) null else web
+        // (test builds: the frames of this move are counted under this name — Settings → Page speed report)
+        Perf.nextLabel = Perf.pageName(pathOnly(fromPath)) + " → " + Perf.pageName(pathOnly(toPath), search)
         when (kind) {
             PageFx.Kind.TAB -> PageFx.run(root, kind, fromV, toV, dir = if (tB > tA) 1 else -1,
                 // Home ↔ Recent: Explore lies between them and passes by (as the tab between does in FRND)
@@ -1341,10 +1347,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 root.postDelayed({
                     say("live done ${i + 1}: at=${router.path}${router.search} page=${router.idx} moving=${PageFx.running} home=${state(pages.home)} explore=${state(explore)} recent=${state(pages.recent)} wallet=${state(wallet)} " +
                         "x=${pages.home.translationX.toInt()},${explore.translationX.toInt()},${pages.recent.translationX.toInt()},${wallet.translationX.toInt()}")
+                    say("perf| ${Perf.lastMove()}")
                 }, t + 4500)
                 t += 8000L
             }
-            root.postDelayed({ say("end") }, t)
+            root.postDelayed({ Perf.report(this).lines().forEach { say("perf| $it") }; say("end") }, t)
             return
         }
         var at = 6000L
@@ -1353,7 +1360,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             root.postDelayed({ frozenStep(k, what, act) }, at)
             at += 24000L
         }
-        root.postDelayed({ say("end") }, at)
+        root.postDelayed({ Perf.report(this).lines().forEach { say("perf| $it") }; say("end") }, at)
     }
 
     private fun startPreview() {
