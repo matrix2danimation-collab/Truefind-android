@@ -38,6 +38,9 @@ import app.truefind.android.games.GamesLayer
 import app.truefind.android.login.LoginLayer
 import org.json.JSONObject
 
+/** Ask the phone for its quickest screen mode (see MainActivity.askFastScreen). Off until the owner's phone has shown it can keep up. */
+private const val FAST_SCREEN = false
+
 /**
  * True Find for Android — every screen is drawn by the phone itself; the backend stays on Base44
  * (the same functions and data as the website).
@@ -208,6 +211,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true
         }
+        askFastScreen()
 
         // (PageHost: pages that were shown once stay ready while hidden, so coming back to them is only a move)
         root = PageHost(this).apply { setBackgroundColor(Color.WHITE); clipChildren = false }
@@ -1462,8 +1466,37 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (scene == "voice-check") root.postDelayed({ android.util.Log.i("TFVOICE", app.truefind.android.games.GameVoice.selfCheck(this)) }, 1500)
     }
 
+    /**
+     * Asks the phone for the quickest way its screen can show this size (90 or 120 pictures a second instead
+     * of 60). Many phones keep an app at 60 unless it asks: the owner's phone can do 90 and showed this app at
+     * 60 (page speed report, 19 Nov). The phone may still say no (battery saver, heat, its own setting) —
+     * then nothing changes. Page moves and the app's animations go by the clock, so they take just as long
+     * and only show more pictures on the way.
+     *
+     * Not switched on yet ([FAST_SCREEN]): at 90 a second the phone has 11 ms for each picture instead of
+     * 17. A page whose pictures take 12–16 ms keeps a steady 60 on a 60 screen, but on a 90 screen it would
+     * miss every other tick and look worse than before. The page speed report's "typical frame" per page
+     * (build 97 on) says which it is on the owner's phone; this is switched on only if that fits.
+     */
+    private fun askFastScreen() {
+        if (!FAST_SCREEN) return
+        try {
+            @Suppress("DEPRECATION") val d = windowManager.defaultDisplay ?: return
+            val now = d.mode ?: return
+            val best = d.supportedModes.filter { it.physicalWidth == now.physicalWidth && it.physicalHeight == now.physicalHeight }
+                .maxByOrNull { it.refreshRate } ?: return
+            if (best.refreshRate < 61f) return                 // a 60-only screen: nothing to ask for
+            val lp = window.attributes
+            if (lp.preferredDisplayModeId == best.modeId) return
+            lp.preferredDisplayModeId = best.modeId
+            window.attributes = lp
+            note("asked the screen for ${Math.round(best.refreshRate)} pictures a second (it shows ${Math.round(now.refreshRate)} now)")
+        } catch (e: Throwable) { }
+    }
+
     override fun onResume() {
         super.onResume()
+        askFastScreen()
         Push.visible = true
         Push.clearCalls(this) // the app rings it itself now
         calls.onAppVisible(true)

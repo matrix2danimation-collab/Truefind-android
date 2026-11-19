@@ -251,10 +251,10 @@ object Perf {
             sb.append("Counted since ${time.format(Date(since))} (now ${time.format(Date())})\n")
             if (allowN > 0) sb.append("Android allows an ordinary frame about ${String.format(Locale.US, "%.0f", allowSumNs / 1e6 / allowN)} ms here (one tick is ${String.format(Locale.US, "%.1f", periodNs / 1e6)} ms)\n")
             sb.append("\"late\" = the picture came after the tick it was meant for · \"ticks lost\" = how many ticks the old picture stayed on in all\n")
-            sb.append("\nPAGE MOVES — times · frames · late · ticks lost · longest wait\n")
+            sb.append("\nPAGE MOVES — times · frames · late · ticks lost · typical frame · longest wait\n")
             if (moveStats.isEmpty()) sb.append("  (none yet: change pages a few times, then open this again)\n")
             for ((k, b) in moveStats.entries.sortedByDescending { it.value.lost * 1000 / maxOf(1, it.value.frames) }) {
-                sb.append("  $k  ×${moveCount[k] ?: 0} · ${b.frames} frames · ${b.late} late (${pct(b.late, b.frames)}) · ${b.lost} ticks lost · longest ${ms(b.worstMs)}\n")
+                sb.append("  $k  ×${moveCount[k] ?: 0} · ${b.frames} frames · ${b.late} late (${pct(b.late, b.frames)}) · ${b.lost} ticks lost · typical ${String.format(Locale.US, "%.0f", b.typical())} ms · longest ${ms(b.worstMs)}\n")
             }
             val all = Bucket()
             for (b in moveStats.values) { all.frames += b.frames; all.late += b.late; all.lost += b.lost; if (b.worstMs > all.worstMs) all.worstMs = b.worstMs }

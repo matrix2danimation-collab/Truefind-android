@@ -341,13 +341,19 @@ class DailyClaimSheet private constructor(ctx: Context, private val home: HomeSc
                 parts.add(P((Math.random() * w).toFloat(), (-20 - Math.random() * h * .6).toFloat(), ((Math.random() - .5) * 1.4).toFloat(), (2 + Math.random() * 2.6).toFloat(),
                     (6 + Math.random() * 6).toFloat(), (9 + Math.random() * 8).toFloat(), (Math.random() * 6.28).toFloat(), ((Math.random() - .5) * .25).toFloat(), (Math.random() * 6.28).toFloat(), COLORS[i % COLORS.size], k))
             }
-            if (!running) { running = true; postInvalidateOnAnimation() }
+            if (!running) { running = true; lastAt = 0L; postInvalidateOnAnimation() }
         }
+        private var lastAt = 0L
         override fun onDraw(c: Canvas) {
             if (!running) return
             val d = Ui.density; val h = height / d
+            // The pieces' steps were made for 60 pictures a second (one step each 16.7 ms): the step is sized by the
+            // time since the last picture, so they fall just as fast on a screen that shows 90 or 120.
+            val now = android.os.SystemClock.uptimeMillis()
+            val k = if (lastAt == 0L) 1f else ((now - lastAt) / 16.667f).coerceIn(0.25f, 3f)
+            lastAt = now
             for (q in parts) {
-                q.sw += .08f; q.x += q.vx + sin(q.sw.toDouble()).toFloat() * .8f; q.y += q.vy; q.r += q.vr; q.vy = min(q.vy + .025f, 4.4f)
+                q.sw += .08f * k; q.x += (q.vx + sin(q.sw.toDouble()).toFloat() * .8f) * k; q.y += q.vy * k; q.r += q.vr * k; q.vy = min(q.vy + .025f * k, 4.4f)
                 c.save(); c.translate(q.x * d, q.y * d); c.rotate(Math.toDegrees(q.r.toDouble()).toFloat()); c.scale(1f, cos(q.sw * 1.3).toFloat())
                 p.color = q.c
                 when (q.k) {
