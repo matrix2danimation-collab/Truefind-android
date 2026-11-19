@@ -3,10 +3,17 @@ package app.truefind.android
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.PathInterpolator
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -19,6 +26,8 @@ import java.io.File
  * The Settings drawer of Profile (?settings=1), sliding in from the left, and its screens
  * (?settings=notifications | apply | verification | memberships | privacy | blocked |
  * security | refer | help) sliding in from the right over the list.
+ * On top of the list: a search box. A word typed there keeps only the settings that match it
+ * (their title, the line under it, and words for what is inside their screen).
  */
 @SuppressLint("ViewConstructor")
 class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) {
@@ -33,6 +42,29 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
     private var panelBody: PPanel? = null
     var panel: String? = null; private set
     private var leaving = false
+    // Search: the box is made once and stays (so the keyboard and the cursor stay while the list under it changes)
+    private var query = ""
+    private var searchInput: EditText? = null
+    private var meHolder: FrameLayout? = null
+    private var groupsCol: LinearLayout? = null
+    private val notWord = Regex("[^\\p{L}\\p{M}\\p{N}]+")
+    /** other words people look for, per setting: what is inside its screen (its title and the line under it are searched too) */
+    private val words = mapOf(
+        "admin" to "admin owner manage members",
+        "notifications" to "notification alerts likes messages",
+        "wallet" to "coins balance recharge top-up topup add buy payment pay money history",
+        "refer" to "invite friend code link share free coins reward",
+        "apply" to "apply earn earning selfie video upi",
+        "verification" to "verify verified identity age 18 pan card voice badge",
+        "memberships" to "membership premium plan secret dating join",
+        "update" to "update version latest new",
+        "speed" to "speed smooth test",
+        "privacy" to "location show hide hidden visible city state",
+        "blocked" to "block unblock people",
+        "security" to "safety safe rules otp password bank money meet report ban",
+        "help" to "faq question contact email whatsapp report problem complaint withdrawal screenshot",
+        "logout" to "logout sign out signout exit",
+        "delete" to "delete remove permanently close")
 
     init {
         isClickable = true
@@ -52,6 +84,7 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
     }
     fun slideOut(done: () -> Unit) {
         leaving = true
+        hideKeyboard()
         dim.animate().alpha(0f).setDuration(300).start()
         aside.animate().translationX(-width.toFloat().coerceAtLeast(1f)).setDuration(300).setInterpolator(ease).withEndAction { release(); done() }.start()
     }
@@ -102,15 +135,32 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
 
     private fun renderList() {
         val ctx = context
-        val y = listScroll.scrollY
-        listCol.removeAllViews()
-        val head = PUi.pageHead(ctx, "Settings", null, PUi.headBtn(ctx, "Close settings", PUi.lu(Lu.X, Color.WHITE, 20f, 2.2f)) { ps.closeDrawer() })
-        listCol.addView(head, LinearLayout.LayoutParams(-1, -2))
-        val body = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL; background = Tf.topRound(PC.ground, 28f)
-            setPadding(Ui.dpi(16f), Ui.dpi(20f), Ui.dpi(16f), Ui.dpi(22f))
+        if (groupsCol == null) {
+            // the frame, once: the head, the search box, my card, the list, the wordmark
+            listCol.removeAllViews()
+            val head = PUi.pageHead(ctx, "Settings", null, PUi.headBtn(ctx, "Close settings", PUi.lu(Lu.X, Color.WHITE, 20f, 2.2f)) { ps.closeDrawer() })
+            listCol.addView(head, LinearLayout.LayoutParams(-1, -2))
+            val body = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL; background = Tf.topRound(PC.ground, 28f)
+                setPadding(Ui.dpi(16f), Ui.dpi(20f), Ui.dpi(16f), Ui.dpi(22f))
+            }
+            body.addView(searchBox(), LinearLayout.LayoutParams(-1, Ui.dpi(48f)))
+            val holder = FrameLayout(ctx); meHolder = holder
+            body.addView(holder, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
+            val groups = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }; groupsCol = groups
+            body.addView(groups, LinearLayout.LayoutParams(-1, -2))
+            val wm = FrameLayout(ctx).apply { setPadding(0, Ui.dpi(4f), 0, 0) }
+            wm.addView(PUi.wordmark(ctx, 14f), FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL))
+            body.addView(wm, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
+            listCol.addView(body, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = -Ui.dpi(28f) })
         }
-        // back to my profile
+        meHolder?.let { it.removeAllViews(); it.addView(meCard(), FrameLayout.LayoutParams(-1, -2)) }
+        renderGroups()
+    }
+
+    /** back to my profile */
+    private fun meCard(): View {
+        val ctx = context
         val me = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(68f)
             setPadding(Ui.dpi(12f), 0, Ui.dpi(10f), 0); background = Tf.box(Color.WHITE, 16f, 1f, PC.line)
@@ -126,16 +176,97 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         mc.addView(Tf.t(ctx, "Joined ${PR.fmtDate(ps.joinedAt).ifEmpty { "—" }}", 12.5f, PC.sub, false).lineH(16f))
         me.addView(mc, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = Ui.dpi(12f) })
         me.addView(PUi.icon(ctx, PUi.lu(Lu.ChevronRight, PC.sub, 16f, 2.2f), 16f))
-        body.addView(me, LinearLayout.LayoutParams(-1, -2))
+        return me
+    }
+
+    // ── Search: type a word, the list keeps only the settings that match ──
+    /** every word typed must start a word of the setting ("log" finds Log out, "coin" finds Wallet) */
+    private fun matches(it: Item, q: List<String>): Boolean {
+        val have = wordsOf(it.title + " " + (it.sub ?: "") + " " + (words[it.id] ?: ""))
+        return q.isNotEmpty() && q.all { w -> have.any { h -> h.startsWith(w) } }
+    }
+    private fun wordsOf(text: String): List<String> = text.lowercase().split(notWord).filter { it.isNotEmpty() }
+
+    private fun searchBox(): View {
+        val ctx = context
+        fun edge(on: Boolean) = Tf.box(Color.WHITE, 16f, if (on) 1.5f else 1f, if (on) PC.head else PC.line)
+        val box = FrameLayout(ctx).apply {
+            background = edge(false)
+            // when the cursor leaves the box it rests here (on old phones it would jump straight back into the box)
+            isFocusable = true; isFocusableInTouchMode = true
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        val clear = FrameLayout(ctx).apply {
+            contentDescription = "Clear search"; visibility = View.GONE
+            addView(PUi.icon(ctx, PUi.lu(Lu.X, PC.sub, 16f, 2.4f), 16f), FrameLayout.LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
+            Ui.pressable(this, .9f)
+        }
+        val input = EditText(ctx).apply {
+            background = null; setPadding(Ui.dpi(42f), 0, Ui.dpi(44f), 0)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(15f)); typeface = Ui.regular; includeFontPadding = false
+            setTextColor(PC.ink); setHintTextColor(Ui.c("#9A91AD"))
+            hint = "Search settings"
+            isSingleLine = true; maxLines = 1; gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            inputType = InputType.TYPE_CLASS_TEXT
+            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            setOnEditorActionListener { _, _, _ -> hideKeyboard(); true }
+            // (whenever the cursor leaves the box — a row tapped, Settings closed or taken away — the keyboard goes too)
+            setOnFocusChangeListener { v, f ->
+                box.background = edge(f)
+                if (!f) try { (ctx.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0) } catch (e: Exception) { }
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    val now = s?.toString().orEmpty()
+                    if (now == query) return
+                    query = now
+                    clear.visibility = if (now.isEmpty()) View.GONE else View.VISIBLE
+                    renderGroups()
+                    listScroll.scrollTo(0, 0)
+                }
+            })
+        }
+        searchInput = input
+        clear.setOnClickListener { input.setText("") }
+        // (the box is one place to tap: the text field fills it, the two icons lie over it)
+        box.addView(input, FrameLayout.LayoutParams(-1, -1))
+        box.addView(PUi.icon(ctx, PUi.lu(Lu.Search, PC.sub, 18f, 2.2f), 18f), FrameLayout.LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER_VERTICAL or Gravity.START).apply { leftMargin = Ui.dpi(14f) })
+        box.addView(clear, FrameLayout.LayoutParams(Ui.dpi(44f), -1, Gravity.END))
+        return box
+    }
+
+    private fun hideKeyboard() { searchInput?.takeIf { it.hasFocus() }?.clearFocus() }
+
+    /** the groups of settings; with a word in the search box, only the settings that match it (in one box) */
+    private fun renderGroups() {
+        val ctx = context
+        val col = groupsCol ?: return
+        col.removeAllViews()
+        val searching = query.isNotBlank()
+        // (my card is not a setting: it steps aside while a word is being looked for)
+        meHolder?.visibility = if (searching) View.GONE else View.VISIBLE
         val unread = ps.unread
-        for (group in items()) {
+        val groups = if (!searching) items() else wordsOf(query).let { q -> listOf(items().flatten().filter { matches(it, q) }) }.filter { it.isNotEmpty() }
+        // (test screens only: what the search found, as a line to read back)
+        if (searching && Demo.on) android.util.Log.i("TFDBG", "settings search \"${query.trim()}\": " + groups.flatten().joinToString(",") { it.id }.ifEmpty { "nothing" })
+        if (groups.isEmpty()) {
+            val none = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(Ui.dpi(12f), Ui.dpi(28f), Ui.dpi(12f), Ui.dpi(12f)) }
+            none.addView(Tf.t(ctx, "No settings found", 15f, PC.ink).lineH(20f).apply { gravity = Gravity.CENTER })
+            none.addView(Tf.t(ctx, "Nothing matches \u201C${query.trim()}\u201D. Try another word.", 13f, PC.sub, false).lineH(18f).apply { gravity = Gravity.CENTER },
+                LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
+            col.addView(none, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
+            return
+        }
+        for (group in groups) {
             val box = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = Tf.box(Color.WHITE, 16f, 1f, PC.line); clipToOutline = true }
             group.forEachIndexed { i, it ->
                 if (i > 0) box.addView(View(ctx).apply { setBackgroundColor(PC.line) }, LinearLayout.LayoutParams(-1, Ui.dpi(1f)))
                 val row = LinearLayout(ctx).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(56f)
                     setPadding(Ui.dpi(12f), 0, Ui.dpi(10f), 0)
-                    setOnClickListener { _ -> onItem(it) }; Ui.pressable(this, .97f)
+                    setOnClickListener { _ -> hideKeyboard(); onItem(it) }; Ui.pressable(this, .97f)
                 }
                 row.addView(PUi.tile(ctx, it.color, it.icon, 34f), LinearLayout.LayoutParams(Ui.dpi(34f), Ui.dpi(34f)).apply { rightMargin = Ui.dpi(12f) })
                 val tc = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
@@ -148,13 +279,8 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
                 row.addView(PUi.icon(ctx, PUi.lu(Lu.ChevronRight, PC.sub, 16f, 2.2f), 16f))
                 box.addView(row, LinearLayout.LayoutParams(-1, -2))
             }
-            body.addView(box, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
+            col.addView(box, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
         }
-        val wm = FrameLayout(ctx).apply { setPadding(0, Ui.dpi(4f), 0, 0) }
-        wm.addView(PUi.wordmark(ctx, 14f), FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL))
-        body.addView(wm, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
-        listCol.addView(body, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = -Ui.dpi(28f) })
-        listScroll.post { listScroll.scrollTo(0, y) }
     }
 
     private fun onItem(it: Item) {
@@ -207,7 +333,11 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         page.animate().translationX(0f).setDuration(260).setInterpolator(ease).start()
     }
 
-    fun previewOpen(what: String) { panelBody?.previewOpen(what) }
+    fun previewOpen(what: String) {
+        // (test pictures) "find:coins" types that word into the search box
+        if (what.startsWith("find:")) { searchInput?.setText(what.substring(5)); return }
+        panelBody?.previewOpen(what)
+    }
 }
 
 /** One Settings screen. */

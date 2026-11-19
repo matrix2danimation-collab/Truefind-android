@@ -224,6 +224,36 @@ nshot p06-followers 9 $P profile --es tf_open people=followers
 nshot p07-following 9 $P profile --es tf_open people=following
 nshot p08-unfollow 10 $P profile --es tf_open people=following,unfollow
 nshot p09-settings 9 $P profile --es tf_open settings=1
+nshot p09b-settings-search 10 $P profile --es tf_open settings=1,find:coins
+nshot p09c-settings-search-none 10 $P profile --es tf_open settings=1,find:zzz
+# Settings search with the phone's own keyboard: tap the box, type a word, then tap the setting it found
+search_typed() {
+  local name=p09d-settings-search-typed box sx sy sb t
+  adb shell am force-stop $PKG; adb shell pm clear $PKG > /dev/null; sleep 1; adb logcat -c
+  echo "== $name" >> "$OUT/start.txt"
+  adb shell am start -W -n $PKG/.MainActivity $P profile --es tf_open settings=1 >> "$OUT/start.txt" 2>&1
+  waitlog "preview open" 60; sleep 9
+  # where the box is: from the screen's own description; if that cannot be read, where it is on this test phone
+  box=$(adb exec-out uiautomator dump /dev/tty 2>/dev/null | tr '>' '\n' | grep 'class="android.widget.EditText"' | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1 | grep -o '[0-9]*' | tr '\n' ' ')
+  set -- $box
+  if [ $# -eq 4 ]; then sx=$(( ($1 + $3) / 2 )); sy=$(( ($2 + $4) / 2 )); sb=$4; echo "  search box at $box" >> "$OUT/start.txt"
+  else sx=540; sy=559; sb=622; echo "  search box: not read from the screen ($box), using $sx,$sy" >> "$OUT/start.txt"; fi
+  kbd() { adb shell dumpsys input_method | grep -o "mInputShown=[a-z]*" | head -1; }
+  adb shell input tap $sx $sy
+  t=0; while [ $t -lt 30 ] && [ "$(kbd)" != "mInputShown=true" ]; do sleep 1; t=$((t+1)); done
+  echo "  after the tap on the box: $(kbd) (waited $t s)" >> "$OUT/start.txt"
+  sleep 2
+  adb shell input text block; sleep 3
+  adb exec-out screencap -p > "$OUT/$name.png"
+  # the setting it found is the first row under the box (16 dp gap + half of a 56 dp row = 115 px here)
+  adb shell input tap $sx $(( sb + 115 )); sleep 5
+  echo "  after the tap on the found row: $(kbd)" >> "$OUT/start.txt"
+  adb exec-out screencap -p > "$OUT/p09e-settings-search-open.png"
+  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+}
+search_typed
 nshot p10-notifications 9 $P profile --es tf_open settings=notifications
 nshot p11-apply-host 9 $P profile --es tf_open settings=apply
 nshot p12-apply-form 10 $P profile --es tf_open settings=apply,form
