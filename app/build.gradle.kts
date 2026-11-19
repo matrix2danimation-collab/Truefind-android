@@ -17,7 +17,9 @@ android {
         versionName = "0.1.$build"
         // test builds: the app checks this file and offers the newer APK (Update button)
         buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/test-build/version.json\"")
-        buildConfigField("boolean", "SELF_UPDATE", "true")
+        // The build for users (Play Store) is made with -PtfStore=true: then there is no Update box, no
+        // "Check for update", no "Page speed report" and no test screens — all of them hang on this one switch.
+        buildConfigField("boolean", "SELF_UPDATE", if (project.findProperty("tfStore") == "true") "false" else "true")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live Dance video (Agora) ships for phones (ARM) only; the emulator tests add x86_64

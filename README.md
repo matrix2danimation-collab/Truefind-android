@@ -14,6 +14,8 @@ Every push to `main` builds a test APK with GitHub Actions:
 - **Releases → "Test build" → `TrueFind-test.apk`** (open on the phone and install), or
 - **Actions → latest run → Artifacts → `TrueFind-test-apk`**.
 
+Test builds update themselves (the Update box, Settings → "Check for update") and have Settings → "Page speed report" and the test screens. **The build for users must not have any of these**: build it with `-PtfStore=true` (one switch, `BuildConfig.SELF_UPDATE`, turns all of them off).
+
 ## Files
 
 | File | What it is |

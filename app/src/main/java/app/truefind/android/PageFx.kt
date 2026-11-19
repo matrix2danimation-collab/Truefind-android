@@ -29,8 +29,15 @@ import android.widget.FrameLayout
  *   old one. The old page does not move and does not darken — the way FRND opens its Profile:
  *   12 · 59 · 89 · 100 % and 26 · 76 · 98 · 100 % at 24 pictures a second, which is 150 ms on Android's
  *   plain ease-in-out curve (½ − ½ cos πt), exactly on the screen's frames (33 · 83 · 117 ms / 50 · 100 · 133 ms).
- * - POP (Back): the page slides away to the right, 300 ms on the same curve; the page under it is still and
- *   fully bright all the way (FRND: 2 · 12 · 34 · 51 · 73 · 90 · 98 % and 4 · 23 · 45 · 59 · 82 · 96 %).
+ * - POP (Back): the way the Claude app goes back — the owner's choice on 19 Nov, from his recording of it
+ *   (four Backs followed frame by frame, each page's place, size and see-through fitted to a fraction of a pixel):
+ *   · the page you leave goes half a screen to the right, shrinks to 90 % and fades away, all three together:
+ *     35 → 81 → 93 % of the way on three recorded frames (41 ms apart), gone after about 110 ms;
+ *   · the page you come back to lies under it: it fades in at 92 % of its size, coming from 15 % of the width
+ *     further left (seen 16 → 57 → 72 → 82 %, shift −12 → −6 → −4 → −2.6 %), and from about 140 ms it grows
+ *     to full size (92 → 97 → 99.4 → 99.8 → 100 %); all is still after about 290 ms.
+ *   Both pages turn around the middle of the screen. (Until 19 Nov: FRND's way — the page slid away over
+ *   300 ms and the page under it stood still: 2 · 12 · 34 · 51 · 73 · 90 · 98 %.)
  *
  *   FRND has a second way too, for the pages that are separate screens of it (its room lists): Android's own
  *   screen change — 450 ms, the old page a quarter of the width to the left and darkened to half. This app
@@ -40,6 +47,8 @@ import android.widget.FrameLayout
  * How it stays smooth:
  * - Only where a page is drawn changes (its drawing is not made again), and the part of the lower page that
  *   the upper page covers is not drawn at all.
+ * - Back fades and resizes whole pages: for that move each of the two pages is one finished picture
+ *   (a hardware layer), so a frame only places two pictures instead of drawing both pages again.
  * - The move's clock goes by the frames that were really drawn: when the phone needs longer for one frame
  *   (a page drawn for the first time), the next frame goes on from where the last one was instead of jumping
  *   ahead. Before, one slow frame made the page jump most of the way in one go.
@@ -56,6 +65,18 @@ object PageFx {
     private const val TAB_MS = 200f        // + 100 ms for each page in between (ViewPager)
     private const val PUSH_MS = 150f
     private const val POP_MS = 300f
+    // Back, the Claude app's way (ms on the move's clock; see the notes above)
+    private const val POP_OLD_MS = 110f    // the page you leave: gone by then
+    private const val POP_TURN_MS = 140f   // the page under it: faded in (small) until then, growing after
+    private const val POP_GROW_MS = 35f    // … each 35 ms it comes 63 % closer to full size
+    private const val POP_OLD_SHIFT = 0.5f // of the width, to the right
+    private const val POP_OLD_SIZE = 0.9f
+    private const val POP_NEW_SHIFT = 0.15f // of the width, from the left
+    private const val POP_NEW_SIZE = 0.92f
+    private const val POP_NEW_SEEN = 0.8f  // how visible at the turn
+    private const val POP_NEW_LEFT = 0.15f // how much of its way it still has to go at the turn
+    /** quick at first, then slowing (1 − (1 − t)²) */
+    private fun outQuad(t: Float): Float { val u = 1f - t.coerceIn(0f, 1f); return 1f - u * u }
     /** Android's plain ease-in-out (AccelerateDecelerateInterpolator) */
     private fun inOut(t: Float): Float = (0.5 - 0.5 * Math.cos(Math.PI * t)).toFloat()
     /** ViewPager's curve */
@@ -67,12 +88,15 @@ object PageFx {
     private val moved = ArrayList<View>()     // views whose translation we change
     private val lifted = ArrayList<Lift>()    // views lifted above the others for the move
     private val clipped = ArrayList<View>()   // views drawn only where the upper page doesn't cover them
+    private val faded = ArrayList<Look>()     // views whose size and see-through we change (Back)
     private var overlayHost: ViewGroup? = null
     private val overlays = ArrayList<Drawable>()
     private var ended: (() -> Unit)? = null
     private val clip = Rect()
 
     private class Lift(val v: View, val z: Float, val spot: Int, val ambient: Int)
+    /** how a view looked before the move (it gets all of it back) */
+    private class Look(val v: View, val alpha: Float, val sx: Float, val sy: Float, val px: Float, val py: Float, val pivotSet: Boolean, val layer: Int)
 
     fun off(ctx: Context): Boolean = try {
         Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
@@ -124,6 +148,13 @@ object PageFx {
         lifted.clear()
         for (v in clipped) v.clipBounds = null
         clipped.clear()
+        for (k in faded) {
+            val v = k.v
+            v.alpha = k.alpha; v.scaleX = k.sx; v.scaleY = k.sy
+            if (Build.VERSION.SDK_INT >= 28 && !k.pivotSet) v.resetPivot() else if (k.pivotSet) { v.pivotX = k.px; v.pivotY = k.py } else { v.pivotX = v.width / 2f; v.pivotY = v.height / 2f }
+            if (v.layerType != k.layer) v.setLayerType(k.layer, null)
+        }
+        faded.clear()
         for (v in held) wanted[v]?.let { v.visibility = it }
         wanted.clear()
         frozen = false
@@ -175,6 +206,14 @@ object PageFx {
             clip.set(0, 0, r.coerceAtLeast(0), maxOf(v.height, container.height, 1))
             v.clipBounds = clip
         }
+        /** [v] may be resized and faded in this move: one finished picture of it, turning around the middle of the screen */
+        fun look(v: View) {
+            if (v is WebView || faded.any { it.v === v }) return
+            faded.add(Look(v, v.alpha, v.scaleX, v.scaleY, v.pivotX, v.pivotY, Build.VERSION.SDK_INT >= 28 && v.isPivotSet, v.layerType))
+            if (v.layerType == View.LAYER_TYPE_NONE) v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            v.pivotX = container.width / 2f - v.left
+            v.pivotY = container.height / 2f - v.top
+        }
         val ms: Float
         val ease: (Float) -> Float
         val step: (Float) -> Unit
@@ -216,33 +255,73 @@ object PageFx {
             }
             Kind.POP -> {
                 ms = POP_MS
-                ease = ::inOut
-                val lowers = listOfNotNull(to) + lowerExtras
+                // (each part of this move has its own curve: the step gets the plain clock, 0..1 of POP_MS)
+                ease = { it }
+                val lowers = (listOfNotNull(to) + lowerExtras).filter { it !is WebView }
+                val looks = HashMap<View, Look>()
+                fun ready(v: View) { look(v); faded.firstOrNull { it.v === v }?.let { looks[v] = it } }
+                /** the page under: small and faint, a little to the left, until the turn; then it grows to full size */
+                fun under(at: Float) {
+                    val seen: Float; val shift: Float; val size: Float
+                    if (at <= POP_TURN_MS) {
+                        val g = outQuad(at / POP_TURN_MS)
+                        seen = POP_NEW_SEEN * g
+                        shift = 1f - (1f - POP_NEW_LEFT) * g
+                        size = POP_NEW_SIZE
+                    } else {
+                        val k = if (at >= POP_MS) 0f else Math.exp(-((at - POP_TURN_MS) / POP_GROW_MS).toDouble()).toFloat()
+                        seen = 1f - (1f - POP_NEW_SEEN) * k
+                        shift = POP_NEW_LEFT * k
+                        size = 1f - (1f - POP_NEW_SIZE) * k
+                    }
+                    for (l in lowers) {
+                        val was = looks[l] ?: continue
+                        l.translationX = -POP_NEW_SHIFT * w * shift
+                        l.scaleX = was.sx * size; l.scaleY = was.sy * size
+                        l.alpha = was.alpha * seen
+                    }
+                }
+                lowers.forEach { ready(it); move(it) }
                 if (from != null) {
-                    // the page you leave is still a view: it slides away on top; the page under it is still
+                    // the page you leave is still a view: it goes to the right on top, shrinking and fading
                     hold(from)
                     lift(from, zUp)
                     move(from)
                     val ups = upperExtras.filter { it !== from && it !== to }
                     // (they leave with the page: on screen until the move ends, as that page is)
                     ups.forEach { hold(it); lift(it, zUp - Ui.dp(1f)); move(it) }
+                    val uppers = listOf(from) + ups
+                    uppers.forEach { ready(it) }
                     step = { t ->
-                        val x = w * t
-                        val edge = from.left + x
-                        from.translationX = x
-                        for (u in ups) u.translationX = x
-                        for (l in lowers) cut(l, edge)
+                        val at = t * POP_MS
+                        val p = if (t >= 1f) 1f else outQuad(at / POP_OLD_MS)
+                        for (u in uppers) {
+                            // (a web page is not resized or faded: it slides off the screen, as it did)
+                            val was = looks[u]
+                            if (was == null) { u.translationX = w * p; continue }
+                            u.translationX = POP_OLD_SHIFT * w * p
+                            val size = 1f - (1f - POP_OLD_SIZE) * p
+                            u.scaleX = was.sx * size; u.scaleY = was.sy * size
+                            u.alpha = was.alpha * (1f - p)
+                        }
+                        under(at)
                     }
                 } else {
-                    // the page you leave is gone (a web page): its picture slides away on top
+                    // the page you leave is gone (a web page): its picture goes the same way on top
                     val shot = snapshot?.let { BitmapDrawable(container.resources, it).apply { setBounds(0, 0, container.width, container.height) } }
-                    if (shot == null) { ended = null; onEnd?.invoke(); return }
+                    if (shot == null) { ended = null; finish(); onEnd?.invoke(); return }
                     container.overlay.add(shot); overlays.add(shot)
                     overlayHost = container
+                    val cw = container.width; val ch = container.height
                     step = { t ->
-                        val x = (w * t).toInt()
-                        for (l in lowers) cut(l, x.toFloat())
-                        shot.setBounds(x, 0, x + container.width, container.height)
+                        val at = t * POP_MS
+                        val p = if (t >= 1f) 1f else outQuad(at / POP_OLD_MS)
+                        val size = 1f - (1f - POP_OLD_SIZE) * p
+                        val sw = (cw * size).toInt(); val sh = (ch * size).toInt()
+                        val x = ((cw - sw) / 2f + POP_OLD_SHIFT * w * p).toInt(); val y = (ch - sh) / 2
+                        shot.setBounds(x, y, x + sw, y + sh)
+                        shot.alpha = (255f * (1f - p)).toInt().coerceIn(0, 255)
+                        under(at)
                         container.invalidate()
                     }
                 }
@@ -252,7 +331,8 @@ object PageFx {
         step(0f)
         if (freezeAt in 0f..1f) {
             // test runs only: stay at this point of the way (0..1) until finish()
-            val at = freezeAt
+            // (a Back has most to show early: both pages are on screen for its first third only)
+            val at = if (kind == Kind.POP) freezeAt / 3f else freezeAt
             freezeAt = -1f
             frozen = true
             step(at)
