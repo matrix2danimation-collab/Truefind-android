@@ -206,11 +206,14 @@ object PageFx {
             clip.set(0, 0, r.coerceAtLeast(0), maxOf(v.height, container.height, 1))
             v.clipBounds = clip
         }
-        /** [v] may be resized and faded in this move: one finished picture of it, turning around the middle of the screen */
-        fun look(v: View) {
+        /**
+         * [v] may be resized and faded in this move, turning around the middle of the screen. [picture]: it is
+         * one finished picture from now on (false: not yet — a page that is still invisible is made one when it appears).
+         */
+        fun look(v: View, picture: Boolean = true) {
             if (v is WebView || faded.any { it.v === v }) return
             faded.add(Look(v, v.alpha, v.scaleX, v.scaleY, v.pivotX, v.pivotY, Build.VERSION.SDK_INT >= 28 && v.isPivotSet, v.layerType))
-            if (v.layerType == View.LAYER_TYPE_NONE) v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            if (picture && v.layerType == View.LAYER_TYPE_NONE) v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
             v.pivotX = container.width / 2f - v.left
             v.pivotY = container.height / 2f - v.top
         }
@@ -259,7 +262,10 @@ object PageFx {
                 ease = { it }
                 val lowers = (listOfNotNull(to) + lowerExtras).filter { it !is WebView }
                 val looks = HashMap<View, Look>()
-                fun ready(v: View) { look(v); faded.firstOrNull { it.v === v }?.let { looks[v] = it } }
+                fun ready(v: View, picture: Boolean) { look(v, picture); faded.firstOrNull { it.v === v }?.let { looks[v] = it } }
+                // The page under is invisible in the frame of the tap: it becomes a finished picture one frame later,
+                // so that frame makes only the leaving page's picture and the next one only this page's.
+                var underPictures = false
                 /** the page under: small and faint, a little to the left, until the turn; then it grows to full size */
                 fun under(at: Float) {
                     val seen: Float; val shift: Float; val size: Float
@@ -274,6 +280,10 @@ object PageFx {
                         shift = POP_NEW_LEFT * k
                         size = 1f - (1f - POP_NEW_SIZE) * k
                     }
+                    if (!underPictures && at > 0f) {
+                        underPictures = true
+                        for (l in lowers) if (looks[l] != null && l.layerType == View.LAYER_TYPE_NONE) l.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    }
                     for (l in lowers) {
                         val was = looks[l] ?: continue
                         l.translationX = -POP_NEW_SHIFT * w * shift
@@ -281,7 +291,7 @@ object PageFx {
                         l.alpha = was.alpha * seen
                     }
                 }
-                lowers.forEach { ready(it); move(it) }
+                lowers.forEach { ready(it, false); move(it) }
                 if (from != null) {
                     // the page you leave is still a view: it goes to the right on top, shrinking and fading
                     hold(from)
@@ -291,7 +301,7 @@ object PageFx {
                     // (they leave with the page: on screen until the move ends, as that page is)
                     ups.forEach { hold(it); lift(it, zUp - Ui.dp(1f)); move(it) }
                     val uppers = listOf(from) + ups
-                    uppers.forEach { ready(it) }
+                    uppers.forEach { ready(it, true) }
                     step = { t ->
                         val at = t * POP_MS
                         val p = if (t >= 1f) 1f else outQuad(at / POP_OLD_MS)
