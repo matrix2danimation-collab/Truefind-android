@@ -101,6 +101,27 @@ object WCoins {
     fun small(ctx: Context): Bitmap? = sm ?: load(ctx, "wallet/tf-coin-sm.png").also { sm = it }
     fun big3d(ctx: Context): Bitmap? = d3 ?: load(ctx, "wallet/tf-coin-3d.png").also { d3 = it }
 
+    private val sized = HashMap<String, Bitmap>()
+
+    /**
+     * The coin picture shrunk to exactly [px] × [px]-ish screen pixels, halving step by
+     * step with smoothing. Drawing the 144 px picture straight down to a small size
+     * makes its rim grainy and jagged; a picture already at screen size stays clean.
+     * Same picture, same size on screen — only sharper.
+     */
+    fun sharp(src: Bitmap, pxW: Int, pxH: Int = pxW): Bitmap {
+        if (pxW <= 0 || pxH <= 0 || (pxW >= src.width && pxH >= src.height)) return src
+        val key = "${System.identityHashCode(src)}:$pxW:$pxH"
+        sized[key]?.let { return it }
+        var b = src
+        while (b.width / 2 >= pxW && b.height / 2 >= pxH) {
+            b = Bitmap.createScaledBitmap(b, b.width / 2, b.height / 2, true)
+        }
+        if (b.width != pxW || b.height != pxH) b = Bitmap.createScaledBitmap(b, pxW, pxH, true)
+        sized[key] = b
+        return b
+    }
+
     private fun load(ctx: Context, path: String): Bitmap? = try {
         ctx.assets.open(path).use { BitmapFactory.decodeStream(it) }
     } catch (e: Exception) {
@@ -110,7 +131,7 @@ object WCoins {
     /** <TFCoin size={…} />: the flat TF coin picture (falls back to the drawn coin). */
     fun flat(ctx: Context, sizeDp: Float): ImageView = ImageView(ctx).apply {
         val b = small(ctx)
-        if (b != null) setImageBitmap(b) else setImageDrawable(CoinDrawable(sizeDp))
+        if (b != null) setImageBitmap(sharp(b, Ui.dpi(sizeDp))) else setImageDrawable(CoinDrawable(sizeDp))
         scaleType = ImageView.ScaleType.FIT_CENTER
         layoutParams = LinearLayout.LayoutParams(Ui.dpi(sizeDp), Ui.dpi(sizeDp))
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -119,9 +140,10 @@ object WCoins {
     /** <TFCoin3D size={…} />: the tilted 3D coin, 228 × 240. */
     fun tilted(ctx: Context, sizeDp: Float): ImageView = ImageView(ctx).apply {
         val b = big3d(ctx)
-        if (b != null) setImageBitmap(b) else setImageDrawable(CoinDrawable(sizeDp))
+        val pw = Math.round(sizeDp * 228f / 240f * Ui.density)
+        if (b != null) setImageBitmap(sharp(b, pw, Ui.dpi(sizeDp))) else setImageDrawable(CoinDrawable(sizeDp))
         scaleType = ImageView.ScaleType.FIT_CENTER
-        layoutParams = LinearLayout.LayoutParams(Math.round(sizeDp * 228f / 240f * Ui.density), Ui.dpi(sizeDp))
+        layoutParams = LinearLayout.LayoutParams(pw, Ui.dpi(sizeDp))
         contentDescription = "TF coin"
     }
 }
@@ -158,6 +180,7 @@ class CoinArtDrawable(private val ctx: Context, private val tier: Int, widthDp: 
         canvas = c
         c.save()
         c.translate(b.left.toFloat(), b.top.toFloat())
+        unit = b.width() / 76f
         c.scale(b.width() / 76f, b.height() / 46f)
         when (tier) {
             2 -> { ground(6f, 64f); big(19f, 31f, 12f); big(57f, 31f, 12f); big(38f, 28f, 16f) }
@@ -192,27 +215,29 @@ class CoinArtDrawable(private val ctx: Context, private val tier: Int, widthDp: 
 
     // the drawing helpers below draw on the canvas given to draw()
     private var canvas: Canvas? = null
+    private var unit = 1f
     private fun cnv(): Canvas = canvas!!
 
     private fun big(x: Float, y: Float, rad: Float) {
         val c = cnv()
         r.set(x - rad, y - rad, x + rad, y + rad)
-        if (coin != null) c.drawBitmap(coin, null, r, bmp) else mini(x, y, rad)
+        if (coin != null) c.drawBitmap(WCoins.sharp(coin, Math.round(rad * 2f * unit)), null, r, bmp) else mini(x, y, rad)
     }
 
     private fun mini(x: Float, y: Float, rad: Float) {
         val c = cnv()
-        fill.color = RIM; c.drawCircle(x, y, rad, fill)
-        line.color = RIM_D; line.strokeWidth = 0.7f; c.drawCircle(x, y, rad, line)
-        fill.color = FACE; c.drawCircle(x, y, rad * 0.72f, fill)
-        line.color = FACE_D; line.strokeWidth = 0.5f; c.drawCircle(x, y, rad * 0.72f, line)
+        // the rings as filled circles (same size and colours as before): crisper than thin strokes when small
+        fill.color = RIM_D; c.drawCircle(x, y, rad + 0.35f, fill)
+        fill.color = RIM; c.drawCircle(x, y, rad - 0.35f, fill)
+        fill.color = FACE_D; c.drawCircle(x, y, rad * 0.72f + 0.25f, fill)
+        fill.color = FACE; c.drawCircle(x, y, rad * 0.72f - 0.25f, fill)
         c.save()
         c.translate(x, y)
         c.scale(rad * 0.86f, rad * 0.86f)
         c.skew(SKEW, 0f)
-        // paint-order: stroke first, then the cream fill on top
-        line.color = INK; line.strokeWidth = 0.09f
-        c.drawPath(TF_T, line); c.drawPath(TF_F, line)
+        // the dark edge of "TF" as a small solid shadow (a thin outline smudges the tiny letters), then the cream letters
+        fill.color = INK
+        c.save(); c.translate(0.05f, 0.07f); c.drawPath(TF_T, fill); c.drawPath(TF_F, fill); c.restore()
         fill.color = CREAM
         c.drawPath(TF_T, fill); c.drawPath(TF_F, fill)
         c.restore()
