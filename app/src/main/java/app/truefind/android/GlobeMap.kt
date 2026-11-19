@@ -164,7 +164,8 @@ class GlobeMap(
     private var frame: ((Double) -> Unit)? = null
     private val choreo = Choreographer.getInstance()
     private val tick = object : Choreographer.FrameCallback {
-        override fun doFrame(t: Long) { val f = frame ?: return; f(t / 1e6); if (frame != null) choreo.postFrameCallback(this) }
+        // (while pages are moving the globe holds still, as Explore's bubbles do: see PageFx)
+        override fun doFrame(t: Long) { val f = frame ?: return; if (!PageFx.running) f(t / 1e6); if (frame != null) choreo.postFrameCallback(this) }
     }
     private fun loop(f: (Double) -> Unit) { val was = frame != null; frame = f; if (!was) { choreo.removeFrameCallback(tick); choreo.postFrameCallback(tick) } }
     private fun stop() { frame = null; choreo.removeFrameCallback(tick); zt = null }

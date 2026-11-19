@@ -59,6 +59,7 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         "memberships" to "membership premium plan secret dating join",
         "update" to "update version latest new",
         "speed" to "speed smooth test",
+        "fxspeed" to "speed slow slower fast animation move test",
         "privacy" to "location show hide hidden visible city state",
         "blocked" to "block unblock people",
         "security" to "safety safe rules otp password bank money meet report ban",
@@ -120,6 +121,8 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
             if (BuildConfig.SELF_UPDATE) Item("update", "Check for update", "Version ${BuildConfig.VERSION_NAME} · tap to look for a new one", Lu.RefreshCw, PC.tHelp, action = { ps.pages.checkUpdate() }) else null,
             // test builds: how smoothly the pages really move on this phone (numbers to copy)
             if (BuildConfig.SELF_UPDATE && Perf.on) Item("speed", "Page speed report", "Test build · how smoothly pages move on this phone", Lu.Clock, PC.tHelp, action = { ps.pages.speedReport() }) else null,
+            // test builds: how long page moves take, to try on the phone
+            if (BuildConfig.SELF_UPDATE) Item("fxspeed", "Page move speed", "Test build · now: " + (if (PageFx.slow <= 1.01f) "as measured from FRND and Claude" else "${PageFx.slow}× as long"), Lu.Clock, PC.tHelp, action = { ps.pages.moveSpeed() }) else null,
             Item("privacy", "Privacy", if (ps.profile?.opt("location_visible") == false) "Location hidden" else "Location visible", Lu.Eye, PC.tPrivacy),
             Item("blocked", "Blocked users", "${ps.blocked.size} blocked", Lu.Ban, PC.tBlocked),
             Item("security", "Security & guidelines", "Stay safe on the app", Lu.Lock, PC.tSecurity),

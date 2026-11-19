@@ -221,8 +221,15 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
             if (!born.containsKey(v)) born[v] = now
             drawBubble(canvas, v, p, slotX(v), top, now)
         }
-        if (running) postInvalidateOnAnimation()
+        // While pages are moving the bubbles hold still: for the move this page is one finished picture, and
+        // drawing the bubbles again in each of its frames made the slide into Explore stutter on the owner's
+        // phone (19 Nov: a fifth of those frames late). They go on right after the move.
+        if (running) {
+            if (!PageFx.running) postInvalidateOnAnimation()
+            else if (!waiting) { waiting = true; PageFx.whenStill { waiting = false; if (running) postInvalidateOnAnimation() } }
+        }
     }
+    private var waiting = false
 
     private fun drawBubble(c: Canvas, v: Int, p: Person, cx: Float, top: Float, now: Long) {
         val gone = !inPool.contains(p.id)

@@ -249,6 +249,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         pages.checkUpdate = { updater.checkNow() }
         // test builds: how smoothly the app draws on this phone (Settings → Page speed report)
         pages.speedReport = { Perf.show(this) }
+        pages.moveSpeed = { askMoveSpeed() }
+        if (BuildConfig.SELF_UPDATE) PageFx.slow = try { getSharedPreferences("tf_test", MODE_PRIVATE).getFloat("fx_slow", 1f).coerceIn(1f, 3f) } catch (e: Exception) { 1f }
         if (BuildConfig.SELF_UPDATE) Perf.start(this)
         pages.onWallet = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offer(d) }
         pages.askCamera = { cb ->
@@ -1487,11 +1489,35 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                 .maxByOrNull { it.refreshRate } ?: return
             if (best.refreshRate < 61f) return                 // a 60-only screen: nothing to ask for
             val lp = window.attributes
-            if (lp.preferredDisplayModeId == best.modeId) return
+            if (lp.preferredDisplayModeId == best.modeId && lp.preferredRefreshRate == best.refreshRate) return
+            // (both ways of asking: some phones listen to only one of them)
             lp.preferredDisplayModeId = best.modeId
+            lp.preferredRefreshRate = best.refreshRate
             window.attributes = lp
             note("asked the screen for ${Math.round(best.refreshRate)} pictures a second (it shows ${Math.round(now.refreshRate)} now)")
         } catch (e: Throwable) { }
+    }
+
+    /**
+     * Test builds, Settings → "Page move speed": every page move takes 1 / 1.25 / 1.5 / 2 times as long, kept on
+     * this phone. For the owner to find, beside FRND and Claude on his own phone, the speed that looks right to
+     * him: measured frame by frame the moves already take as long as theirs, yet they look quicker to him.
+     */
+    private fun askMoveSpeed() {
+        val steps = floatArrayOf(1f, 1.25f, 1.5f, 2f)
+        val names = arrayOf("As measured from FRND and Claude (now the app's own)", "A little slower · 1.25×", "Slower · 1.5×", "Much slower · 2×")
+        val at = steps.indexOfFirst { Math.abs(it - PageFx.slow) < 0.01f }.coerceAtLeast(0)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Page move speed")
+            .setSingleChoiceItems(names, at) { d, i ->
+                PageFx.slow = steps[i]
+                try { getSharedPreferences("tf_test", MODE_PRIVATE).edit().putFloat("fx_slow", steps[i]).apply() } catch (e: Exception) { }
+                pages.profile.drawer?.refresh()
+                d.dismiss()
+                android.widget.Toast.makeText(this, if (i == 0) "Page moves: as measured." else "Page moves: ${steps[i]}× as long.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     override fun onResume() {

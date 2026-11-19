@@ -47,8 +47,14 @@ import android.widget.FrameLayout
  * How it stays smooth:
  * - Only where a page is drawn changes (its drawing is not made again), and the part of the lower page that
  *   the upper page covers is not drawn at all.
- * - Back fades and resizes whole pages: for that move each of the two pages is one finished picture
- *   (a hardware layer), so a frame only places two pictures instead of drawing both pages again.
+ * - For a move each page that moves (or is uncovered) is one finished picture (a hardware layer), so a frame
+ *   only places two or three pictures instead of drawing the pages again. Back did this from the start
+ *   (it fades and resizes whole pages); on the owner's phone its frames were the cheapest of all moves
+ *   (page speed report, 19 Nov, build 100: typical 11 ms against 15–27 ms for tabs and opening, where up
+ *   to a fifth of the frames came late), so tabs and opening do it too. A page coming in becomes a picture
+ *   one frame after the tap: each of the first two frames then carries one page's drawing.
+ * - Pages that keep moving by themselves (Explore's bubbles, the Secret Dating globe) hold still while a
+ *   move runs ([running]) and go on right after it — otherwise their picture is made again in every frame.
  * - The move's clock goes by the frames that were really drawn: when the phone needs longer for one frame
  *   (a page drawn for the first time), the next frame goes on from where the last one was instead of jumping
  *   ahead. Before, one slow frame made the page jump most of the way in one go.
@@ -89,12 +95,24 @@ object PageFx {
     private val lifted = ArrayList<Lift>()    // views lifted above the others for the move
     private val clipped = ArrayList<View>()   // views drawn only where the upper page doesn't cover them
     private val faded = ArrayList<Look>()     // views whose size and see-through we change (Back)
+    private val pictured = ArrayList<View>()  // pages that are one finished picture for the move (tabs, opening)
+    /** test builds: every move takes this many times as long (Settings → Page move speed); 1 = as measured */
+    @Volatile var slow = 1f
     private var overlayHost: ViewGroup? = null
     private val overlays = ArrayList<Drawable>()
     private var ended: (() -> Unit)? = null
     private val clip = Rect()
 
     private class Lift(val v: View, val z: Float, val spot: Int, val ambient: Int)
+    /** a view with a video surface inside (a call, a live room) is not made a picture: the video would not show through it */
+    private fun hasSurface(v: View, left: IntArray = intArrayOf(800)): Boolean {
+        if (v is android.view.SurfaceView) return true
+        if (v is ViewGroup) for (i in 0 until v.childCount) {
+            if (--left[0] < 0) return false
+            if (hasSurface(v.getChildAt(i), left)) return true
+        }
+        return false
+    }
     /** how a view looked before the move (it gets all of it back) */
     private class Look(val v: View, val alpha: Float, val sx: Float, val sy: Float, val px: Float, val py: Float, val pivotSet: Boolean, val layer: Int)
 
@@ -148,6 +166,8 @@ object PageFx {
         lifted.clear()
         for (v in clipped) v.clipBounds = null
         clipped.clear()
+        for (v in pictured) if (v.layerType == View.LAYER_TYPE_HARDWARE) v.setLayerType(View.LAYER_TYPE_NONE, null)
+        pictured.clear()
         for (k in faded) {
             val v = k.v
             v.alpha = k.alpha; v.scaleX = k.sx; v.scaleY = k.sy
@@ -213,9 +233,15 @@ object PageFx {
         fun look(v: View, picture: Boolean = true) {
             if (v is WebView || faded.any { it.v === v }) return
             faded.add(Look(v, v.alpha, v.scaleX, v.scaleY, v.pivotX, v.pivotY, Build.VERSION.SDK_INT >= 28 && v.isPivotSet, v.layerType))
-            if (picture && v.layerType == View.LAYER_TYPE_NONE) v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            if (picture && v.layerType == View.LAYER_TYPE_NONE && !hasSurface(v)) v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
             v.pivotX = container.width / 2f - v.left
             v.pivotY = container.height / 2f - v.top
+        }
+        /** [v] is one finished picture until the move ends (its drawing is not made again while it only changes place) */
+        fun picture(v: View?) {
+            if (v == null || v is WebView || pictured.contains(v) || v.layerType != View.LAYER_TYPE_NONE || hasSurface(v)) return
+            v.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            pictured.add(v)
         }
         val ms: Float
         val ease: (Float) -> Float
@@ -225,11 +251,15 @@ object PageFx {
                 // side by side, like the pages of a ViewPager: [from] | between … | [to]
                 val mid = between.filter { it !== from && it !== to && it !is WebView }
                 val n = mid.size + 1
-                ms = TAB_MS + 100f * mid.size
+                ms = (TAB_MS + 100f * mid.size) * slow
                 ease = ::pager
                 hold(from); mid.forEach { hold(it) }
                 move(from); move(to); mid.forEach { move(it) }
+                picture(from)
+                var arrived = false
                 step = { t ->
+                    // (the pages coming in are still off the screen in the frame of the tap)
+                    if (!arrived && t > 0f) { arrived = true; picture(to); mid.forEach { picture(it) } }
                     val p = n * t
                     from?.translationX = -dir * w * p
                     for (i in mid.indices) mid[i].translationX = dir * w * (i + 1 - p)
@@ -237,7 +267,7 @@ object PageFx {
                 }
             }
             Kind.PUSH -> {
-                ms = PUSH_MS
+                ms = PUSH_MS * slow
                 ease = ::inOut
                 val upper = to
                 if (upper == null) { ended = null; onEnd?.invoke(); return }
@@ -248,7 +278,11 @@ object PageFx {
                 ups.forEach { lift(it, zUp - Ui.dp(1f)); move(it) }
                 // the old page stays where it is, as bright as it is: only what the new page covers is not drawn
                 val lowers = if (moveLower) listOfNotNull(from) + lowerExtras else emptyList()
+                lowers.forEach { picture(it) }
+                var arrived = false
                 step = { t ->
+                    // (the new page is still off the screen in the frame of the tap)
+                    if (!arrived && t > 0f) { arrived = true; picture(upper); ups.forEach { picture(it) } }
                     val x = w * (1f - t)
                     val edge = upper.left + x
                     upper.translationX = x
@@ -257,7 +291,7 @@ object PageFx {
                 }
             }
             Kind.POP -> {
-                ms = POP_MS
+                ms = POP_MS * slow
                 // (each part of this move has its own curve: the step gets the plain clock, 0..1 of POP_MS)
                 ease = { it }
                 val lowers = (listOfNotNull(to) + lowerExtras).filter { it !is WebView }
@@ -282,7 +316,7 @@ object PageFx {
                     }
                     if (!underPictures && at > 0f) {
                         underPictures = true
-                        for (l in lowers) if (looks[l] != null && l.layerType == View.LAYER_TYPE_NONE) l.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                        for (l in lowers) if (looks[l] != null && l.layerType == View.LAYER_TYPE_NONE && !hasSurface(l)) l.setLayerType(View.LAYER_TYPE_HARDWARE, null)
                     }
                     for (l in lowers) {
                         val was = looks[l] ?: continue

@@ -102,6 +102,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     var checkUpdate: () -> Unit = {}
     /** Settings → Page speed report (test builds) */
     var speedReport: () -> Unit = {}
+    /** test builds: Settings → "Page move speed" (how long page moves take, to try on the phone) */
+    var moveSpeed: () -> Unit = {}
     private var profilePrefetched = false
 
     // ═════════════════ which screen shows ═════════════════

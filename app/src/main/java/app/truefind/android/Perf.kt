@@ -246,6 +246,7 @@ object Perf {
         sb.append("Phone: ${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}\n")
         sb.append("Screen: ${dm.widthPixels}×${dm.heightPixels} · now ${Math.round(hz)} pictures a second" + (if (can.isNotEmpty()) " (can do: $can)" else "") + "\n")
         sb.append("Battery saver: ${if (saver) "ON" else "off"} · animation speed setting: ${anim}× · heat: $heat\n")
+        sb.append("Page move speed (the app's test setting): " + (if (PageFx.slow <= 1.01f) "as measured (1×)" else "${PageFx.slow}× as long") + "\n")
         if (!started) { sb.append("\nThis Android cannot measure frames (needs Android 7 or newer).\n"); return sb.toString() }
         synchronized(lock) {
             sb.append("Counted since ${time.format(Date(since))} (now ${time.format(Date())})\n")
