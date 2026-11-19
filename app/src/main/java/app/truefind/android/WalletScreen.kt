@@ -422,13 +422,21 @@ class WalletScreen(
         }
     }
 
+    /**
+     * The own profile as the Wallet reads it: without what changes by itself every few seconds
+     * (online / last seen, written by the app's "I am online" call) and is shown nowhere on this page.
+     */
+    private fun meSig(p: JSONObject?): String = try {
+        if (p == null) "" else JSONObject(p.toString()).apply { remove("last_active"); remove("online_status"); remove("updated_date") }.toString()
+    } catch (e: Exception) { "" }
+
     /** Own profile: creator / host verification and the withdraw request fields. */
     private fun loadProfile(quiet: Boolean = false, done: (() -> Unit)? = null) {
         source.me { user, prof, ok ->
             val wasAdmin = isAdmin
             if (user != null) isAdmin = user.str("role") == "admin"
             if (ok) {
-                val sig = try { prof?.toString().orEmpty() } catch (e: Exception) { "" }
+                val sig = meSig(prof)
                 val same = quiet && sig.isNotEmpty() && sig == drawnMe && wasAdmin == isAdmin
                 me = prof
                 drawnMe = sig.ifEmpty { null }
