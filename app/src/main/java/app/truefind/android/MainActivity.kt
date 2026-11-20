@@ -222,7 +222,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         askFastScreen()
 
         // (PageHost: pages that were shown once stay ready while hidden, so coming back to them is only a move)
-        root = PageHost(this).apply { setBackgroundColor(Color.WHITE); clipChildren = false }
+        root = PageHost(this).apply { clipChildren = false }
+        // white as before; the strip under the phone's status bar turns Explore's purple while Explore is open
+        appBg = AppBackground({ root.paddingTop }, { if (::explore.isInitialized) explore.headerHeight else 0 })
+        root.background = appBg
         setContentView(root)
         // keep everything clear of the status bar, the phone's own buttons and the keyboard
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -1184,6 +1187,15 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         fxPath = path; fxIdx = routeIdx
     }
 
+    private lateinit var appBg: AppBackground
+
+    /** Explore open: the phone's status bar sits on Explore's purple (white clock and icons); elsewhere white as before. */
+    private fun exploreStatusBar(on: Boolean) {
+        if (appBg.purple == on) return
+        appBg.purple = on
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
+    }
+
     private fun sizeTo(v: View, h: Int) {
         val lp = v.layoutParams as FrameLayout.LayoutParams
         if (lp.height != h) { lp.height = h; v.layoutParams = lp }
@@ -1241,6 +1253,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // two must never be left disagreeing — that left Explore on screen with its bubbles stopped. While Explore
         // is open, every screen update also makes sure its bubbles are moving: setShown(true) again only checks that.)
         if (show || explore.visibility == View.VISIBLE || explore.isOn) explore.setShown(show)
+        exploreStatusBar(show)
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
         if (secretView.isNotEmpty()) sdNav.current = secretView
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
@@ -1429,6 +1442,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; else -> "home" }
         if (screen === explore) {
             explore.setShown(true)
+            exploreStatusBar(true)
             // the bottom bar under Explore too, as in the app (its Explore tab joins the Voice / Video / Random panel)
             pages.nav.visibility = View.VISIBLE; pages.nav.current = "explore"; pages.nav.seamless = true
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(explore, innerH - pages.nav.barPx) }
