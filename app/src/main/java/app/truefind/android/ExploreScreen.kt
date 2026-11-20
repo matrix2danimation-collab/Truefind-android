@@ -27,7 +27,8 @@ import java.io.ByteArrayOutputStream
 /**
  * EXPLORE · CONNECT — native version of src/pages/Explore.jsx.
  * Same data (getOnlineNow), same filters, same calls (startCall). Since 20 Nov its look is its own: the
- * wallpaper "Moti · Dil", bigger bubbles and a bigger call bar (the owner wanted that design in the native app only).
+ * wallpaper "Moti · Dil", bigger bubbles, a bigger call bar and a dark purple top box with a soft white light
+ * (the owner wanted that design in the native app only).
  * It sits above the web app's bottom bar, which stays the web's own.
  *
  * [host]  full-screen layer for the sheet, dialogs and the calling screen
@@ -102,39 +103,43 @@ class ExploreScreen(
 
         // ── header: True Find · coins, then the filter chips ──
         header.orientation = LinearLayout.VERTICAL
-        // no outline: the white top flows straight out of the phone's white status bar (one piece, owner 19 Nov)
-        header.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.WHITE, Ui.c("#F8F3FF"))).apply {
-            cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f))
-        }
+        // 20 Nov (owner): the top box is dark purple with a soft white light, like a neon lamp — as the old Explore
+        // background had, but without doodles ([TopLight]); its words and chips are light on it
+        header.background = LayerDrawable(arrayOf(
+            GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#4C1D95"), Ui.c("#3F1487"), Ui.c("#2F0B6B"))).apply {
+                cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f))
+            },
+            TopLight(22f),
+        ))
         header.elevation = Ui.dp(10f)
         header.isClickable = true // touches on the bar stay on the bar (pull to refresh)
         header.outlineSpotShadowColorCompat(Ui.c("#18043C"))
         header.setPadding(Ui.dpi(14f), Ui.dpi(32f), Ui.dpi(14f), Ui.dpi(13f))
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val brand = SpannableString("True Find").apply {
-            setSpan(ForegroundColorSpan(Ui.c("#6C04CB")), 5, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            setSpan(ForegroundColorSpan(Ui.c("#E3D0FF")), 5, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        row.addView(Ui.text(ctx, brand, 18f, INK), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(Ui.text(ctx, brand, 18f, Color.WHITE), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val coin = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            background = Ui.round(Ui.c("#F4ECFF"), 20f, Ui.c("#E3D3FB"))
+            background = Ui.round(Color.argb(36, 255, 255, 255), 20f, Color.argb(64, 255, 255, 255))
             setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(4f), Ui.dpi(3f))
             contentDescription = "Wallet balance, add coins"
             setOnClickListener { go("/wallet", null) }
         }
         coin.addView(ImageView(ctx).apply { setImageDrawable(CoinDrawable(20f)) }, LinearLayout.LayoutParams(Ui.dpi(20f), Ui.dpi(20f)))
-        coinText = Ui.text(ctx, "–", 13f, INK).apply { setPadding(Ui.dpi(5f), 0, Ui.dpi(5f), 0) }
+        coinText = Ui.text(ctx, "–", 13f, Color.WHITE).apply { setPadding(Ui.dpi(5f), 0, Ui.dpi(5f), 0) }
         coin.addView(coinText)
-        coin.addView(Ui.text(ctx, "+", 12f, Color.WHITE).apply {
+        coin.addView(Ui.text(ctx, "+", 12f, Ui.c("#6C04CB")).apply {
             gravity = Gravity.CENTER
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Ui.c("#6C04CB")) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) }
         }, LinearLayout.LayoutParams(Ui.dpi(18f), Ui.dpi(18f)).apply { leftMargin = Ui.dpi(2f) })
         row.addView(coin)
         header.addView(row)
         val chipsScroll = HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; clipToPadding = false }
         val chips = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         CHIPS.forEachIndexed { i, (k, label) ->
-            val tv = Ui.text(ctx, label, 12.5f, Ui.c("#5B3E8C")).apply {
+            val tv = Ui.text(ctx, label, 12.5f, Ui.c("#F1E7FF")).apply {
                 setPadding(Ui.dpi(13f), Ui.dpi(6f), Ui.dpi(13f), Ui.dpi(6f))
                 setOnClickListener { setFilter(k) }
                 tag = k
@@ -264,8 +269,9 @@ class ExploreScreen(
     private fun paintChips() {
         for (tv in chipViews) {
             val on = tv.tag == filter
-            tv.setTextColor(if (on) Color.WHITE else Ui.c("#5B3E8C"))
-            tv.background = if (on) Ui.vgrad(Ui.c("#7A0AD7"), Ui.c("#5806A3"), 16f) else Ui.round(Ui.c("#F6F0FF"), 16f, Ui.c("#E8DDF8"))
+            // on the dark purple top box: the chosen chip is white with purple words, the others are see-through with light words
+            tv.setTextColor(if (on) Ui.c("#4C1D95") else Ui.c("#F1E7FF"))
+            tv.background = if (on) Ui.round(Color.WHITE, 16f) else Ui.round(Color.argb(28, 255, 255, 255), 16f, Color.argb(54, 255, 255, 255))
         }
     }
 
