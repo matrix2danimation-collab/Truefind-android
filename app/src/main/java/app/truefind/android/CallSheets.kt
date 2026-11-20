@@ -312,6 +312,49 @@ object CallSheets {
     }
 
     /**
+     * Voice → video (owner, 20 Nov): the other person asked to switch this voice call to video. "Accept" turns the
+     * call into a video call from now (the caller then pays the video price per minute); "Not now" keeps it a voice
+     * call. Tapping outside = "Not now". The sheet closes by itself when the request expires or is taken back.
+     */
+    fun videoAsk(host: CallView, name: String, iPay: Boolean, rate: Int, onAccept: () -> Unit, onDecline: () -> Unit): () -> Unit {
+        val ctx = host.context
+        val p = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = Tf.topRound(Color.WHITE, 24f)
+            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f))
+            isClickable = true
+        }
+        val who = first(name).ifEmpty { "They" }
+        val head = Tf.row(ctx)
+        head.addView(FrameLayout(ctx).apply {
+            background = Tf.circle(CallKit.PURPLE)
+            addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.CAMERA, 20f, Color.WHITE)) }, FrameLayout.LayoutParams(Ui.dpi(20f), Ui.dpi(20f), Gravity.CENTER))
+        }, Tf.ll(Ui.dpi(40f), Ui.dpi(40f), r = 12f))
+        head.addView(CallKit.t(ctx, "$who wants to switch to video", 17f, CallKit.INK, 700).apply { maxLines = 2 }, Tf.ll(0, Tf.W, 1f))
+        p.addView(head)
+        val note = if (iPay) (if (rate > 0) "From now the call costs $rate coins/min. Your camera turns on when you accept." else "From now you pay the video call price. Your camera turns on when you accept.")
+            else "Your camera turns on when you accept."
+        p.addView(CallKit.t(ctx, note, 14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 10f))
+        val row = Tf.row(ctx)
+        var close: () -> Unit = {}
+        var chose = false
+        val no = CallKit.t(ctx, "Not now", 15f, CallKit.INK, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#E9E6EE")); contentDescription = "Not now, stay on voice"
+            setOnClickListener { if (!chose) { chose = true; close(); onDecline() } }
+        }
+        val yes = CallKit.t(ctx, "Accept", 15f, Color.WHITE, 700).apply {
+            gravity = Gravity.CENTER; background = Tf.box(CallKit.PURPLE, 16f); contentDescription = "Accept video call"
+            setOnClickListener { if (!chose) { chose = true; close(); onAccept() } }
+        }
+        Ui.pressable(no, .97f); Ui.pressable(yes, .97f)
+        row.addView(no, Tf.ll(0, Ui.dpi(46f), 1f, r = 12f))
+        row.addView(yes, Tf.ll(0, Ui.dpi(46f), 1f))
+        p.addView(row, Tf.ll(Tf.M, Tf.W, t = 16f))
+        close = host.layer.sheet(p, Color.argb(128, 0, 0, 0), onClose = { if (!chose) { chose = true; onDecline() } })
+        return { chose = true; close() }
+    }
+
+    /**
      * The red End button (owner, 20 Nov): asks once — "Exit" on top (the call goes on, you leave its screen;
      * "Call in progress · Return" brings it back) and "End call" under it. Tapping outside: nothing changes.
      */
