@@ -178,6 +178,8 @@ if [ "$SET" = fx3 ]; then bash ci/fx-test.sh "$APK" "$OUT" 1 0 live; exit 0; fi
 if [ "$SET" = session ]; then bash ci/session-test.sh "$APK" "$OUT"; exit 0; fi
 # the native sign-in pages (their own list of screens, from the Login work)
 if [ "$SET" = login ]; then bash ci/login-screens.sh "$APK" "$OUT"; exit 0; fi
+# ── native Explore alone: one picture, a quick check after a change to Explore ──
+if [ "$SET" = explore ]; then shot 01-explore home --es tf_preview explore; exit 0; fi
 if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"
