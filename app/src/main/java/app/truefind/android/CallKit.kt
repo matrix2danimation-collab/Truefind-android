@@ -283,6 +283,9 @@ class HeartBadge(ctx: Context, label: String) : FrameLayout(ctx) {
         addView(ImageView(ctx).apply { setImageDrawable(CallKit.heart(20f)) }, LayoutParams(Ui.dpi(20f), Ui.dpi(20f), Gravity.CENTER))
         contentDescription = label
     }
+    private val icon get() = getChildAt(0)
+    /** the small size (on the video call's little photo and my camera tile): a smaller heart in the circle */
+    fun scaleSmall() { (icon.layoutParams as LayoutParams).apply { width = Ui.dpi(14f); height = Ui.dpi(14f) }; icon.requestLayout() }
     fun pop() {
         scaleX = 0f; scaleY = 0f
         ValueAnimator.ofFloat(0f, 1f).apply {

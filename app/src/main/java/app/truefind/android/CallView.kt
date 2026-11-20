@@ -67,6 +67,7 @@ class CallView(
     private var addCoinsClose: (() -> Unit)? = null
     private var endAskClose: (() -> Unit)? = null
     private var ratingOpen = false
+    private var videoAskClose: (() -> Unit)? = null
 
     init {
         isClickable = true // nothing under the call can be tapped
@@ -120,6 +121,13 @@ class CallView(
             ratingOpen = true
             CallSheets.rating(this, s, s.otherName) { ratingOpen = false; s.afterRating() }
         }
+        // voice → video: their request (Accept / Not now), my notes ("said not now" …)
+        if (s.videoAskTheirs && videoAskClose == null && s.settled == null) {
+            videoAskClose = CallSheets.videoAsk(this, s.otherName, s.isCaller, s.videoAskRate,
+                onAccept = { videoAskClose = null; s.answerVideo(true) },
+                onDecline = { videoAskClose = null; s.answerVideo(false) })
+        } else if (!s.videoAskTheirs && videoAskClose != null) { videoAskClose?.invoke(); videoAskClose = null }
+        s.videoNote?.let { n -> s.videoNote = null; if (shownConnected) toast(n, 3200, camera = true) }
         // the call is over: the in-call report sheet closes (as setReportOpen(false)), and so does "End this call?"
         if (s.settled != null || s.ended) { reportClose?.invoke(); reportClose = null; endAskClose?.invoke(); endAskClose = null }
     }
@@ -184,7 +192,7 @@ class CallView(
     // ═════════════════ toasts and the heart ═════════════════
     private var toastView: View? = null
     private val hideToast = Runnable { toastView?.let { v -> v.animate().alpha(0f).setDuration(180).withEndAction { (v.parent as? ViewGroup)?.removeView(v); if (toastView === v) toastView = null }.start() } }
-    fun toast(text: String, ms: Long) {
+    fun toast(text: String, ms: Long, camera: Boolean = false) {
         main.removeCallbacks(hideToast)
         toastView?.let { (it.parent as? ViewGroup)?.removeView(it) }
         val ctx = context
@@ -193,8 +201,8 @@ class CallView(
             setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(8f))
             elevation = Ui.dp(6f)
             outlineSpotShadowColorCompat(Color.argb(64, 0, 0, 0))
-            addView(ImageView(ctx).apply { setImageDrawable(CallKit.heart(16f)) }, Tf.ll(Ui.dpi(16f), Ui.dpi(16f), r = 8f))
-            addView(CallKit.t(ctx, text, 13.5f, Color.WHITE).apply { maxLines = 1 })
+            addView(ImageView(ctx).apply { setImageDrawable(if (camera) CallKit.svg(CallKit.CAMERA, 16f, Color.WHITE) else CallKit.heart(16f)) }, Tf.ll(Ui.dpi(16f), Ui.dpi(16f), r = 8f))
+            addView(CallKit.t(ctx, text, 13.5f, Color.WHITE).apply { maxLines = 2; maxWidth = Ui.dpi(300f) })
         }
         val lp = LayoutParams(-2, -2, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(74f) }
         conn.addView(v, lp)
@@ -211,11 +219,13 @@ class CallView(
         HeartBurst.play(heartPart, this)
         likeErr = ""
         val a = IntArray(2); heartPart.getLocationInWindow(a)
-        val target = if (s.video) conn.vPeerFace else conn.peerFace
+        val target = if (s.video) conn.vPeerFace.parent as View else conn.peerFace
         val b = IntArray(2); target.getLocationInWindow(b)
         val me = IntArray(2); getLocationInWindow(me)
         val x = a[0] - me[0] + heartPart.width / 2f; val y = a[1] - me[1] + heartPart.height / 2f - Ui.dp(10f)
-        val tx = b[0] - me[0] + target.width - Ui.dp(13f); val ty = b[1] - me[1] + Ui.dp(15f)
+        // the centre of the heart badge (top-right corner of the photo)
+        val half = if (s.video) 11f else 17f
+        val tx = b[0] - me[0] + target.width - Ui.dp(half); val ty = b[1] - me[1] + Ui.dp(half)
         fly(x, y, tx - x, ty - y)
         flying = true
         conn.bind()
@@ -474,6 +484,8 @@ class CallView(
         private val balance = CallKit.t(ctx, "—", 19f, Color.WHITE, 700)
         private lateinit var muteBtn: CallKit.RoundBtn
         private lateinit var camBtn: CallKit.RoundBtn
+        private lateinit var videoBtn: CallKit.RoundBtn
+        private var lastVideoAsk: Boolean? = null
         private lateinit var speakerBtn: CallKit.RoundBtn
         private lateinit var showBtns: TextView
 
@@ -592,12 +604,14 @@ class CallView(
                 addView(bb, Tf.ll(Ui.dpi(136f), Ui.dpi(26f), t = 10f))
             }
             val you = CallKit.t(ctx, "You", 16.5f, CallKit.INK, 600).apply { gravity = Gravity.CENTER }
-            meFace.badge(meHeart, 34f, 34f, rightDp = -4f, topDp = -2f)
+            // the heart sits inside the photo's own square, on its top-right edge — never outside it (owner, 20 Nov:
+            // it stuck out and was cut off, on both phones)
+            meFace.badge(meHeart, 34f, 34f, rightDp = 0f, topDp = 0f)
             muteBadge.background = Tf.circle(CallKit.RED)
             muteBadge.addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.MIC, 16f, Color.WHITE)) }, LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
             muteBadge.contentDescription = "Muted"
             meFace.badge(muteBadge, 32f, 32f, rightDp = 0f, bottomDp = 2f)
-            peerFace.badge(peerHeart, 34f, 34f, rightDp = -4f, topDp = -2f)
+            peerFace.badge(peerHeart, 34f, 34f, rightDp = 0f, topDp = 0f)
             meCol = column(meFace, you, meBars)
             peerCol = column(peerFace, peerLabel, peerBars)
             peopleRow.addView(meCol, Tf.ll(Ui.dpi(136f), Tf.W))
@@ -666,8 +680,14 @@ class CallView(
                 setPadding(Ui.dpi(5f), Ui.dpi(5f), Ui.dpi(14f), Ui.dpi(5f))
                 clipChildren = false
             }
-            vPeerFace.badge(vPeerHeart, 34f, 34f, rightDp = -12f, topDp = -10f)
-            vPeerChip.addView(vPeerFace, Tf.ll(Ui.dpi(46f), Ui.dpi(46f), r = 10f))
+            // her photo whole, and the heart on its top-right corner — both inside one box, so nothing is cut and the
+            // heart no longer covers her face (owner, 20 Nov)
+            val faceBox = FrameLayout(ctx)
+            faceBox.addView(vPeerFace, LayoutParams(Ui.dpi(46f), Ui.dpi(46f), Gravity.START or Gravity.BOTTOM))
+            vPeerHeart.scaleSmall()
+            faceBox.addView(vPeerHeart, LayoutParams(Ui.dpi(22f), Ui.dpi(22f), Gravity.END or Gravity.TOP))
+            vPeerHeart.elevation = Ui.dp(10f)
+            vPeerChip.addView(faceBox, Tf.ll(Ui.dpi(56f), Ui.dpi(52f), r = 10f))
             val nameCol = Tf.col(ctx)
             vPeerName.maxLines = 1; vPeerName.ellipsize = android.text.TextUtils.TruncateAt.END; vPeerName.maxWidth = Ui.dpi(170f)
             nameCol.addView(vPeerName, Tf.ll())
@@ -685,7 +705,8 @@ class CallView(
             tile.addView(tileBox, LayoutParams(-1, -1))
             tileBorder.isClickable = false
             tile.addView(tileBorder, LayoutParams(-1, -1))
-            tile.addView(tileHeart, LayoutParams(Ui.dpi(34f), Ui.dpi(34f), Gravity.END or Gravity.TOP).apply { rightMargin = -Ui.dpi(4f); topMargin = -Ui.dpi(2f) })
+            tileHeart.scaleSmall()
+            tile.addView(tileHeart, LayoutParams(Ui.dpi(26f), Ui.dpi(26f), Gravity.END or Gravity.TOP).apply { rightMargin = Ui.dpi(5f); topMargin = Ui.dpi(5f) })
             tileHeart.elevation = Ui.dp(10f)
             tile.elevation = Ui.dp(4f)
             tile.contentDescription = "Your camera (drag to move)"
@@ -771,6 +792,14 @@ class CallView(
             val sz = if (v) 44f else 52f
             muteBtn = CallKit.RoundBtn(ctx, "Mute", sz, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.MIC, 24f), compact = v) { s.toggleMute() }
             btns.addView(muteBtn); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
+            if (!v) {
+                // voice → video (owner, 20 Nov): asks the other person; the call then costs the video price
+                videoBtn = CallKit.RoundBtn(ctx, "Video", sz, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.CAMERA, 24f)) {
+                    if (s.videoAskMine) s.cancelVideoAsk() else s.askVideo()
+                }
+                videoBtn.contentDescription = "Switch to video call"
+                btns.addView(videoBtn); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
+            }
             if (v) {
                 camBtn = CallKit.RoundBtn(ctx, "Camera", 44f, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.CAMERA, 24f), compact = true) { s.toggleCam() }
                 btns.addView(camBtn); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
@@ -863,6 +892,15 @@ class CallView(
                 dateErr.text = likeErr; dateErr.visibility = if (likeErr.isEmpty()) GONE else VISIBLE
                 heartBtn.contentDescription = "Date $peerName"
                 showBtns.visibility = GONE
+                val asking = s.videoAskMine
+                if (lastVideoAsk != asking) {
+                    lastVideoAsk = asking
+                    videoBtn.set(if (asking) "Asking…" else "Video", if (asking) Color.WHITE else Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255),
+                        CallKit.svg(CallKit.CAMERA, 24f, if (asking) CallKit.PURPLE else Color.WHITE))
+                    videoBtn.contentDescription = if (asking) "Waiting for them to accept video. Tap to cancel" else "Switch to video call"
+                }
+                videoBtn.isEnabled = s.canSwitchVideo
+                videoBtn.alpha = if (s.canSwitchVideo) 1f else .5f
             } else {
                 vPeerFace.setPhoto(s.otherPhoto)
                 vPeerFace.border(if (s.peerSpeaking) CallKit.LILAC else Color.WHITE)

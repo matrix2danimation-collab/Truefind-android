@@ -31,7 +31,9 @@ import org.json.JSONObject
  * go of it first, and it is left clean (nothing joined, no video) when the call is over, so they make
  * it again the way they need it.
  */
-class CallMedia(private val ctx: Context, private val callId: String, private val video: Boolean, private val l: Listener) {
+class CallMedia(private val ctx: Context, private val callId: String, video0: Boolean, private val l: Listener) {
+    /** a voice call can become a video call while it runs (toVideo) */
+    private var video = video0
     interface Listener {
         /** preparing → ready | failed */
         fun onMediaState(state: String)
@@ -51,6 +53,8 @@ class CallMedia(private val ctx: Context, private val callId: String, private va
     var localView: TextureView? = null; private set
     var remoteView: TextureView? = null; private set
     private var remoteUid = 0
+    /** the other phone in the channel (known on a voice call too, for a switch to video) */
+    private var peerUid = 0
     private var muted = false
     private var camOff = false
     private var loud = false
@@ -198,17 +202,7 @@ class CallMedia(private val ctx: Context, private val callId: String, private va
             e.muteAllRemoteAudioStreams(false)
             e.adjustPlaybackSignalVolume(if (loud) 250 else 100)
             if (video) {
-                e.enableVideo()
-                // the web's "480p_1": 640 × 480, 15 fps
-                e.setVideoEncoderConfiguration(VideoEncoderConfiguration(
-                    VideoEncoderConfiguration.VD_640x480, VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15,
-                    VideoEncoderConfiguration.STANDARD_BITRATE, VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_ADAPTIVE))
-                e.muteAllRemoteVideoStreams(false)
-                e.enableLocalVideo(!camOff)
-                e.muteLocalVideoStream(camOff)
-                val lv = localView ?: TextureView(ctx).also { localView = it }
-                e.setupLocalVideo(VideoCanvas(lv, VideoCanvas.RENDER_MODE_HIDDEN, 0).apply { mirrorMode = Constants.VIDEO_MIRROR_MODE_ENABLED })
-                e.startPreview()
+                videoOn(e)
             } else {
                 e.disableVideo()
             }
@@ -229,6 +223,40 @@ class CallMedia(private val ctx: Context, private val callId: String, private va
         main.postDelayed({ if (!dead && !joined) fail("Could not connect the call. Check your internet and try again.", "JOIN_TIMEOUT: no answer from the call service") }, 30000)
     }
 
+    /** sound + camera: the front camera, 480p 15 fps, my own picture mirrored */
+    private fun videoOn(e: RtcEngine) {
+        e.enableVideo()
+        // the web's "480p_1": 640 × 480, 15 fps
+        e.setVideoEncoderConfiguration(VideoEncoderConfiguration(
+            VideoEncoderConfiguration.VD_640x480, VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15,
+            VideoEncoderConfiguration.STANDARD_BITRATE, VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_ADAPTIVE))
+        e.muteAllRemoteVideoStreams(false)
+        e.enableLocalVideo(!camOff)
+        e.muteLocalVideoStream(camOff)
+        val lv = localView ?: TextureView(ctx).also { localView = it }
+        e.setupLocalVideo(VideoCanvas(lv, VideoCanvas.RENDER_MODE_HIDDEN, 0).apply { mirrorMode = Constants.VIDEO_MIRROR_MODE_ENABLED })
+        e.startPreview()
+    }
+
+    /**
+     * Voice → video while the call goes on (owner, 20 Nov): the camera starts and is sent, the other person's
+     * picture is received. [off]: my camera stays off (no camera permission) — I still see theirs.
+     */
+    fun toVideo(off: Boolean) {
+        if (dead || video) return
+        video = true
+        camOff = off
+        val e = engine ?: return // not joined yet: join() sets video up itself
+        try {
+            videoOn(e)
+            e.updateChannelMediaOptions(ChannelMediaOptions().apply {
+                publishCameraTrack = true
+                autoSubscribeVideo = true
+            })
+            if (peerUid != 0) bindRemote(peerUid)
+        } catch (t: Throwable) { }
+    }
+
     private fun joinedOk() {
         if (joined) return
         joined = true
@@ -236,6 +264,7 @@ class CallMedia(private val ctx: Context, private val callId: String, private va
     }
 
     private fun peerIn(uid: Int) {
+        if (uid != 0) peerUid = uid
         if (video && remoteUid == 0) bindRemote(uid)
         l.onPeerJoined()
     }

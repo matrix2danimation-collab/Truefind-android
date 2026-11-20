@@ -244,7 +244,13 @@ class CallSession(
         if (disposed) return
         // a late "ringing" / "active" record (a slow first read, an old answer) never brings back a call that is over
         if (DONE.contains(status) && !DONE.contains(Tf.s(c, "status"))) return
+        // an older copy of a call that is already video (a slow read) never turns it back into voice
+        val prev = call
+        val wasVideo = prev != null && Tf.s(prev, "type") == "video"
+        if (wasVideo && Tf.s(c, "type") != "video") c.put("type", "video")
+        if (prev != null) videoAnswerSeen(prev, c) else answerSeenAt = Tf.s(c, "video_ask_answer_at")
         call = c
+        if (prev != null && !wasVideo && Tf.s(c, "type") == "video" && lastStatus == "active") onSwitchedToVideo()
         onStatus()
     }
 
@@ -481,6 +487,113 @@ class CallSession(
     fun toggleMute() { muted = !muted; media?.setMuted(muted); if (muted) meSpeaking = false; emit() }
     fun toggleCam() { camOff = !camOff; media?.setCamOff(camOff); emit() }
     fun toggleSpeaker() { speakerOn = !speakerOn; media?.setLoud(speakerOn); emit() }
+
+    // ═════════════════ voice → video (callSwitch, owner 20 Nov) ═════════════════
+    private var videoAsking = false
+    /** a short note for the screen ("Riya said not now" …), shown once */
+    var videoNote: String? = null
+    private var answerSeenAt = ""
+    private var practiceVideoAsk = false
+    private val myId: String get() = if (isCaller) Tf.s(call, "caller_id") else Tf.s(call, "callee_id")
+    private val videoAskOpen: Boolean get() {
+        if (practice) return practiceVideoAsk
+        val by = Tf.s(call, "video_ask_by"); if (by.isEmpty() || status != "active") return false
+        val at = utcMs(Tf.s(call, "video_ask_at"))
+        return at > 0 && System.currentTimeMillis() - at < 30000
+    }
+    /** I asked to switch to video and wait for their answer */
+    val videoAskMine: Boolean get() = isVoice && (videoAsking || (videoAskOpen && (practice || Tf.s(call, "video_ask_by") == myId)))
+    /** they asked: the Accept / Not now sheet */
+    val videoAskTheirs: Boolean get() = isVoice && !practice && videoAskOpen && Tf.s(call, "video_ask_by").let { it.isNotEmpty() && it != myId }
+    val videoAskRate: Int get() = Tf.n(call, "video_ask_rate").toInt()
+    /** the Switch to Video button: a voice call that is on, with someone on the other side */
+    val canSwitchVideo: Boolean get() = isVoice && !ended && settled == null && (practice || (status == "active" && !demoCallee))
+
+    private fun takeNote(n: String) { videoNote = n; emit() }
+
+    /** "Video" on a voice call: my camera permission first, then the other person is asked */
+    fun askVideo() {
+        if (!canSwitchVideo || videoAskMine) return
+        host.askPerms(true) { ok ->
+            if (disposed) return@askPerms
+            if (!ok) { takeNote("Allow camera access for True Find to switch to video."); return@askPerms }
+            if (practice) {
+                // the demo: she says yes after a moment (nothing billed)
+                practiceVideoAsk = true; emit()
+                main.postDelayed({
+                    if (disposed || !practiceVideoAsk) return@postDelayed
+                    practiceVideoAsk = false
+                    call?.put("type", "video")
+                    takeNote("${CallKit.firstName(otherName).ifEmpty { "They" }} accepted · video call on")
+                }, 2500)
+                return@askPerms
+            }
+            videoAsking = true; emit()
+            Api.invoke("callSwitch", JSONObject().put("call_id", callId).put("action", "ask")) { r ->
+                if (disposed) return@invoke
+                videoAsking = false
+                r.data.optJSONObject("call")?.let { if (Tf.s(it, "id") == callId) setCall(it) }
+                if (!r.ok) takeNote(Tf.s(r.data, "message", "error").ifEmpty { r.error ?: "Could not switch to video. Try again." })
+                else if (!video) takeNote("Asked ${CallKit.firstName(otherName).ifEmpty { "them" }} to switch to video")
+                emit()
+            }
+        }
+    }
+
+    /** I take my request back (tap the button again while it waits) */
+    fun cancelVideoAsk() {
+        if (practice) { practiceVideoAsk = false; emit(); return }
+        if (!videoAskOpen) return
+        Api.invoke("callSwitch", JSONObject().put("call_id", callId).put("action", "cancel")) { r ->
+            if (!disposed) r.data.optJSONObject("call")?.let { if (Tf.s(it, "id") == callId) setCall(it) }
+        }
+    }
+
+    /** their request: Accept (my camera permission first) or Not now */
+    fun answerVideo(accept: Boolean) {
+        fun send(yes: Boolean) {
+            Api.invoke("callSwitch", JSONObject().put("call_id", callId).put("action", "answer").put("accept", yes)) { r ->
+                if (disposed) return@invoke
+                r.data.optJSONObject("call")?.let { if (Tf.s(it, "id") == callId) setCall(it) }
+                if (!r.ok && yes) takeNote(Tf.s(r.data, "message", "error").ifEmpty { r.error ?: "Could not switch to video." })
+            }
+        }
+        if (!accept) { send(false); return }
+        host.askPerms(true) { ok ->
+            if (disposed) return@askPerms
+            if (!ok) { takeNote("Allow camera access for True Find to switch to video."); send(false); return@askPerms }
+            send(true)
+        }
+    }
+
+    /** the call has just become a video call: the camera joins, and the time left is counted at the new price */
+    private fun onSwitchedToVideo() {
+        videoAsking = false
+        main.post {
+            if (disposed) return@post
+            host.askPerms(true) { ok ->
+                if (disposed) return@askPerms
+                if (!ok) camOff = true
+                media?.toVideo(camOff)
+                emit()
+            }
+            tick()
+        }
+    }
+
+    /** the answer to MY request (declined / no coins / accepted), once */
+    private fun videoAnswerSeen(prev: JSONObject, c: JSONObject) {
+        val at = Tf.s(c, "video_ask_answer_at")
+        if (at.isEmpty() || at == answerSeenAt) return
+        answerSeenAt = at
+        val askedByMe = Tf.s(prev, "video_ask_by").let { it.isEmpty() || it == myId } // (cleared by the answer)
+        val who = CallKit.firstName(otherName).ifEmpty { "They" }
+        when (Tf.s(c, "video_ask_answer")) {
+            "declined" -> if (askedByMe && Tf.s(c, "type") != "video") videoNote = "$who said not now · still a voice call"
+            "no_coins" -> videoNote = if (isCaller) "Not enough coins for video · add coins to switch" else "$who doesn't have enough coins for video"
+            "accepted" -> videoNote = "Video call on"
+        }
+    }
 
     /** "Date This": the pink heart (the server marks the call, both phones see it live). done(error or null) */
     fun like(done: (String?) -> Unit) {
