@@ -164,12 +164,16 @@ class ExploreScreen(
         actions.isClickable = true
         actions.setPadding(Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f), Ui.dpi(13f))
         // 20 Nov: bigger buttons, each with its own faint doodles (ExploreArt)
-        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Ui.c("#16a34a"), 18f), INK, Ui.c("#674A96"), Ui.round(Color.WHITE, 18f, Ui.c("#E3D3FB")),
-            art = ExploreArt.VOICE to 0.20f) { startRandom("voice") }
-        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Color.WHITE, 19f), Color.WHITE, Ui.c("#E9D5FF"),
-            Ui.vgrad(Ui.c("#7A0AD7"), Ui.c("#5806A3"), 18f), art = ExploreArt.VIDEO to 0.20f) { startRandom("video") }
-        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Ui.c("#6C04CB"), 18f, 2.4f), Ui.c("#4C1D95"), Ui.c("#674A96"),
-            Ui.round(Ui.c("#F1E8FE"), 18f, Ui.c("#E3D3FB")), smallText = "match now", coin = false, art = ExploreArt.RANDOM to 0.17f) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
+        // 20 Nov, design #19 "Glass Chips" (owner's pick): Voice and Random are see-through glass on the purple panel
+        // with white words and white doodles; Video in the middle is solid white with purple words and purple doodles
+        val glass = { Ui.round(Color.argb(36, 255, 255, 255), 18f, Color.argb(115, 255, 255, 255), 1.5f) }
+        val lilac = Ui.c("#E9DDFF")
+        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Color.WHITE, 18f), Color.WHITE, lilac, glass(),
+            art = ExploreArt.VOICE.replace("#16A34A", "#FFFFFF") to 0.20f) { startRandom("voice") }
+        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Ui.c("#4C1D95"), 19f), Ui.c("#4C1D95"), Ui.c("#6D4BB0"),
+            Ui.round(Color.WHITE, 18f, Color.argb(115, 255, 255, 255), 1.5f), art = ExploreArt.VIDEO.replace("#FFFFFF", "#7C3AED") to 0.20f) { startRandom("video") }
+        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Color.WHITE, 18f, 2.4f), Color.WHITE, lilac,
+            glass(), smallText = "match now", coin = false, art = ExploreArt.RANDOM.replace("#6C04CB", "#FFFFFF") to 0.20f) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
         voiceRate = vr; videoRate = dr
         listOf(vb, db, rb).forEachIndexed { i, b ->
             actions.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { if (i > 0) leftMargin = Ui.dpi(9f) })
