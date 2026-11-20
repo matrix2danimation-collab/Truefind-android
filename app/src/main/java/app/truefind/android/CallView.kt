@@ -163,6 +163,15 @@ class CallView(
         return true
     }
 
+    /** the red End button (a call that is on): "Exit" (it goes on, its screen put aside) or "End call" */
+    private fun askExitOrEnd() {
+        if (endAskClose != null) return
+        endAskClose = CallSheets.exitOrEnd(this,
+            onExit = { endAskClose = null; mgr.putAside() },
+            onEnd = { endAskClose = null; session.hangUp() },
+            onStay = { endAskClose = null })
+    }
+
     private fun askEnd() {
         if (endAskClose != null) return
         val ringing = session.screenState == "ringing" || session.screenState == "connecting"
@@ -382,7 +391,8 @@ class CallView(
             btn.set(label, CallKit.RED, 3f, Color.WHITE, CallKit.svg(CallKit.PHONE, 30f))
         }
 
-        private fun onButton() { if (action == "close") session.onCallEnded() else session.hangUp() }
+        // "End" on a call that is on asks first (Exit / End call); "Cancel" while it still rings stops it at once
+        private fun onButton() { if (action == "close") session.onCallEnded() else if (session.status == "active" && !session.practice) askExitOrEnd() else session.hangUp() }
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -459,6 +469,7 @@ class CallView(
         // the purple panel
         private lateinit var panel: FrameLayout
         private lateinit var minsChip: TextView
+        private lateinit var durLabel: TextView
         private val duration = CallKit.t(ctx, "00:00", 20f, Color.WHITE, 700)
         private val balance = CallKit.t(ctx, "—", 19f, Color.WHITE, 700)
         private lateinit var muteBtn: CallKit.RoundBtn
@@ -731,7 +742,8 @@ class CallView(
             if (!v) pc.addView(minsChip, Tf.ll(g = Gravity.CENTER_HORIZONTAL, b = 9f))
             val row = Tf.row(ctx)
             val left = Tf.col(ctx)
-            if (!v) left.addView(label(ctx, "Duration"), Tf.ll(b = 1f))
+            durLabel = label(ctx, "Duration")
+            if (!v) left.addView(durLabel, Tf.ll(b = 1f))
             val dur = Tf.row(ctx)
             dur.addView(CallKit.blinkDot(ctx, Ui.c("#FF5A6A")), Tf.ll(Ui.dpi(8f), Ui.dpi(8f), r = 6f))
             duration.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(if (v) 16f else 20f))
@@ -763,7 +775,7 @@ class CallView(
                 camBtn = CallKit.RoundBtn(ctx, "Camera", 44f, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.CAMERA, 24f), compact = true) { s.toggleCam() }
                 btns.addView(camBtn); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
             }
-            val end = CallKit.RoundBtn(ctx, "End", if (v) 52f else 62f, CallKit.RED, 3f, Color.WHITE, CallKit.svg(CallKit.PHONE, 30f), 135f, 700, compact = v) { s.hangUp() }
+            val end = CallKit.RoundBtn(ctx, "End", if (v) 52f else 62f, CallKit.RED, 3f, Color.WHITE, CallKit.svg(CallKit.PHONE, 30f), 135f, 700, compact = v) { askExitOrEnd() }
             btns.addView(end); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
             speakerBtn = CallKit.RoundBtn(ctx, "Speaker", sz, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.SPEAKER, 24f), compact = v) { s.toggleSpeaker() }
             btns.addView(speakerBtn)
@@ -896,7 +908,8 @@ class CallView(
                 vDate.isEnabled = !hidden
                 vHeartBtn.isClickable = !hidden && !ended; vGoChat.isClickable = !hidden && !ended
                 panel.animate().translationY(if (hidden) panel.height * 1.1f else 0f).setDuration(350).setInterpolator(CallKit.EASE_OUT_BACK).start()
-                showBtns.text = "${CallKit.fmt(s.seconds)} · Show buttons"
+                val left1 = s.secsLeft
+                showBtns.text = "${if (s.showLeft && left1 != null && !ended) CallKit.fmtLeft(left1) + " left" else CallKit.fmt(s.seconds)} · Show buttons"
                 showBtns.visibility = if (hidden) VISIBLE else GONE
                 if (lastCamOff != s.camOff) {
                     lastCamOff = s.camOff
@@ -904,15 +917,19 @@ class CallView(
                         CallKit.svg(if (s.camOff) CallKit.CAMERA_OFF else CallKit.CAMERA, 24f, if (s.camOff) CallKit.INK else Color.WHITE))
                 }
             }
-            // the panel
+            // the panel: the caller sees the time his coins have left, counting down (owner, 20 Nov — it used to
+            // count the call's length up); she (and a call without that number) sees the duration
             val left = s.secsLeft
-            val minsLeft = left?.let { Math.ceil(it / 60.0).toLong().coerceAtLeast(0) }
+            val countDown = s.showLeft && left != null && !ended
             if (!v) {
                 val rate = if (s.practice) (if (s.video) 40 else 10) else s.rate
-                minsChip.text = "About $minsLeft min left${if (rate > 0) " · $rate coins/min" else ""}"
-                minsChip.visibility = if (s.showLeft && minsLeft != null) VISIBLE else GONE
+                minsChip.text = "$rate coins / min"
+                minsChip.visibility = if (s.showLeft && rate > 0 && !ended) VISIBLE else GONE
+                val want = if (countDown) "TIME LEFT" else "DURATION"
+                if (durLabel.text.toString() != want) durLabel.text = want
             }
-            duration.text = CallKit.fmt(s.seconds)
+            duration.text = if (countDown) CallKit.fmtLeft(left!!) else CallKit.fmt(s.seconds)
+            duration.contentDescription = if (countDown) "Time left ${CallKit.fmtLeft(left!!)}" else "Duration ${CallKit.fmt(s.seconds)}"
             balance.text = s.coins?.toString() ?: "—"
             if (lastMuted != s.muted) {
                 lastMuted = s.muted

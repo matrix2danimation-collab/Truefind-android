@@ -140,7 +140,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     val coins: Double? get() = PR.firstNum(profile, listOf("coin_balance", "coins", "wallet_balance", "balance"))
 
     // ═════════════════ shown / the address ═════════════════
-    fun setShown(on: Boolean, search: String, usr: JSONObject?) {
+    fun setShown(on: Boolean, search: String, usr: JSONObject?, fresh: Boolean = false) {
         val was = shown
         shown = on
         visibility = if (on) VISIBLE else GONE
@@ -151,6 +151,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             return
         }
         this.search = search; this.usr = usr
+        // opened afresh (a tap — not Back from a page opened over it): from the top, not where it was left
+        // (owner, 20 Nov: scrolled down, Back, opened again → it was still down there)
+        if (!was && fresh) { scroll.stopNestedScroll(); scroll.fling(0); scroll.scrollTo(0, 0) }
         if (profile == null) { restoreSaved(); if (profile != null) renderPage() }
         if (!was && !loading) load()
         if (!was && profile != null) loadShop()

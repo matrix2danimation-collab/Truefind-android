@@ -45,7 +45,7 @@ object ShopData {
     fun buy(status: Int, d: JSONObject): Buy = when {
         status in 200..299 && d.optBoolean("ok") -> Buy.Done(coins(d))
         status == 402 && d.optString("error") == "coins" -> Buy.Short(d.optInt("need", 0).coerceAtLeast(1), coins(d))
-        status == 429 && d.optString("error") == "busy" -> Buy.Failed("The shop is busy right now. Please try again in a moment.")
+        status == 429 && (d.optString("error") == "busy" || d.optBoolean("server_busy")) -> Buy.Failed("The shop is busy right now. Please try again in a moment.")
         status == 0 -> Buy.Failed("No internet. Check your connection and try again — you were not charged twice.")
         else -> Buy.Failed(d.optString("error").takeIf { it.isNotEmpty() && it != "coins" && it.length < 120 } ?: "Could not buy it. Please try again.")
     }

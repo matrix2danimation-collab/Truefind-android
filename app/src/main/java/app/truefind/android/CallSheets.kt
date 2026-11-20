@@ -311,6 +311,38 @@ object CallSheets {
         return { close() }
     }
 
+    /**
+     * The red End button (owner, 20 Nov): asks once — "Exit" on top (the call goes on, you leave its screen;
+     * "Call in progress · Return" brings it back) and "End call" under it. Tapping outside: nothing changes.
+     */
+    fun exitOrEnd(host: CallView, onExit: () -> Unit, onEnd: () -> Unit, onStay: () -> Unit): () -> Unit {
+        val ctx = host.context
+        val p = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = Tf.topRound(Color.WHITE, 24f)
+            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f))
+            isClickable = true
+        }
+        p.addView(CallKit.t(ctx, "Exit or end the call?", 18f, CallKit.INK, 700))
+        p.addView(CallKit.t(ctx, "Exit: the call keeps going and you can come back with Return. End call: the call stops.",
+            14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
+        var close: () -> Unit = {}
+        var chose = false
+        val exit = CallKit.t(ctx, "Exit", 15f, CallKit.INK, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#E9E6EE")); contentDescription = "Exit, the call keeps going"
+            setOnClickListener { if (!chose) { chose = true; close(); onExit() } }
+        }
+        val end = CallKit.t(ctx, "End call", 15f, Color.WHITE, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#E5484D"), 16f); contentDescription = "End call"
+            setOnClickListener { if (!chose) { chose = true; close(); onEnd() } }
+        }
+        Ui.pressable(exit, .97f); Ui.pressable(end, .97f)
+        p.addView(exit, Tf.ll(Tf.M, Ui.dpi(48f), t = 16f))
+        p.addView(end, Tf.ll(Tf.M, Ui.dpi(48f), t = 10f))
+        close = host.layer.sheet(p, Color.argb(128, 0, 0, 0), onClose = { if (!chose) onStay() })
+        return { close() }
+    }
+
     // ═════════════════ the "+" after the balance ═════════════════
     /** "The Wallet opens on its own page, so this call will end." Returns close(). */
     fun addCoins(host: CallView, onKeep: () -> Unit, onEnd: () -> Unit): () -> Unit {

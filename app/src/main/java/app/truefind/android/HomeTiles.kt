@@ -213,15 +213,15 @@ object HomeTiles {
         val name = "${HomeRules.firstName(p).ifEmpty { "Member" }}${if (age != null) ", $age" else ""}"
         val city = HomeRules.cityOf(p).ifEmpty { "India" }
         val card = FrameLayout(ctx).apply {
-            background = Tf.boxPx(Color.WHITE, m.px(18f), m.px(1.5f), Ui.c("#EEE9F5"))
+            background = Tf.boxPx(Color.WHITE, m.px(18f))
+            foreground = Tf.boxPx(Color.TRANSPARENT, m.px(18f), m.px(1.5f), Ui.c("#EEE9F5"))
             clipToOutline = true
             contentDescription = "Open $name, $city, ${if (busy) "on a call" else "online"}"
             setOnClickListener { open() }
         }
         // the Weekly Top card's doodle top (owner, 19 Nov evening: the Online box like Weekly Top Creators)
         val bw = Math.round(m.px(1.5f))
-        card.addView(View(ctx).apply { background = TileFill(Svg.of(HomeArt.DOODLE_TILE), 60f * m.z, "doodle", Color.WHITE) },
-            FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
+        card.addView(doodleTop(ctx, m, bw), FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         val av = FrameLayout(ctx)
         val ring = FrameLayout(ctx).apply { background = Tf.circle(Ui.c("#EDE7FB")).apply { setStroke(m.pi(3f), if (busy) Ui.c("#FCA5A5") else Ui.c("#86EFAC")) }; setPadding(m.pi(3f), m.pi(3f), m.pi(3f), m.pi(3f)) }
@@ -253,21 +253,34 @@ object HomeTiles {
     }
 
     /** Weekly Top Creators card (113 × 188): doodle top, 3D face with the live dot, name, hours this week, Video Call */
+    /** the doodle top of a Weekly Top / Online card: its two top corners as round as the inside of the card's border */
+    fun doodleTop(ctx: Context, m: Zm, bw: Int): View = View(ctx).apply {
+        background = TileFill(Svg.of(HomeArt.DOODLE_TILE), 60f * m.z, "doodle", Color.WHITE)
+        val r = (m.px(18f) - bw).coerceAtLeast(0f)
+        outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: android.graphics.Outline) { outline.setRoundRect(0, 0, view.width, view.height + r.toInt() + 1, r) }
+        }
+        clipToOutline = true
+    }
+
     fun creatorCard(ctx: Context, m: Zm, p: JSONObject, face: String, selected: Boolean, call: () -> Unit): View {
         val mins = HomeRules.weekMins(p); val age = HomeRules.ageOf(p); val free = HomeRules.isFree(p); val busy = HomeRules.isBusy(p)
         val title = "${HomeRules.firstName(p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}"
         val hours = if (mins >= 60) "${HomeRules.jsRound(mins / 60)} h this week" else if (mins > 0) "${HomeRules.jsRound(mins)} min this week" else if (busy) "On a call" else ""
         val dot = if (busy) Ui.c("#EF4444") else Ui.c("#22C55E")
         val card = FrameLayout(ctx).apply {
-            background = Tf.boxPx(Color.WHITE, m.px(18f), m.px(1.5f), if (selected) Ui.c("#6C2BD9") else Ui.c("#EEE9F5"))
+            background = Tf.boxPx(Color.WHITE, m.px(18f))
+            // the border is drawn over the card's insides: the doodle top used to cover it at the two top
+            // corners (owner, 20 Nov: "white at the corners" on the chosen card)
+            foreground = Tf.boxPx(Color.TRANSPARENT, m.px(18f), m.px(1.5f), if (selected) Ui.c("#6C2BD9") else Ui.c("#EEE9F5"))
             clipToOutline = true
             contentDescription = "Open $title, ${HomeRules.cityOf(p).ifEmpty { "India" }}, ${if (free) "online" else if (busy) "on a call" else "offline"}${if (hours.isNotEmpty()) ", $hours" else ""}"
             setOnClickListener { call() }
         }
-        // the doodles sit inside the card's border (like the web's absolute span in the padding box)
+        // the doodles sit inside the card's border (like the web's absolute span in the padding box), their top corners
+        // as round as the border's inside
         val bw = Math.round(m.px(1.5f))
-        card.addView(View(ctx).apply { background = TileFill(Svg.of(HomeArt.DOODLE_TILE), 60f * m.z, "doodle", Color.WHITE) },
-            FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
+        card.addView(doodleTop(ctx, m, bw), FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false }
         val av = FrameLayout(ctx).apply { clipChildren = false }
         val ring = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE).apply { setStroke(m.pi(3f), Ui.c("#E4DAFA")) }; setPadding(m.pi(3f), m.pi(3f), m.pi(3f), m.pi(3f)) }

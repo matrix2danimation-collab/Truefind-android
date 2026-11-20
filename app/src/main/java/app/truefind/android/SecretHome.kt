@@ -59,6 +59,31 @@ class SecretHome(
     private val freshIds = LinkedHashSet<String>()
     private var actKnown: Set<String>? = null
     private val inviteState = HashMap<String, String>()
+    /**
+     * My Secret Dating chats, by the other person's profile id and user id (owner, 20 Nov: after a request was
+     * sent, their profile asked for "Send Request" again — the request opens a chat at once, but the profile only
+     * knew that when opened from the chat list). A profile with a chat shows Open Chat; Send Request on its card
+     * opens the chat. Read as the member (their own matches), not as the app.
+     */
+    private val chatWith = HashMap<String, String>()
+    private var chatsSeq = 0
+    private fun loadMyChats(done: (() -> Unit)? = null) {
+        val me = myId
+        if (me.isEmpty()) { done?.invoke(); return }
+        val my = ++chatsSeq
+        val q = JSONObject().put("\$or", org.json.JSONArray()
+            .put(JSONObject().put("user_a_id", me).put("app", "secret"))
+            .put(JSONObject().put("user_b_id", me).put("app", "secret")))
+        Api.filter("Match", q, "-created_date", 500) { r ->
+            if (my == chatsSeq && r.ok) {
+                val items = r.data.optJSONArray("items")
+                if (items != null) { chatWith.clear(); chatWith.putAll(SdChatIndex.build(items, me)); render() }
+            }
+            done?.invoke()
+        }
+    }
+    /** the chat I already have with this person ("" when none) */
+    fun chatIdFor(p: JSONObject): String = SdChatIndex.find(chatWith, p)
     private val viewed = HashSet<String>()
     private var notice = ""
     private var shown = false
@@ -299,9 +324,9 @@ class SecretHome(
         if (!Api.ready) { main.postDelayed({ if (shown) loadAll(done) else done?.invoke() }, 700); return }
         // a plan remembered on this phone counts until the server answers (it is only what's SHOWN)
         if (access == null) prefs.getString("sd_plan_until", "")?.let { u -> if (u.isNotEmpty() && SdRules.ms(u) > System.currentTimeMillis()) access = true to u }
-        var left = 3
+        var left = 4
         val one: () -> Unit = { left -= 1; if (left == 0) done?.invoke() }
-        loadPeople(one); loadStories(one); loadActivity(one)
+        loadPeople(one); loadStories(one); loadActivity(one); loadMyChats(one)
     }
 
     // ── pull down to refresh (owner, 19 Nov evening): the home page and the chats, in Secret Dating's own pink ──
@@ -355,7 +380,9 @@ class SecretHome(
         Api.me { u ->
             val uid = u.data.optString("id")
             if (!u.ok || uid.isEmpty()) { if (myProfile == null) myProfile = JSONObject(); render(); return@me }
+            val first = myId.isEmpty()
             myId = uid
+            if (first) loadMyChats()
             Api.filter("UserProfile", JSONObject().put("created_by_id", uid), limit = 1) { pr ->
                 val p = pr.data.optJSONArray("items")?.optJSONObject(0)
                 myProfile = p ?: JSONObject().put("full_name", u.data.optString("full_name"))
@@ -938,6 +965,7 @@ class SecretHome(
 
     fun openProfile(p: JSONObject): (JSONObject) -> Unit {
         val withOnline = JSONObject(p.toString()).put("_online", p.optBoolean("_online") || p.optString("id") in onlineIds || SdRules.isOnline(p))
+        chatIdFor(p).let { if (it.isNotEmpty()) withOnline.put("_chatId", it) }
         val id = withOnline.optString("id")
         if (id.isNotEmpty() && viewed.add(id) && !id.startsWith("demo")) Api.invoke("recordProfileView", JSONObject().put("profile_id", id)) { }
         return SdProfileView.open(this, withOnline)
@@ -1053,6 +1081,8 @@ class SecretHome(
     /** "Send Request" (card or profile) */
     fun askRequest(p: JSONObject) {
         if (sameGender(p)) return
+        val chat = chatIdFor(p)
+        if (chat.isNotEmpty()) { if (canUse) { layer.closeAll(); go("/chat/$chat", JSONObject().put("openChat", 1)) } else locked("chat"); return }
         if (!canRequest) { locked("request"); return }
         val st = inviteState[p.optString("id")]
         if (st == "sent") { if (!layer.open) openProfile(p); return }
@@ -1072,7 +1102,12 @@ class SecretHome(
                 if (d.has("credits_left") && !d.isNull("credits_left")) credits = d.optInt("credits_left")
                 else if (d.optBoolean("ok") && !d.optBoolean("free")) credits = credits?.let { maxOf(0, it - 1) }
                 val match = d.optString("match_id")
-                if (match.isNotEmpty() && !d.isNull("match_id")) { inviteState.remove(id); layer.closeAll(); render(); go("/chat/$match", JSONObject().put("openChat", 1)); return@invoke }
+                if (match.isNotEmpty() && !d.isNull("match_id")) {
+                    inviteState.remove(id)
+                    chatWith[id] = match
+                    SdRules.s(p, "user_id", "created_by_id").let { if (it.isNotEmpty()) chatWith[it] = match }
+                    layer.closeAll(); render(); go("/chat/$match", JSONObject().put("openChat", 1)); return@invoke
+                }
                 inviteState[id] = "sent"
                 say("Request sent to ${SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "them" }} ✓")
             } else {
@@ -1236,5 +1271,28 @@ class SecretHome(
         val close = Runnable { card.animate().alpha(0f).setDuration(200).withEndAction { host.removeView(card) }.start() }
         card.setOnClickListener { main.removeCallbacks(close); host.removeView(card); scroll.smoothScrollTo(0, maxOf(0, actBox.top - dpi(80f))) }
         main.postDelayed(close, 4500)
+    }
+}
+
+/** My Secret Dating chats by the other person's user id and profile id (newest first wins) — and the lookup for a profile. */
+object SdChatIndex {
+    fun build(items: org.json.JSONArray, me: String): HashMap<String, String> {
+        val out = HashMap<String, String>()
+        for (i in 0 until items.length()) {
+            val m = items.optJSONObject(i) ?: continue
+            val id = m.optString("id"); if (id.isEmpty()) continue
+            val a = m.optString("user_a_id"); val b = m.optString("user_b_id")
+            if (a != me && b != me) continue                                   // not mine
+            val hid = m.optJSONArray("hidden_for")
+            if (hid != null && (0 until hid.length()).any { hid.optString(it) == me }) continue   // "deleted for me"
+            val aMe = a == me
+            val uid = if (aMe) b else a; val pid = m.optString(if (aMe) "profile_b_id" else "profile_a_id")
+            if (uid.isNotEmpty()) out.putIfAbsent(uid, id)
+            if (pid.isNotEmpty()) out.putIfAbsent(pid, id)
+        }
+        return out
+    }
+    fun find(index: Map<String, String>, p: JSONObject): String = p.optString("_chatId").ifEmpty {
+        listOf("id", "user_id", "created_by_id").firstNotNullOfOrNull { k -> p.optString(k).takeIf { it.isNotEmpty() }?.let { index[it] } } ?: ""
     }
 }

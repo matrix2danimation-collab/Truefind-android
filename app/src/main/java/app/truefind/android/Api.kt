@@ -41,10 +41,49 @@ object Api {
     fun invoke(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) {
         // reading something (getWallet, getOnlineNow, getChats …) is safe to ask again
         if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
+        if (name in NOT_AGAIN) { invokeOnce(name, payload, timeoutMs, done); return }
+        actWithBusyRetry({ call(name, payload, timeoutMs) }, done)
+    }
+    /** actions that reach outside services first (an SMS, a payment order, an email): never asked again by themselves */
+    private val NOT_AGAIN = setOf("sendPhoneOtp", "verifyPhoneOtp", "checkPhoneLogin", "whatsappCheck", "createPremiumCheckout",
+        "createCreditsCheckout", "topUpWallet", "support", "deleteAccount", "adminPayouts")
+    /** asked once: the screen asks again itself (a chat message with its own key) */
+    fun invokeOnce(name: String, payload: JSONObject, timeoutMs: Int = 30000, done: (Result) -> Unit) {
+        pool.execute { val r = call(name, payload, timeoutMs); main.post { done(r) } }
+    }
+
+    // ── a busy platform (20 Nov) ──
+    // Base44 answers 429 "Rate limit exceeded … after N s" when the app's server calls together go over their
+    // shared allowance. The functions now wait a little themselves and then answer { error: "busy",
+    // retry_after, retry_safe }. An action is asked again by itself only when the server says nothing was
+    // saved yet (retry_safe) — after the wait it named (1–10 s), at most twice; otherwise the member reads
+    // "The server is busy. Please try again in a moment." (never "Something went wrong").
+    private const val BUSY_TEXT = "The server is busy. Please try again in a moment."
+    /** a server answer that means "too many requests right now" (not "the person is busy on a call": that is 409) */
+    fun isServerBusy(code: Int, json: JSONObject, text: String = ""): Boolean = code == 429 &&
+        (json.optString("error") == "busy" || json.optBoolean("rate_limited") || json.optBoolean("server_busy") ||
+            Regex("rate.?limit|too many requests", RegexOption.IGNORE_CASE).containsMatchIn(json.optString("error") + " " + json.optString("message") + " " + text.take(300)))
+    /** seconds the server asked to wait (1–10; 4 when it didn't say) */
+    fun busyWaitMs(r: Result): Long = (r.data.optDouble("retry_after", 4.0).takeIf { !it.isNaN() } ?: 4.0).let { (it * 1000).toLong().coerceIn(1000L, 10_000L) }
+    private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0) {
         pool.execute {
-            val r = call(name, payload, timeoutMs)
-            main.post { done(r) }
+            val r = work()
+            main.post {
+                val again = tries < 2 && ready && !Demo.on && r.status == 429 && r.data.optBoolean("server_busy") && r.data.optBoolean("retry_safe")
+                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1) }, busyWaitMs(r))
+                else done(r)
+            }
         }
+    }
+    /** the answer of a busy platform, made readable on every screen: its words in "error", the old code kept */
+    private fun markBusy(code: Int, json: JSONObject, text: String): JSONObject {
+        if (!isServerBusy(code, json, text)) return json
+        val said = json.optString("message").takeIf { it.isNotBlank() && it != "busy" }
+        json.put("error_code", json.optString("error").ifBlank { "busy" })
+        json.put("error", said ?: BUSY_TEXT)
+        json.put("server_busy", true)
+        if (!json.has("retry_after")) json.put("retry_after", 4)
+        return json
     }
 
     // ── a read that failed for a moment is asked again ──
@@ -56,7 +95,7 @@ object Api {
         pool.execute {
             val r = work()
             main.post {
-                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1) }, if (tries == 0) 700L else 1800L)
+                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1) }, if (r.status == 429) busyWaitMs(r) else if (tries == 0) 700L else 1800L)
                 else PageFx.whenStill { done(r) }
             }
         }
@@ -91,10 +130,10 @@ object Api {
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() } ?: ""
-            val json = try {
+            val json = markBusy(code, try {
                 val t = text.trim()
                 if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t)
-            } catch (e: Exception) { JSONObject() }
+            } catch (e: Exception) { JSONObject() }, text)
             val err = if (code in 200..299) null else
                 (json.optString("error").takeIf { it.isNotBlank() } ?: json.optString("message").takeIf { it.isNotBlank() }
                     ?: ("Something went wrong. Please try again." + tag(code, path)))
@@ -173,7 +212,7 @@ object Api {
                 .header("Accept", "application/json").header("X-App-Id", appId).header("Authorization", "Bearer $token").build()
             http.newCall(req).execute().use { res ->
                 val text = res.body?.string() ?: ""
-                val json = try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }
+                val json = markBusy(res.code, try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }, text)
                 val err = if (res.isSuccessful) null else (json.optString("error").ifBlank { json.optString("message") }.ifBlank { "Something went wrong. Please try again." + tag(res.code, path) })
                 if (!res.isSuccessful) { note(method, path, res.code, text); signal(res.code, json) }
                 Result(res.code, json, err)

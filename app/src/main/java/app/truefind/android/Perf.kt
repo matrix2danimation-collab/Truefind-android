@@ -276,6 +276,11 @@ object Perf {
                 sb.append("  ${time.format(Date(m.wallMs))} ${m.label}: ${m.planMs} ms · $took · ${m.frames} frames · ${m.late} late (${m.lost} ticks) · longest ${ms(m.worstMs)}\n")
             }
         }
+        // the server answers that failed lately (20 Nov): with these, an error on a photo can be traced to its real
+        // reason — 429 = the server was busy (too many requests), 5xx = a server failure, 401 = sign-in not accepted
+        val bad = Api.failures
+        sb.append("\nSERVER ANSWERS THAT FAILED (the newest last) — when · call · code: start of the answer\n")
+        if (bad.isEmpty()) sb.append("  (none)\n") else bad.takeLast(25).forEach { sb.append("  $it\n") }
         return sb.toString()
     }
 

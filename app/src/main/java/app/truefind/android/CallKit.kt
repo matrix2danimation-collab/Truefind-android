@@ -83,6 +83,8 @@ object CallKit {
 
     fun firstName(n: String?): String = Tf.firstName(n)
     fun fmt(s0: Long): String { val s = maxOf(0L, s0); return "%02d:%02d".format(s / 60, s % 60) }
+    /** time left: 00:59 · 12:05 · 1:02:30 (an hour or more) */
+    fun fmtLeft(s0: Long): String { val s = maxOf(0L, s0); return if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s / 60 % 60, s % 60) else fmt(s) }
 
     /** the doodles of the call page (140 tile, -8°) and of its purple panel (120 tile) */
     fun doodles(ctx: Context): View = View(ctx).apply { background = PatternFill(MatchStage.DOODLE, 140f, -8f, "stageDoodle"); isClickable = false }

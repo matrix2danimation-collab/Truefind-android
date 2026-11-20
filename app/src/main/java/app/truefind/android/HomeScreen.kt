@@ -360,7 +360,13 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         if (v) { loadWallet(); loadPeople(); loadDaily(); schedulePoll() } else main.removeCallbacks(poll)
     }
 
-    private val poll = Runnable { if (shown && appVisible) { loadWallet(); loadPeople(); loadDaily() }; schedulePoll() }
+    // every minute: coins and people; the daily coins (they change once a day) every 10 minutes — fewer server
+    // calls from everyone's Home (20 Nov: the app's shared server allowance ran out → "busy" everywhere)
+    private var dailyAt = 0L
+    private val poll = Runnable {
+        if (shown && appVisible) { loadWallet(); loadPeople(); if (android.os.SystemClock.elapsedRealtime() - dailyAt > 10 * 60_000L) loadDaily() }
+        schedulePoll()
+    }
     private fun schedulePoll() { main.removeCallbacks(poll); if (shown) main.postDelayed(poll, 60_000) }
 
     fun onBack(): Boolean = sheets.onBack()
@@ -437,6 +443,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
     private fun loadDaily(done: (() -> Unit)? = null) {
         if (!Api.ready) { done?.invoke(); return }
+        dailyAt = android.os.SystemClock.elapsedRealtime()
         Api.invoke("claimDailyCoins", JSONObject().put("peek", true)) { r ->
             if (r.ok) {
                 daily = parseDaily(r.data, r.data.optBoolean("ready"))
@@ -450,7 +457,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
     private fun loadPeople(done: ((List<JSONObject>?) -> Unit)? = null) {
         if (!Api.ready) { done?.invoke(null); return }
-        Api.invoke("getDiscoverProfiles", JSONObject()) { r ->
+        // week: the Weekly Top row's minutes (only Home asks for them: the feed elsewhere doesn't read the calls)
+        Api.invoke("getDiscoverProfiles", JSONObject().put("week", true)) { r ->
             if (r.ok) {
                 val list = HomeRules.uniq(Tf.arr(r.data.optJSONArray("profiles")))
                 val need = r.data.optString("needs_membership").takeIf { it.isNotEmpty() && it != "secret" && it != "null" && r.data.opt("needs_membership") != false } ?: ""
@@ -599,7 +607,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         val row = creatorsRow.row
         for (i in 0 until row.childCount) {
             val c = row.getChildAt(i)
-            (c.background as? GradientDrawable)?.setStroke(m.pi(1.5f), if (c.tag == selCreator) Ui.c("#6C2BD9") else Ui.c("#EEE9F5"))
+            // the border is the card's foreground (drawn over its doodle top, whole at the corners)
+            (c.foreground as? GradientDrawable)?.setStroke(m.pi(1.5f), if (c.tag == selCreator) Ui.c("#6C2BD9") else Ui.c("#EEE9F5"))
         }
     }
 

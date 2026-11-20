@@ -124,6 +124,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
      * Called by MainActivity whenever the page or the login changes ([signedIn]: signed in and inside the app).
      * Returns the bottom of the page area for the native Explore (px, or -1 = leave as it is).
      */
+    /** the page now opening was opened afresh (a tap), not gone back to (MainActivity sets it before [update]) */
+    var freshOpen = true
     fun update(signedIn: Boolean): Int {
         if (preview.isNotEmpty()) return -1
         this.signedIn = signedIn
@@ -149,7 +151,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
         // Profile gets its data ready while Home shows, so opening it is instant (like FRND)
         if (showHome && !profilePrefetched) { profilePrefetched = true; main.postDelayed({ profile.prefetch() }, 1500) }
         if (!live) profilePrefetched = false
-        profile.setShown(showProfile, search, usr)
+        profile.setShown(showProfile, search, usr, fresh = freshOpen)
         builder.setShown(showBuilder)
         verify.setShown(showVerify)
         expert.setShown(showExpert)

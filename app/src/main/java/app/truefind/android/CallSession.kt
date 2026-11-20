@@ -127,7 +127,9 @@ class CallSession(
     val seconds: Long get() = if (practice) (if (practiceEndedAt >= 0) practiceEndedAt else practiceSec) else elapsed
     val secsLeft: Long?
         get() {
-            if (practice) { previewSecsLeft?.let { return it }; val c = coins ?: return null; val r = if (video) 40 else 10; return (c / r) * 60 }
+            // the demo call: what the coins would last at this call's rate, counting down as it goes (nothing is billed);
+            // no coins → no countdown (the duration shows instead)
+            if (practice) { previewSecsLeft?.let { return it }; val c = coins ?: return null; val r = if (video) 40 else 10; val all = (c / r) * 60; return if (all <= 0) null else maxOf(0L, all - seconds) }
             val rem = remaining ?: return null
             return maxOf(0L, rem - (SystemClock.elapsedRealtime() - tickAt) / 1000)
         }
@@ -500,6 +502,8 @@ class CallSession(
         override fun run() {
             if (disposed || practiceEnded) return
             practiceSec += 1
+            // the demo's coins would be used up now: it ends the way a real call does at 0 left
+            if (mode == Mode.PRACTICE && secsLeft == 0L) { practiceEnd(); return }
             // made-up talking, 3 s each: her, you, both together, her again
             val phase = (practiceSec / 3) % 4
             peerSpeaking = phase == 0L || phase == 2L || phase == 3L

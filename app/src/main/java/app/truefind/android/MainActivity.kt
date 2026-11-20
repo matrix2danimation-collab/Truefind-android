@@ -1217,6 +1217,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             }
         }
 
+        pages.freshOpen = lastMove != Router.Move.POP
         val navTop = pages.update(inApp)
         val p = path.trimEnd('/')
         val onExplore = p == "/explore"

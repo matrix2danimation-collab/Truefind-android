@@ -122,6 +122,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
      * Wallet (Back, its own back arrow) or tapping Return brings the call screen back.
      */
     var minimized = false; private set
+    /** put aside by "Exit" (not by the Wallet's "+"): it stays aside on every page until "Return" */
+    private var asideByExit = false
 
     // ── the incoming call ──
     private var incoming: JSONObject? = null
@@ -190,11 +192,24 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
         host.changed()
     }
 
+    /**
+     * "Exit" on the End question (owner, 20 Nov): the call goes on, its screen is put aside and the page under it
+     * shows; "Call in progress · Return" brings it back. Unlike the Wallet's case, moving between pages doesn't.
+     */
+    fun putAside() {
+        val v = view ?: return
+        if (minimized) return
+        minimized = true; asideByExit = true
+        v.animate().cancel()
+        v.visibility = View.INVISIBLE
+        host.changed()
+    }
+
     /** The call goes on with its screen put aside, and [path] opens (the coin Wallet). */
     fun minimizeTo(path: String) {
         val v = view ?: return
         if (minimized) return
-        minimized = true
+        minimized = true; asideByExit = false
         // INVISIBLE, not removed: the call's sound goes on and its video pictures keep their surfaces
         v.animate().cancel()
         v.visibility = View.INVISIBLE
@@ -206,7 +221,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     fun restore() {
         val v = view ?: return
         if (!minimized) return
-        minimized = false
+        minimized = false; asideByExit = false
         v.alpha = 0f
         v.visibility = View.VISIBLE
         v.animate().alpha(1f).setDuration(180).start()
@@ -226,7 +241,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
             view = null
             // the call ended while its screen was put aside (they hung up, the coins ran out): the member stays
             // on the page they are on (the Wallet) and is told
-            if (minimized) { minimized = false; to = null; say("Call ended.") }
+            if (minimized) { minimized = false; asideByExit = false; to = null; say("Call ended.") }
         }
         v.dispose()
         v.animate().alpha(0f).setDuration(220).withEndAction { (v.parent as? ViewGroup)?.removeView(v) }.start()
@@ -311,7 +326,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     /** the app moved to another page: the pill is checked again (it shows on most pages); leaving the Wallet brings a put-aside call back */
     fun routeChanged() {
-        if (minimized && !host.path().substringBefore('?').trimEnd('/').equals("/wallet")) restore()
+        if (minimized && !asideByExit && !host.path().substringBefore('?').trimEnd('/').equals("/wallet")) restore()
         if (pillCall != null) verifyPill()
     }
 

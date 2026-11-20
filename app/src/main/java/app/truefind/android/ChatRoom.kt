@@ -442,26 +442,26 @@ class ChatRoom(
     private var failedKey = ""
     private var failedText = ""
     private fun passingFailure(r: Api.Result): Boolean = !r.ok && (r.status == 0 || r.status == 408 || r.status in 500..599 ||
-        (r.status == 429 && r.data.optString("error").let { it == "busy" || it == "rate_limited" || it.isEmpty() }))
+        (r.status == 429 && (r.data.optBoolean("server_busy") || r.data.optString("error").let { it == "busy" || it == "rate_limited" || it.isEmpty() })))
     private fun deliverTry(payload: JSONObject, price: Int, attempt: Int, done: (Api.Result) -> Unit) {
         val forMatch = matchId
         val body = JSONObject(payload.toString()).put("match_id", forMatch)
         if (attempt > 0) body.put("retry", true)
-        Api.invoke("sendMessage", body) { r ->
+        Api.invokeOnce("sendMessage", body) { r ->
             if (!r.ok && attempt < 2 && passingFailure(r) && forMatch == matchId) {
                 val err = r.data.optString("error")
                 val wait = when {
                     r.status == 429 && err == "rate_limited" -> 900L     // sent too fast: just after the 0.6 s gap
                     // the chat busy (the platform's read limit): as long as the server said, up to 8 s — asking
                     // sooner would only be told "busy" again
-                    r.status == 429 && err == "busy" -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1200L, 8000L)
+                    r.status == 429 && (err == "busy" || r.data.optBoolean("server_busy")) -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1200L, 8000L)
                     attempt == 0 -> 1200L
                     else -> 3000L
                 }
                 main.postDelayed({ if (forMatch == matchId) deliverTry(payload, price, attempt + 1, done) else done(r) }, wait)
-                return@invoke
+                return@invokeOnce
             }
-            if (forMatch != matchId) { done(r); return@invoke }
+            if (forMatch != matchId) { done(r); return@invokeOnce }
             if (r.ok) {
                 val w = r.data.optJSONObject("wallet")
                 if (w != null) balance = w.optInt("coins") else if (price > 0) balance = balance?.let { max(0, it - price) }
