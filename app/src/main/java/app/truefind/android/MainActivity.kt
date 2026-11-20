@@ -1193,6 +1193,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun exploreStatusBar(on: Boolean) {
         if (appBg.purple == on) return
         appBg.purple = on
+        // the phone paints its status bar in the theme's white; on Explore it is see-through, so the purple strip shows
+        @Suppress("DEPRECATION")
+        window.statusBarColor = if (on) Color.TRANSPARENT else Color.WHITE
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
     }
 
