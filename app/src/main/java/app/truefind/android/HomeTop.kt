@@ -144,7 +144,9 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
         val order = listOf(1, 0, 2)          // 2nd on the left, 1st in the middle, 3rd on the right
         for (k in order) {
             val r = top.getOrNull(k)
-            row.addView(if (r == null) View(ctx) else place(ctx, r, k), Tf.ll(0, Tf.W, if (k == 0) 1.25f else 1f))
+            // an empty place (fewer than 3 this week) takes no height: a plain View sized "wrap" would take ALL the
+            // height there is and stretch the podium down the whole page (owner, 20 Nov photo)
+            row.addView(if (r == null) View(ctx) else place(ctx, r, k), Tf.ll(0, if (r == null) 0 else Tf.W, if (k == 0) 1.25f else 1f))
         }
         card.addView(row, LayoutParams(-1, -2))
         return card

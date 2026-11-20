@@ -251,10 +251,14 @@ class ChatRoom(
         Api.me { u ->
             if (g != gen) return@me
             meId = u.data.optString("id")
-            fun chats(retried: Boolean) {
+            // a busy server (right after a request many calls go out at once) is waited out — still "loading", not an
+            // error page — up to 6 tries, each after the wait the server named (owner, 20 Nov: "server busy" in the chat)
+            fun again(r: Api.Result, tries: Int) = !r.ok && tries < (if (r.data.optBoolean("server_busy")) 6 else 2)
+            fun waitFor(r: Api.Result) = if (r.data.optBoolean("server_busy")) Api.busyWaitMs(r) else 2500L
+            fun chats(tries: Int) {
                 Api.invoke("getChats", JSONObject().put("match_id", matchId).put("only", true)) { r ->
                     if (g != gen) return@invoke
-                    if (!r.ok && !retried) { main.postDelayed({ if (g == gen) chats(true) }, 2500); return@invoke }
+                    if (again(r, tries + 1)) { main.postDelayed({ if (g == gen) chats(tries + 1) }, waitFor(r)); return@invoke }
                     if (!r.ok) { error = r.error ?: "Could not load chat."; loading = false; renderAll(); return@invoke }
                     val list = r.data.optJSONArray("chats")
                     val chat = (0 until (list?.length() ?: 0)).mapNotNull { list!!.optJSONObject(it) }.firstOrNull { it.optString("match_id") == matchId }
@@ -271,10 +275,10 @@ class ChatRoom(
                         renderInfo()
                     }
                     // the NEWEST 100 messages (oldest first on screen)
-                    fun page(retried2: Boolean) {
+                    fun page(tries: Int) {
                         Api.filter("Message", JSONObject().put("match_id", matchId), "-created_date", 100) { m ->
                             if (g != gen) return@filter
-                            if (!m.ok && !retried2) { main.postDelayed({ if (g == gen) page(true) }, 2500); return@filter }
+                            if (again(m, tries + 1)) { main.postDelayed({ if (g == gen) page(tries + 1) }, waitFor(m)); return@filter }
                             if (!m.ok) { error = m.error ?: "Could not load chat."; loading = false; renderAll(); return@filter }
                             val items = m.data.optJSONArray("items") ?: JSONArray()
                             messages.clear()
@@ -284,7 +288,7 @@ class ChatRoom(
                             markRead()
                         }
                     }
-                    page(false)
+                    page(0)
                     // did I block this person?
                     Api.filter("Block", JSONObject().put("blocker_id", meId), null, 200) { b -> if (g == gen && b.ok) { blockRow = findBlock(b.data.optJSONArray("items")); renderComposer() } }
                     // their story (Secret Dating chats only)
@@ -301,7 +305,7 @@ class ChatRoom(
                     renderAll()
                 }
             }
-            chats(false)
+            chats(0)
         }
     }
     private fun markRead() {
