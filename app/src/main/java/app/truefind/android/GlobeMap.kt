@@ -3,7 +3,7 @@ package app.truefind.android
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapShader
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
@@ -17,6 +17,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.os.Handler
 import android.os.Looper
+import android.util.LruCache
 import android.view.Choreographer
 import android.view.Gravity
 import android.view.MotionEvent
@@ -29,10 +30,13 @@ import org.json.JSONObject
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.exp
+import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.ln
+import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -41,11 +45,19 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Premium 3D Earth (the web's GlobeMap in src/pages/SecretApp.jsx): a real globe you can spin 360°,
- * India raised and glowing on it, verified members as gold pins at the city they chose (never a live
- * location). One finger turns the Earth under your finger, two fingers zoom where your fingers are,
- * a flick keeps it turning a little. The first time it opens the Earth rolls half way round and
- * glides down to your city. Sizes are the web's CSS pixels (dp here).
+ * Secret Dating · Online Map — a 3D Earth with India on it (the web's components/secret/GlobeMap.jsx, rebuilt Nov 20).
+ * • A real globe you can spin 360°: one finger turns the Earth under your finger, two fingers zoom where your
+ *   fingers are, a flick keeps it turning a little. The first time it opens the Earth rolls half way round and
+ *   glides down to your city.
+ * • Place names are placed again on every frame, most important first, and never sit on each other or on a
+ *   person. They fade in and out as you zoom (before, the names from the last zoom stayed on screen while you
+ *   zoomed out, bunched together, and then jumped all at once when the map stopped).
+ * • People sit at the town or district they chose in their profile (never a live location, and never moved off
+ *   it to make room). Pins that would overlap share one pin with a count; as you zoom in they split up, gliding
+ *   apart instead of jumping. A shared pin of one town opens the list of everyone there.
+ * • More detail as you come closer: rivers, then highways, then smaller roads; state names, landscapes and waters.
+ * • The glowing light that sat in the middle of India is gone.
+ * Sizes are the web's CSS pixels (dp here).
  */
 @SuppressLint("ViewConstructor")
 class GlobeMap(
@@ -65,27 +77,56 @@ class GlobeMap(
     private var busy = false
     private var pendingIntro = true
     var active = false
-        set(v) { field = v; if (v) maybeStart() else { if (frame != null) { stop(); busy = false; idleView = view.copy(); refresh() } } }
+        set(v) { field = v; if (v) { maybeStart(); refresh() } else { if (frame != null) { stop(); busy = false; idleView = view.copy(); refresh() } } }
     var full = false
         set(v) { field = v; fullBtn.setImageDrawable(Icon(if (v) Lucide.Minimize2 else Lucide.Maximize2, GOLD_ICON, 20f)); fullBtn.contentDescription = if (v) "Exit full screen" else "Full screen map" }
 
-    // people
+    // ── people → points (one per person, at their town) → pins (people whose pins would overlap share one) ──
     private var people: List<JSONObject> = emptyList()
+    private var peopleSig = ""
     var me: JSONObject? = null
     var mine: JSONObject = JSONObject()
-    private class Group(val key: String, val city: String, val geo: DoubleArray, val people: MutableList<JSONObject>)
-    private class Cluster(val key: String, val geo: DoubleArray, val people: List<JSONObject>, val city: String, val cities: List<String>)
-    private var groups: List<Group> = emptyList()
-    private var clusters: List<Cluster> = emptyList()
-    private var zoomStepNow = Int.MIN_VALUE
-    private class Label(val key: String, val n: String, val lng: Double, val lat: Double, val fs: Float, val st: Boolean, val big: Boolean)
-    private var labels: List<Label> = emptyList()
-    private val labelBorn = HashMap<String, Long>()
+    private class Pt(val p: JSONObject, val id: String, val g: DoubleArray, val live: Boolean, val chat: Boolean, val town: String) {
+        var i = 0; var n = 0; val cl = cos(g[1] * D2R)
+    }
+    /** where a pin is drawn: its town, or on its way between two places while it glides */
+    private class Disp(val lng: Double, val lat: Double)
+    private class Cl(val lead: Pt, val m: List<Pt>, val towns: List<String>) {
+        val key: String get() = lead.id
+        val n = m.size
+        val live = m.any { it.live }
+        val chat = m.any { it.chat }
+        val city = if (towns.size > 1) "${towns[0]} +${towns.size - 1}" else towns.firstOrNull() ?: ""
+        val people: List<JSONObject> get() = m.map { it.p }
+        val first: String by lazy { SdRules.firstName(SdRules.s(lead.p, "name")) }
+        var a = 1.0                 // fades in when new
+        var from: Disp? = null      // glides from here…
+        var t0 = 0.0                // …since then
+        var disp: Disp? = null      // where it was drawn last
+    }
+    /** a pin that joined another one: it glides into it and fades away */
+    private class Ghost(val c: Cl, val from: Disp, val into: Cl?, val t0: Double)
+    private var pts: List<Pt> = emptyList()
+    private var ver = 0
+    private var cver = -1
+    private var zstep = Int.MIN_VALUE
+    private var clusters: List<Cl> = emptyList()
+    private var ghosts = ArrayList<Ghost>()
+    private var firstFrame = true
+    /** a place name on screen (or fading out): its kind, text, place, which side of its dot, how visible */
+    private class Lbl(var kind: String, var text: String, var lng: Double, var lat: Double, var side: Int, var a: Double, var on: Boolean)
+    private val lbl = LinkedHashMap<String, Lbl>()
+    /** the pins drawn last (tap boxes), the rings under people online */
+    private class Drawn(val c: Cl, val x0: Double, val x1: Double, val y0: Double, val y1: Double)
+    private var drawn: List<Drawn> = emptyList()
+    private class Rip(val key: String, val x: Double, val y: Double, val s: Double)
+    private var rips: List<Rip> = emptyList()
 
-    // children: stars · the Earth (kept as a picture while it rests) · pins and names · buttons
+    // children: stars · the Earth (kept as a picture while it rests) · names and pins · rings under people online · buttons
     private val stars = Stars(ctx)
     private val globe = Globe(ctx)
     private val top = Top(ctx)
+    private val fx = Fx(ctx)
     private val fullBtn = mapButton(Lucide.Maximize2, 20f, "Full screen map") { onFull() }
     private val locBtn = mapButton(Lucide.Navigation, 19f, "Go to my city", 1.8f) { locate() }
 
@@ -96,6 +137,7 @@ class GlobeMap(
         globe.setLayerType(LAYER_TYPE_HARDWARE, null)
         addView(globe, LayoutParams(-1, -1))
         addView(top, LayoutParams(-1, -1))
+        addView(fx, LayoutParams(-1, -1))
         // controls
         addView(fullBtn, LayoutParams(dpi(46f), dpi(46f), Gravity.START or Gravity.BOTTOM).apply { setMargins(dpi(12f), 0, 0, dpi(14f)) })
         addView(locBtn, LayoutParams(dpi(46f), dpi(46f), Gravity.END or Gravity.BOTTOM).apply { setMargins(0, 0, dpi(12f), dpi(14f)) })
@@ -115,15 +157,18 @@ class GlobeMap(
         zoom.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> v.translationY = v.height * 0.1f }
         addView(sdText(ctx, "Map: svg-maps (CC BY 4.0) · Natural Earth · GeoNames", 8.5f, Color.argb(71, 255, 255, 255), bold = false).apply { importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO },
             LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dpi(4f) })
-        contentDescription = "3D Earth with verified members across India. Drag to spin the globe, pinch or use + and − to zoom."
-        post { SdMapData.load(context) { makeClusters(); refresh() } }
+        describe()
+        post { SdMapData.load(context) { rebuildPoints(); refresh() } }
+    }
+    private fun describe() {
+        val n = people.size
+        contentDescription = "3D Earth with $n verified ${if (n == 1) "member" else "members"} across India. Drag to turn the globe, pinch or use + and − to zoom, tap a picture to open it."
     }
 
     // ═════════════ the projection (orthographic) ═════════════
     private fun radius(k: Double) = max(60.0, min(bw, bh) / 2 - 18) * k
     private fun cx() = bw / 2
     private fun cy() = bh / 2
-    private fun proj(v: V) = Proj(v.lon, v.lat, radius(v.k), cx(), cy())
 
     /** which rotation puts place g at screen point (sx, sy) at zoom k */
     private fun aim(g: DoubleArray, k: Double, sx: Double, sy: Double): V {
@@ -157,8 +202,9 @@ class GlobeMap(
     private fun freeV(v: V) = V(wrapLon(v.lon), max(-85.0, min(85.0, v.lat)), max(1.0, min(MAX_K, v.k)))
     private fun put(v: V) { view = freeV(v); refresh() }
     private fun homeView() = aim(doubleArrayOf(80.5, 22.0), HOME_K, bw / 2, bh * 0.54)
-    private fun myGeo(): DoubleArray = me?.let { SdRules.geoOf(SdRules.s(it, "city"), SdRules.s(it, "state")) } ?: SdRules.geoOf(SdRules.s(mine, "city"), SdRules.s(mine, "state"))
-    private fun myView() = aim(myGeo(), 4.2, bw / 2, bh * 0.5)
+    /** your own town (from your profile) — null when the map doesn't know it yet */
+    private fun myGeo(): DoubleArray? = me?.let { SdPlaces.placeOf(SdRules.s(it, "city"), SdRules.s(it, "state")) } ?: SdPlaces.placeOf(SdRules.s(mine, "city"), SdRules.s(mine, "state"))
+    private fun myView(): V? = myGeo()?.let { aim(it, 4.2, bw / 2, bh * 0.5) }
 
     // ═════════════ frames ═════════════
     private var frame: ((Double) -> Unit)? = null
@@ -178,12 +224,10 @@ class GlobeMap(
         val t = now()
         if (LITE && busy && t - lastPaint < 26) { removeCallbacks(again); postOnAnimation(again); return }
         lastPaint = t
-        globe.invalidate(); top.invalidate(); stars.invalidate()
-        val step = round(ln(view.k) / ln(1.18)).toInt()
-        if (step != zoomStepNow) { zoomStepNow = step; makeClusters() }
+        globe.invalidate(); top.invalidate(); fx.invalidate(); stars.invalidate()
     }
     private val main = Handler(Looper.getMainLooper())
-    private val settled = Runnable { busy = false; idleView = view.copy(); makeClusters(); refresh() }
+    private val settled = Runnable { busy = false; idleView = view.copy(); refresh() }
     private fun settle(ms: Long = 200) { main.removeCallbacks(settled); main.postDelayed(settled, ms) }
 
     private fun fly(to: V, ms: Double = 650.0, raw: Boolean = false, then: (() -> Unit)? = null) {
@@ -250,7 +294,8 @@ class GlobeMap(
     private fun playIntro() {
         stop()
         introDone = true
-        val end = myView()
+        var end = myView() ?: homeView()
+        var endKnown = myView() != null
         if (REDUCED) { view = freeV(end); idleView = view.copy(); refresh(); return }
         val start = V(end.lon - 180, 14.0, 1.0)
         view = start.copy()
@@ -260,20 +305,30 @@ class GlobeMap(
             val t = min(1.0, (n - t0) / ms)
             val spin = 0.5 - 0.5 * cos(Math.PI * min(1.0, t / 0.9))
             val dive = if (t < 0.4) 0.0 else easeIO((t - 0.4) / 0.6)
+            // your city arrived while the Earth was turning: land there
+            if (!endKnown && t > 0.3) { endKnown = true; myView()?.let { mv -> end = V(start.lon + 180 + lonGap(start.lon + 180, mv.lon), mv.lat, mv.k) } }
             view = freeV(V(start.lon + (end.lon - start.lon) * spin, start.lat + (end.lat - start.lat) * dive, start.k + (end.k - start.k) * dive))
             refresh()
             if (t >= 1) { frame = null; settle(40) }
         }
     }
 
-    private fun locate() {
-        fly(aim(myGeo(), 5.0, bw / 2, bh * 0.5), 900.0)
+    /** test photos only: the map at rest over [lng, lat] at zoom k (no intro, no flight) */
+    fun showAt(lng: Double, lat: Double, k: Double) {
+        stop(); pendingIntro = false; introDone = true
+        busy = false; view = freeV(aim(doubleArrayOf(lng, lat), k, bw / 2, bh * 0.5)); idleView = view.copy(); refresh()
     }
 
-    // the stars, the glowing centre and the pins move only while the map is on screen
+    private fun locate() {
+        val g = myGeo()
+        if (g == null) { say("Add your city in your profile to see people around you."); return }
+        fly(aim(g, 5.0, bw / 2, bh * 0.5), 900.0)
+    }
+
+    // the stars and the rings under people online move only while the map is on screen
     private val visRect = android.graphics.Rect()
     private fun onScreen(): Boolean = isShown && getGlobalVisibleRect(visRect)
-    private val scrolled = android.view.ViewTreeObserver.OnScrollChangedListener { if (onScreen()) { stars.invalidate(); top.invalidate() } }
+    private val scrolled = android.view.ViewTreeObserver.OnScrollChangedListener { if (onScreen()) { stars.invalidate(); top.invalidate(); fx.invalidate() } }
     override fun onAttachedToWindow() { super.onAttachedToWindow(); viewTreeObserver.addOnScrollChangedListener(scrolled) }
     override fun onDetachedFromWindow() {
         viewTreeObserver.removeOnScrollChangedListener(scrolled)
@@ -284,85 +339,78 @@ class GlobeMap(
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         super.onSizeChanged(w, h, ow, oh)
         bw = w / dens.toDouble(); bh = h / dens.toDouble()
+        cver = -1 // regroup the pins for the new size
         if (pendingIntro) maybeStart()
-        makeClusters(); refresh()
+        refresh()
     }
 
-    // ═════════════ people → pins (nearby cities share one pin until you zoom in) ═════════════
+    // ═════════════ people → points ═════════════
     fun setPeople(list: List<JSONObject>) {
-        if (list.map { it.optString("id") + it.optBoolean("_online") + it.optBoolean("chatting") } == people.map { it.optString("id") + it.optBoolean("_online") + it.optBoolean("chatting") }) { people = list; return }
         people = list
-        val m = LinkedHashMap<String, Group>()
-        for (p in list) {
-            val g = SdRules.geoOf(SdRules.s(p, "city"), SdRules.s(p, "state"))
-            val key = SdRules.s(p, "city") + "|" + SdRules.s(p, "state")
-            m.getOrPut(key) { Group(key, SdRules.s(p, "city").ifEmpty { SdRules.s(p, "state") }, g, ArrayList()) }.people.add(p)
-        }
-        groups = m.values.toList()
-        makeClusters(); top.invalidate()
+        val sig = list.joinToString(";") { "${it.optString("id")}|${SdRules.liveOf(it)}|${it.optBoolean("chatting")}|${SdRules.s(it, "city")}|${SdRules.s(it, "state")}|${SdRules.s(it, "photo_thumb", "photo", "profile_picture")}" }
+        if (sig == peopleSig) return
+        peopleSig = sig
+        rebuildPoints()
+        describe()
     }
-    private fun makeClusters() {
-        if (bw <= 0) { clusters = emptyList(); return }
-        val cv = view
-        val r = radius(cv.k); val P = Proj(cv.lon, cv.lat, r, cx(), cy())
-        val thr = 58 * pinScaleOf(r)
-        class C(val key: String, val geo: DoubleArray, val sx: Double, val sy: Double, val people: ArrayList<JSONObject>, val cities: ArrayList<String>)
-        val out = ArrayList<C>(); val o = DoubleArray(5)
-        for (g in groups.sortedByDescending { it.people.size }) {
-            P.at(g.geo[0], g.geo[1], o)
-            val near = out.firstOrNull { hypot(it.sx - o[0], it.sy - o[1]) < thr }
-            if (near != null) { near.people.addAll(g.people); if (g.city !in near.cities) near.cities.add(g.city) }
-            else out.add(C(g.key, g.geo, o[0], o[1], ArrayList(g.people), arrayListOf(g.city)))
+    /** each person at their town (people of one town: online first); who gets a pin first: people you chat with, then people online, then bigger towns */
+    private fun rebuildPoints() {
+        val towns = LinkedHashMap<String, MutableList<Pt>>()
+        for (p in people) {
+            val g = SdPlaces.placeOf(SdRules.s(p, "city"), SdRules.s(p, "state")) ?: continue
+            val key = "%.3f,%.3f".format(java.util.Locale.US, g[0], g[1])
+            towns.getOrPut(key) { ArrayList() }.add(Pt(p, p.optString("id"), g, SdRules.liveOf(p), p.optBoolean("chatting"), shortTown(SdRules.s(p, "city").ifEmpty { SdRules.s(p, "state") })))
         }
-        clusters = out.map { Cluster(it.key, it.geo, it.people, if (it.cities.size > 1) "${it.cities[0]} +${it.cities.size - 1}" else it.cities[0], it.cities) }
-        makeLabels()
+        val out = ArrayList<Pt>()
+        for (list in towns.values) {
+            list.sortWith(compareByDescending<Pt> { it.chat }.thenByDescending { it.live }.thenBy { it.id })
+            list.forEachIndexed { i, o -> o.i = i; o.n = list.size; out.add(o) }
+        }
+        out.sortWith(compareByDescending<Pt> { it.chat }.thenByDescending { it.live }.thenByDescending { it.n }.thenBy { it.i })
+        pts = out
+        ver += 1
+        top.invalidate()
     }
-    // which place names fit is worked out when the map comes to rest (never on top of a person, a button or each other)
-    private fun makeLabels() {
-        if (bw <= 0 || !SdMapData.ready) { labels = emptyList(); return }
-        val vv = view; val r = radius(vv.k); val P = Proj(vv.lon, vv.lat, r, cx(), cy()); val ps = pinScaleOf(r)
-        val minPop = minPopFor(r * D2R)
-        val showStates = vv.k >= 4.5 && vv.k < 15
-        val cityLbl = r > 900
-        val boxes = ArrayList<DoubleArray>(); val o = DoubleArray(5)
-        for (c in clusters) { P.at(c.geo[0], c.geo[1], o); if (o[2] > 0.08) boxes.add(doubleArrayOf(o[0], o[1] - 24 * ps, (if (cityLbl) 104.0 else 62.0) * ps, 114 * ps)) }
-        boxes.add(doubleArrayOf(87.0, 33.0, 164.0, 48.0)); boxes.add(doubleArrayOf(bw - 35, bh / 2 + 10, 58.0, 108.0))
-        boxes.add(doubleArrayOf(35.0, bh - 37, 60.0, 60.0)); boxes.add(doubleArrayOf(bw - 35, bh - 37, 60.0, 60.0)); boxes.add(doubleArrayOf(bw / 2, bh - 9, 300.0, 16.0))
-        fun fits(x: Double, y: Double, wd: Double, ht: Double) = boxes.none { q -> abs(q[0] - x) < (q[2] + wd) / 2 && abs(q[1] - y) < (q[3] + ht) / 2 }
-        val qv = geoBox(vv)
-        fun seen(lng: Double, lat: Double) = qv == null || (lng >= qv[0] && lng <= qv[2] && lat >= qv[1] && lat <= qv[3])
-        val out = ArrayList<Label>()
-        fun tryAdd(ct: SdMapData.City?, st: SdMapData.State?) {
-            val lng = (ct?.lng ?: st!!.lng).toDouble(); val lat = (ct?.lat ?: st!!.lat).toDouble()
-            P.at(lng, lat, o)
-            if (o[2] < 0.3 || o[0] < -60 || o[1] < -20 || o[0] > bw + 60 || o[1] > bh + 20) return
-            if (st != null) {
-                val fs = if (vv.k >= 7) 11.5 else 10.5; val lw = st.n.length * fs * 0.6 + 6
-                if (!fits(o[0], o[1], lw, 15.0)) return
-                boxes.add(doubleArrayOf(o[0], o[1], lw, 15.0))
-                out.add(Label("s-${st.n}", st.n, lng, lat, fs.toFloat(), true, false)); return
+    /** pins that would sit on each other share one (the first person's) — worked out from the zoom only, so turning the Earth never regroups them */
+    private fun clusterize(list: List<Pt>, ppd: Double, withLabels: Boolean): List<Cl> {
+        val ps = pinScaleOf(ppd)
+        // what one pin covers (with its tag when tags show), plus a step of zoom to spare
+        val w = (if (withLabels) 76 else 58) * ps * 1.12; val h = (if (withLabels) 102 else 80) * ps * 1.12; val cell = max(w, h)
+        class C(val x: Double, val y: Double, val lead: Pt) { val m = ArrayList<Pt>().apply { add(lead) } }
+        val grid = HashMap<Long, ArrayList<C>>(); val out = ArrayList<C>()
+        fun cellKey(ix: Long, iy: Long) = (ix shl 32) xor (iy and 0xffffffffL)
+        for (o in list) {
+            // flat map around India: east-west distances shrink with latitude (measured from 80°E so they stay true)
+            val x = (o.g[0] - 80) * o.cl * ppd; val y = -o.g[1] * ppd
+            val gx = floor(x / cell).toLong(); val gy = floor(y / cell).toLong()
+            var hit: C? = null
+            loop@ for (ix in gx - 1..gx + 1) for (iy in gy - 1..gy + 1) {
+                val l = grid[cellKey(ix, iy)] ?: continue
+                for (c in l) if (abs(c.x - x) < w && abs(c.y - y) < h) { hit = c; break@loop }
             }
-            ct!!
-            val big = ct.pop >= 3500; val fs = if (big) 12.0 else 10.5; val lw = ct.n.length * fs * 0.56 + 14
-            if (!fits(o[0] + lw / 2 - 4, o[1], lw, 16.0)) return
-            boxes.add(doubleArrayOf(o[0] + lw / 2 - 4, o[1], lw, 16.0))
-            out.add(Label("c-${ct.n}", ct.n, lng, lat, fs.toFloat(), false, big))
+            if (hit != null) { hit.m.add(o); continue }
+            val c = C(x, y, o)
+            out.add(c)
+            grid.getOrPut(cellKey(gx, gy)) { ArrayList() }.add(c)
         }
-        for (ct in SdMapData.cities) if (ct.pop >= 3500 && ct.pop >= minPop && seen(ct.lng.toDouble(), ct.lat.toDouble())) tryAdd(ct, null)
-        if (showStates) for (st in SdMapData.states) if (st.a > (if (vv.k >= 7) 280 else 1500)) tryAdd(null, st)
-        for (ct in SdMapData.cities) if (ct.pop < 3500 && ct.pop >= minPop && seen(ct.lng.toDouble(), ct.lat.toDouble())) tryAdd(ct, null)
-        val t = System.currentTimeMillis()
-        val keep = out.map { it.key }.toHashSet()
-        labelBorn.keys.retainAll(keep)
-        for (l in out) labelBorn.getOrPut(l.key) { t }
-        labels = out
+        return out.map { c ->
+            val towns = ArrayList<String>()
+            for (o in c.m) if (o.town.isNotEmpty() && o.town !in towns) towns.add(o.town)
+            Cl(c.lead, c.m, towns)
+        }
     }
 
-    private fun tapCluster(c: Cluster) {
-        if (c.people.size == 1) { onOpen(c.people[0]); return }
-        if (view.k < 6 && c.cities.size > 1) { fly(aim(c.geo, min(MAX_K, view.k * 2.2), bw / 2, bh * 0.5), 650.0); return }
+    private fun tapGroup(c: Cl) {
+        if (c.n == 1) { onOpen(c.people[0]); return }
+        // people from several towns under one pin: come closer and they separate
+        if (c.towns.size > 1 && view.k < MAX_K / 2) { fly(aim(c.lead.g, min(MAX_K, view.k * 2.4), bw / 2, bh * 0.56), 650.0); return }
         onGroup(c.people, "${c.people.size} ${if (c.people.size == 1) "person" else "people"} · ${c.city}")
     }
+    private fun pinAt(x: Double, y: Double): Cl? {
+        for (d in drawn.asReversed()) if (x >= d.x0 && x <= d.x1 && y >= d.y0 && y <= d.y1) return d.c
+        return null
+    }
+
 
     // ═════════════ touch: one finger turns, two fingers zoom ═════════════
     private val ptrs = LinkedHashMap<Int, DoubleArray>()
@@ -469,8 +517,8 @@ class GlobeMap(
 
     private fun tapAt(x: Double, y: Double) {
         // a pin first (the one drawn on top), then a double tap zooms in where you tapped
-        val hit = top.pinAt(x, y)
-        if (hit != null) { tapCluster(hit); return }
+        val hit = pinAt(x, y)
+        if (hit != null) { tapGroup(hit); return }
         val t = System.currentTimeMillis()
         if (t - lastTap < 320 && hypot(x - lastTapX, y - lastTapY) < 30) { lastTap = 0; zoomSoft(2.0, doubleArrayOf(x, y)) }
         else { lastTap = t; lastTapX = x; lastTapY = y }
@@ -479,6 +527,7 @@ class GlobeMap(
     // ═════════════ the Earth (one picture, redrawn while it moves) ═════════════
     private inner class Globe(ctx: Context) : View(ctx) {
         private val path = Path()
+        private val india = Path()
         private val fillP = Paint(Paint.ANTI_ALIAS_FLAG)
         private val strokeP = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
         private val dotP = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
@@ -487,13 +536,12 @@ class GlobeMap(
             floatArrayOf(0f, .84f, .877f, .92f, 1f), Shader.TileMode.CLAMP)
         private val sea = RadialGradient(0f, 0f, 1f, intArrayOf(Ui.c("#4b30b0"), Ui.c("#25166c"), Ui.c("#100a3a"), Ui.c("#060320")), floatArrayOf(0f, .35f, .7f, 1f), Shader.TileMode.CLAMP)
         private val shade = RadialGradient(0f, 0f, 1f, intArrayOf(Color.argb(0, 2, 0, 8), Color.argb(0, 2, 0, 8), Color.argb(107, 2, 0, 8), Color.argb(199, 2, 0, 8)), floatArrayOf(0f, .66f, .9f, 1f), Shader.TileMode.CLAMP)
-        private val glint = RadialGradient(0f, 0f, 1f, intArrayOf(Color.argb(97, 232, 220, 255), Color.argb(31, 179, 146, 255), Color.argb(0, 179, 146, 255)), floatArrayOf(0f, .5f, 1f), Shader.TileMode.CLAMP)
         private val rim = LinearGradient(0f, -1f, 0f, 1f, intArrayOf(Ui.c("#f4ecff"), Color.argb(179, 179, 146, 255), Color.argb(38, 124, 77, 255), Color.argb(13, 124, 77, 255)), floatArrayOf(0f, .3f, .65f, 1f), Shader.TileMode.CLAMP)
         private val side = LinearGradient(0f, 0f, 0f, 1f, intArrayOf(Ui.c("#ffe3a6"), Ui.c("#d99a3c"), Ui.c("#6e3a10")), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
-        private val topG = LinearGradient(0f, 0f, 1f, 1f, intArrayOf(Ui.c("#4e28a6"), Ui.c("#2f1470"), Ui.c("#1c0a48")), floatArrayOf(0f, .5f, 1f), Shader.TileMode.CLAMP)
-        private var waves: BitmapShader? = null
         private val o = DoubleArray(5)
+        private val o2 = DoubleArray(5)
         private var pts = FloatArray(512)
+        private val bounds = RectF()
 
         private fun shaderAt(s: Shader, x: Double, y: Double, r: Double): Shader { m.reset(); m.setScale(r.toFloat(), r.toFloat()); m.postTranslate(x.toFloat(), y.toFloat()); s.setLocalMatrix(m); return s }
 
@@ -508,104 +556,104 @@ class GlobeMap(
             val v = view
             val r = radius(v.k); val x0 = cx(); val y0 = cy()
             val P = Proj(v.lon, v.lat, r, x0, y0)
+            val ppd = r * D2R
             val moving = busy
             val rich = !LITE && !moving
-            val fine = !moving
-            val sd = min(2.2, max(0.7, r / 420)).toFloat()
-            val dd = min(1.25, max(0.7, r / 520)).toFloat()
             val rf = r.toFloat(); val xf = x0.toFloat(); val yf = y0.toFloat()
+            // is the edge of the Earth on screen? (zoomed in it isn't, and its glow and shading need no drawing)
+            val far = maxOf(hypot(x0, y0), hypot(bw - x0, y0), hypot(x0, bh - y0), hypot(bw - x0, bh - y0))
+            val edgeOn = far > r * 0.62
             // atmosphere + ocean
             fillP.reset(); fillP.isAntiAlias = true
-            fillP.shader = shaderAt(atm, x0, y0, r * 1.14); c.drawCircle(xf, yf, rf * 1.14f, fillP)
-            fillP.shader = shaderAt(sea, x0 - r * 0.35, y0 - r * 0.45, r * 1.55); c.drawCircle(xf, yf, rf, fillP)
-            if (rich) {
-                val w = wavesShader()
-                m.reset(); m.setScale(1f / dens, 1f / dens)
-                m.postTranslate(modp(-v.lon * D2R * r * cos(v.lat * D2R), 46.0).toFloat(), modp(v.lat * D2R * r, 16.0).toFloat())
-                w.setLocalMatrix(m)
-                fillP.shader = w; fillP.alpha = 128; c.drawCircle(xf, yf, rf, fillP); fillP.alpha = 255
-            }
-            // the glint of light on the sea
-            c.save()
-            val gx = (x0 - r * 0.32).toFloat(); val gy = (y0 - r * 0.42).toFloat()
-            c.rotate(-24f, gx, gy); c.translate(gx, gy); c.scale((r * 0.42).toFloat(), (r * 0.22).toFloat())
-            glint.setLocalMatrix(null); fillP.shader = glint; fillP.alpha = 191; c.drawCircle(0f, 0f, 1f, fillP); fillP.alpha = 255
-            c.restore()
+            if (far > r) { fillP.shader = shaderAt(atm, x0, y0, r * 1.14); c.drawCircle(xf, yf, rf * 1.14f, fillP) }
+            // close in, the sea is one colour (one quick fill instead of a big gradient)
+            val seaShader: Shader? = if (edgeOn) shaderAt(sea, x0 - r * 0.35, y0 - r * 0.45, r * 1.55) else null
+            fillP.shader = seaShader; fillP.color = SEA_FLAT
+            if (far > r) c.drawCircle(xf, yf, rf, fillP) else c.drawRect(0f, 0f, bw.toFloat(), bh.toFloat(), fillP)
             fillP.shader = null
-            if (!SdMapData.ready) { drawShadeRim(c, x0, y0, r); return }
+            if (!SdMapData.ready) { if (edgeOn) drawShadeRim(c, x0, y0, r, far > r); return }
             val q = geoBox(v)
-            if (fine) { line(SdMapData.graticule, q, P, false); stroke(c, Color.argb(36, 185, 162, 255), 0.8f) }
+            // faint latitude / longitude lines
+            if (!(LITE && moving) && ppd < 40) { line(SdMapData.graticule, q, P, false); stroke(c, Color.argb(33, 185, 162, 255), 0.8f) }
             // the continents at night
             fill(worldRings(r), q, P, r, x0, y0)
             fillP.color = Color.argb(235, 42, 28, 102); c.drawPath(path, fillP)
             stroke(c, Color.argb(97, 165, 140, 255), 0.8f)
-            // India's border shape (a thin channel of sea around it)
+            // India
             fill(borderRings(r), q, P, r, x0, y0)
-            val india = Path(path)
-            val hasIndia = !india.isEmpty
-            if (hasIndia) {
-                fillP.shader = shaderAt(sea, x0 - r * 0.35, y0 - r * 0.45, r * 1.55); c.drawPath(india, fillP)
-                strokeP.shader = fillP.shader; strokeP.strokeWidth = 5f; strokeP.color = Color.BLACK; c.drawPath(india, strokeP); strokeP.shader = null
-                fillP.shader = null
+            india.set(path)
+            val indiaOn = !india.isEmpty
+            // a thin channel of sea around India so it stands apart from its neighbours
+            if (indiaOn) {
+                strokeP.shader = seaShader; strokeP.color = SEA_FLAT; strokeP.strokeWidth = 5f; c.drawPath(india, strokeP); strokeP.shader = null
             }
-            if (rich) dots(c, SdMapData.worldLights, P, 0.1, { it % 3 != 0 }, Color.argb(56, 255, 184, 92), 4 * dd)
-            dots(c, SdMapData.worldLights, P, 0.06, null, Color.argb(191, 255, 217, 160), 1.3f * dd)
-            if (hasIndia) {
-                // India — raised, glowing, with a gold edge
+            // the world's city lights
+            if (ppd < 30) {
+                val dd = min(1.25, max(0.7, r / 520)).toFloat()
+                if (rich) dots(c, SdMapData.worldLights, P, 0.1, { it % 3 != 0 }, Color.argb(51, 255, 184, 92), 4f * dd)
+                dots(c, SdMapData.worldLights, P, 0.06, null, Color.argb(191, 255, 217, 160), 1.3f * dd)
+            }
+            if (indiaOn) {
+                val sd = min(2.2, max(0.7, r / 420)).toFloat()
+                india.computeBounds(bounds, true)
+                // raised, with a soft purple shadow and a gold edge. Close in only the edges show, so the shadow and the
+                // gold side are drawn as wide edge lines there instead of whole filled shapes (much less to paint).
+                val whole = ppd < 24
                 c.save(); c.translate(0f, 9 * sd)
-                fillP.color = Color.argb(77, 124, 58, 237); c.drawPath(india, fillP)
+                if (whole) { fillP.color = Color.argb(77, 124, 58, 237); c.drawPath(india, fillP) }
                 if (rich) { strokeP.color = Color.argb(56, 139, 92, 246); strokeP.strokeWidth = 16 * sd; c.drawPath(india, strokeP) }
                 c.restore()
-                val b = RectF(); india.computeBounds(b, true)
                 c.save(); c.translate(0f, 4 * sd)
-                m.reset(); m.setScale(b.width().coerceAtLeast(1f), b.height().coerceAtLeast(1f)); m.postTranslate(b.left, b.top); side.setLocalMatrix(m)
-                fillP.shader = side; c.drawPath(india, fillP); fillP.shader = null
+                m.reset(); m.setScale(1f, max(1f, bounds.height())); m.postTranslate(0f, bounds.top); side.setLocalMatrix(m)
+                if (whole) { fillP.shader = side; c.drawPath(india, fillP); fillP.shader = null }
+                else { strokeP.shader = side; strokeP.strokeWidth = 8 * sd; c.drawPath(india, strokeP); strokeP.shader = null }
                 strokeP.color = Ui.c("#6e3a10"); strokeP.strokeWidth = 1.2f * sd; c.drawPath(india, strokeP)
                 c.restore()
                 strokeP.color = Ui.c("#ffdca0"); strokeP.strokeWidth = 3 * sd; c.drawPath(india, strokeP)
-                topG.setLocalMatrix(m.also { it.reset(); it.setScale(b.width().coerceAtLeast(1f), b.height().coerceAtLeast(1f)); it.postTranslate(b.left, b.top) })
-                fillP.shader = topG; c.drawPath(india, fillP); fillP.shader = null
-                if (fine && r > 1500) {
-                    line(SdMapData.roads, q, P, false); stroke(c, Ui.c("#cdb8ff"), min(1.6, 0.5 + r / 9000).toFloat(), min(0.35, 0.12 + r / 40000).toFloat())
-                    line(SdMapData.highways, q, P, false); stroke(c, Ui.c("#f3cf8a"), min(2.6, 0.8 + r / 7000).toFloat(), min(0.5, 0.2 + r / 30000).toFloat())
-                }
-                if (fine && r > 520) { line(SdMapData.rivers, q, P, false); stroke(c, Ui.c("#9cc4ff"), min(1.8, 0.5 + r / 3000).toFloat(), min(0.55, 0.2 + r / 6000).toFloat()) }
+                fillP.shader = LinearGradient(bounds.left, bounds.top, bounds.right, bounds.bottom, TOP_COLORS, TOP_STOPS, Shader.TileMode.CLAMP); c.drawPath(india, fillP); fillP.shader = null
+                // detail that comes in as you zoom: rivers, then highways, then smaller roads
+                val aRiv = ramp(ppd, 7.0, 16.0); val aHw = ramp(ppd, 16.0, 30.0); val aRd = ramp(ppd, 30.0, 60.0)
+                if (aRd > 0) { line(SdMapData.roads, q, P, false); stroke(c, Ui.c("#cdb8ff"), min(1.6, 0.5 + ppd / 160).toFloat(), (aRd * min(0.34, 0.14 + ppd / 700)).toFloat()) }
+                if (aHw > 0) { line(SdMapData.highways, q, P, false); stroke(c, Ui.c("#f3cf8a"), min(2.6, 0.8 + ppd / 120).toFloat(), (aHw * min(0.5, 0.22 + ppd / 520)).toFloat()) }
+                if (aRiv > 0) { line(riverRings(r), q, P, false); stroke(c, Ui.c("#9cc4ff"), min(1.8, 0.5 + ppd / 52).toFloat(), (aRiv * min(0.55, 0.22 + ppd / 105)).toFloat()) }
+                // state borders
                 line(stateRings(r), q, P, false); stroke(c, Ui.c("#f3ecff"), min(1.1, 0.5 + r / 1500).toFloat(), 0.45f)
-                if (fine && r <= 900) { line(SdMapData.netLines, null, P, false); stroke(c, Ui.c("#d9b8ff"), 0.6f, 0.3f) }
-                if (rich && r <= 900) dots(c, SdMapData.netGeo, P, 0.05, { it % 2 != 0 }, Color.argb(89, 255, 179, 71), 4.5f * dd)
-                if (r <= 900) dots(c, SdMapData.netGeo, P, 0.06, null, Color.argb(204, 255, 226, 166), 1.4f * dd)
-                if (rich) dots(c, SdMapData.cityGeo, P, 0.06, null, Color.argb(102, 255, 198, 107), 7 * dd)
-                dots(c, SdMapData.cityGeo, P, 0.06, null, Ui.c("#fff1cf"), 2.2f * dd)
+                // the network between India's big cities (zoomed out only)
+                val aMesh = 1 - ramp(ppd, 12.0, 24.0)
+                if (aMesh > 0) {
+                    path.rewind()
+                    val ms = SdMapData.mesh
+                    var i = 0
+                    while (i < ms.size) {
+                        P.at(ms[i].toDouble(), ms[i + 1].toDouble(), o); P.at(ms[i + 2].toDouble(), ms[i + 3].toDouble(), o2)
+                        if (o[2] >= 0.05 && o2[2] >= 0.05) { path.moveTo(o[0].toFloat(), o[1].toFloat()); path.lineTo(o2[0].toFloat(), o2[1].toFloat()) }
+                        i += 4
+                    }
+                    stroke(c, Ui.c("#d9b8ff"), 0.7f, (0.32 * aMesh).toFloat())
+                }
+                // the big cities' lights (they hand over to the town names as you come closer)
+                val aLights = 1 - ramp(ppd, 20.0, 34.0)
+                if (aLights > 0) {
+                    val dd = min(1.25, max(0.7, r / 520)).toFloat()
+                    if (rich) dots(c, SdMapData.cityGeo, P, 0.06, null, Color.argb((0.36 * aLights * 255).toInt(), 255, 198, 107), 7f * dd)
+                    dots(c, SdMapData.cityGeo, P, 0.06, null, Color.argb((aLights * 255).toInt(), 255, 241, 207), 2.3f * dd)
+                }
             }
-            drawShadeRim(c, x0, y0, r)
+            // the night side and the bright rim
+            if (edgeOn) drawShadeRim(c, x0, y0, r, far > r)
         }
 
-        private fun drawShadeRim(c: Canvas, x0: Double, y0: Double, r: Double) {
-            // night-side shading + bright rim
+        private fun drawShadeRim(c: Canvas, x0: Double, y0: Double, r: Double, rimOn: Boolean) {
             fillP.shader = shaderAt(shade, x0, y0, r); c.drawCircle(x0.toFloat(), y0.toFloat(), r.toFloat(), fillP); fillP.shader = null
+            if (!rimOn) return
             m.reset(); m.setScale(1f, r.toFloat()); m.postTranslate(x0.toFloat(), y0.toFloat()); rim.setLocalMatrix(m)
             strokeP.shader = rim; strokeP.strokeWidth = 1.8f; c.drawCircle(x0.toFloat(), y0.toFloat(), r.toFloat(), strokeP); strokeP.shader = null
         }
 
         private fun stroke(c: Canvas, color: Int, width: Float, alpha: Float = 1f) {
             if (path.isEmpty) return
-            strokeP.shader = null; strokeP.color = color; if (alpha < 1f) strokeP.alpha = (Color.alpha(color) * alpha).toInt()
+            strokeP.shader = null; strokeP.color = color; if (alpha < 1f) strokeP.alpha = (Color.alpha(color) * alpha).toInt().coerceIn(0, 255)
             strokeP.strokeWidth = width; c.drawPath(path, strokeP)
-        }
-
-        private fun wavesShader(): BitmapShader {
-            waves?.let { return it }
-            val s = dens
-            val bmp = Bitmap.createBitmap((46 * s).toInt().coerceAtLeast(1), (16 * s).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
-            val cv = Canvas(bmp); cv.scale(s, s)
-            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-            p.color = Color.argb(56, 200, 182, 255); p.strokeWidth = 0.8f
-            cv.drawPath(androidx.core.graphics.PathParser.createPathFromPathData("M0 9C6 5 11 5 17 9S29 13 35 9 43 5 46 7"), p)
-            p.color = Color.argb(36, 230, 220, 255); p.strokeWidth = 0.6f
-            cv.drawPath(androidx.core.graphics.PathParser.createPathFromPathData("M-6 2C0 0 5 0 10 2"), p)
-            p.color = Color.argb(31, 230, 220, 255)
-            cv.drawPath(androidx.core.graphics.PathParser.createPathFromPathData("M24 14C30 12 35 12 40 14"), p)
-            return BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT).also { waves = it }
         }
 
         // filled shapes: the far side folds onto the edge of the Earth
@@ -627,28 +675,29 @@ class GlobeMap(
             var any = false
             for (i in 0 until n) { P.at(ring[2 * i].toDouble(), ring[2 * i + 1].toDouble(), o); pts[5 * i] = o[0].toFloat(); pts[5 * i + 1] = o[1].toFloat(); pts[5 * i + 2] = o[2].toFloat(); pts[5 * i + 3] = o[3].toFloat(); pts[5 * i + 4] = o[4].toFloat(); if (o[2] > 0) any = true }
             if (!any) return
-            var prevBack = Double.NaN; var lx = 0f; var ly = 0f
+            var back = false; var started = false; var prevAng = 0.0; var lx = 0f; var ly = 0f
             val oval = RectF((x0 - r).toFloat(), (y0 - r).toFloat(), (x0 + r).toFloat(), (y0 + r).toFloat())
             for (i in 0 until n) {
                 val px = pts[5 * i]; val py = pts[5 * i + 1]; val pz = pts[5 * i + 2]
                 if (pz > 0) {
-                    if (i > 0 && prevBack.isNaN() && i < n - 1 && abs(px - lx) + abs(py - ly) < 0.7f) continue
-                    if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
-                    prevBack = Double.NaN; lx = px; ly = py
+                    if (started && !back && i < n - 1 && abs(px - lx) + abs(py - ly) < 0.7f) continue   // closer than a pixel
+                    if (started) path.lineTo(px, py) else { path.moveTo(px, py); started = true }
+                    back = false; lx = px; ly = py
                     continue
                 }
                 val ux = pts[5 * i + 3].toDouble(); val uy = pts[5 * i + 4].toDouble()
                 val rr = hypot(ux, uy).takeIf { it > 0 } ?: 1.0
                 val X = x0 + (r * ux) / rr; val Y = y0 - (r * uy) / rr; val ang = atan2(Y - y0, X - x0)
-                if (!prevBack.isNaN() && i > 0) {
-                    var da = ang - prevBack
+                if (back && started) {
+                    var da = ang - prevAng
                     while (da > Math.PI) da -= 2 * Math.PI
                     while (da < -Math.PI) da += 2 * Math.PI
-                    path.arcTo(oval, Math.toDegrees(prevBack).toFloat(), Math.toDegrees(da).toFloat(), false)
-                } else if (i == 0) path.moveTo(X.toFloat(), Y.toFloat()) else path.lineTo(X.toFloat(), Y.toFloat())
-                prevBack = ang
+                    path.arcTo(oval, Math.toDegrees(prevAng).toFloat(), Math.toDegrees(da).toFloat(), false)
+                } else if (started) path.lineTo(X.toFloat(), Y.toFloat())
+                else { path.moveTo(X.toFloat(), Y.toFloat()); started = true }
+                back = true; prevAng = ang
             }
-            path.close()
+            if (started) path.close()
         }
 
         // lines: only the part facing you
@@ -680,7 +729,7 @@ class GlobeMap(
             }
         }
 
-        // many tiny dots (round caps on zero-length lines)
+        // many small round dots (round caps on zero-length lines; width = the dot's size)
         private fun dots(c: Canvas, src: FloatArray, P: Proj, minZ: Double, skip: ((Int) -> Boolean)?, color: Int, width: Float) {
             val n = src.size / 2
             if (pts.size < n * 2) pts = FloatArray(n * 2 + 64)
@@ -690,11 +739,12 @@ class GlobeMap(
                 P.at(src[2 * i].toDouble(), src[2 * i + 1].toDouble(), o)
                 if (o[2] > minZ) { pts[k++] = o[0].toFloat(); pts[k++] = o[1].toFloat() }
             }
-            if (k == 0) return
+            if (k == 0 || Color.alpha(color) == 0) return
             dotP.color = color; dotP.strokeWidth = width
             c.drawPoints(pts, 0, k, dotP)
         }
     }
+
 
     // ═════════════ stars that stream past as the Earth turns ═════════════
     private inner class Stars(ctx: Context) : View(ctx) {
@@ -768,240 +818,426 @@ class GlobeMap(
             c.restore()
         }
     }
+    // ═════════════ place names and people (placed again on every frame the map moves) ═════════════
+    private class Sprite(val bmp: Bitmap, val l: Float, val t: Float, val w: Float, val h: Float)
+    /** a name: its picture and where its anchor is inside it (the dot for towns, the middle for other names) */
+    private class NameSprite(val bmp: Bitmap, val w: Float, val h: Float, val ax: Float, val ay: Float)
+    private class Placed(val kind: String, val text: String, val lng: Double, val lat: Double, val side: Int)
+    private class Pin(val c: Cl, val x: Double, val y: Double, val a: Double, val label: String, val ghost: Boolean)
 
-    // ═════════════ the glowing centre of India, place names, people ═════════════
+    private fun regroup(now: Double, sppd: Double, withLabels: Boolean, stp: Int) {
+        val prev = clusters
+        val next = clusterize(pts, sppd, withLabels)
+        val prevOf = HashMap<String, Cl>()
+        for (c in prev) for (o in c.m) prevOf[o.id] = c
+        val leads = HashSet<String>(); for (c in next) leads.add(c.lead.id)
+        val glide = !firstFrame && prev.isNotEmpty()
+        for (c in next) {
+            val was = prevOf[c.lead.id]
+            if (!glide) { c.a = 1.0; continue }
+            if (was != null && was.lead.id == c.lead.id) { c.from = was.from; c.t0 = was.t0; c.a = was.a }
+            else if (was?.disp != null) { c.from = was.disp; c.t0 = now; c.a = 1.0 }
+            else c.a = 0.0 // someone new: fades in
+        }
+        // pins that join another one glide into it and fade away
+        ghosts.removeAll { now - it.t0 >= GLIDE_MS }
+        if (glide) for (c in prev) {
+            if (c.lead.id in leads) continue
+            val d = c.disp ?: continue
+            ghosts.add(Ghost(c, d, next.firstOrNull { n -> n.m.any { it.id == c.lead.id } }, now))
+        }
+        clusters = next; cver = ver; zstep = stp; firstFrame = false
+    }
+    private fun pinLabel(c: Cl, ppd: Double) = if (ppd < 14) "" else if (c.n == 1 && ppd >= 40) c.first else c.city
+    // the names' keys, made once (a name keeps its key while it fades in and out)
+    private val cityKeys: Array<String> by lazy { Array(SdMapData.cities.size) { val c = SdMapData.cities[it]; "c-${c.n}-${c.lng}" } }
+    private val stateKeys: Array<String> by lazy { Array(SdMapData.states.size) { "s-${SdMapData.states[it].n}" } }
+    private val nameKeys: Array<String> by lazy { Array(SdMapData.names.size) { val n = SdMapData.names[it]; "x-${n.t}-${n.lng}" } }
+    private fun mix(a: Disp, b: Disp, e: Double) = Disp(a.lng + lonGap(a.lng, b.lng) * e, a.lat + (b.lat - a.lat) * e)
+
     private inner class Top(ctx: Context) : View(ctx) {
-        private val tp = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val gp = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
         private val o = DoubleArray(5)
-        private val t0 = System.currentTimeMillis()
-        private val hubG = RadialGradient(0f, 0f, 1f, intArrayOf(Ui.c("#fff3cf"), Ui.c("#ffb547"), Color.argb(0, 255, 150, 40)), floatArrayOf(0f, .45f, .72f), Shader.TileMode.CLAMP)
-        private val baseG = RadialGradient(0f, 0f, 1f, intArrayOf(Color.argb(179, 167, 112, 255), Color.argb(64, 124, 58, 237), Color.argb(0, 124, 58, 237)), floatArrayOf(0f, .55f, .72f), Shader.TileMode.CLAMP)
-        private val pinGlow = RadialGradient(0f, 0f, 1f, intArrayOf(Color.argb(140, 167, 112, 255), Color.argb(0, 167, 112, 255)), floatArrayOf(0f, .7f), Shader.TileMode.CLAMP)
-        private val coreG = RadialGradient(0f, 0f, 1f, intArrayOf(Ui.c("#ffe4a8"), Color.argb(150, 255, 190, 90), Color.argb(0, 255, 190, 90)), floatArrayOf(0f, .45f, 1f), Shader.TileMode.CLAMP)
-        private val m = Matrix()
-        private inner class Shown(val c: Cluster, val x: Double, val y: Double, val s: Double)
-        private var shown: List<Shown> = emptyList()
-        private val loading = HashSet<String>()
+        private val bp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        private val photoOn = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        // offline: saturate(.75) brightness(.92)
+        private val photoOff = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.75f); postConcat(ColorMatrix().apply { setScale(0.92f, 0.92f, 0.92f, 1f) }) })
+        }
+        private val disc = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#20123a") }
+        private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 2f; color = Ui.c("#1a0b33") }
+        private val dst = RectF()
+        private var lastT = 0.0
+        // what is covered on screen (names keep clear of it): x0, y0, x1, y1 …
+        private var boxes = DoubleArray(512)
+        private var nb = 0
+        private val placed = LinkedHashMap<String, Placed>()
 
-        fun pinAt(x: Double, y: Double): Cluster? {
-            for (sh in shown.asReversed()) {
-                val l = sh.x - 28 * sh.s; val t = sh.y - 80 * sh.s
-                if (x >= l && x <= l + 56 * sh.s && y >= t && y <= t + 96 * sh.s) return sh.c
-            }
-            return null
+        private fun box(x0: Double, y0: Double, x1: Double, y1: Double) {
+            if (nb + 4 > boxes.size) boxes = boxes.copyOf(boxes.size * 2)
+            boxes[nb] = x0; boxes[nb + 1] = y0; boxes[nb + 2] = x1; boxes[nb + 3] = y1; nb += 4
+        }
+        private fun free(x0: Double, y0: Double, x1: Double, y1: Double): Boolean {
+            val pad = 2.0
+            var i = 0
+            while (i < nb) { if (x0 < boxes[i + 2] + pad && x1 > boxes[i] - pad && y0 < boxes[i + 3] + pad && y1 > boxes[i + 1] - pad) return false; i += 4 }
+            return true
         }
 
         override fun onDraw(c: Canvas) {
             if (bw <= 0) return
+            val now = now()
+            val dt = if (lastT > 0) min(64.0, now - lastT) else 16.0
+            lastT = now
+            val v = view; val r = radius(v.k); val P = Proj(v.lon, v.lat, r, cx(), cy())
+            val ppd = r * D2R; val q = geoBox(v); val moving = busy
+            val w = bw; val h = bh
+            var more = false
             c.save(); c.scale(dens, dens)
-            val v = view; val r = radius(v.k); val P = Proj(v.lon, v.lat, r, cx(), cy()); val ps = pinScaleOf(r)
-            val now = System.currentTimeMillis() - t0
-            var animating = false
-            // glowing centre of India
-            if (SdMapData.ready) {
-                P.at(SdMapData.hub[0].toDouble(), SdMapData.hub[1].toDouble(), o)
-                if (o[2] >= 0.2) {
-                    val s = (60 * ps).toFloat(); val hx = o[0].toFloat(); val hy = o[1].toFloat()
-                    m.reset(); m.setScale(0.2828f * s, 0.2828f * s); m.postTranslate(hx, hy); hubG.setLocalMatrix(m)
-                    gp.shader = hubG; c.drawCircle(hx, hy, 0.2f * s, gp); gp.shader = null
-                    if (!REDUCED) {
-                        for (d in longArrayOf(0, 1200)) {
-                            val f = ((now - d).coerceAtLeast(0) % 2400) / 2400f
-                            val e = 1 - (1 - f) * (1 - f)
-                            val sc = 0.4f + 1.4f * e; val op = 0.95f * (1 - e)
-                            sp.color = Color.argb((op * (if (d == 0L) 204 else 153)).toInt(), 255, 190, 90); sp.strokeWidth = 1.5f * sc
-                            c.drawCircle(hx, hy, s / 2 * sc, sp)
-                        }
-                        animating = true
-                    }
-                }
-            }
-            // continents, oceans and neighbours
-            for (n in PLACE_NAMES) {
-                if (n.kind == 'c' && r > 1300) continue
-                if (n.kind == 'n' && r < 620) continue
-                if (n.kind == 'o' && n.t != "Indian Ocean" && n.t != "Pacific Ocean" && n.t != "Atlantic Ocean" && r < 380) continue
-                P.at(n.lng, n.lat, o)
-                if (o[2] < 0.18 || o[0] < -80 || o[1] < -20 || o[0] > bw + 80 || o[1] > bh + 20) continue
-                val op = min(1.0, (o[2] - 0.18) / 0.3).toFloat()
-                when (n.kind) {
-                    'c' -> text(c, n.t, o[0], o[1], if (r > 600) 15f else 12.5f, Ui.bold, 0.22f, Color.argb((0.78f * op * 255).toInt(), 246, 222, 170), 6f, 0.95f)
-                    'o' -> text(c, n.t, o[0], o[1], if (r > 600) 14f else 12f, Ui.boldItalic, 0.04f, Color.argb((0.62f * op * 255).toInt(), 190, 170, 255), 6f, 0.95f)
-                    else -> text(c, n.t, o[0], o[1], 10.5f, Ui.bold, 0.06f, Color.argb((0.55f * op * 255).toInt(), 220, 210, 255), 6f, 0.95f)
-                }
-            }
-            // place names as you zoom in: big cities, then states, then smaller cities
-            if (!(LITE && busy)) {
-                val t = System.currentTimeMillis()
-                for (l in labels) {
-                    P.at(l.lng, l.lat, o)
-                    if (o[2] < 0.25 || o[0] < -160 || o[1] < -40 || o[0] > bw + 160 || o[1] > bh + 40) continue
-                    val fade = if (REDUCED) 1f else min(1f, (t - (labelBorn[l.key] ?: 0L)) / 350f)
-                    if (fade < 1f) animating = true
-                    if (l.st) { text(c, l.n, o[0], o[1], l.fs, Ui.bold, 0.05f, Color.argb((0.66f * fade * 255).toInt(), 240, 230, 255), 4f, 0.9f); continue }
-                    val ds = if (l.big) 7f else 5f
-                    val dx = (o[0] - 4 + ds / 2).toFloat(); val dy = o[1].toFloat()
-                    gp.color = if (l.big) Ui.c("#ffe2a6") else Ui.c("#f1e8ff"); gp.alpha = (fade * 255).toInt()
-                    gp.setShadowLayer(if (l.big) 8f else 5f, 0f, 0f, if (l.big) Color.argb((0.95f * fade * 255).toInt(), 255, 200, 110) else Color.argb((0.9f * fade * 255).toInt(), 200, 170, 255))
-                    c.drawCircle(dx, dy, ds / 2, gp); gp.clearShadowLayer()
-                    sp.color = Color.argb((0.6f * fade * 255).toInt(), 20, 8, 40); sp.strokeWidth = 1f; c.drawCircle(dx, dy, ds / 2 - 0.5f, sp)
-                    tp.reset(); tp.isAntiAlias = true
-                    tp.typeface = if (l.big) Ui.bold else Ui.bold; tp.textSize = l.fs; tp.letterSpacing = 0.02f
-                    tp.color = if (l.big) Color.argb((0.95f * fade * 255).toInt(), 255, 236, 200) else Color.argb((0.85f * fade * 255).toInt(), 236, 228, 255)
-                    tp.setShadowLayer(3f, 0f, 1f, Color.argb((0.95f * fade * 255).toInt(), 0, 0, 0))
-                    val fm = tp.fontMetrics
-                    c.drawText(l.n, (o[0] - 4 + ds + 4).toFloat(), (o[1] - (fm.ascent + fm.descent) / 2).toFloat(), tp)
-                }
-            }
-            // people
-            val list = ArrayList<Shown>()
+
+            // ── people: regroup when the zoom has moved a step (or the list / the size changed) ──
+            val stp = round(ln(max(1.0, ppd)) / ln(1.12)).toInt()
+            val sppd = 1.12.pow(stp)
+            if (cver != ver || zstep != stp) regroup(now, sppd, sppd >= 14, stp)
+            val ps = pinScaleOf(ppd)
+            val pins = ArrayList<Pin>()
             for (cl in clusters) {
-                P.at(cl.geo[0], cl.geo[1], o)
-                if (o[2] <= 0.08) continue
-                if (o[0] < -8 - 30 || o[1] < -8 || o[0] > bw + 8 + 30 || o[1] > bh + 8 + 80) continue
-                list.add(Shown(cl, o[0], o[1], o[2]))
-            }
-            list.sortBy { it.y }
-            val showCity = r > 900
-            val out = ArrayList<Shown>()
-            for (sh in list) {
-                val fade = if (sh.s < 0.3) max(0.25, sh.s / 0.3).toFloat() else 1f
-                if (drawPin(c, sh.c, sh.x, sh.y, ps, fade, showCity, now)) animating = true
-                out.add(Shown(sh.c, sh.x, sh.y, ps))
-            }
-            shown = out
-            c.restore()
-            if (animating && onScreen()) postInvalidateOnAnimation()
-        }
-
-        private fun text(c: Canvas, s: String, x: Double, y: Double, size: Float, tf: android.graphics.Typeface, spacing: Float, color: Int, shadow: Float, shadowA: Float) {
-            tp.reset(); tp.isAntiAlias = true; tp.typeface = tf; tp.textSize = size; tp.letterSpacing = spacing; tp.color = color; tp.textAlign = Paint.Align.CENTER
-            tp.setShadowLayer(shadow, 0f, 1f, Color.argb((shadowA * Color.alpha(color)).toInt(), 0, 0, 0))
-            val fm = tp.fontMetrics
-            c.drawText(s, x.toFloat(), (y - (fm.ascent + fm.descent) / 2).toFloat(), tp)
-        }
-
-        /** one pin: ripples on the ground, the breathing glow, the photo in a gold ring. true = it is animating */
-        private fun drawPin(c: Canvas, cl: Cluster, x: Double, y: Double, ps: Double, fade: Float, showCity: Boolean, now: Long): Boolean {
-            val live = cl.people.any { SdRules.liveOf(it) }
-            c.save()
-            c.translate((x - 28).toFloat(), (y - 80).toFloat())
-            if (ps != 1.0) c.scale(ps.toFloat(), ps.toFloat(), 28f, 80f)
-            val a = (fade * 255).toInt()
-            // ripples on the ground
-            val groupA = if (live) 1f else 0.45f
-            m.reset(); m.setScale(32f * 1.414f, 12f * 1.414f); m.postTranslate(28f, 78f); baseG.setLocalMatrix(m)
-            gp.shader = baseG; gp.alpha = (a * groupA).toInt(); c.drawOval(-4f, 66f, 60f, 90f, gp); gp.shader = null; gp.alpha = 255
-            var anim = false
-            if (live && !REDUCED) {
-                for ((d, al) in listOf(0L to 1f, 900L to 0.9f)) {
-                    val f = (now - d).coerceAtLeast(0) % 1800 / 1800f
-                    val e = 1 - (1 - f) * (1 - f)
-                    val sc = 0.35f + 1.15f * e; val op = (1 - e) * al * fade
-                    sp.color = Color.argb((op * 255).toInt(), 200, 160, 255); sp.strokeWidth = 2f * sc
-                    c.drawOval(28 - 24 * sc, 78 - 8 * sc, 28 + 24 * sc, 78 + 8 * sc, sp)
-                    sp.color = Color.argb((op * 90).toInt(), 167, 112, 255); sp.strokeWidth = 6f * sc
-                    c.drawOval(28 - 24 * sc, 78 - 8 * sc, 28 + 24 * sc, 78 + 8 * sc, sp)
+                var d = Disp(cl.lead.g[0], cl.lead.g[1])
+                val fr = cl.from
+                if (fr != null) {
+                    val t = (now - cl.t0) / GLIDE_MS
+                    if (t < 1) { d = mix(fr, d, easeOut(t.coerceIn(0.0, 1.0))); more = true } else cl.from = null
                 }
-                anim = true
+                if (cl.a < 1) { cl.a = min(1.0, cl.a + dt / 220); more = true }
+                cl.disp = d
+                P.at(d.lng, d.lat, o)
+                if (o[2] < 0.06) continue
+                val fade = cl.a * (if (o[2] < 0.3) ((o[2] - 0.06) / 0.24).coerceIn(0.0, 1.0) else 1.0)
+                if (o[0] < -80 || o[0] > w + 80 || o[1] < -40 || o[1] > h + 120) continue
+                pins.add(Pin(cl, o[0], o[1], fade, pinLabel(cl, ppd), false))
             }
-            m.reset(); m.setScale(13f, 9f); m.postTranslate(28f, 78f); coreG.setLocalMatrix(m)
-            gp.shader = coreG; gp.alpha = (a * groupA).toInt(); c.drawOval(15f, 69f, 41f, 87f, gp); gp.shader = null; gp.alpha = 255
-            // glow that breathes (live)
-            if (live) {
-                val br = if (REDUCED) 1f else 0.35f + 0.65f * (0.5f - 0.5f * cos(2 * Math.PI * (now % 1600) / 1600.0).toFloat())
-                m.reset(); m.setScale(34f * 1.414f, 34f * 1.414f); m.postTranslate(28f, 28f); pinGlow.setLocalMatrix(m)
-                gp.shader = pinGlow; gp.alpha = (a * br).toInt(); c.drawCircle(28f, 28f, 34f, gp); gp.shader = null; gp.alpha = 255
-                anim = anim || !REDUCED
+            val gone = ArrayList<Pin>()
+            for (g in ghosts) {
+                val t = (now - g.t0) / GLIDE_MS
+                if (t >= 1) continue
+                more = true
+                val e = easeOut(t.coerceIn(0.0, 1.0))
+                val to = g.into?.let { it.disp ?: Disp(it.lead.g[0], it.lead.g[1]) } ?: g.from
+                val d = mix(g.from, to, e)
+                P.at(d.lng, d.lat, o)
+                if (o[2] < 0.06) continue
+                gone.add(Pin(g.c, o[0], o[1], 1 - e, "", true))
             }
-            // the photo in a gold ring, its dot, the gold tail, badges and the city
-            val sp1 = sprite(cl, live, showCity)
-            if (sp1 != null) { tp.reset(); tp.isFilterBitmap = true; tp.alpha = a; c.drawBitmap(sp1.bmp, null, RectF(sp1.l, sp1.t, sp1.l + sp1.w, sp1.t + sp1.h), tp) }
+            ghosts.removeAll { now - it.t0 >= GLIDE_MS }
+
+            // ── what pins and buttons cover (place names keep clear of them) ──
+            nb = 0
+            for (pn in pins) {
+                box(pn.x - 28 * ps, pn.y - 70 * ps, pn.x + 28 * ps, pn.y + 9 * ps)
+                if (pn.label.isNotEmpty()) { val lw = (tagWidth(pn.label) + 16) * ps; box(pn.x - lw / 2, pn.y + 9 * ps, pn.x + lw / 2, pn.y + 30 * ps) }
+            }
+            box(10.0, 8.0, 236.0, 58.0); box(w - 62, h / 2 - 44, w - 8, h / 2 + 62); box(6.0, h - 66, 62.0, h - 8); box(w - 62, h - 66, w - 6, h - 8); box(w / 2 - 130, h - 16, w / 2 + 130, h)
+
+            // ── place names: most important first, each only where it fits ──
+            placed.clear()
+            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean) {
+                P.at(lng, lat, o)
+                if (o[2] < 0.25 || o[0] < -60 || o[0] > w + 60 || o[1] < -30 || o[1] > h + 30) return
+                val px = o[0]; val py = o[1]
+                val first = if (twoSides) (lbl[key]?.side?.takeIf { it != 0 } ?: 1) else 0
+                for (k in 0 until (if (twoSides) 2 else 1)) {
+                    val side = if (k == 0) first else -first
+                    val sp = nameSprite(kind, text, side)
+                    val x0 = px - sp.ax; val y0 = py - sp.ay
+                    if (x0 < -4 || y0 < -4 || x0 + sp.w > w + 4 || y0 + sp.h > h + 4) continue
+                    if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)) continue
+                    box(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)
+                    placed[key] = Placed(kind, text, lng, lat, side)
+                    return
+                }
+            }
+            if (SdMapData.ready && !(LITE && moving && ppd < 6)) {
+                val names = SdMapData.names
+                fun inZ(n: SdMapData.Name) = ppd >= n.z0 && ppd < n.z1
+                fun seen(lng: Float, lat: Float) = q == null || (lng >= q[0] && lng <= q[2] && lat >= q[1] && lat <= q[3])
+                // far away: continents and oceans
+                for ((j, n) in names.withIndex()) if ((n.k == "co" || n.k == "oc") && ppd < 10 && inZ(n)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
+                // states
+                if (ppd >= 12 && ppd < 60) {
+                    val minA = if (ppd < 20) 1500f else if (ppd < 32) 280f else 0f
+                    for ((j, s) in SdMapData.states.withIndex()) if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], "st", s.n, s.lng.toDouble(), s.lat.toDouble(), false)
+                }
+                // big cities, neighbours and seas, then smaller towns, then landscapes
+                val minPop = minPopFor(ppd)
+                val cs = SdMapData.cities
+                var i = 0
+                while (i < cs.size && cs[i].pop >= 1000) { val ct = cs[i]; if (ct.pop >= minPop && seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "cb", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
+                for ((j, n) in names.withIndex()) if ((n.k == "cn" || (n.k == "oc" && ppd >= 10)) && inZ(n)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
+                while (i < cs.size) { val ct = cs[i]; if (ct.pop < minPop) break; if (seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "ct", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
+                for ((j, n) in names.withIndex()) if ((n.k == "rg" || n.k == "wt") && inZ(n) && seen(n.lng, n.lat)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
+            }
+            // fade names in and out (never a jump)
+            val fadeStep = dt / 170
+            for ((key, pl) in placed) {
+                val e = lbl[key]
+                if (e != null) { e.side = pl.side; e.on = true; e.kind = pl.kind; e.text = pl.text; e.lng = pl.lng; e.lat = pl.lat }
+                else lbl[key] = Lbl(pl.kind, pl.text, pl.lng, pl.lat, pl.side, if (firstFrame) 1.0 else 0.0, true)
+            }
+            val it = lbl.entries.iterator()
+            while (it.hasNext()) {
+                val en = it.next(); val e = en.value
+                if (!placed.containsKey(en.key)) e.on = false
+                val tgt = if (e.on) 1.0 else 0.0
+                if (e.a != tgt) { e.a = if (tgt > e.a) min(1.0, e.a + fadeStep) else max(0.0, e.a - fadeStep * 1.4); if (e.a != tgt) more = true }
+                if (!e.on && e.a <= 0) { it.remove(); continue }
+                P.at(e.lng, e.lat, o)
+                if (o[2] < 0.2) { if (!e.on) it.remove(); continue }
+                val sp = nameSprite(e.kind, e.text, e.side)
+                val zf = if (o[2] < 0.45) ((o[2] - 0.2) / 0.25).coerceIn(0.0, 1.0) else 1.0
+                val al = (e.a * zf * 255).toInt()
+                if (al <= 0) continue
+                bp.alpha = al
+                val x0 = (o[0] - sp.ax).toFloat(); val y0 = (o[1] - sp.ay).toFloat()
+                dst.set(x0, y0, x0 + sp.w, y0 + sp.h)
+                c.drawBitmap(sp.bmp, null, dst, bp)
+            }
+            bp.alpha = 255
+
+            // ── pins on top: lower ones in front ──
+            val all = ArrayList<Pin>(gone.size + pins.size); all.addAll(gone); all.addAll(pins)
+            all.sortBy { it.y }
+            val dr = ArrayList<Drawn>(pins.size)
+            for (pn in all) {
+                drawPin(c, pn.c, pn.x, pn.y, pn.a, pn.label, ps)
+                if (!pn.ghost) dr.add(Drawn(pn.c, pn.x - 30 * ps, pn.x + 30 * ps, pn.y - 72 * ps, pn.y + 8 * ps + (if (pn.label.isNotEmpty()) 22 * ps else 0.0)))
+            }
+            drawn = dr
+            // the rings under people who are online (drawn by their own layer above this one)
+            val rp = ArrayList<Rip>()
+            for (pn in pins) if (pn.c.live && pn.a >= 0.5) rp.add(Rip(pn.c.key, pn.x, pn.y, ps))
+            rips = rp
             c.restore()
-            return anim
+            firstFrame = false
+            fx.invalidate()
+            if (more && active && onScreen()) postInvalidateOnAnimation()
         }
 
-        private inner class Sprite(val bmp: Bitmap, val l: Float, val t: Float, val w: Float, val h: Float)
-        private val sprites = LinkedHashMap<String, Sprite>()
+        /** one pin: photo in a gold ring on a tail, standing on a glowing spot; count, online dot, name/town tag */
+        private fun drawPin(c: Canvas, cl: Cl, x: Double, y: Double, a: Double, label: String, ps: Double) {
+            val alpha = (a * 255).toInt().coerceIn(0, 255)
+            if (alpha <= 1) return
+            c.save()
+            c.translate(x.toFloat(), y.toFloat())
+            c.scale(ps.toFloat(), ps.toFloat())
+            // fading: the whole pin fades as one picture (as the web's sprite does), not part by part
+            val layered = alpha < 250
+            if (layered) c.saveLayerAlpha(-96f, -96f, 96f, 36f, alpha)
+            fun draw(s: Sprite?) { if (s == null) return; dst.set(s.l, s.t, s.l + s.w, s.t + s.h); c.drawBitmap(s.bmp, null, dst, bp) }
+            draw(baseSprite(cl.live))
+            // the photo
+            c.drawCircle(0f, -44f, 21.5f, disc)
+            val face = faceOf(cl.lead.p)
+            if (face != null) { dst.set(-21.5f, -65.5f, 21.5f, -22.5f); c.drawBitmap(face, null, dst, if (cl.live) photoOn else photoOff) }
+            c.drawCircle(0f, -44f, 21.5f, edge)
+            draw(dotSprite(cl.live))
+            if (cl.n > 1) draw(countSprite(if (cl.n > 99) "99+" else cl.n.toString()))
+            if (cl.chat) draw(chatSprite(label))
+            if (label.isNotEmpty()) draw(tagSprite(label))
+            if (layered) c.restore()
+            c.restore()
+        }
 
-        /** the still part of a pin (photo in its gold ring, the dot, the tail, badges, the city) as one small picture */
-        private fun sprite(cl: Cluster, live: Boolean, showCity: Boolean): Sprite? {
-            val p = cl.people.firstOrNull { SdRules.liveOf(it) } ?: cl.people[0]
-            val pid = p.optString("id")
-            val chat = cl.people.any { it.optBoolean("chatting") }
-            val key = "${cl.key}|${cl.people.size}|$live|$showCity|$chat|${cl.city}|$pid"
-            sprites[key]?.let { return it }
-            val raws = listOf(SdRules.s(p, "photo_thumb"), SdRules.s(p, "photo", "profile_picture")).filter { it.isNotBlank() }
-            val px = Ui.dpi(46f).coerceAtLeast(48)
-            val face = Demo.round(p, px) ?: Photos.cached(raws, px)
-            if (face == null && raws.isNotEmpty() && loading.add("photo|$pid")) Photos.loadRaw(raws, px) { _ -> sprites.keys.removeAll { it.endsWith("|$pid") }; invalidate() }
-            val tq = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold }
-            tq.textSize = 10.5f; val chatW = 3f + 5f + 11f + 3f + tq.measureText("Chatting") + 7f
-            tq.textSize = 12f; tq.isFakeBoldText = true; val count = cl.people.size.toString(); val countW = max(24f, tq.measureText(count) + 12f)
-            tq.textSize = 11f; tq.isFakeBoldText = false; val cityW = tq.measureText(cl.city) + 16f
-            val withCity = showCity && cl.city.isNotEmpty()
-            // the picture's box around the pin (0,0 = the pin's top-left; it is 56 wide)
-            var l = -8f; var r = 64f; var t = -2f; var b = 78f
-            if (chat) { l = min(l, -14f); r = max(r, -12f + chatW + 2f); t = min(t, -10f) }
-            if (cl.people.size > 1) { r = max(r, 68f); t = min(t, -8f) }
-            if (withCity) { l = min(l, 28f - cityW / 2 - 2f); r = max(r, 28f + cityW / 2 + 2f); b = 112f }
-            val w = r - l; val h = b - t
-            val bm = Bitmap.createBitmap((w * dens).toInt().coerceAtLeast(1), (h * dens).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
-            val cv = Canvas(bm); cv.scale(dens, dens); cv.translate(-l, -t)
-            val q = Paint(Paint.ANTI_ALIAS_FLAG)
-            // shadow and the purple ring around the gold ring
-            q.color = Color.argb(140, 0, 0, 0); q.maskFilter = android.graphics.BlurMaskFilter(7f, android.graphics.BlurMaskFilter.Blur.NORMAL)
-            cv.drawCircle(28f, 34f, 28f, q); q.maskFilter = null
-            q.color = Color.argb(89, 139, 63, 224); cv.drawCircle(28f, 28f, 31f, q)
-            val gdx = (35.9 * sin(Math.toRadians(160.0))).toFloat(); val gdy = (-35.9 * cos(Math.toRadians(160.0))).toFloat()
-            q.shader = LinearGradient(28f - gdx, 28f - gdy, 28f + gdx, 28f + gdy, intArrayOf(Ui.c("#ffe7a8"), Ui.c("#e0a43c"), Ui.c("#a8661a")), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
-            cv.drawCircle(28f, 28f, 28f, q); q.shader = null
-            q.color = Ui.c("#20123a"); cv.drawCircle(28f, 28f, 25f, q)
-            if (face != null) {
-                val fp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-                // offline: saturate(.75) brightness(.92)
-                if (!live) fp.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.75f); postConcat(ColorMatrix().apply { setScale(0.92f, 0.92f, 0.92f, 1f) }) })
-                cv.save(); cv.clipPath(Path().apply { addCircle(28f, 28f, 23f, Path.Direction.CW) })
-                cv.drawBitmap(face, null, RectF(5f, 5f, 51f, 51f), fp); cv.restore()
-            } else { cv.save(); cv.translate(5f, 5f); DefaultAvatar.draw(cv, 46f); cv.restore() }
-            q.style = Paint.Style.STROKE; q.strokeWidth = 2f; q.color = Ui.c("#1a0b33"); cv.drawCircle(28f, 28f, 24f, q); q.style = Paint.Style.FILL
-            // online / offline dot
-            if (live) { q.color = Color.argb(230, 52, 211, 94); q.maskFilter = android.graphics.BlurMaskFilter(5f, android.graphics.BlurMaskFilter.Blur.NORMAL); cv.drawCircle(49.5f, 45.5f, 7.5f, q); q.maskFilter = null }
-            q.shader = RadialGradient(47.25f, 42.5f, 14.3f, if (live) Ui.c("#7af08a") else Ui.c("#d4cfe0"), if (live) Ui.c("#16a34a") else Ui.c("#8c84a3"), Shader.TileMode.CLAMP)
-            cv.drawCircle(49.5f, 45.5f, 7.5f, q); q.shader = null
-            q.style = Paint.Style.STROKE; q.color = Ui.c("#12081f"); cv.drawCircle(49.5f, 45.5f, 6.5f, q); q.style = Paint.Style.FILL
-            // gold tail
-            q.shader = LinearGradient(0f, 54f, 0f, 76f, intArrayOf(Ui.c("#ffe7a8"), Ui.c("#e0a43c"), Ui.c("#b8741f")), floatArrayOf(0f, .6f, 1f), Shader.TileMode.CLAMP)
-            cv.drawPath(Path().apply { moveTo(18f, 54f); lineTo(38f, 54f); lineTo(28f, 76f); close() }, q); q.shader = null
-            if (chat) {
-                tq.textSize = 10.5f; tq.color = Color.WHITE
-                q.color = Color.argb(115, 0, 0, 0); q.maskFilter = android.graphics.BlurMaskFilter(3f, android.graphics.BlurMaskFilter.Blur.NORMAL); cv.drawRoundRect(-12f, -6f, -12f + chatW, 14f, 10f, 10f, q); q.maskFilter = null
-                q.color = Ui.c("#E3086C"); cv.drawRoundRect(-12f, -8f, -12f + chatW, 12f, 10f, 10f, q)
-                q.style = Paint.Style.STROKE; q.strokeWidth = 1.5f; q.color = Color.WHITE; cv.drawRoundRect(-11.25f, -7.25f, -12.75f + chatW, 11.25f, 9.25f, 9.25f, q); q.style = Paint.Style.FILL
-                cv.save(); cv.translate(-12f + 1.5f + 5f, -2.5f); Icon(Lucide.MessageCircleMore, Color.WHITE, 11f, 2.4f).apply { setBounds(0, 0, 11, 11) }.draw(cv); cv.restore()
-                val fm = tq.fontMetrics; cv.drawText("Chatting", -12f + 1.5f + 5f + 11f + 3f, 2f - (fm.ascent + fm.descent) / 2, tq)
-            }
-            if (cl.people.size > 1) {
-                tq.textSize = 12f; tq.isFakeBoldText = true; tq.color = Ui.c("#2a1600")
-                val lx = 66f - countW
-                q.color = Color.argb(128, 0, 0, 0); q.maskFilter = android.graphics.BlurMaskFilter(3f, android.graphics.BlurMaskFilter.Blur.NORMAL); cv.drawRoundRect(lx, -4f, lx + countW, 18f, 11f, 11f, q); q.maskFilter = null
-                q.shader = LinearGradient(0f, -6f, 0f, 16f, Ui.c("#ffe7a8"), Ui.c("#d99a35"), Shader.TileMode.CLAMP); cv.drawRoundRect(lx, -6f, lx + countW, 16f, 11f, 11f, q); q.shader = null
-                tq.textAlign = Paint.Align.CENTER; val fm = tq.fontMetrics; cv.drawText(count, lx + countW / 2, 5f - (fm.ascent + fm.descent) / 2, tq); tq.textAlign = Paint.Align.LEFT
-                tq.isFakeBoldText = false
-            }
-            if (withCity) {
-                tq.textSize = 11f; tq.color = Ui.c("#efe6ff")
-                val lx = 28f - cityW / 2
-                q.color = Color.argb(199, 12, 6, 24); cv.drawRoundRect(lx, 92f, lx + cityW, 92f + 17f, 8f, 8f, q)
-                q.style = Paint.Style.STROKE; q.strokeWidth = 1f; q.color = Color.argb(102, 186, 140, 255); cv.drawRoundRect(lx + .5f, 92.5f, lx + cityW - .5f, 92f + 16.5f, 7.5f, 7.5f, q); q.style = Paint.Style.FILL
-                val fm = tq.fontMetrics; cv.drawText(cl.city, lx + 8f, 92f + 8.5f - (fm.ascent + fm.descent) / 2, tq)
-            }
-            while (sprites.size >= 40) sprites.remove(sprites.keys.first())
-            return Sprite(bm, l, t, w, h).also { sprites[key] = it }
+        // the picture for a person: their photo (round), the default avatar, or nothing yet (still loading)
+        private val loading = HashSet<String>()
+        private val noFace = HashSet<String>()
+        private fun faceOf(p: JSONObject): Bitmap? {
+            val px = Ui.dpi(43f).coerceAtLeast(48)
+            Demo.round(p, px)?.let { return it }
+            val raws = listOf(SdRules.s(p, "photo_thumb"), SdRules.s(p, "photo", "profile_picture")).filter { it.isNotBlank() }.distinct()
+            if (raws.isEmpty()) return defaultFace(px)
+            val key = raws.joinToString("|")
+            if (key in noFace) return defaultFace(px)
+            Photos.cached(raws, px)?.let { return it }
+            if (loading.add(key)) Photos.loadRaw(raws, px) { b -> loading.remove(key); if (b == null) noFace.add(key); invalidate() }
+            return null
         }
     }
+
+    /** the rings that ripple out under people who are online (their own layer: the map underneath is not redrawn for them) */
+    private inner class Fx(ctx: Context) : View(ctx) {
+        private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.rgb(167, 112, 255) }
+        private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.rgb(200, 160, 255) }
+        private val oval = RectF()
+        private val t0 = System.currentTimeMillis()
+        override fun onDraw(c: Canvas) {
+            val list = rips
+            if (list.isEmpty() || bw <= 0) return
+            c.save(); c.scale(dens, dens)
+            val now = System.currentTimeMillis() - t0
+            for (rp in list) {
+                if (REDUCED) { ring(c, rp, 1.0, 0.6); continue }
+                for (d in if (LITE) longArrayOf(0) else longArrayOf(0, 900)) {
+                    val f = ((now - d).coerceAtLeast(0) % 1800) / 1800.0
+                    val e = cssEaseOut(f)
+                    ring(c, rp, 0.35 + 1.15 * e, 1 - e)
+                }
+            }
+            c.restore()
+            if (!REDUCED && active && onScreen()) postInvalidateOnAnimation()
+        }
+        /** a 48 × 16 ring (2 px edge, soft purple glow) at the person's spot, at scale s */
+        private fun ring(c: Canvas, rp: Rip, s: Double, op: Double) {
+            if (op <= 0.01) return
+            val k = (s * rp.s).toFloat()
+            val x = rp.x.toFloat(); val y = rp.y.toFloat()
+            oval.set(x - 23 * k, y - 7 * k, x + 23 * k, y + 7 * k)
+            glow.strokeWidth = 7f * k; glow.alpha = (0.28 * op * 255).toInt(); c.drawOval(oval, glow)
+            line.strokeWidth = 2f * k; line.alpha = (0.95 * op * 255).toInt(); c.drawOval(oval, line)
+        }
+    }
+
+    // ── sprites: a pin part or a name is drawn once into a small picture, then only copied on every frame ──
+    private val measure = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val widths = HashMap<String, Float>()
+    /** width of a pin's town / name tag text (600 11px) */
+    private fun tagWidth(t: String): Double = widths.getOrPut(t) { measure.typeface = Ui.bold; measure.textSize = 11f; measure.letterSpacing = 0f; measure.measureText(t) }.toDouble()
+    private val nameCache = object : LruCache<String, NameSprite>(10 * 1024 * 1024) { override fun sizeOf(key: String, value: NameSprite) = value.bmp.byteCount }
+    private val parts = object : LruCache<String, Sprite>(6 * 1024 * 1024) { override fun sizeOf(key: String, value: Sprite) = value.bmp.byteCount }
+    private val bases = arrayOfNulls<Sprite>(2)
+    private val dotSprites = arrayOfNulls<Sprite>(2)
+    private var noPhoto: Bitmap? = null
+
+    private fun canvasFor(w: Float, h: Float): Pair<Bitmap, Canvas> {
+        val bm = Bitmap.createBitmap(ceil(w * dens).toInt().coerceAtLeast(1), ceil(h * dens).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bm); cv.scale(dens, dens)
+        return bm to cv
+    }
+    /** canvas shadowBlur b → Android's blur radius (the same softness) */
+    private fun blur(b: Float) = BlurMaskFilter(max(0.5f, (b / 2 - 0.5f) / 0.57735f), BlurMaskFilter.Blur.NORMAL)
+    private fun sprite(l: Float, t: Float, w: Float, h: Float, draw: (Canvas) -> Unit): Sprite {
+        val (bm, cv) = canvasFor(w, h)
+        cv.translate(-l, -t)
+        draw(cv)
+        return Sprite(bm, l, t, bm.width / dens, bm.height / dens)
+    }
+
+    // name styles: kind = town, big city, state, continent, ocean/sea, country, region, water
+    private class Ls(val size: Float, val italic: Boolean, val color: Int, val spacing: Float = 0f, val upper: Boolean = false, val dot: Int = 0, val glow: Int = 0, val r: Float = 0f)
+    private val LS = mapOf(
+        "ct" to Ls(11f, false, Color.argb(235, 238, 230, 255), dot = Ui.c("#efe6ff"), glow = Color.argb(242, 200, 170, 255), r = 2.4f),
+        "cb" to Ls(12.5f, false, Color.argb(250, 255, 238, 204), dot = Ui.c("#ffe2a6"), glow = Color.argb(250, 255, 196, 104), r = 3.2f),
+        "st" to Ls(11f, false, Color.argb(143, 236, 226, 255), 1.8f, true),
+        "co" to Ls(14f, false, Color.argb(204, 246, 222, 170), 3.4f, true),
+        "oc" to Ls(13f, true, Color.argb(168, 190, 170, 255), 0.5f),
+        "cn" to Ls(10.5f, false, Color.argb(153, 222, 212, 255), 1.1f, true),
+        "rg" to Ls(11f, true, Color.argb(128, 214, 198, 255), 1.4f),
+        "wt" to Ls(10.5f, true, Color.argb(168, 160, 196, 255), 0.4f),
+    )
+    /** side: 1 = name right of the dot, -1 = left of it, 0 = centred (no dot) */
+    private fun nameSprite(kind: String, text: String, side: Int): NameSprite {
+        val key = "$kind|$side|$text"
+        nameCache.get(key)?.let { return it }
+        val st = LS[kind] ?: LS.getValue("ct")
+        val t = if (st.upper) text.uppercase() else text
+        val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = if (st.italic) Ui.boldItalic else Ui.bold; textSize = st.size; letterSpacing = st.spacing / st.size }
+        val tw = tp.measureText(t)
+        val dot = if (st.dot != 0) st.r * 2 + 5 else 0f
+        val w = ceil(tw + dot + 8); val h = ceil(st.size * 1.45f + 6)
+        val (bm, cv) = canvasFor(w, h)
+        val fm = tp.fontMetrics
+        val ty = h / 2 + 0.5f - (fm.ascent + fm.descent) / 2
+        var tx = 4f; var dx = 0f
+        if (st.dot != 0) {
+            if (side >= 0) { dx = 4 + st.r; tx = 4 + dot } else { dx = w - 4 - st.r; tx = 4f }
+            val q = Paint(Paint.ANTI_ALIAS_FLAG)
+            q.color = st.glow; q.maskFilter = blur(6f); cv.drawCircle(dx, h / 2, st.r, q); q.maskFilter = null
+            q.color = st.dot; cv.drawCircle(dx, h / 2, st.r, q)
+            q.style = Paint.Style.STROKE; q.strokeWidth = 1f; q.color = Color.argb(179, 20, 8, 40); cv.drawCircle(dx, h / 2, st.r, q)
+        }
+        tp.style = Paint.Style.STROKE; tp.strokeWidth = 3.2f; tp.strokeJoin = Paint.Join.ROUND; tp.color = Color.argb(224, 6, 2, 22)
+        cv.drawText(t, tx, ty, tp)
+        tp.style = Paint.Style.FILL; tp.color = st.color
+        cv.drawText(t, tx, ty, tp)
+        val s = NameSprite(bm, bm.width / dens, bm.height / dens, if (st.dot != 0) dx else w / 2, h / 2)
+        nameCache.put(key, s)
+        return s
+    }
+
+    // the still parts of a pin, around its ground point (0, 0); the photo's middle is 44 above it
+    private fun baseSprite(live: Boolean): Sprite = bases[if (live) 1 else 0] ?: sprite(-41f, -85f, 82f, 98f) { cv ->
+        val q = Paint(Paint.ANTI_ALIAS_FLAG)
+        // soft glow when someone here is online
+        if (live) { q.shader = RadialGradient(0f, -44f, 40f, intArrayOf(Color.argb(140, 167, 112, 255), Color.argb(140, 167, 112, 255), Color.argb(0, 167, 112, 255)), floatArrayOf(0f, .1f, 1f), Shader.TileMode.CLAMP); cv.drawCircle(0f, -44f, 40f, q); q.shader = null }
+        // the spot on the ground
+        cv.save(); cv.scale(1f, 0.34f)
+        val a0 = if (live) 191 else 102
+        q.shader = RadialGradient(0f, 0f, 24f, intArrayOf(Color.argb(a0, 167, 112, 255), Color.argb(a0, 167, 112, 255), Color.argb(64, 124, 58, 237), Color.argb(0, 124, 58, 237)), floatArrayOf(0f, 2f / 24, 0.5875f, 1f), Shader.TileMode.CLAMP)
+        cv.drawCircle(0f, 0f, 24f, q); q.shader = null
+        cv.restore()
+        q.color = Color.argb(217, 255, 190, 90); q.maskFilter = blur(8f); cv.drawOval(-6f, -3f, 6f, 3f, q); q.maskFilter = null
+        q.color = Ui.c("#ffe4a8"); cv.drawOval(-6f, -3f, 6f, 3f, q)
+        // gold tail
+        q.shader = LinearGradient(0f, -24f, 0f, -5f, intArrayOf(Ui.c("#ffe7a8"), Ui.c("#e0a43c"), Ui.c("#b8741f")), floatArrayOf(0f, .6f, 1f), Shader.TileMode.CLAMP)
+        cv.drawPath(Path().apply { moveTo(-9f, -25f); lineTo(9f, -25f); lineTo(0f, -5f); close() }, q); q.shader = null
+        // ring
+        q.color = Color.argb(140, 0, 0, 0); q.maskFilter = blur(10f); cv.drawCircle(0f, -40f, 25f, q); q.maskFilter = null
+        q.shader = LinearGradient(-18f, -69f, 14f, -19f, intArrayOf(Ui.c("#ffe7a8"), Ui.c("#e0a43c"), Ui.c("#a8661a")), floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
+        cv.drawCircle(0f, -44f, 25f, q); q.shader = null
+        q.style = Paint.Style.STROKE; q.strokeWidth = 3f; q.color = Color.argb(102, 139, 63, 224); cv.drawCircle(0f, -44f, 26.5f, q)
+    }.also { bases[if (live) 1 else 0] = it }
+
+    /** online (green) / offline (grey) dot */
+    private fun dotSprite(live: Boolean): Sprite = dotSprites[if (live) 1 else 0] ?: sprite(10f, -37f, 18f, 18f) { cv ->
+        val q = Paint(Paint.ANTI_ALIAS_FLAG)
+        q.shader = RadialGradient(17f, -30f, 8.5f, intArrayOf(if (live) Ui.c("#7af08a") else Ui.c("#d4cfe0"), if (live) Ui.c("#7af08a") else Ui.c("#d4cfe0"), if (live) Ui.c("#16a34a") else Ui.c("#8c84a3")), floatArrayOf(0f, .12f, 1f), Shader.TileMode.CLAMP)
+        cv.drawCircle(19f, -28f, 7f, q); q.shader = null
+        q.style = Paint.Style.STROKE; q.strokeWidth = 2f; q.color = Ui.c("#12081f"); cv.drawCircle(19f, -28f, 7f, q)
+    }.also { dotSprites[if (live) 1 else 0] = it }
+
+    /** how many people (top right of the ring) */
+    private fun countSprite(t: String): Sprite = parts.get("n|$t") ?: run {
+        val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = 12f }
+        val bw = max(24f, tp.measureText(t) + 12)
+        sprite(4f, -83f, bw + 12f, 34f) { cv ->
+            val q = Paint(Paint.ANTI_ALIAS_FLAG)
+            q.color = Color.argb(128, 0, 0, 0); q.maskFilter = blur(5f); cv.drawRoundRect(10f, -75f, 10f + bw, -54f, 10.5f, 10.5f, q); q.maskFilter = null
+            q.shader = LinearGradient(0f, -77f, 0f, -56f, Ui.c("#ffe7a8"), Ui.c("#d99a35"), Shader.TileMode.CLAMP); cv.drawRoundRect(10f, -77f, 10f + bw, -56f, 10.5f, 10.5f, q); q.shader = null
+            tp.color = Ui.c("#2a1600"); tp.textAlign = Paint.Align.CENTER
+            val fm = tp.fontMetrics; cv.drawText(t, 10f + bw / 2, -66f - (fm.ascent + fm.descent) / 2, tp)
+        }.also { parts.put("n|$t", it) }
+    }
+
+    /** "Chatting": someone you chat with (its place follows the web's: it depends on how wide the pin's tag is) */
+    private fun chatSprite(label: String): Sprite {
+        val lw = if (label.isNotEmpty()) ceil(tagWidth(label) + 16).toFloat() else 0f
+        val bigX = max(84f, lw + 6) / 2
+        val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = 10.5f }
+        val bw = tp.measureText("Chatting") + 14
+        val bx = max(1f, bigX - 34 - bw / 2 + 8) - bigX
+        val key = "c|${(bx * 4).toInt()}"
+        parts.get(key)?.let { return it }
+        return sprite(bx - 2, -81f, bw + 4, 23f) { cv ->
+            val q = Paint(Paint.ANTI_ALIAS_FLAG)
+            q.color = Ui.c("#E3086C"); cv.drawRoundRect(bx, -79f, bx + bw, -60f, 9.5f, 9.5f, q)
+            q.style = Paint.Style.STROKE; q.strokeWidth = 1.5f; q.color = Color.WHITE; cv.drawRoundRect(bx, -79f, bx + bw, -60f, 9.5f, 9.5f, q)
+            tp.color = Color.WHITE; tp.textAlign = Paint.Align.CENTER
+            val fm = tp.fontMetrics; cv.drawText("Chatting", bx + bw / 2, -69f - (fm.ascent + fm.descent) / 2, tp)
+        }.also { parts.put(key, it) }
+    }
+
+    /** town (or first name) under the pin */
+    private fun tagSprite(label: String): Sprite = parts.get("t|$label") ?: run {
+        val lw = ceil(tagWidth(label) + 16).toFloat()
+        sprite(-lw / 2 - 1, 9f, lw + 2, 21f) { cv ->
+            val q = Paint(Paint.ANTI_ALIAS_FLAG)
+            q.color = Color.argb(204, 12, 6, 24); cv.drawRoundRect(-lw / 2, 10f, lw / 2, 29f, 8f, 8f, q)
+            q.style = Paint.Style.STROKE; q.strokeWidth = 1f; q.color = Color.argb(107, 186, 140, 255); cv.drawRoundRect(-lw / 2, 10f, lw / 2, 29f, 8f, 8f, q)
+            val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = 11f; color = Ui.c("#efe6ff"); textAlign = Paint.Align.CENTER }
+            val fm = tp.fontMetrics; cv.drawText(label, 0f, 20f - (fm.ascent + fm.descent) / 2, tp)
+        }.also { parts.put("t|$label", it) }
+    }
+
+    /** the default avatar (lavender silhouette) for someone without a photo */
+    private fun defaultFace(px: Int): Bitmap = noPhoto?.takeIf { it.width == px } ?: Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { DefaultAvatar.draw(Canvas(it), px.toFloat()); noPhoto = it }
 
     // ═════════════ helpers ═════════════
     private fun mapButton(icon: String, size: Float, label: String, stroke: Float = 2f, onClick: () -> Unit): ImageView = ImageView(context).apply {
@@ -1032,31 +1268,26 @@ class GlobeMap(
         override fun getOutline(o: android.graphics.Outline) { o.setRoundRect(bounds, Ui.dp(radiusDp)) }
     }
 
-    private fun worldRings(r: Double): SdMapData.Rings { val ok = SdMapData.world.filter { it.tol * D2R * r < 1.6 }; return ok.lastOrNull() ?: SdMapData.world[0] }
-    private fun borderRings(r: Double): SdMapData.Rings { val ok = SdMapData.border.filter { it.tol * D2R * r < 0.9 }; return ok.lastOrNull() ?: SdMapData.border[0] }
-    private fun stateRings(r: Double): SdMapData.Rings { val ok = SdMapData.state.filter { it.tol * D2R * r < 1 }; return ok.lastOrNull() ?: SdMapData.state[0] }
+    private fun pick(levels: List<SdMapData.Rings>, r: Double, px: Double): SdMapData.Rings { val ok = levels.filter { it.tol * D2R * r < px }; return ok.lastOrNull() ?: levels[0] }
+    private fun worldRings(r: Double) = pick(SdMapData.world, r, 1.6)
+    private fun borderRings(r: Double) = pick(SdMapData.border, r, 0.9)
+    private fun stateRings(r: Double) = pick(SdMapData.state, r, 1.0)
+    private fun riverRings(r: Double) = pick(SdMapData.river, r, 1.2)
 
     companion object {
         const val D2R = Math.PI / 180
         const val MAX_K = 96.0
         private const val HOME_LON = 80.5; private const val HOME_LAT = -10.0; private const val HOME_K = 2.4
+        private const val GLIDE_MS = 320.0
         private val GOLD_ICON = Ui.c("#f6d89a")
+        private val SEA_FLAT = Ui.c("#1d1258")
+        private val TOP_COLORS = intArrayOf(Ui.c("#4e28a6"), Ui.c("#2f1470"), Ui.c("#1c0a48"))
+        private val TOP_STOPS = floatArrayOf(0f, .5f, 1f)
         /** the 360° Earth spin plays once each time the app is opened, not on every visit to the map */
         var introDone = false
         /** lighter drawing on budget phones (few cores / little memory) or when the phone asks for less motion */
         val LITE: Boolean by lazy { Lite.on }
         val REDUCED: Boolean get() = Lite.reducedMotion
-
-        private class Name(val t: String, val lng: Double, val lat: Double, val kind: Char)
-        private val PLACE_NAMES = listOf(
-            Name("ASIA", 96.0, 48.0, 'c'), Name("EUROPE", 18.0, 52.0, 'c'), Name("AFRICA", 20.0, 6.0, 'c'),
-            Name("NORTH AMERICA", -100.0, 46.0, 'c'), Name("SOUTH AMERICA", -60.0, -14.0, 'c'), Name("AUSTRALIA", 134.0, -25.0, 'c'),
-            Name("Indian Ocean", 80.0, -18.0, 'o'), Name("Arabian Sea", 64.5, 14.5, 'o'), Name("Bay of Bengal", 88.5, 14.5, 'o'),
-            Name("Pacific Ocean", -150.0, 4.0, 'o'), Name("Pacific Ocean", 160.0, 18.0, 'o'), Name("Atlantic Ocean", -35.0, 12.0, 'o'),
-            Name("Pakistan", 68.5, 28.5, 'n'), Name("China", 90.0, 34.5, 'n'), Name("Nepal", 84.0, 28.3, 'n'),
-            Name("Bhutan", 90.5, 27.45, 'n'), Name("Bangladesh", 90.2, 23.9, 'n'), Name("Myanmar", 95.8, 21.5, 'n'),
-            Name("Sri Lanka", 80.7, 7.6, 'n'), Name("Afghanistan", 66.0, 33.8, 'n'),
-        )
     }
 }
 
@@ -1082,8 +1313,31 @@ fun wrapLon(l: Double) = ((((l + 180) % 360) + 360) % 360) - 180
 fun lonGap(a: Double, b: Double) = wrapLon(b - a)
 fun modp(a: Double, n: Double) = ((a % n) + n) % n
 fun easeIO(t: Double) = if (t < 0.5) 4 * t * t * t else 1 - (-2 * t + 2).pow(3) / 2
-fun pinScaleOf(r: Double) = min(1.0, max(0.62, 0.62 + (r - 190) / 480))
-fun minPopFor(ppd: Double) = when { ppd >= 230 -> 0.0; ppd >= 170 -> 25.0; ppd >= 110 -> 50.0; ppd >= 70 -> 100.0; ppd >= 40 -> 250.0; ppd >= 24 -> 900.0; ppd >= 14 -> 3500.0; else -> Double.POSITIVE_INFINITY }
+fun easeOut(t: Double) = 1 - (1 - t).pow(3)
+fun ramp(x: Double, a: Double, b: Double) = ((x - a) / (b - a)).coerceIn(0.0, 1.0)
+/** CSS "ease-out" (cubic-bezier(0, 0, .58, 1)): the timing of the rings under people online */
+fun cssEaseOut(t: Double): Double {
+    if (t <= 0) return 0.0
+    if (t >= 1) return 1.0
+    // x(s) = 3(1-s)s²·.58 + s³ (x1 = 0): solve x(s) = t, then y(s)
+    var lo = 0.0; var hi = 1.0; var s = t
+    repeat(22) { s = (lo + hi) / 2; val x = 3 * (1 - s) * s * s * 0.58 + s * s * s; if (x < t) lo = s else hi = s }
+    return 3 * (1 - s) * s * s + s * s * s      // y(s) with y1 = 0, y2 = 1
+}
+/** how big a pin is at this zoom (ppd = screen dp per degree of the Earth) */
+fun pinScaleOf(ppd: Double) = (0.56 + 0.16 * log2(max(1.0, ppd) / 8)).coerceIn(0.56, 1.0)
+/** the smallest town (people, in thousands) that gets a name at this zoom */
+fun minPopFor(ppd: Double) = when {
+    ppd < 5 -> Double.POSITIVE_INFINITY; ppd < 9 -> 5000.0; ppd < 14 -> 2500.0; ppd < 22 -> 900.0; ppd < 32 -> 300.0
+    ppd < 48 -> 120.0; ppd < 70 -> 50.0; ppd < 100 -> 20.0; ppd < 150 -> 8.0; else -> 0.0
+}
+/** "Gautam Buddh Nagar (Noida)" → "Noida", "Mohali (SAS Nagar)" → "Mohali": the short name people know, for the tag under a pin */
+fun shortTown(t: String): String {
+    val raw = t.trim()
+    val m = Regex("^(.*?)\\s*\\((.+)\\)\\s*$").find(raw)
+    val name = (if (m != null) (if (m.groupValues[1].length > 12) m.groupValues[2] else m.groupValues[1]) else raw).trim()
+    return if (name.length > 15) name.take(14) + "…" else name
+}
 
 /** the web's map xy (Mercator, svg-maps/india): for "Near You" */
 fun mapXY(lat: Double, lng: Double): DoubleArray {

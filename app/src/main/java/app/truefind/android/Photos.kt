@@ -16,8 +16,22 @@ import java.util.concurrent.Executors
  * Downloads profile photos once, decodes them already shrunk to the size
  * they are shown at (square, centre-cropped), and keeps them in memory.
  * At most 6 download at the same time (same rule as the web Explore).
+ * "asset:path" is a picture kept inside the app (Secret Dating's demo profiles: the 3D faces in assets/home/faces).
  */
 object Photos {
+    /** the app's own pictures (set when the app starts) */
+    @Volatile var assets: android.content.res.AssetManager? = null
+    private fun local(u: String) = u.startsWith("asset:")
+    /** the picture's bytes: downloaded, or read from the app for "asset:" */
+    private fun bytesOf(u: String): ByteArray? {
+        if (local(u)) return assets?.open(u.removePrefix("asset:"))?.use { it.readBytes() }
+        val c = URL(u).openConnection() as HttpURLConnection
+        try {
+            c.connectTimeout = 15000; c.readTimeout = 30000; c.instanceFollowRedirects = true
+            if (c.responseCode !in 200..299) return null
+            return c.inputStream.use { it.readBytes() }
+        } finally { c.disconnect() }
+    }
     private val pool = Executors.newFixedThreadPool(6)
     private val main = Handler(Looper.getMainLooper())
     private val cache = object : LruCache<String, Bitmap>(28 * 1024 * 1024) {
@@ -33,7 +47,7 @@ object Photos {
 
     /** Loads [urls] in order (small copy first, full photo if that fails). */
     fun load(urls: List<String>, size: Int, done: (Bitmap?) -> Unit) {
-        val list = urls.filter { it.startsWith("http") && !hasFailed(it) }
+        val list = urls.filter { (it.startsWith("http") || local(it)) && !hasFailed(it) }
         if (list.isEmpty()) { done(null); return }
         val first = list[0]
         val hit = get(first, size)
@@ -65,7 +79,7 @@ object Photos {
     /** The address to download [raw] from ("" = none). Private files are signed first (like resolveAvatar). */
     fun url(raw: String, done: (String) -> Unit) {
         if (raw.isBlank()) { done(""); return }
-        if (raw.startsWith("http") || raw.startsWith("demo:")) { done(raw); return }
+        if (raw.startsWith("http") || raw.startsWith("demo:") || local(raw)) { done(raw); return }
         signed[raw]?.let { done(it); return }
         signing[raw]?.let { it.add(done); return }
         signing[raw] = mutableListOf(done)
@@ -114,18 +128,15 @@ object Photos {
     fun cachedCover(raws: List<String>, w: Int, h: Int): Bitmap? {
         for (r in raws) {
             if (r.isBlank()) continue
-            val u = if (r.startsWith("http")) r else signed[r] ?: continue
+            val u = if (r.startsWith("http") || local(r)) r else signed[r] ?: continue
             cache.get("c${w}x$h|$u")?.let { return it }
         }
         return null
     }
 
     private fun fetchCover(url: String, w: Int, h: Int): Bitmap? {
-        var conn: HttpURLConnection? = null
         return try {
-            conn = (URL(url).openConnection() as HttpURLConnection).apply { connectTimeout = 15000; readTimeout = 30000 }
-            if (conn.responseCode !in 200..299) return null
-            val bytes = conn.inputStream.use { it.readBytes() }
+            val bytes = bytesOf(url) ?: return null
             val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, o)
             if (o.outWidth <= 0 || o.outHeight <= 0) return null
@@ -140,14 +151,14 @@ object Photos {
             Canvas(out).drawBitmap(src, Rect(sx, sy, sx + cw, sy + ch), Rect(0, 0, w, h), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
             src.recycle()
             out
-        } catch (e: Throwable) { null } finally { conn?.disconnect() }
+        } catch (e: Throwable) { null }
     }
 
     /** Already downloaded (any of [raws])? */
     fun cached(raws: List<String>, size: Int): Bitmap? {
         for (r in raws) {
             if (r.isBlank()) continue
-            val u = if (r.startsWith("http")) r else signed[r] ?: continue
+            val u = if (r.startsWith("http") || local(r)) r else signed[r] ?: continue
             get(u, size)?.let { return it }
         }
         return null
@@ -160,10 +171,7 @@ object Photos {
             if (u.isBlank() || u.startsWith("demo:")) { done(null); return@url }
             pool.execute {
                 val b = try {
-                    val c = URL(u).openConnection() as HttpURLConnection
-                    c.connectTimeout = 15000; c.readTimeout = 30000
-                    val bytes = c.inputStream.use { it.readBytes() }
-                    c.disconnect()
+                    val bytes = bytesOf(u) ?: throw java.io.IOException("no picture")
                     val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, o)
                     var s = 1
@@ -187,15 +195,8 @@ object Photos {
     }
 
     private fun fetch(url: String, size: Int): Bitmap? {
-        var conn: HttpURLConnection? = null
         return try {
-            conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 15000
-                readTimeout = 30000
-                instanceFollowRedirects = true
-            }
-            if (conn.responseCode !in 200..299) return null
-            val bytes = conn.inputStream.use { it.readBytes() }
+            val bytes = bytesOf(url) ?: return null
             val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
             val minSide = minOf(opts.outWidth, opts.outHeight)
@@ -215,8 +216,6 @@ object Photos {
             circle(out)
         } catch (e: Throwable) {
             null
-        } finally {
-            conn?.disconnect()
         }
     }
 }

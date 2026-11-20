@@ -83,6 +83,13 @@ object SdProfileView {
                 if (liking) return@onTap
                 val next = !fav
                 if (next) HeartBurst.play(btn, h.layer.root, heartView)
+                // a demo profile (testing only): the heart changes here, but no like is sent anywhere
+                if (SdDemo.isDemo(p)) {
+                    fav = next; paint()
+                    likeMsg.text = "Demo profile: likes reach real members only"; likeMsg.icon(Icon(Lucide.Heart, white, 14f, 2f, white), 5f)
+                    likeMsg.visibility = if (next) View.VISIBLE else View.GONE
+                    return@onTap
+                }
                 fav = next; paint(); liking = true; likeMsg.visibility = View.GONE
                 Api.invoke("likeProfile", JSONObject().put("to_profile_id", p.optString("id")).put("app", "secret").put("action", if (next) "like" else "unlike")) { r ->
                     liking = false

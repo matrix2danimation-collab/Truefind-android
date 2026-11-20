@@ -33,9 +33,12 @@ object Demo {
     }
     private fun people(): JSONArray { val a = JSONArray(); for (i in 0 until if (girl) 5 else 7) a.put(person(i, !girl)); return a }
 
+    /** Secret Dating's own demo profiles (SdDemo, "demo-sd-…") show their 3D faces, also in test mode */
+    private fun own(id: String) = !id.startsWith("demo") || id.startsWith("demo-sd-")
+
     fun face(p: JSONObject?): Bitmap? {
         val id = p?.optString("id").orEmpty()
-        if (!on || !id.startsWith("demo")) return null
+        if (!on || own(id)) return null
         return AvatarArt.forKey(id, isGirl(p, id), Ui.dpi(360f), round = false)
     }
 
@@ -51,14 +54,14 @@ object Demo {
     }
     fun cover(p: JSONObject?, w: Int, h: Int): Bitmap? {
         val id = p?.optString("id").orEmpty()
-        if (!on || !id.startsWith("demo") || w <= 0 || h <= 0) return null
+        if (!on || own(id) || w <= 0 || h <= 0) return null
         return portrait(id, isGirl(p, id), w, h)
     }
 
     /** a demo face, already round, at the size it is shown (cached) */
     fun round(p: JSONObject?, sizePx: Int): Bitmap? {
         val id = p?.optString("id").orEmpty().ifEmpty { p?.optString("profile_id").orEmpty() }
-        if (!on || !id.startsWith("demo")) return null
+        if (!on || own(id)) return null
         return AvatarArt.forKey(id, isGirl(p, id), sizePx.coerceAtLeast(48), round = true)
     }
 
@@ -170,6 +173,21 @@ object Demo {
                         .put("person", if (premium) p else JSONObject.NULL).put("match_id", if (kinds[i] == "message") "m1" else JSONObject.NULL))
                 }
                 JSONObject().put("can_see", premium).put("counts", JSONObject().put("total", 2)).put("items", items)
+            }
+            // My Activity: who liked me, who I liked, matches, requests I sent (people only with a plan where the server hides them)
+            "getMyActivity" -> {
+                val g = if (girl) "m" else "f"
+                fun item(id: String, ago: Long, p: JSONObject?) = JSONObject().put("id", id).put("at", iso(ago)).put("g", g).put("person", p ?: JSONObject.NULL)
+                val liked = JSONArray(); for (i in 0 until 5) liked.put(item("l$i", (i * 55 + 4).toLong(), if (premium) person(i, !girl) else null))
+                val you = JSONArray()
+                for (i in 0 until 4) you.put(item("y$i", (i * 70 + 9).toLong(), far(i, !girl)).put("request", when (i) {
+                    0 -> JSONObject().put("status", "accepted").put("match_id", "m2"); 1 -> JSONObject().put("status", "pending").put("match_id", JSONObject.NULL)
+                    2 -> JSONObject().put("status", "declined").put("match_id", JSONObject.NULL); else -> JSONObject.NULL }))
+                val matches = JSONArray(); for (i in 0 until 2) matches.put(item("x$i", (i * 90 + 30).toLong(), if (premium) person(i + 1, !girl) else null).put("request", JSONObject.NULL))
+                val reqs = JSONArray()
+                for ((i, st) in listOf("accepted", "pending", "declined").withIndex()) reqs.put(item("r$i", (i * 120 + 15).toLong(), far(i, !girl)).put("status", st).put("match_id", if (st == "accepted") "m2" else JSONObject.NULL))
+                JSONObject().put("can_see", premium).put("counts", JSONObject().put("liked_you", liked.length()).put("you_liked", you.length()).put("matches", matches.length()).put("requests", reqs.length()))
+                    .put("liked_you", liked).put("you_liked", you).put("matches", matches).put("requests", reqs)
             }
             "getChats" -> {
                 val ids = if (noChats) emptyList() else listOf("m1", "m2", "m3", "m4", "m5")

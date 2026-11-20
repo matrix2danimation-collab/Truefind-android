@@ -111,6 +111,13 @@ class SecretHome(
     /** not a member of Secret Dating yet: the Join card takes the body's place (JoinAppCard.jsx) */
     private var joinCard: View? = null
     private val myPhoto = RoundPhoto(ctx, 43f)
+    private val headLeft = FrameLayout(ctx)
+    private val headTitle = FrameLayout(ctx)
+    private val headRight = FrameLayout(ctx)
+    private var headMember: Boolean? = null
+    private val bellBtn = FrameLayout(ctx)
+    private val bellIcon = Icon(Lucide.Bell, Color.WHITE, 18f, 2.3f)
+    private val bellDot = BellDot(ctx)
     private val myBadge = FrameLayout(ctx)
     private val creditsPill = sdText(ctx, "", 13f, Color.WHITE)
     private val pills = ArrayList<TextView>()                 // the same pill on the map and chat pages
@@ -166,7 +173,7 @@ class SecretHome(
         noticeBox.visibility = GONE
         noticeBox.setOnClickListener { notice = ""; noticeBox.visibility = GONE }
         col.addView(noticeBox, lp(MATCH, WRAP, t = 12f))
-        col.addView(actBox, lp(MATCH, WRAP, t = 14f))
+        // (Notifications live inside My Activity now — the bell beside Credits, Nov 20)
         buildComplete()
         body.clipChildren = false
         col.addView(body, lp(MATCH, WRAP))
@@ -329,7 +336,8 @@ class SecretHome(
             q.getQueryParameter("credits") == "cancelled" -> "Payment cancelled. You can recharge anytime."
             else -> notice
         }
-        if (q.getQueryParameter("activity") != null) main.postDelayed({ scroll.smoothScrollTo(0, maxOf(0, actBox.top - dpi(80f))) }, 500)
+        // a tapped notification: open My Activity (Notifications are at its top)
+        if (q.getQueryParameter("activity") != null) main.postDelayed({ if (shown && !needSecret) openMyActivity("liked") }, 300)
         renderNotice()
     }
 
@@ -372,7 +380,9 @@ class SecretHome(
         }
         Api.invoke("getMapProfiles", JSONObject().put("include_offline", true)) { r ->
             if (r.ok) {
-                online = list(r.data.optJSONArray("profiles")).map { p -> p.put("_online", p.opt("online") == true || (!p.has("online") && SdRules.isOnline(p))) }
+                val real = list(r.data.optJSONArray("profiles")).map { p -> p.put("_online", p.opt("online") == true || (!p.has("online") && SdRules.isOnline(p))) }
+                // demo profiles (testing only, see SdDemo): after the real people, the gender this member sees
+                online = if (SdDemo.SHOW) real + SdDemo.people(SdRules.sexOf(r.data.optJSONObject("me"))) else real
                 mapPremium = r.data.optBoolean("premium", false) && r.data.opt("premium") == true
                 mapUntil = r.data.optString("premium_until", "")
                 me = r.data.optJSONObject("me")
@@ -453,7 +463,7 @@ class SecretHome(
 
     // ═════════════════ header ═════════════════
     private fun buildHeader() {
-        val row = FrameLayout(context)
+        val row = LinearLayout(context)
         // my photo: flat two-tone ring, a fine white gap, then the photo
         val btn = FrameLayout(context)
         val ring = FrameLayout(context).apply {
@@ -468,9 +478,9 @@ class SecretHome(
         btn.contentDescription = "My profile"
         btn.press().onTap { openMyProfile(false) }
         // (inside the page's edge: a margin past it cut the ring's left side — owner, 20 Nov)
-        row.addView(btn, LayoutParams(dpi(56f), dpi(56f), Gravity.START or Gravity.CENTER_VERTICAL))
+        headLeft.addView(btn, LayoutParams(dpi(56f), dpi(56f), Gravity.START or Gravity.CENTER_VERTICAL))
         val vw = resources.displayMetrics.widthPixels / Ui.density
-        row.addView(sdText(context, "TrueFind", (vw * .074f).coerceIn(26f, 31f), Color.WHITE, italic = true).apply { setPadding(dpi(4f), 0, dpi(4f), 0) },
+        headTitle.addView(sdText(context, "TrueFind", (vw * .074f).coerceIn(26f, 31f), Color.WHITE, italic = true).apply { setPadding(dpi(4f), 0, dpi(4f), 0) }.oneLine(),
             LayoutParams(-2, -2, Gravity.CENTER))
         // credits pill — opens the Secret Dating wallet
         creditsPill.background = rounded(K.wine2, 17f)
@@ -482,9 +492,49 @@ class SecretHome(
         creditsPill.setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(plus), null)
         val pillBox = FrameLayout(context).apply { addView(creditsPill, LayoutParams(-2, dpi(34f), Gravity.CENTER)) }
         pillBox.press().onTap { wallet() }
+        // bell → My Activity (Liked you · You liked · Matches · Requests, with Notifications at its top); red dot while something is new (Nov 20)
+        val bellFace = ImageView(context).apply { setImageDrawable(bellIcon); scaleType = ImageView.ScaleType.CENTER; background = oval(K.wine2); elevation = Ui.dp(3f) }
+        bellBtn.addView(bellFace, LayoutParams(dpi(34f), dpi(34f), Gravity.CENTER))
+        bellDot.background = oval(Ui.c("#FF1F3D"), 2f, Color.WHITE)
+        bellDot.elevation = Ui.dp(4f)
+        bellDot.visibility = GONE
+        bellBtn.addView(bellDot, LayoutParams(dpi(12f), dpi(12f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(4f), dpi(4f), 0) })
+        bellBtn.contentDescription = "My Activity"
+        bellBtn.press().onTap { openMyActivity("liked") }
+        val right = hbox(context, 4f)
+        right.addView(bellBtn, lp(dpi(44f), dpi(44f)))
         // (inside the page's edge too: the "+" circle was cut on the right — owner, 20 Nov)
-        row.addView(pillBox, LayoutParams(-2, dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL))
+        right.addView(pillBox, lp(WRAP, dpi(44f)))
+        headRight.addView(right, LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL))
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
+        row.addView(headLeft); row.addView(headTitle); row.addView(headRight)
+        layoutHeader(true)
         col.addView(row, lp(MATCH, WRAP))
+    }
+    /** a member: photo · TrueFind (in the middle of what is left) · bell + credits; not a member yet: TrueFind in the middle of the row */
+    private fun layoutHeader(member: Boolean) {
+        if (headMember == member) return
+        headMember = member
+        headLeft.layoutParams = lp(if (member) WRAP else 0, WRAP, if (member) 0f else 1f)
+        headTitle.layoutParams = lp(if (member) 0 else WRAP, WRAP, if (member) 1f else 0f)
+        headRight.layoutParams = lp(if (member) WRAP else 0, WRAP, if (member) 0f else 1f)
+        bellBtn.visibility = if (member) VISIBLE else GONE
+    }
+    /** the bell: filled, with a blinking red dot, while new likes / messages / views are unseen */
+    private fun renderBell() {
+        val n = activity?.optJSONObject("counts")?.optInt("total") ?: 0
+        bellIcon.tint(Color.WHITE, if (n > 0) Color.WHITE else null)
+        bellDot.visibility = if (n > 0) VISIBLE else GONE
+        bellBtn.contentDescription = if (n > 0) "My Activity, $n new" else "My Activity"
+    }
+    /** the red dot on the bell: opacity 1 → .55 → 1 every 1.1 s (sd-ndot) */
+    private class BellDot(ctx: Context) : View(ctx) {
+        private val a = android.animation.ObjectAnimator.ofPropertyValuesHolder(this, android.animation.PropertyValuesHolder.ofKeyframe(View.ALPHA,
+            android.animation.Keyframe.ofFloat(0f, 1f), android.animation.Keyframe.ofFloat(.6f, .55f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() },
+            android.animation.Keyframe.ofFloat(1f, 1f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() })).apply { duration = 1100; repeatCount = -1 }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); if (!GlobeMap.REDUCED) a.start() }
+        override fun onDetachedFromWindow() { a.cancel(); super.onDetachedFromWindow() }
     }
 
     /** the little white "+" circle at the end of the credits pill */
@@ -647,6 +697,7 @@ class SecretHome(
         completeBtn.visibility = if (showComplete) VISIBLE else GONE
         completeSub.text = "Add ${missing.joinToString(", ") { SdRules.NEED_LABEL[it] ?: it }} to unlock Premium features."
         actBox.visibility = if (needSecret) GONE else VISIBLE
+        layoutHeader(!needSecret)
         // not a member yet: the Join card instead of Online Now, the cards, Stories and Private by Design
         body.visibility = if (needSecret) GONE else VISIBLE
         if (needSecret && joinCard == null) {
@@ -729,6 +780,7 @@ class SecretHome(
     // ── Notifications (who liked you, messaged you, viewed your profile) ──
     private var actAll = false
     private fun renderActivity() {
+        renderBell()
         actBox.removeAllViews()
         if (needSecret) return
         val data = activity
@@ -897,20 +949,39 @@ class SecretHome(
         }
     }
 
-    /** the box was on screen for a moment: what is new counts as seen */
-    private var seenCheck: Runnable? = null
+    /** the box was on screen (in My Activity) for a moment: what is new counts as seen */
+    private val seenCheck = Runnable {
+        if (seenSent || !shown || actPage?.isOpen != true) return@Runnable
+        val r = Rect()
+        if (actBox.isShown && actBox.getGlobalVisibleRect(r) && r.height() >= actBox.height * 0.4f) { seenSent = true; markActivitySeen() }
+    }
     private fun watchSeen() {
         if (seenSent) return
-        val check = Runnable {
-            if (seenSent || !shown) return@Runnable
-            val r = Rect()
-            if (actBox.getGlobalVisibleRect(r) && r.height() >= actBox.height * 0.4f) { seenSent = true; markActivitySeen() }
-        }
-        seenCheck?.let { main.removeCallbacks(it) }
-        seenCheck = check
-        main.postDelayed(check, 1200)
-        scroll.setOnScrollChangeListener { _, _, _, _, _ -> if (!seenSent) { main.removeCallbacks(check); main.postDelayed(check, 1200) } }
+        main.removeCallbacks(seenCheck)
+        main.postDelayed(seenCheck, 1200)
     }
+    /** My Activity scrolled: look again in a moment */
+    fun activitySeenSoon() { if (!seenSent && freshIds.isNotEmpty()) watchSeen() }
+
+    // ── My Activity (the bell): Notifications at its top, then Liked you · You liked · Matches · Requests ──
+    private var actPage: SdActivity? = null
+    fun openMyActivity(start: String = "liked", all: Boolean = false) {
+        if (needSecret) return
+        if (actPage?.isOpen == true) return
+        actAll = all   // the Notifications list starts short each time (See all N opens it in place)
+        actPage = SdActivity.open(this, start)
+        watchSeen()
+    }
+    /** the Notifications box goes into the My Activity page that is opening */
+    fun attachActivityBox(parent: LinearLayout, params: LinearLayout.LayoutParams) {
+        (actBox.parent as? android.view.ViewGroup)?.removeView(actBox)
+        parent.addView(actBox, params)
+        renderActivity()
+    }
+    fun activityClosed(page: SdActivity) { if (actPage === page) actPage = null }
+    /** a credits pill made for a page that has closed (its number no longer needs keeping up to date) */
+    fun forgetPill(wrapper: View) { (wrapper as? android.view.ViewGroup)?.getChildAt(0)?.let { pills.remove(it) } }
+    fun openChatId(id: String) { layer.closeAll(); go("/chat/$id", JSONObject().put("openChat", 1)) }
 
     // ── stories ──
     private fun renderStories() {
@@ -1121,6 +1192,7 @@ class SecretHome(
 
     /** "Send Request" (card or profile) */
     fun askRequest(p: JSONObject) {
+        if (SdDemo.isDemo(p)) { say("This is a demo profile. Requests go only to real members."); return }
         if (sameGender(p)) return
         val chat = chatIdFor(p)
         if (chat.isNotEmpty()) { if (canUse || chatOpen(chat)) { layer.closeAll(); go("/chat/$chat", JSONObject().put("openChat", 1)) } else locked("chat"); return }
@@ -1164,10 +1236,13 @@ class SecretHome(
                 }
             }
             render(); refresh()
+            // My Activity shows the request's new status
+            actPage?.takeIf { it.isOpen }?.load()
         }
     }
 
     fun moderate(p: JSONObject, action: String) {
+        if (SdDemo.isDemo(p)) { say("This is a demo profile."); return }
         Api.invoke("moderateUser", JSONObject().put("profile_id", p.optString("id")).put("action", action)) { r ->
             if (r.ok) {
                 val id = p.optString("id")
@@ -1251,7 +1326,11 @@ class SecretHome(
             "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height)
             "scrollmid" -> scroll.scrollTo(0, deckBox.top + deckBox.height / 2)
             "stories" -> scroll.scrollTo(0, (storyRow.parent as View).top - dpi(260f))
-            "seeall" -> { actAll = true; renderActivity() }
+            "seeall" -> openMyActivity("liked", all = true)
+            "activity" -> openMyActivity("liked")
+            "activity-you" -> openMyActivity("you")
+            "activity-match" -> openMyActivity("match")
+            "activity-req" -> openMyActivity("req")
             "profileend" -> { openProfile(first); postDelayed({ lastScroll(layer.root)?.let { it.scrollTo(0, it.getChildAt(0).height) } }, 1200) }
         }
     }
@@ -1310,7 +1389,7 @@ class SecretHome(
         card.translationY = -dpi(120f).toFloat(); card.alpha = 0f
         card.animate().translationY(0f).alpha(1f).setDuration(380).setInterpolator(android.view.animation.PathInterpolator(.2f, .8f, .2f, 1f)).start()
         val close = Runnable { card.animate().alpha(0f).setDuration(200).withEndAction { host.removeView(card) }.start() }
-        card.setOnClickListener { main.removeCallbacks(close); host.removeView(card); scroll.smoothScrollTo(0, maxOf(0, actBox.top - dpi(80f))) }
+        card.setOnClickListener { main.removeCallbacks(close); host.removeView(card); openMyActivity("liked") }
         main.postDelayed(close, 4500)
     }
 }

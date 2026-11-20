@@ -304,6 +304,14 @@ shot 18-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
 shot 19-free-stories open --es tf_preview secret --es tf_open stories
 shot 20-see-all open --es tf_preview secret --ez tf_premium true --es tf_open seeall
 shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
+# My Activity (the bell beside Credits): Notifications at its top, then Liked you · You liked · Matches · Requests
+shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
+shot 23-activity-free open --es tf_preview secret --es tf_open activity
+shot 24-activity-you open --es tf_preview secret --ez tf_premium true --es tf_open activity-you
+shot 25-activity-match open --es tf_preview secret --ez tf_premium true --es tf_open activity-match
+shot 26-activity-req open --es tf_preview secret --ez tf_premium true --es tf_open activity-req
+shot 27-activity-girl open --es tf_preview secret --ez tf_girl true --es tf_open activity
+shot 28-activity-match-free open --es tf_preview secret --es tf_open activity-match
 fi
 if [ "$SET" = chat ] || [ "$SET" = all ]; then
 # Online Map (/dating)
@@ -314,6 +322,11 @@ shot 33-map-everyone open --es tf_preview secret-map --ez tf_premium true --es t
 shot 34-map-online open --es tf_preview secret-map --ez tf_premium true --es tf_open online
 shot 35-map-end open --es tf_preview secret-map --ez tf_premium true --es tf_open scroll
 shot 38-map-near open --es tf_preview secret-map --ez tf_premium true --es tf_open near
+# closer in (names never on top of each other or of a person; pins split up as you zoom)
+shot 39a-map-zoom-north open --es tf_preview secret-map --ez tf_premium true --es tf_open zoom-north
+shot 39b-map-zoom-haryana open --es tf_preview secret-map --ez tf_premium true --es tf_open zoom-haryana
+shot 39c-map-zoom-delhi open --es tf_preview secret-map --ez tf_premium true --es tf_open zoom-delhi
+shot 39d-map-zoom-south open --es tf_preview secret-map --ez tf_premium true --es tf_open zoom-south
 shot 36-map-moving anim --es tf_preview secret-map --ez tf_premium true
 shot 37-map-strong-phone anim --es tf_preview secret-map --ez tf_premium true --es tf_lite 0
 # Chats (/secret-app?tab=chat)

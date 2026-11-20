@@ -206,6 +206,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Ui.init(this)
+        Photos.assets = applicationContext.assets
         Lite.init(this)
         // failed server answers are kept on the phone for the page speed report (20 Nov)
         Api.keepFailuresIn(this)

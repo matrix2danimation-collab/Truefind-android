@@ -234,6 +234,11 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
             "all" -> allSheet(h.onlineNow ?: emptyList(), null)
             "near", "online" -> { filter = what; render() }
             "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height)
+            // closer in: state names and big cities, then towns, first names, highways and roads
+            "zoom-north" -> globe.showAt(78.0, 27.6, 7.0)
+            "zoom-haryana" -> globe.showAt(76.7, 29.1, 16.0)
+            "zoom-delhi" -> globe.showAt(77.15, 28.62, 40.0)
+            "zoom-south" -> globe.showAt(78.0, 14.5, 6.0)
         }
     }
 
