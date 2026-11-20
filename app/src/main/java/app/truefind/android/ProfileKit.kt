@@ -505,6 +505,8 @@ class PImg(ctx: Context, private val radiusDp: Float = 0f, private val round: Bo
         Photos.loadCover(list, w, h) { b -> if (want == list) { bmp = b; invalidate(); onLoaded?.invoke(b != null) } }
     }
     val hasPhoto: Boolean get() = bmp != null
+    /** the photo as drawn here (the hold-to-see-big photo starts with it while the whole photo loads) */
+    val bitmap: Bitmap? get() = bmp
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
         r.set(0f, 0f, w, h)

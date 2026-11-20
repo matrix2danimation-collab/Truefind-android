@@ -274,6 +274,9 @@ nshot p26-viewer 10 $P profile --es tf_open viewer
 nshot p27-logout 10 $P profile --es tf_open logout
 nshot p28-delete 10 $P profile --es tf_open delete
 nshot p29-toast 2 $P profile --es tf_open toast
+# hold a photo: it shows big over the page (owner, 21 Nov) — the main photo, then the profile photo at the top
+nshot p30-photo-hold 4 $P profile --es tf_open peek
+nshot p31-photo-hold-top 4 $P profile --es tf_open peek-avatar
 nshot b01-builder 9 $P builder
 nshot b02-builder-error 10 $P builder --es tf_open error
 nshot b03-builder-uploading 10 $P builder --es tf_open uploading

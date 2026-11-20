@@ -505,6 +505,8 @@ class CallView(
             builtVideo = isVideo
             val ctx = context
             removeAllViews()
+            // the buttons are made new below: their look is set again by bind() (muted, speaker on … stay right)
+            lastMuted = null; lastSpeaker = null; lastCamOff = null; lastVideoAsk = null
             setBackgroundColor(if (builtVideo) Color.BLACK else Color.WHITE)
             if (builtVideo) {
                 videoLayer.removeAllViews()
@@ -555,7 +557,7 @@ class CallView(
                     val cw = minOf(r - l, maxW); val x = (r - l - cw) / 2
                     content.layout(x, 0, x + cw, b - t)
                 }
-            }.also { it.addView(content, LayoutParams(-1, -1)) }, LayoutParams(-1, -1))
+            }.also { it.addView(content.free(), LayoutParams(-1, -1)) }, LayoutParams(-1, -1))
 
             // the "Show buttons" pill (video, buttons hidden)
             showBtns = CallKit.t(ctx, "", 13f, Color.WHITE, 700).apply {
@@ -769,7 +771,7 @@ class CallView(
             dur.addView(CallKit.blinkDot(ctx, Ui.c("#FF5A6A")), Tf.ll(Ui.dpi(8f), Ui.dpi(8f), r = 6f))
             duration.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(if (v) 16f else 20f))
             duration.fontFeatureSettings = "tnum"
-            dur.addView(duration)
+            dur.addView(duration.free())
             left.addView(dur, Tf.ll())
             row.addView(left, Tf.ll(0, Tf.W, 1f))
             val right = Tf.col(ctx, Gravity.END)
@@ -777,7 +779,7 @@ class CallView(
             val bal = Tf.row(ctx)
             bal.addView(CallKit.CoinTF(ctx), Tf.ll(r = 8f))
             balance.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(if (v) 16f else 19f))
-            bal.addView(balance, Tf.ll(r = 8f))
+            bal.addView(balance.free(), Tf.ll(r = 8f))
             val plus = FrameLayout(ctx).apply { setPadding(Ui.dpi(9f), Ui.dpi(9f), Ui.dpi(9f), Ui.dpi(9f)); contentDescription = "Add coins"; setOnClickListener { openAddCoins() } }
             plus.addView(FrameLayout(ctx).apply {
                 background = Tf.circle(Color.WHITE)
@@ -830,8 +832,8 @@ class CallView(
             card.addView(icon, Tf.ll(Ui.dpi(60f), Ui.dpi(60f)))
             card.addView(CallKit.t(ctx, "Call ended", 21f, Color.WHITE, 800), Tf.ll(t = 10f))
             endedLabel.fontFeatureSettings = "tnum"
-            card.addView(endedLabel, Tf.ll(t = 10f))
-            card.addView(endedNote, Tf.ll(t = 10f))
+            card.addView(endedLabel.free(), Tf.ll(t = 10f))
+            card.addView(endedNote.free(), Tf.ll(t = 10f))
             endedOverlay.addView(card, LayoutParams(-2, -2, Gravity.CENTER))
             endedOverlay.setPadding(Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f), Ui.dpi(24f))
             endedOverlay.visibility = GONE
@@ -1103,6 +1105,13 @@ class CallView(
         box.addView(v, LayoutParams(-1, -1))
     }
 
+    /**
+     * A view the call screen keeps for the whole call, taken out of the box it was in before the screen is drawn
+     * again. Voice → video draws the call screen a second time; these views were still in the voice screen's
+     * boxes, and putting a view into a second box closes the whole app (owner, 21 Nov: Video → "Asking…" → app gone).
+     */
+    private fun <T : View> T.free(): T { (parent as? ViewGroup)?.removeView(this); return this }
+
     private fun show(v: View, on: Boolean, invisible: Boolean = false) { v.visibility = if (on) VISIBLE else if (invisible) INVISIBLE else GONE }
 
     private fun badge(b: HeartBadge, on: Boolean) {
@@ -1180,6 +1189,8 @@ class CallView(
             "peerlocked" -> { openPeer(); peerPage?.preview("locked") }
             "premium" -> { openPeer(); peerPage?.preview("premium") }
             "hidden" -> { hideUi = true; conn.bind() }
+            // voice → video: Video tapped, she says yes after a moment (the call screen is drawn again as video)
+            "switch" -> session.askVideo()
             "toast" -> toast("Date request sent to ${CallKit.firstName(session.otherName)}", 60000)
             "liketoast" -> toast("${CallKit.firstName(session.otherName)} liked you for a date", 60000)
         }

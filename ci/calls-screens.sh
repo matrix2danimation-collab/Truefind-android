@@ -56,6 +56,8 @@ shot c25-voice-low-balance 12 $C voice-low-talkp
 shot c26-voice-reconnecting 12 $C voice-reconnect
 shot c27-voice-ended 12 $C voice-ended-charged
 shot c28-voice-ended-out-of-coins 12 $C voice-ended-ranout-charged
+# voice → video: Video tapped on a voice call, she says yes (the app used to close here: owner, 21 Nov)
+shot c29-voice-to-video 16 $C voice-talkp --es tf_open switch
 # after the call: the stars
 shot c30-rating 13 $C voice-ended --es tf_open rating
 shot c31-rating-report 13 $C voice-ended --es tf_open rating2

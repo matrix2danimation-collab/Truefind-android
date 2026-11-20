@@ -32,6 +32,7 @@ Test builds update themselves (the Update box, Settings → "Check for update") 
 | `AvatarArt.kt` | drawn faces for profiles without a photo (same as web) |
 | `LiveRoomsScreen.kt`, `LiveListPages.kt`, `LiveRoomPage.kt`, `LiveRoomSheets.kt`, `LiveSheets.kt`, `LiveKit.kt`, `LiveVoice.kt`, `LiveApi.kt` | native Live Rooms (`/live`, `/live/…`, audio only): list, Leaderboard, Go Live, the room (voice, seats, Super Chat, Hearts, gifts, Join list, Follow, Block / Report, End Live); same `liveRoom` / `liveRoomToken` functions as the web page |
 | `Photos.kt`, `Api.kt`, `Person.kt`, `Ui.kt`, `Widgets.kt` | helpers |
+| `PhotoPeek.kt` | hold a photo (Profile): it shows big over the page, like Instagram; lift the finger and it goes |
 | `AdminScreen.kt` | native Control Center (`/admin`, admin only): black top with the section tabs, members and overview data, verification decisions |
 | `AdTabs1.kt`, `AdVerify.kt`, `AdMembers.kt`, `AdTabs2.kt`, `AdTabs3.kt` | the Control Center sections: Overview, Growth · Verify · Members + member sheet · Reports, Experts, Live, Payouts · Support, Errors, Settings, System |
 | `AdKit.kt`, `AdSheets.kt`, `AdMedia.kt`, `AdIcons.kt`, `AdSource.kt`, `AdDemo.kt` | the Control Center's look (cards, buttons, pills, sheets, photo / video viewers), its server calls, and made-up data for the test pictures |

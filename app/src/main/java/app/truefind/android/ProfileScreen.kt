@@ -756,9 +756,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         else cam.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Camera, PC.head, 14f, 2.1f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         av.addView(cam, FrameLayout.LayoutParams(Ui.dpi(28f), Ui.dpi(28f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -Ui.dpi(2f); bottomMargin = -Ui.dpi(2f) })
         av.setOnClickListener { avatarSheet() }
-        av.setOnLongClickListener { showPencil(av); true }
-        av.isHapticFeedbackEnabled = false
-        Ui.pressable(av, .97f)
+        // hold: the photo big, like Instagram (owner, 21 Nov); when the finger lifts, the pencil shows as before
+        // (owner, 19 Nov). No photo yet: the pencil at once, as before.
+        PhotoPeek.attach(av, avatarRaws, { face.bitmap }, this@ProfileScreen, .97f, onEmpty = { showPencil(av) }, onClosed = { showPencil(av) })
         sec.addView(av, LinearLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(84f)).apply { rightMargin = Ui.dpi(16f) })
         val who = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
         val nameRow = ShrinkRow(ctx, Ui.dpi(6f))
@@ -1027,6 +1027,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         img.onLoaded = { ok -> spin.visibility = if (ok && !swapping) GONE else spin.visibility }
         img.set(listOf(ph.ref))
         if (img.hasPhoto && !swapping) spin.visibility = GONE
+        // hold: the photo big, like Instagram (owner, 21 Nov); a tap still opens it with Make main / Replace / Delete
+        PhotoPeek.attach(cell, listOf(ph.ref), { img.bitmap }, this@ProfileScreen, .97f)
         if (ph.pending) {
             val badge = Tf.t(ctx, "In review", if (big) 10.5f else 10f, PC.amber).apply {
                 gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 6f); maxLines = 1
@@ -1085,6 +1087,12 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             "delete" -> doDelete()
             "toast" -> say("Photo added. Our team will check it soon.")
             "scroll" -> scroll.scrollTo(0, pageCol.height)
+            // hold on the main photo / on the profile photo (the big photo stays: no finger is lifted)
+            "peek", "peek-avatar" -> {
+                val found = ArrayList<View>()
+                pageCol.findViewsWithText(found, if (what == "peek") "Main photo" else "Profile photo", View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION)
+                found.firstOrNull()?.performLongClick()
+            }
             else -> drawer?.previewOpen(what) ?: edit?.previewOpen(what) ?: people?.previewOpen(what)
         }
     }
