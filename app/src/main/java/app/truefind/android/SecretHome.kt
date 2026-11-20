@@ -138,6 +138,7 @@ class SecretHome(
         statusCover.elevation = Ui.dp(50f)
         addView(statusCover, LayoutParams(-1, -2))
         layer.onPages = { statusCover.visibility = if (layer.hasPage) VISIBLE else GONE }
+        layer.dimColor = Color.argb(115, 12, 12, 16)
         buildStories()
         buildToast()
         render()

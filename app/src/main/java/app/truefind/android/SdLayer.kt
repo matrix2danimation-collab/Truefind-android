@@ -38,6 +38,8 @@ class SdLayer(private val host: FrameLayout) {
     private val pageViews = HashSet<View>()
     /** a full page is open (Secret Dating paints the status bar strip to match it) */
     val hasPage: Boolean get() = stack.any { it.view in pageViews }
+    /** the shade behind a sheet (Secret Dating's yellow look: a plain dark one) */
+    var dimColor: Int = Color.argb(115, 60, 0, 25)
     /** told when a full page opens or closes (besides onChange) */
     var onPages: (() -> Unit)? = null
 
@@ -66,7 +68,7 @@ class SdLayer(private val host: FrameLayout) {
     fun sheet(panel: View, z: Float = 37f, locked: () -> Boolean = { false }, onClose: () -> Unit = {}, maxVh: Float = 0f): () -> Unit {
         val ctx = host.context
         val box = FrameLayout(ctx)
-        val dim = View(ctx).apply { setBackgroundColor(Color.argb(115, 60, 0, 25)); alpha = 0f }
+        val dim = View(ctx).apply { setBackgroundColor(dimColor); alpha = 0f }
         box.addView(dim, FrameLayout.LayoutParams(-1, -1))
         // the web's max-height: N vh = N % of the page's own height (the screen inside the phone's bars)
         val maxH = if (maxVh > 0f) (maxVh * (host.height - host.paddingTop - host.paddingBottom)).toInt().coerceAtLeast(Ui.dpi(300f))
