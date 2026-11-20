@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Handler
 import android.os.Looper
 import android.text.SpannableString
@@ -25,7 +26,8 @@ import java.io.ByteArrayOutputStream
 
 /**
  * EXPLORE · CONNECT — native version of src/pages/Explore.jsx.
- * Same data (getOnlineNow), same filters, same calls (startCall), same look.
+ * Same data (getOnlineNow), same filters, same calls (startCall). Since 20 Nov its look is its own: the
+ * wallpaper "Moti · Dil", bigger bubbles and a bigger call bar (the owner wanted that design in the native app only).
  * It sits above the web app's bottom bar, which stays the web's own.
  *
  * [host]  full-screen layer for the sheet, dialogs and the calling screen
@@ -153,15 +155,17 @@ class ExploreScreen(
         }
         actions.elevation = Ui.dp(10f)
         actions.isClickable = true
-        actions.setPadding(Ui.dpi(12f), Ui.dpi(13f), Ui.dpi(12f), Ui.dpi(11f))
-        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Ui.c("#16a34a"), 15f), INK, Ui.c("#674A96"), Ui.round(Color.WHITE, 14f, Ui.c("#E3D3FB"))) { startRandom("voice") }
-        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Color.WHITE, 16f), Color.WHITE, Ui.c("#E9D5FF"),
-            Ui.vgrad(Ui.c("#7A0AD7"), Ui.c("#5806A3"), 14f)) { startRandom("video") }
-        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Ui.c("#6C04CB"), 15f, 2.4f), Ui.c("#4C1D95"), Ui.c("#674A96"),
-            Ui.round(Ui.c("#F1E8FE"), 14f, Ui.c("#E3D3FB")), smallText = "match now", coin = false) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
+        actions.setPadding(Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f), Ui.dpi(13f))
+        // 20 Nov: bigger buttons, each with its own faint doodles (ExploreArt)
+        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Ui.c("#16a34a"), 18f), INK, Ui.c("#674A96"), Ui.round(Color.WHITE, 18f, Ui.c("#E3D3FB")),
+            art = ExploreArt.VOICE to 0.20f) { startRandom("voice") }
+        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Color.WHITE, 19f), Color.WHITE, Ui.c("#E9D5FF"),
+            Ui.vgrad(Ui.c("#7A0AD7"), Ui.c("#5806A3"), 18f), art = ExploreArt.VIDEO to 0.20f) { startRandom("video") }
+        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Ui.c("#6C04CB"), 18f, 2.4f), Ui.c("#4C1D95"), Ui.c("#674A96"),
+            Ui.round(Ui.c("#F1E8FE"), 18f, Ui.c("#E3D3FB")), smallText = "match now", coin = false, art = ExploreArt.RANDOM to 0.17f) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
         voiceRate = vr; videoRate = dr
         listOf(vb, db, rb).forEachIndexed { i, b ->
-            actions.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { if (i > 0) leftMargin = Ui.dpi(8f) })
+            actions.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { if (i > 0) leftMargin = Ui.dpi(9f) })
         }
         addView(actions, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
         showRates()
@@ -169,10 +173,13 @@ class ExploreScreen(
         // ── empty / error note ──
         empty.orientation = LinearLayout.VERTICAL
         empty.gravity = Gravity.CENTER_HORIZONTAL
-        emptyText = Ui.text(ctx, "", 13.5f, Ui.c("#EFE4FF"), false).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.15f) }
+        // a soft patch of the wallpaper's ground colour behind the note, so its words read cleanly over the doodles
+        empty.background = SoftPatch(Wallpaper.GROUND, 0.92f, 0.58f)
+        empty.setPadding(Ui.dpi(10f), Ui.dpi(18f), Ui.dpi(10f), Ui.dpi(18f))
+        emptyText = Ui.text(ctx, "", 13.5f, Ui.c("#3B0D7A"), false).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.15f) }
         empty.addView(emptyText)
-        emptyBtn = Ui.text(ctx, "Retry", 13f, Color.WHITE).apply {
-            background = Ui.round(Color.argb(36, 255, 255, 255), 12f, Color.argb(77, 255, 255, 255))
+        emptyBtn = Ui.text(ctx, "Retry", 13f, Ui.c("#4C1D95")).apply {
+            background = Ui.round(Color.WHITE, 12f, Color.argb(77, 91, 33, 182))
             setPadding(Ui.dpi(16f), Ui.dpi(7f), Ui.dpi(16f), Ui.dpi(7f))
         }
         empty.addView(emptyBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(10f) })
@@ -210,29 +217,42 @@ class ExploreScreen(
         (toast.layoutParams as LayoutParams).let { if (it.topMargin != top + Ui.dpi(30f)) { it.topMargin = top + Ui.dpi(30f); toast.layoutParams = it } }
     }
 
+    /**
+     * One call button. With [art] (its doodles' markup and how strongly they show) it is one of the bar's three
+     * big buttons (20 Nov): 74 high, bigger words, the icon right beside the word, its own doodles behind them.
+     * Without it, it is one of the two buttons of a busy person's pop-up, which stay as they were.
+     */
     private fun actionButton(
         ctx: Context, label: String, icon: PathIcon, color: Int, smallColor: Int, bg: GradientDrawable,
-        smallText: String? = null, coin: Boolean = true, onClick: () -> Unit,
+        smallText: String? = null, coin: Boolean = true, art: Pair<String, Float>? = null, onClick: () -> Unit,
     ): Pair<View, TextView> {
+        val big = art != null
         val b = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = bg
-            setPadding(Ui.dpi(6f), Ui.dpi(8f), Ui.dpi(6f), Ui.dpi(8f))
+            background = if (art == null) bg else LayerDrawable(arrayOf(bg, ButtonDoodles(Svg.of(art.first), art.second, 17f))).apply {
+                val line = Ui.dpi(1f)   // the doodles stay inside the button's outline
+                setLayerInset(1, line, line, line, line)
+            }
+            // (big: almost no side padding — the words are centred anyway, and on a narrow phone "Random" needs the room)
+            setPadding(Ui.dpi(if (big) 2f else 6f), Ui.dpi(8f), Ui.dpi(if (big) 2f else 6f), Ui.dpi(8f))
+            if (big) minimumHeight = Ui.dpi(74f)
             setOnClickListener { onClick() }
         }
         Ui.pressable(b)
-        val top = Ui.text(ctx, label, 14f, color).apply {
+        val top = Ui.text(ctx, label, if (big) 18.5f else 14f, color).apply {
             gravity = Gravity.CENTER
-            compoundDrawablePadding = Ui.dpi(5f)
+            compoundDrawablePadding = Ui.dpi(if (big) 7f else 5f)
             setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)
+            if (big) { minHeight = Ui.dpi(20f); maxLines = 1 }
         }
-        b.addView(top)
-        val small = Ui.text(ctx, smallText ?: "", 10.5f, smallColor).apply {
+        if (big) b.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)) else b.addView(top)
+        val small = Ui.text(ctx, smallText ?: "", if (big) 12.5f else 10.5f, smallColor).apply {
             gravity = Gravity.CENTER
-            compoundDrawablePadding = Ui.dpi(3f)
-            if (coin) setCompoundDrawablesWithIntrinsicBounds(CoinDrawable(12f), null, null, null)
+            compoundDrawablePadding = Ui.dpi(if (big) 4f else 3f)
+            if (coin) setCompoundDrawablesWithIntrinsicBounds(CoinDrawable(if (big) 14f else 12f), null, null, null)
+            if (big) { minHeight = Ui.dpi(14f); maxLines = 1 }
         }
-        b.addView(small, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(2f) })
+        b.addView(small, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(if (big) 6f else 2f) })
         return b to small
     }
 

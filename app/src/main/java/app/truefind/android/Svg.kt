@@ -77,6 +77,9 @@ class Svg private constructor(val vbX: Float, val vbY: Float, val vbW: Float, va
 
         fun of(xml: String): Svg = synchronized(cache) { cache.getOrPut(xml) { parse(xml) } }
 
+        /** A big picture that is drawn once into a bitmap and then not needed again (a wallpaper tile): parsed, not kept. */
+        fun once(xml: String): Svg = parse(xml)
+
         /** A Lucide icon (24 box, stroke = currentColor). */
         fun lucide(inner: String, stroke: Float = 2f, fill: String = "none"): Svg =
             of("<svg viewBox=\"0 0 24 24\" fill=\"$fill\" stroke=\"currentColor\" stroke-width=\"$stroke\" stroke-linecap=\"round\" stroke-linejoin=\"round\">$inner</svg>")
