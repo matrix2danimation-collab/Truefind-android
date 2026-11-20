@@ -103,7 +103,8 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
 
         // everyone on the map: verified boys and girls, online first
         peopleBtn.orientation = LinearLayout.HORIZONTAL; peopleBtn.gravity = Gravity.CENTER_VERTICAL
-        peopleBtn.background = GradientDrawable().apply { setColor(K.hot); cornerRadius = Ui.dp(29f); setStroke(dpi(2f), Color.WHITE) }
+        // green (owner, 20 Nov): the "N People · M Online" bar
+        peopleBtn.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#22C55E"), Ui.c("#15924A"))).apply { cornerRadius = Ui.dp(29f); setStroke(dpi(2f), Color.WHITE) }
         peopleBtn.elevation = Ui.dp(6f)
         peopleBtn.setPadding(dpi(22f), 0, dpi(18f), 0)
         peopleBtn.addView(peopleDot, lp(dpi(19f), dpi(19f), r = 12f))
@@ -265,16 +266,20 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
     private fun personCard(p: JSONObject): View {
         val live = SdRules.liveOf(p)
-        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line); setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)); elevation = Ui.dp(3f) }
+        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line); setPadding(dpi(3f), dpi(8f), dpi(3f), dpi(3f)); elevation = Ui.dp(3f) }
+        // a round photo with a soft pink ring (owner, 20 Nov: the photos are circles)
         val w = cardW() - dpi(6f)
+        val d = (w - dpi(14f)).coerceAtLeast(dpi(40f))
         val photo = FrameLayout(context)
-        val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true; outlineProvider = roundOutline(14f); setBackgroundColor(Ui.c("#F6D6E6")) }
+        val ringV = FrameLayout(context).apply { background = oval(Ui.c("#FFE1EF"), 2f, Ui.c("#F7A8CB")); setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)) }
+        val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true; outlineProvider = SD_CIRCLE_OUTLINE; setBackgroundColor(Ui.c("#F6D6E6")) }
         val raws = listOf(SdRules.s(p, "photo_thumb"), SdRules.s(p, "photo", "profile_picture")).filter { it.isNotBlank() }
-        val demo = Demo.cover(p, w, w)
+        val demo = Demo.cover(p, d, d)
         if (demo != null) img.setImageBitmap(demo)
-        else Photos.cachedCover(raws, w, w)?.let { img.setImageBitmap(it) } ?: Photos.loadCover(raws, w, w) { b -> if (b != null) img.setImageBitmap(b) }
-        photo.addView(img, LayoutParams(-1, -1))
-        card.addView(photo, lp(MATCH, w))
+        else Photos.cachedCover(raws, d, d)?.let { img.setImageBitmap(it) } ?: Photos.loadCover(raws, d, d) { b -> if (b != null) img.setImageBitmap(b) }
+        ringV.addView(img, LayoutParams(-1, -1))
+        photo.addView(ringV, LayoutParams(d, d, Gravity.CENTER_HORIZONTAL))
+        card.addView(photo, lp(MATCH, d))
         val dot = View(context).apply { background = oval(if (live) Ui.c("#34C759") else Ui.c("#A79FB8"), 2.5f, Color.WHITE); elevation = Ui.dp(3f); outlineProvider = null }
         val texts = vbox(context, 1f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(3f), dpi(7f), dpi(3f), dpi(6f)) }
         texts.addView(sdText(context, shortName(SdRules.s(p, "name", "full_name")), 14f, K.wine2).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
@@ -284,7 +289,11 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         card.addView(texts, lp(MATCH, WRAP))
         val wrap = FrameLayout(context).apply { clipChildren = false }
         wrap.addView(card, LayoutParams(-1, -2))
-        wrap.addView(dot, LayoutParams(dpi(14f), dpi(14f)).apply { leftMargin = dpi(3f + 6f); topMargin = dpi(3f) + w - dpi(9f) })
+        // the status dot sits on the circle's lower right
+        wrap.addView(dot, LayoutParams(dpi(14f), dpi(14f)).apply {
+            val cx = dpi(3f) + w / 2 + (d * 0.354f).toInt(); val cy = dpi(8f) + d / 2 + (d * 0.354f).toInt()
+            leftMargin = cx - dpi(7f); topMargin = cy - dpi(7f)
+        })
         wrap.contentDescription = "${SdRules.s(p, "name")}, ${SdRules.s(p, "age")}, $city, ${SdRules.seenText(p)}"
         wrap.press().onTap { h.openProfile(p) }
         return wrap
@@ -371,3 +380,6 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         }
     }
 }
+
+/** a round photo's outline (the map's people cards) */
+private val SD_CIRCLE_OUTLINE = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setOval(0, 0, v.width, v.height) } }

@@ -77,13 +77,26 @@ class SecretHome(
         Api.filter("Match", q, "-created_date", 500) { r ->
             if (my == chatsSeq && r.ok) {
                 val items = r.data.optJSONArray("items")
-                if (items != null) { chatWith.clear(); chatWith.putAll(SdChatIndex.build(items, me)); render() }
+                if (items != null) {
+                    chatWith.clear(); chatWith.putAll(SdChatIndex.build(items, me))
+                    openChats.clear(); openChats.addAll(SdChatOpen.openIds(items, me))
+                    render()
+                }
             }
             done?.invoke()
         }
     }
     /** the chat I already have with this person ("" when none) */
     fun chatIdFor(p: JSONObject): String = SdChatIndex.find(chatWith, p)
+    /**
+     * Chats opened once (a request paid with a credit, or a message sent with a plan): they open without a running
+     * plan, for good (owner, 20 Nov: "a chat once opened never locks again"). The same rule as the server's.
+     */
+    private val openChats = HashSet<String>()
+    fun chatOpen(matchId: String): Boolean = matchId.isNotEmpty() &&
+        (matchId in openChats || ChatCache.chat(matchId)?.optBoolean("open") == true || chatPage?.chats?.any { it.id == matchId && it.open } == true)
+    /** this person's chat is open for me without a plan */
+    fun chatOpenWith(p: JSONObject): Boolean = p.optBoolean("_chatOpen") || chatOpen(chatIdFor(p))
     private val viewed = HashSet<String>()
     private var notice = ""
     private var shown = false
@@ -454,7 +467,8 @@ class SecretHome(
         btn.addView(myBadge, LayoutParams(-1, -1))
         btn.contentDescription = "My profile"
         btn.press().onTap { openMyProfile(false) }
-        row.addView(btn, LayoutParams(dpi(56f), dpi(56f), Gravity.START or Gravity.CENTER_VERTICAL).apply { leftMargin = -dpi(6f) })
+        // (inside the page's edge: a margin past it cut the ring's left side — owner, 20 Nov)
+        row.addView(btn, LayoutParams(dpi(56f), dpi(56f), Gravity.START or Gravity.CENTER_VERTICAL))
         val vw = resources.displayMetrics.widthPixels / Ui.density
         row.addView(sdText(context, "TrueFind", (vw * .074f).coerceIn(26f, 31f), Color.WHITE, italic = true).apply { setPadding(dpi(4f), 0, dpi(4f), 0) },
             LayoutParams(-2, -2, Gravity.CENTER))
@@ -468,7 +482,8 @@ class SecretHome(
         creditsPill.setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(plus), null)
         val pillBox = FrameLayout(context).apply { addView(creditsPill, LayoutParams(-2, dpi(34f), Gravity.CENTER)) }
         pillBox.press().onTap { wallet() }
-        row.addView(pillBox, LayoutParams(-2, dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL).apply { rightMargin = -dpi(8f) })
+        // (inside the page's edge too: the "+" circle was cut on the right — owner, 20 Nov)
+        row.addView(pillBox, LayoutParams(-2, dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL))
         col.addView(row, lp(MATCH, WRAP))
     }
 
@@ -564,14 +579,30 @@ class SecretHome(
     }
 
     private fun buildPrivate() {
-        body.addView(sectionTitle("Private by Design", "Your privacy is the most important feature of this app."), lp(MATCH, WRAP, t = 24f, b = 14f))
-        val grid = hbox(context, 6f, Gravity.TOP)
-        for ((ic, t) in listOf(Lucide.Lock to "No Private Number Sharing", Lucide.Link2Off to "No Link Sharing", Lucide.ShieldCheck to "Every Function Will Work After Full Verification", Lucide.MessageCircleMore to "Unlimited Chat")) {
-            val cell = vbox(context, 8f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 18f); setPadding(dpi(2f), dpi(12f), dpi(2f), dpi(11f)); elevation = Ui.dp(2f) }
-            cell.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Color.WHITE, 21f, 2.1f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.hot) }, lp(dpi(40f), dpi(40f)))
-            val vw = resources.displayMetrics.widthPixels / Ui.density
-            cell.addView(sdText(context, t, (vw * .031f).coerceIn(11.5f, 13f), K.ink).apply { gravity = Gravity.CENTER; lineHeight(1.0f) })
-            grid.addView(cell, lp(0, MATCH, 1f))
+        // owner, 20 Nov: the four boxes were written unprofessionally — each point now has a short title and one clear line
+        body.addView(sectionTitle("Private by Design", "Your privacy is our most important feature."), lp(MATCH, WRAP, t = 24f, b = 14f))
+        val points = listOf(
+            Triple(Lucide.Lock, "Your number stays private", "Your phone number is never shown or shared."),
+            Triple(Lucide.Link2Off, "No links or IDs", "Links, IDs and social handles are blocked in chat."),
+            Triple(Lucide.ShieldCheck, "Verified members", "Every feature opens after full verification."),
+            Triple(Lucide.MessageCircleMore, "Unlimited chat", "Once a chat is open, talk as much as you like."),
+        )
+        val grid = vbox(context, 10f)
+        for (r in 0 until 2) {
+            val row = hbox(context, 10f, Gravity.TOP).apply { isBaselineAligned = false }
+            for (c in 0 until 2) {
+                val (ic, title, line) = points[r * 2 + c]
+                val cell = vbox(context, 0f).apply {
+                    background = rounded(Color.WHITE, 18f, 1f, Color.argb(40, 214, 40, 120))
+                    setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(13f)); elevation = Ui.dp(2f)
+                }
+                cell.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Color.WHITE, 18f, 2.1f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.hot) }, lp(dpi(36f), dpi(36f)))
+                cell.addView(sdText(context, title, 15f, Ui.c("#7A1240")).lineHeight(1.08f), lp(MATCH, WRAP, t = 10f))
+                cell.addView(sdText(context, line, 13f, K.sub, bold = false).lineHeight(1.18f), lp(MATCH, WRAP, t = 4f))
+                cell.contentDescription = "$title. $line"
+                row.addView(cell, lp(0, MATCH, 1f))
+            }
+            grid.addView(row, lp(MATCH, WRAP))
         }
         body.addView(grid, lp(MATCH, WRAP))
     }
@@ -647,6 +678,7 @@ class SecretHome(
             pill.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, K.rose, 15f, 2.2f)) }, lp(dpi(15f), dpi(15f)))
             pill.addView(sdText(context, "Private · Members only", 17f, K.sub))
         }
+        onlineRow.orientation = LinearLayout.HORIZONTAL
         onlineRow.addView(pill, lp(WRAP, dpi(36f)))
         val d = daysLeft
         if (premiumKnown && premium && d != null) {
@@ -654,8 +686,15 @@ class SecretHome(
             val plan = sdText(context, if (renew) "Premium ended · Renew" else "Premium · $d", 13f, if (renew) Ui.c("#B4183C") else K.wine)
                 .icon(Icon(Lucide.Hourglass, if (renew) Ui.c("#B4183C") else K.wine, 13f), 5f).apply {
                     gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
+                    // always one whole line (owner, 20 Nov: it was squeezed into two lines and cut)
+                    isSingleLine = true; maxLines = 1
                 }
             plan.press().onTap { wallet() }
+            // both side by side only when both fit whole; otherwise the plan goes under, centred
+            val free = resources.displayMetrics.widthPixels - dpi(32f)
+            val un = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            pill.measure(un, un); plan.measure(un, un)
+            if (pill.measuredWidth + dpi(8f) + plan.measuredWidth > free) onlineRow.orientation = LinearLayout.VERTICAL
             onlineRow.addView(plan, lp(WRAP, dpi(28f)))
         }
     }
@@ -1035,12 +1074,14 @@ class SecretHome(
     }
     /** Chat list: tap a photo → that person's profile (story + Open Chat) — at once, the rest of the profile fills in when it arrives */
     fun openFromChat(c: SdChatsPage.Chat) {
-        if (!canUse) { locked("chat"); return }
+        val open = c.open || chatOpen(c.id)
+        if (!canUse && !open) { locked("chat"); return }
         val known = ((online ?: emptyList()) + (discover ?: emptyList())).firstOrNull { p ->
             (c.pid.isNotEmpty() && p.optString("id") == c.pid) || (c.uid.isNotEmpty() && (p.optString("user_id") == c.uid || p.optString("created_by_id") == c.uid))
         }
         val base = known?.let { JSONObject(it.toString()) } ?: JSONObject().put("id", c.pid.ifEmpty { c.id }).put("user_id", c.uid).put("name", c.name).put("photo", c.photo).put("age", c.age).put("verified", c.verified)
         base.put("_online", c.online || base.optString("id") in onlineIds || SdRules.isOnline(base)).put("_chatId", c.id)
+        if (open) base.put("_chatOpen", true)
         chatStoryFor(c.uid, c.pid, "")?.let { base.put("_story", it) }
         val refresh = openProfile(base)
         if (known != null) return
@@ -1059,7 +1100,7 @@ class SecretHome(
     }
     /** Chat list: tap the name / message → the chat (a locked chat opens the plans straight away) */
     fun openChatRow(c: SdChatsPage.Chat) {
-        if (premiumKnown && !canUse) { unlock(); return }
+        if (premiumKnown && !canUse && !(c.open || chatOpen(c.id))) { unlock(); return }
         chatPage?.markRead(c.id)
         go("/chat/${c.id}", JSONObject().put("openChat", 1))
     }
@@ -1082,7 +1123,7 @@ class SecretHome(
     fun askRequest(p: JSONObject) {
         if (sameGender(p)) return
         val chat = chatIdFor(p)
-        if (chat.isNotEmpty()) { if (canUse) { layer.closeAll(); go("/chat/$chat", JSONObject().put("openChat", 1)) } else locked("chat"); return }
+        if (chat.isNotEmpty()) { if (canUse || chatOpen(chat)) { layer.closeAll(); go("/chat/$chat", JSONObject().put("openChat", 1)) } else locked("chat"); return }
         if (!canRequest) { locked("request"); return }
         val st = inviteState[p.optString("id")]
         if (st == "sent") { if (!layer.open) openProfile(p); return }
@@ -1275,6 +1316,27 @@ class SecretHome(
 }
 
 /** My Secret Dating chats by the other person's user id and profile id (newest first wins) — and the lookup for a profile. */
+/** Secret Dating: is this chat open for me without a running plan? — the same rule as the server's shared/chatOpen.ts */
+object SdChatOpen {
+    /** chats made before this moment (1 Dec 2026, UTC): the one who sent the request counts as having opened them */
+    const val RULE_FROM = 1796083200000L
+    fun isOpen(m: JSONObject, me: String): Boolean {
+        if (me.isEmpty()) return false
+        if (m.optString("app").ifEmpty { "secret" } != "secret") return false
+        val a = m.optString("user_a_id"); val b = m.optString("user_b_id")
+        if (a != me && b != me) return false
+        val of = m.optJSONArray("open_for")
+        if (of != null && (0 until of.length()).any { of.optString(it) == me }) return true
+        val made = SdRules.ms(m.optString("created_date"))
+        return made in 1 until RULE_FROM && a == me && m.optString("call_free_for") != me
+    }
+    fun openIds(items: org.json.JSONArray, me: String): Set<String> {
+        val out = HashSet<String>()
+        for (i in 0 until items.length()) { val m = items.optJSONObject(i) ?: continue; if (m.optString("id").isNotEmpty() && isOpen(m, me)) out.add(m.optString("id")) }
+        return out
+    }
+}
+
 object SdChatIndex {
     fun build(items: org.json.JSONArray, me: String): HashMap<String, String> {
         val out = HashMap<String, String>()

@@ -26,7 +26,9 @@ import java.util.Locale
 @SuppressLint("ViewConstructor")
 class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     class Chat(val id: String, val name: String, val photo: String, val photoThumb: String, val age: String, val pid: String, val uid: String,
-               val online: Boolean, val verified: Boolean, val text: String, val from: String, val time: String, var unread: Int)
+               val online: Boolean, val verified: Boolean, val text: String, val from: String, val time: String, var unread: Int,
+               /** opened once (a paid request, or a message with a plan): opens without a plan, for good (owner, 20 Nov) */
+               val open: Boolean = false)
 
     private val scroll = ScrollView(context)
     private val col = vbox(context)
@@ -112,6 +114,8 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
                 failed = true; if (chats == null) chats = emptyList(); render(); told(); return@invoke
             }
             loadingNow = false
+            // each chat opens at once from here (ChatCache)
+            ChatCache.putChats(arr)
             chats = list(arr).map { norm(it) }.filter { it.id.isNotEmpty() }.sortedByDescending { SdRules.ms(it.time) }
             failed = false
             render()
@@ -155,6 +159,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             text = text, from = from,
             time = pick(c.opt("last_message_at"), m?.opt("created_date"), c.opt("updated_date"), c.opt("created_date")),
             unread = pick(c.opt("unread_count"), c.opt("unread"), c.opt("unreadCount")).toDoubleOrNull()?.toInt() ?: 0,
+            open = c.optBoolean("open", false),
         )
     }
 

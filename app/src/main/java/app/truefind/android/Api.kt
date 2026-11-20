@@ -42,8 +42,14 @@ object Api {
         // reading something (getWallet, getOnlineNow, getChats …) is safe to ask again
         if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
         if (name in NOT_AGAIN) { invokeOnce(name, payload, timeoutMs, done); return }
-        actWithBusyRetry({ call(name, payload, timeoutMs) }, done)
+        actWithBusyRetry({ call(name, payload, timeoutMs) }, done, 0, PATIENT[name] ?: 2)
     }
+    /**
+     * Actions that wait out a busy server longer by themselves (more tries, each wait at most 5 s): a call must
+     * ring if it possibly can (owner, 20 Nov: "Couldn't connect · The server is busy" again and again on Call Back).
+     * Only when nothing was done yet (retry_safe) — the call is never started twice.
+     */
+    private val PATIENT = mapOf("startCall" to 4)
     /** actions that reach outside services first (an SMS, a payment order, an email): never asked again by themselves */
     private val NOT_AGAIN = setOf("sendPhoneOtp", "verifyPhoneOtp", "checkPhoneLogin", "whatsappCheck", "createPremiumCheckout",
         "createCreditsCheckout", "topUpWallet", "support", "deleteAccount", "adminPayouts")
@@ -65,12 +71,12 @@ object Api {
             Regex("rate.?limit|too many requests", RegexOption.IGNORE_CASE).containsMatchIn(json.optString("error") + " " + json.optString("message") + " " + text.take(300)))
     /** seconds the server asked to wait (1–10; 4 when it didn't say) */
     fun busyWaitMs(r: Result): Long = (r.data.optDouble("retry_after", 4.0).takeIf { !it.isNaN() } ?: 4.0).let { (it * 1000).toLong().coerceIn(1000L, 10_000L) }
-    private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0) {
+    private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0, most: Int = 2) {
         pool.execute {
             val r = work()
             main.post {
-                val again = tries < 2 && ready && !Demo.on && r.status == 429 && r.data.optBoolean("server_busy") && r.data.optBoolean("retry_safe")
-                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1) }, busyWaitMs(r))
+                val again = tries < most && ready && !Demo.on && r.status == 429 && r.data.optBoolean("server_busy") && r.data.optBoolean("retry_safe")
+                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1, most) }, if (most > 2) minOf(busyWaitMs(r), 5000L) else busyWaitMs(r))
                 else done(r)
             }
         }
@@ -78,11 +84,19 @@ object Api {
     /** the answer of a busy platform, made readable on every screen: its words in "error", the old code kept */
     private fun markBusy(code: Int, json: JSONObject, text: String): JSONObject {
         if (!isServerBusy(code, json, text)) return json
-        val said = json.optString("message").takeIf { it.isNotBlank() && it != "busy" }
+        // the platform itself turned the request away (its own "Rate limit exceeded", not one of our functions'
+        // answers): nothing ran on the server, so asking again later is always safe (20 Nov)
+        val platform = !json.has("rate_limited") && json.optString("error") != "busy" && !json.optBoolean("server_busy")
+        val said = json.optString("message").takeIf { it.isNotBlank() && it != "busy" && !platform }
         json.put("error_code", json.optString("error").ifBlank { "busy" })
+        if (platform) json.put("platform_said", (json.optString("message").ifBlank { json.optString("detail") }.ifBlank { text }).take(160))
         json.put("error", said ?: BUSY_TEXT)
         json.put("server_busy", true)
-        if (!json.has("retry_after")) json.put("retry_after", 4)
+        if (platform) json.put("retry_safe", true)
+        if (!json.has("retry_after")) {
+            val m = Regex("after\\s+(\\d+(?:\\.\\d+)?)\\s*s", RegexOption.IGNORE_CASE).find(json.optString("platform_said") + " " + text.take(300))
+            json.put("retry_after", m?.groupValues?.get(1)?.toDoubleOrNull()?.let { Math.ceil(it).toInt() } ?: 4)
+        }
         return json
     }
 
@@ -112,6 +126,7 @@ object Api {
      */
     fun request(method: String, path: String, body: ByteArray?, contentType: String?, timeoutMs: Int = 30000): Result {
         if (!ready) return Result(0, JSONObject(), "Not signed in yet")
+        count(method, path)
         var conn: HttpURLConnection? = null
         return try {
             conn = (URL("$origin/api/apps/$appId$path").openConnection() as HttpURLConnection).apply {
@@ -154,11 +169,39 @@ object Api {
     private val log = ArrayDeque<String>()
     /** the last failed server answers (newest last), each "time METHOD path → code: start of the answer" */
     val failures: List<String> get() = synchronized(log) { log.toList() }
+    // kept on the phone (20 Nov): the list was empty after the app was closed, so a report taken later showed nothing
+    @Volatile private var store: android.content.SharedPreferences? = null
+    /** MainActivity: where the failed answers are kept between app starts */
+    fun keepFailuresIn(ctx: android.content.Context) {
+        if (store != null) return
+        val sp = ctx.getSharedPreferences("tf_api_log", android.content.Context.MODE_PRIVATE)
+        store = sp
+        try {
+            val a = org.json.JSONArray(sp.getString("failed", "[]"))
+            synchronized(log) { log.clear(); for (i in 0 until a.length()) log.addLast(a.optString(i)); while (log.size > 40) log.removeFirst() }
+        } catch (e: Exception) { }
+    }
     private fun note(method: String, path: String, code: Int, text: String) {
-        val t = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
-        val line = "$t $method ${path.substringBefore('?')} → $code: ${text.replace(Regex("\\s+"), " ").take(120)}"
+        val t = java.text.SimpleDateFormat("d MMM HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+        val line = "$t $method ${path.substringBefore('?')} → $code: ${text.replace(Regex("\\s+"), " ").take(160)}"
         android.util.Log.w("TFApi", line)
-        synchronized(log) { log.addLast(line); while (log.size > 40) log.removeFirst() }
+        val snap = synchronized(log) { log.addLast(line); while (log.size > 40) log.removeFirst(); log.toList() }
+        try { store?.edit()?.putString("failed", org.json.JSONArray(snap).toString())?.apply() } catch (e: Exception) { }
+    }
+
+    // ── how many requests this phone sends (page speed report, 20 Nov): every request counts against the member's
+    // own allowance on the platform, and every function's reads against the app's shared one ──
+    private val sent = ArrayDeque<Pair<Long, String>>()
+    private fun count(method: String, path: String) {
+        val name = path.substringBefore('?').let { p -> if (p.startsWith("/functions/")) p.removePrefix("/functions/") else "$method ${p.substringAfter("/entities/").substringBefore('/')}" }
+        val now = System.currentTimeMillis()
+        synchronized(sent) { sent.addLast(now to name); while (sent.isNotEmpty() && now - sent.first().first > 10 * 60_000L) sent.removeFirst(); while (sent.size > 5000) sent.removeFirst() }
+    }
+    /** requests sent in the last [ms]: (total, by name, most first) */
+    fun sentIn(ms: Long): Pair<Int, List<Pair<String, Int>>> {
+        val now = System.currentTimeMillis()
+        val l = synchronized(sent) { sent.filter { now - it.first <= ms } }
+        return l.size to l.groupingBy { it.second }.eachCount().toList().sortedByDescending { it.second }
     }
 
     /** the server said this account is blocked (403 "banned") or the app is in maintenance (503): the status screens show it */
@@ -206,6 +249,7 @@ object Api {
 
     private fun requestOk(method: String, path: String, body: JSONObject?): Result {
         if (!ready) return Result(0, JSONObject(), "Not signed in yet")
+        count(method, path)
         return try {
             val rb = body?.toString()?.toRequestBody("application/json".toMediaType())
             val req = okhttp3.Request.Builder().url("$origin/api/apps/$appId$path").method(method, rb)

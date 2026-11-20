@@ -131,7 +131,8 @@ object SdProfileView {
         fun note(t: String) = sdText(ctx, t, 14f, K.wine).apply { gravity = Gravity.CENTER; lineHeight(1.15f) }
         fun renderMain() {
             mainBox.removeAllViews()
-            val prem = h.isPremium
+            // (a chat opened once opens without a plan: owner, 20 Nov)
+            val prem = h.isPremium || h.chatOpenWith(p)
             when {
                 p.optString("_chatId").isNotEmpty() -> {
                     mainBox.addView(big("Open Chat", if (prem) Icon(Lucide.MessageCircleMore, white, 27f, 2f) else Icon(Lucide.Lock, white, 22f, 2.3f)) { if (prem) h.openChat(p) else h.locked("chat") }, lp(MATCH, dpi(60f)))

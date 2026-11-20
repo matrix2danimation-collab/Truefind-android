@@ -181,7 +181,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         onlineBox.addView(onlineEmpty, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m.pi(14f) })
         addBody(onlineBox)
         // ── Live Rooms ──
-        addBody(sectionHead(ctx, "Live Rooms", liveDot(ctx), "All rooms") { pages.go("/live") }, m.pi(24f))
+        // (no "All rooms ›" at the end of the line: owner, 20 Nov — the tiles below open the rooms)
+        addBody(sectionHead(ctx, "Live Rooms", liveDot(ctx), null) { }, m.pi(24f))
         addBody(HomeTiles.grid(ctx, m, { p -> pages.go(p) }, { goEarn() }), m.pi(202f))
         // ── Serious Single ──
         addBody(HomeTiles.serious(ctx, m) { pages.go("/secret-app") }, m.pi(236f))

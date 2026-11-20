@@ -94,20 +94,14 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         column.setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), Ui.dpi(120f))
         content.addView(column, LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL))
 
-        // "True Find" (24, line-height 1)
-        val name = SpannableString("True Find").apply {
-            setSpan(ForegroundColorSpan(RC.ink), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            setSpan(ForegroundColorSpan(RC.burgundy), 5, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-        val word = Tf.t(ctx, name, 24f, RC.ink).apply { letterSpacing = -0.005f }
-        column.addView(word, RC.line(word, 24f, topDp = 18f))
-        // (clock) Recent — 27, line-height 1.1
+        // (clock) Call Back — 27, line-height 1.1. The page's name is "Call Back" and the "True Find" word above it
+        // is gone (owner, 20 Nov); the title takes the first line's place (18 from the top)
         val h1 = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         h1.addView(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.Clock, RC.purple, 24f, 2.2f)) }, LinearLayout.LayoutParams(Ui.dpi(24f), Ui.dpi(24f)).apply { rightMargin = Ui.dpi(8f) })
-        val h1t = Tf.t(ctx, "Recent", 27f, RC.ink)
+        val h1t = Tf.t(ctx, "Call Back", 27f, RC.ink)
         h1.addView(h1t, LinearLayout.LayoutParams(-2, -2))
-        h1.contentDescription = "Recent"
-        column.addView(h1, LinearLayout.LayoutParams(-2, -2).apply { val h = RC.half(h1t, 29.7f); topMargin = Ui.dpi(16f) + h; bottomMargin = h })
+        h1.contentDescription = "Call Back"
+        column.addView(h1, LinearLayout.LayoutParams(-2, -2).apply { val h = RC.half(h1t, 29.7f); topMargin = Ui.dpi(18f) + h; bottomMargin = h })
         val subT = Tf.t(ctx, "Your recent voice and video calls", 14.5f, RC.sub, false)
         column.addView(subT, RC.line(subT, 21.75f, topDp = 4f))
         listBox.orientation = LinearLayout.VERTICAL

@@ -32,7 +32,8 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
 
     class Item(val key: String, val label: String, val path: String)
     private val items = listOf(Item("home", "Home", "/"), Item("explore", "Explore", "/explore"), Item("find", "Find", "/secret-app"),
-        Item("recent", "Recent", "/chats"), Item("wallet", "Wallet", "/wallet"))
+        // the Recent tab reads "Call Back" (owner, 20 Nov: same icon, only its name changes)
+        Item("recent", "Call Back", "/chats"), Item("wallet", "Wallet", "/wallet"))
 
     private val ON = Ui.c("#6c0fd6"); private val OFF = Ui.c("#7c7594")
     private val wDp: Float get() = minOf(resources.displayMetrics.widthPixels / resources.displayMetrics.density, 480f)
@@ -141,7 +142,12 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
             text.color = col
             text.typeface = if (isOn) Ui.bold else Ui.regular
             val ly = iy + iconPx + gap
+            // a longer name ("Call Back") never runs into the next tab: a little smaller if it must be
+            val fit = cell * 0.94f
+            val tw = text.measureText(it.label)
+            if (tw > fit) text.textSize = labelPx * fit / tw
             c.drawText(it.label, cx, ly + (labelPx - labelH) / 2f - fm.ascent, text)
+            text.textSize = labelPx
             if (isOn) {
                 val uw = cell * 0.60f; val uh = Ui.dp(f(5f, 2.5f)); val by = top + h - Ui.dp(f(8f, 4f))
                 p.shader = LinearGradient(cx - uw / 2f, 0f, cx + uw / 2f, 0f, Ui.c("#6a06c4"), Ui.c("#8a2cf0"), Shader.TileMode.CLAMP)

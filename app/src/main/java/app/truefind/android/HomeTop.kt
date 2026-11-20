@@ -123,12 +123,9 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
         // "Your rank" sits right above number 4
         if (res.fromServer) col.addView(yourRank(ctx, res), Tf.ll(Tf.M, Tf.W, t = 16f))
         if (res.rest.isNotEmpty()) {
-            val list = Tf.col(ctx).apply { background = Tf.box(Color.WHITE, 18f, 1f, Ui.c("#EEE9F5")); setPadding(0, Ui.dpi(4f), 0, Ui.dpi(4f)) }
-            res.rest.forEachIndexed { i, row ->
-                if (i > 0) list.addView(View(ctx).apply { setBackgroundColor(Ui.c("#F1ECF8")) }, Tf.ll(Tf.M, Ui.dpi(1f), l = 64f))
-                list.addView(rowView(ctx, row), Tf.ll(Tf.M, Tf.W))
-            }
-            col.addView(list, Tf.ll(Tf.M, Tf.W, t = 12f))
+            // 4 … 30: one clean card per creator (owner, 20 Nov: "the lines below, made nicely")
+            col.addView(Tf.t(ctx, "Top ${res.rest.first().rank}–${res.rest.last().rank}", 13f, SUB).apply { letterSpacing = 0.02f }, Tf.ll(l = 4f, t = 18f, b = 2f))
+            res.rest.forEach { row -> col.addView(rowView(ctx, row), Tf.ll(Tf.M, Tf.W, t = 8f)) }
         }
         if (!res.fromServer) col.addView(Tf.t(ctx, "Couldn't load this week's ranking. Pull down to try again.", 12.5f, SUB, false).apply { gravity = Gravity.CENTER },
             Tf.ll(Tf.M, Tf.W, t = 14f))
@@ -137,7 +134,10 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
     // ── 2 · 1 · 3 ──
     private fun podium(ctx: Context, top: List<TopRank.Row>): View {
         val card = FrameLayout(ctx).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#6C2BD9"), DEEP)).apply { cornerRadius = Ui.dp(24f) }
+            // the purple card with premium doodles: crowns (some gold), hearts, rings and sparkles (owner, 20 Nov)
+            background = android.graphics.drawable.LayerDrawable(arrayOf(
+                GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#6C2BD9"), DEEP)).apply { cornerRadius = Ui.dp(24f) },
+                CrownDoodles(24f)))
             elevation = Ui.dp(6f)
         }
         val row = Tf.row(ctx, Gravity.BOTTOM).apply { setPadding(Ui.dpi(10f), Ui.dpi(18f), Ui.dpi(10f), 0) }
@@ -156,7 +156,9 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
         val ring = when (k) { 0 -> GOLD; 1 -> SILVER; else -> BRONZE }
         val size = if (first) 86f else 66f
         val c = Tf.col(ctx, Gravity.CENTER_HORIZONTAL).apply { setOnClickListener { sheets.person(r.p) }; contentDescription = "Number ${r.rank}, ${HomeRules.firstName(r.p)}" }
+        // the 1st's pattern for all three (owner, 20 Nov): a crown over each photo — gold, silver, bronze
         if (first) c.addView(View(ctx).apply { background = SvgDrawable(Svg.of(HomeSheets.CROWN), 28f, 22f, GOLD) }, Tf.ll(Ui.dpi(28f), Ui.dpi(22f), b = 2f))
+        else c.addView(View(ctx).apply { background = SvgDrawable(Svg.of(HomeSheets.CROWN), 22f, 17f, ring) }, Tf.ll(Ui.dpi(22f), Ui.dpi(17f), b = 2f))
         val ph = FrameLayout(ctx).apply { background = Tf.circle(ring); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
         val inner = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE); setPadding(Ui.dpi(2f), Ui.dpi(2f), Ui.dpi(2f), Ui.dpi(2f)) }
         val full = HomeRules.photoOf(r.p)
@@ -206,19 +208,121 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
 
     // ── 4 … 30 ──
     private fun rowView(ctx: Context, r: TopRank.Row): View {
-        val row = Tf.row(ctx).apply { setPadding(Ui.dpi(12f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f)); setOnClickListener { sheets.person(r.p) } }
-        row.addView(Tf.t(ctx, "${r.rank}", 14f, PURPLE).apply { gravity = Gravity.CENTER }, Tf.ll(Ui.dpi(26f), Tf.W, r = 8f))
+        val row = Tf.row(ctx).apply {
+            background = Tf.box(Color.WHITE, 18f, 1f, Ui.c("#ECE4FA"))
+            elevation = Ui.dp(1.5f)
+            setPadding(Ui.dpi(10f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f))
+            setOnClickListener { sheets.person(r.p) }
+        }
+        // the place: a small purple-tinted circle
+        row.addView(Tf.t(ctx, "${r.rank}", 14f, DEEP).apply { gravity = Gravity.CENTER; background = Tf.circle(Ui.c("#F1EAFE"), 1f, Ui.c("#DCCDFB")) },
+            Tf.ll(Ui.dpi(30f), Ui.dpi(30f), r = 10f))
+        // the photo with a thin purple ring
         val full = HomeRules.photoOf(r.p)
-        row.addView(RectPhoto(ctx, Ui.dp(999f)).apply { set(listOf(HomeRules.listPhoto(r.p, full), full)) }, Tf.ll(Ui.dpi(44f), Ui.dpi(44f), r = 12f))
+        val ph = FrameLayout(ctx).apply { background = Tf.circle(Ui.c("#B79CF2")); setPadding(Ui.dpi(2f), Ui.dpi(2f), Ui.dpi(2f), Ui.dpi(2f)) }
+        val inner = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE); setPadding(Ui.dpi(1.5f), Ui.dpi(1.5f), Ui.dpi(1.5f), Ui.dpi(1.5f)) }
+        inner.addView(RectPhoto(ctx, Ui.dp(999f)).apply { set(listOf(HomeRules.listPhoto(r.p, full), full)) }, LayoutParams(-1, -1))
+        ph.addView(inner, LayoutParams(-1, -1))
+        val phWrap = FrameLayout(ctx).apply { clipChildren = false }
+        phWrap.addView(ph, LayoutParams(Ui.dpi(48f), Ui.dpi(48f)))
+        if (HomeRules.isFree(r.p)) phWrap.addView(View(ctx).apply { background = Tf.circle(Ui.c("#1A9A50"), 2f, Color.WHITE) },
+            LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.END or Gravity.BOTTOM))
+        row.addView(phWrap, Tf.ll(Ui.dpi(48f), Ui.dpi(48f), r = 12f))
+        // name, age · city
         val t = Tf.col(ctx)
         val age = HomeRules.ageOf(r.p)
-        t.addView(Tf.t(ctx, "${HomeRules.firstName(r.p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}", 14.5f, INK).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
-        t.addView(Tf.t(ctx, HomeRules.cityOf(r.p).ifEmpty { "India" }, 12f, SUB, false).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }, Tf.ll(t = 1f))
+        t.addView(Tf.t(ctx, "${HomeRules.firstName(r.p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}", 15f, INK).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
+        val city = Tf.t(ctx, HomeRules.cityOf(r.p).ifEmpty { "India" }, 12.5f, SUB, false).apply {
+            maxLines = 1; ellipsize = TextUtils.TruncateAt.END
+            compoundDrawablePadding = Ui.dpi(3f)
+            setCompoundDrawablesWithIntrinsicBounds(Tf.lu(Lu.MapPin, Ui.c("#9B8AB8"), 12f, 2.2f), null, null, null)
+        }
+        t.addView(city, Tf.ll(t = 2f))
         row.addView(t, Tf.ll(0, Tf.W, 1f))
-        if (HomeRules.isFree(r.p)) row.addView(View(ctx).apply { background = Tf.circle(Ui.c("#1A9A50"), 2f, Color.WHITE) }, Tf.ll(Ui.dpi(10f), Ui.dpi(10f), r = 8f))
-        row.addView(Tf.t(ctx, TopRank.timeText(r.minutes), 13f, PURPLE).apply { gravity = Gravity.END }, Tf.ll(l = 6f))
+        // minutes this week: a purple pill with a clock
+        row.addView(Tf.t(ctx, TopRank.timeText(r.minutes), 12.5f, PURPLE).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            background = Tf.box(Ui.c("#F5F0FF"), 14f, 1f, Ui.c("#E2D5FB"))
+            setPadding(Ui.dpi(9f), Ui.dpi(5f), Ui.dpi(10f), Ui.dpi(5f))
+            compoundDrawablePadding = Ui.dpi(4f)
+            setCompoundDrawablesWithIntrinsicBounds(Tf.lu(Lu.Clock, PURPLE, 13f, 2.2f), null, null, null)
+            maxLines = 1
+        }, Tf.ll(l = 8f))
         row.contentDescription = "Number ${r.rank}, ${HomeRules.firstName(r.p)}, ${TopRank.timeText(r.minutes)} this week"
         Ui.pressable(row, 0.98f)
         return row
     }
+}
+
+/**
+ * The Weekly Top card's doodles (owner, 20 Nov: crowns, hearts and rings behind the first three, a clean premium
+ * look): a quiet, even pattern — crowns (every fourth one gold), hearts, rings and four-point sparkles — in
+ * see-through white over the purple, each a little turned. Drawn inside the card's rounded corners.
+ */
+class CrownDoodles(private val radiusDp: Float) : android.graphics.drawable.Drawable() {
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { strokeJoin = android.graphics.Paint.Join.ROUND; strokeCap = android.graphics.Paint.Cap.ROUND }
+    private val clip = android.graphics.Path()
+    private val shape = android.graphics.Path()
+    private val box = android.graphics.RectF()
+    override fun draw(c: android.graphics.Canvas) {
+        val b = bounds; if (b.isEmpty) return
+        c.save()
+        box.set(b); clip.reset(); clip.addRoundRect(box, Ui.dp(radiusDp), Ui.dp(radiusDp), android.graphics.Path.Direction.CW)
+        c.clipPath(clip)
+        val cell = Ui.dp(44f)
+        val cols = (b.width() / cell).toInt() + 2; val rows = (b.height() / cell).toInt() + 2
+        for (j in 0 until rows) for (i in 0 until cols) {
+            val k = (i * 7 + j * 13 + i * j * 3) and 0x7fffffff
+            // offset every other row, a little jitter inside the cell
+            val x = b.left + (i + if (j % 2 == 1) 0.5f else 0f) * cell + ((k % 9) - 4) * Ui.dp(1.2f)
+            val y = b.top + (j + 0.5f) * cell + (((k / 9) % 9) - 4) * Ui.dp(1.2f)
+            val turn = (((k / 81) % 7) - 3) * 6f
+            val size = Ui.dp(11f + (k % 4) * 1.5f)
+            c.save(); c.translate(x, y); c.rotate(turn)
+            when (k % 5) {
+                0, 3 -> crown(c, size, if ((i + j) % 4 == 0) android.graphics.Color.argb(78, 245, 197, 66) else android.graphics.Color.argb(40, 255, 255, 255))
+                1 -> heart(c, size * 0.9f, android.graphics.Color.argb(36, 255, 182, 222))
+                2 -> ring(c, size * 0.45f, android.graphics.Color.argb(34, 255, 255, 255))
+                else -> sparkle(c, size * 0.55f, android.graphics.Color.argb(46, 255, 255, 255))
+            }
+            c.restore()
+        }
+        c.restore()
+    }
+    private fun crown(c: android.graphics.Canvas, s: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = Ui.dp(1.4f); p.color = col
+        val w = s; val h = s * 0.72f
+        shape.reset()
+        shape.moveTo(-w / 2f, h / 2f); shape.lineTo(-w / 2f, -h / 4f); shape.lineTo(-w / 4f, h / 8f); shape.lineTo(0f, -h / 2f)
+        shape.lineTo(w / 4f, h / 8f); shape.lineTo(w / 2f, -h / 4f); shape.lineTo(w / 2f, h / 2f); shape.close()
+        c.drawPath(shape, p)
+        p.style = android.graphics.Paint.Style.FILL
+        c.drawCircle(0f, -h / 2f - Ui.dp(1.5f), Ui.dp(1.4f), p)
+        c.drawCircle(-w / 2f, -h / 4f - Ui.dp(1.5f), Ui.dp(1.2f), p)
+        c.drawCircle(w / 2f, -h / 4f - Ui.dp(1.5f), Ui.dp(1.2f), p)
+    }
+    private fun heart(c: android.graphics.Canvas, s: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.FILL; p.color = col
+        val h = s
+        shape.reset()
+        shape.moveTo(0f, h * 0.35f)
+        shape.cubicTo(-h * 0.55f, -h * 0.05f, -h * 0.35f, -h * 0.55f, 0f, -h * 0.25f)
+        shape.cubicTo(h * 0.35f, -h * 0.55f, h * 0.55f, -h * 0.05f, 0f, h * 0.35f)
+        shape.close()
+        c.drawPath(shape, p)
+    }
+    private fun ring(c: android.graphics.Canvas, r: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = Ui.dp(1.4f); p.color = col
+        c.drawCircle(0f, 0f, r, p)
+    }
+    private fun sparkle(c: android.graphics.Canvas, r: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.FILL; p.color = col
+        val q = r * 0.28f
+        shape.reset()
+        shape.moveTo(0f, -r); shape.quadTo(q, -q, r, 0f); shape.quadTo(q, q, 0f, r); shape.quadTo(-q, q, -r, 0f); shape.quadTo(-q, -q, 0f, -r); shape.close()
+        c.drawPath(shape, p)
+    }
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
 }

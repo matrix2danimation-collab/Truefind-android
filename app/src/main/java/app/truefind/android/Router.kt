@@ -68,6 +68,8 @@ class Router {
             under != null && insideProfile(path, search) && pathOnly(under.path) != "/profile" -> null
             else -> stepAbove(path, search)
         }
+        /** a Profile screen that was opened straight from another page (its state says "fromOutside") */
+        fun openedFromOutside(state: JSONObject?): Boolean = state?.optBoolean("fromOutside", false) == true
         /** a screen inside Profile (its edit page, settings, followers …), not the Profile page itself */
         fun insideProfile(path: String, search: String): Boolean =
             pathOnly(path) == "/profile/edit" || (pathOnly(path) == "/profile" && search.isNotEmpty() && search != "?")
@@ -149,6 +151,9 @@ class Router {
         while (guard++ < 8) {
             val cur = stack.last()
             if (same(prev.url, cur.url)) break                       // the same address: nothing to fix
+            // Profile screens opened one from another, starting from another page (Home → Verification → Become a
+            // Host): Back goes to the screen before, never to the Profile page in between (owner, 20 Nov)
+            if (insideProfile(prev.path, prev.search) && insideProfile(cur.path, cur.search) && outsideChain()) break
             val target = stepAboveFor(prev.path, prev.search, prev.state, cur) ?: break   // the page left has no fixed step
             if (same(target, cur.url)) break                         // Back landed on its step already
             // Inside Profile the screens are stacked on the Profile page (tfDepth = how deep): step back
@@ -186,6 +191,16 @@ class Router {
         stack[stack.size - 1] = parse(target)
         onChange(Move.POP)
         return true
+    }
+
+    /** the Profile screens on top of the history (one opened from another) began on another page, not on Profile */
+    private fun outsideChain(): Boolean {
+        var i = stack.size - 1
+        while (i >= 0 && insideProfile(stack[i].path, stack[i].search)) {
+            if (openedFromOutside(stack[i].state)) return true
+            i--
+        }
+        return false
     }
 
     private fun sameState(a: JSONObject?, b: JSONObject?): Boolean =

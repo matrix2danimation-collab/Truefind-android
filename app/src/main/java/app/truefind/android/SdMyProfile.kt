@@ -124,6 +124,11 @@ object SdMyProfile {
             pb.addView(ring, FrameLayout.LayoutParams(-1, -1))
             pb.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, white, 21f, 2.2f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.pill, 3f, white); elevation = Ui.dp(10f); contentDescription = "Change photo" }
                 .press().onTap { h.changePhoto() }, FrameLayout.LayoutParams(dpi(46f), dpi(46f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(6f) })
+            // Premium: the crown shows here too, as on the small photo at the top of Secret Dating (owner, 20 Nov)
+            if (premium) pb.addView(ImageView(ctx).apply {
+                setImageDrawable(Icon(Lucide.Crown, white, if (editing) 17f else 21f, 2.2f, white)); scaleType = ImageView.ScaleType.CENTER
+                background = oval(K.hot, 3f, white); elevation = Ui.dp(10f); contentDescription = "Premium"
+            }, FrameLayout.LayoutParams(dpi(if (editing) 36f else 44f), dpi(if (editing) 36f else 44f), Gravity.END or Gravity.TOP).apply { rightMargin = dpi(4f); topMargin = dpi(6f) })
             col.addView(pb, lp(dpi(size), dpi(size), t = 6f, gravity = Gravity.CENTER_HORIZONTAL))
 
             if (editing) {
@@ -277,17 +282,22 @@ object SdMyProfile {
                 col.addView(ver, lp(MATCH, WRAP, t = 22f))
                 // wallet · back to True Find
                 val rows = vbox(ctx).apply { setPadding(dpi(20f), dpi(12f), dpi(20f), dpi(30f)) }
-                fun row(ic: String, title: String, sub: String, onClick: () -> Unit) {
-                    val r = hbox(ctx, 12f).apply { background = rounded(white, 18f, 1f, K.line2); setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(8f)); minimumHeight = dpi(60f) }
-                    r.addView(ImageView(ctx).apply { setImageDrawable(Icon(ic, K.rose, 21f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(K.tint, 13f) }, lp(dpi(42f), dpi(42f)))
-                    val t = vbox(ctx); t.addView(sdText(ctx, title, 16.5f, K.ink2)); t.addView(sdText(ctx, sub, 13.5f, K.sub, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 1f))
+                fun row(ic: String, title: String, sub: String, blue: Boolean = false, onClick: () -> Unit) {
+                    // "Back to True Find" is a blue box (owner, 20 Nov): True Find's blue, white words
+                    val r = hbox(ctx, 12f).apply {
+                        background = if (blue) grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#4F5FEA"), Ui.c("#3346D3")), 18f) else rounded(white, 18f, 1f, K.line2)
+                        if (blue) elevation = Ui.dp(4f)
+                        setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(8f)); minimumHeight = dpi(60f)
+                    }
+                    r.addView(ImageView(ctx).apply { setImageDrawable(Icon(ic, if (blue) white else K.rose, 21f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(if (blue) Color.argb(46, 255, 255, 255) else K.tint, 13f) }, lp(dpi(42f), dpi(42f)))
+                    val t = vbox(ctx); t.addView(sdText(ctx, title, 16.5f, if (blue) white else K.ink2)); t.addView(sdText(ctx, sub, 13.5f, if (blue) Color.argb(220, 255, 255, 255) else K.sub, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 1f))
                     r.addView(t, lp(0, WRAP, 1f))
-                    r.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ChevronRight, K.wine, 20f)) }, lp(dpi(20f), dpi(20f)))
+                    r.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ChevronRight, if (blue) white else K.wine, 20f)) }, lp(dpi(20f), dpi(20f)))
                     r.press().onTap(onClick)
                     rows.addView(r, lp(MATCH, WRAP, t = 8f))
                 }
                 row(Lucide.Wallet, "Secret Dating Wallet", if (premium) "Plan, credits and history" else "Get Premium · credits come with the plan") { h.showWallet() }
-                row(Lucide.Home, "Back to True Find", "Leave Secret Dating") { h.exit() }
+                row(Lucide.Home, "Back to True Find", "Leave Secret Dating", blue = true) { h.exit() }
                 col.addView(rows, lp(MATCH, WRAP))
             }
             scroll.removeAllViews()

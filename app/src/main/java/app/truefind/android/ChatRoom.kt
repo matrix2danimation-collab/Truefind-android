@@ -86,7 +86,6 @@ class ChatRoom(
     private var balance: Int? = null
     private var lowCoins = false
     private var chatApp = "secret"
-    private var planUntil = prefs.getString("sd_plan_until", "") ?: ""
     private var otherTyping = false
     private var blockRow: JSONObject? = null
     private var story: JSONObject? = null
@@ -173,8 +172,18 @@ class ChatRoom(
         failedKey = ""; failedText = ""
         blockRow = null; story = null; storyPremium = false; gifOpen = false; gifTab = "sweet"; input.setText(""); shownKeys = emptyList()
         listCol.removeAllViews(); tailCol.removeAllViews()
+        // what was seen of this chat before (the chat list, the last visit) shows at once; the server's answer
+        // follows quietly (owner, 20 Nov: the chat took half a minute to show anything)
+        ChatCache.chat(id)?.let { c ->
+            other = JSONObject((c.optJSONObject("other") ?: JSONObject()).toString())
+            chatApp = if (c.optString("app") == "truefind") "truefind" else "secret"
+            otherPhotoRaw = SdRules.s(other, "photo")
+        }
+        ChatCache.messages(id)?.let { list -> messages.addAll(list); loading = false }
+        ChatCache.me().takeIf { it.isNotEmpty() }?.let { meId = it }
         shownNow = true
         renderAll()
+        if (!loading) scrollToEnd(false)
         load(g)
         unsubMsg = Realtime.subscribe("Message") { ev -> onMessageEvent(ev) }
         unsubMatch = Realtime.subscribe("Match") { ev -> onMatchEvent(ev) }
@@ -204,6 +213,8 @@ class ChatRoom(
     fun close() {
         if (!shownNow) return
         shownNow = false
+        // what is on screen now is what shows first next time
+        if (matchId.isNotEmpty() && !loading && error.isEmpty()) ChatCache.putMessages(matchId, messages)
         gen++
         unsubMsg?.invoke(); unsubMsg = null; unsubMatch?.invoke(); unsubMatch = null
         main.removeCallbacks(presence); main.removeCallbacks(fallback); main.removeCallbacks(typingOff); main.removeCallbacks(typingHide); main.removeCallbacks(fxEnd)
@@ -248,63 +259,77 @@ class ChatRoom(
     }
 
     private fun load(g: Int) {
-        Api.me { u ->
+        // a busy server (right after a request many calls go out at once) is waited out — up to 6 tries, each after
+        // the wait the server named; while the chat is already on screen (from before) nothing else changes
+        fun again(r: Api.Result, tries: Int) = !r.ok && tries < (if (r.data.optBoolean("server_busy")) 6 else 2)
+        fun waitFor(r: Api.Result) = if (r.data.optBoolean("server_busy")) Api.busyWaitMs(r) else 2500L
+        var meReady = meId.isNotEmpty()
+        var items: JSONArray? = null
+        // the messages show once both they and "who am I" are known (mine on the right, theirs on the left)
+        fun showMessages() {
+            val a = items ?: return
+            if (!meReady || g != gen) return
+            items = null
+            val fresh = ArrayList<JSONObject>()
+            for (i in a.length() - 1 downTo 0) a.optJSONObject(i)?.let { fresh.add(it) }
+            val same = !loading && fresh.size == messages.size && fresh.indices.all { fresh[it].optString("id") == messages[it].optString("id") && fresh[it].optBoolean("read") == messages[it].optBoolean("read") }
+            ChatCache.putMessages(matchId, fresh)
+            if (!same) {
+                val wasLoading = loading
+                messages.clear(); messages.addAll(fresh)
+                loading = false
+                renderAll(); if (wasLoading) scrollToEnd(false) else scrollToEnd(true)
+            } else if (loading) { loading = false; renderAll() }
+            markRead()
+        }
+        // the NEWEST 100 messages (oldest first on screen) — asked at once, beside the chat's details
+        fun page(tries: Int) {
+            Api.filter("Message", JSONObject().put("match_id", matchId), "-created_date", 100) { m ->
+                if (g != gen) return@filter
+                if (again(m, tries + 1)) { main.postDelayed({ if (g == gen) page(tries + 1) }, waitFor(m)); return@filter }
+                if (!m.ok) { if (loading) { error = m.error ?: "Could not load chat."; loading = false; renderAll() }; return@filter }
+                items = m.data.optJSONArray("items") ?: JSONArray()
+                showMessages()
+            }
+        }
+        fun chats(tries: Int) {
+            Api.invoke("getChats", JSONObject().put("match_id", matchId).put("only", true)) { r ->
+                if (g != gen) return@invoke
+                if (again(r, tries + 1)) { main.postDelayed({ if (g == gen) chats(tries + 1) }, waitFor(r)); return@invoke }
+                // (known from before: a failed look stays quiet — the chat is on screen and works)
+                if (!r.ok) { if (other == null) { error = r.error ?: "Could not load chat."; loading = false; renderAll() }; return@invoke }
+                val list = r.data.optJSONArray("chats")
+                val chat = (0 until (list?.length() ?: 0)).mapNotNull { list!!.optJSONObject(it) }.firstOrNull { it.optString("match_id") == matchId }
+                if (chat == null) { error = "Chat not found."; loading = false; renderAll(); return@invoke }
+                ChatCache.putChat(chat)
+                other = chat.optJSONObject("other") ?: JSONObject()
+                chatApp = if (chat.optString("app") == "truefind") "truefind" else "secret"
+                otherPhotoRaw = SdRules.s(other, "photo")
+                Api.invoke("getWallet", JSONObject().put("app", chatApp)) { w -> if (g == gen && w.ok) { balance = w.data.optJSONObject("wallet")?.optInt("coins") ?: 0; renderTray() } }
+                // did I block this person?
+                if (meId.isNotEmpty()) Api.filter("Block", JSONObject().put("blocker_id", meId), null, 200) { b -> if (g == gen && b.ok) { blockRow = findBlock(b.data.optJSONArray("items")); renderComposer() } }
+                // their story (Secret Dating chats only)
+                if (chatApp != "truefind") Api.invoke("getStories", JSONObject()) { s ->
+                    if (g != gen || !s.ok) return@invoke
+                    val arr = s.data.optJSONArray("stories")
+                    val o = other ?: JSONObject()
+                    story = (0 until (arr?.length() ?: 0)).mapNotNull { arr!!.optJSONObject(it) }.firstOrNull {
+                        (SdRules.s(o, "profile_id").isNotEmpty() && it.optString("profile_id") == SdRules.s(o, "profile_id")) || (SdRules.s(o, "user_id").isNotEmpty() && it.optString("user_id") == SdRules.s(o, "user_id"))
+                    }
+                    storyPremium = s.data.optBoolean("premium")
+                    renderHeader()
+                }
+                renderAll()
+            }
+        }
+        page(0)
+        if (meReady) chats(0)
+        else Api.me { u ->
             if (g != gen) return@me
             meId = u.data.optString("id")
-            // a busy server (right after a request many calls go out at once) is waited out — still "loading", not an
-            // error page — up to 6 tries, each after the wait the server named (owner, 20 Nov: "server busy" in the chat)
-            fun again(r: Api.Result, tries: Int) = !r.ok && tries < (if (r.data.optBoolean("server_busy")) 6 else 2)
-            fun waitFor(r: Api.Result) = if (r.data.optBoolean("server_busy")) Api.busyWaitMs(r) else 2500L
-            fun chats(tries: Int) {
-                Api.invoke("getChats", JSONObject().put("match_id", matchId).put("only", true)) { r ->
-                    if (g != gen) return@invoke
-                    if (again(r, tries + 1)) { main.postDelayed({ if (g == gen) chats(tries + 1) }, waitFor(r)); return@invoke }
-                    if (!r.ok) { error = r.error ?: "Could not load chat."; loading = false; renderAll(); return@invoke }
-                    val list = r.data.optJSONArray("chats")
-                    val chat = (0 until (list?.length() ?: 0)).mapNotNull { list!!.optJSONObject(it) }.firstOrNull { it.optString("match_id") == matchId }
-                    if (chat == null) { error = "Chat not found."; loading = false; renderAll(); return@invoke }
-                    other = chat.optJSONObject("other") ?: JSONObject()
-                    chatApp = if (chat.optString("app") == "truefind") "truefind" else "secret"
-                    otherPhotoRaw = SdRules.s(other, "photo")
-                    Api.invoke("getWallet", JSONObject().put("app", chatApp)) { w -> if (g == gen && w.ok) { balance = w.data.optJSONObject("wallet")?.optInt("coins") ?: 0; renderTray() } }
-                    if (chatApp != "truefind") Api.filter("PremiumAccess", JSONObject().put("user_id", meId).put("app", "secret"), "-until", 1) { p ->
-                        if (g != gen || !p.ok) return@filter
-                        val until = p.data.optJSONArray("items")?.optJSONObject(0)?.optString("until").orEmpty()
-                        planUntil = until
-                        if (until.isNotEmpty() && SdRules.ms(until) > System.currentTimeMillis()) prefs.edit().putString("sd_plan_until", until).apply() else prefs.edit().remove("sd_plan_until").apply()
-                        renderInfo()
-                    }
-                    // the NEWEST 100 messages (oldest first on screen)
-                    fun page(tries: Int) {
-                        Api.filter("Message", JSONObject().put("match_id", matchId), "-created_date", 100) { m ->
-                            if (g != gen) return@filter
-                            if (again(m, tries + 1)) { main.postDelayed({ if (g == gen) page(tries + 1) }, waitFor(m)); return@filter }
-                            if (!m.ok) { error = m.error ?: "Could not load chat."; loading = false; renderAll(); return@filter }
-                            val items = m.data.optJSONArray("items") ?: JSONArray()
-                            messages.clear()
-                            for (i in items.length() - 1 downTo 0) items.optJSONObject(i)?.let { messages.add(it) }
-                            loading = false
-                            renderAll(); scrollToEnd(false)
-                            markRead()
-                        }
-                    }
-                    page(0)
-                    // did I block this person?
-                    Api.filter("Block", JSONObject().put("blocker_id", meId), null, 200) { b -> if (g == gen && b.ok) { blockRow = findBlock(b.data.optJSONArray("items")); renderComposer() } }
-                    // their story (Secret Dating chats only)
-                    if (chatApp != "truefind") Api.invoke("getStories", JSONObject()) { s ->
-                        if (g != gen || !s.ok) return@invoke
-                        val arr = s.data.optJSONArray("stories")
-                        val o = other ?: JSONObject()
-                        story = (0 until (arr?.length() ?: 0)).mapNotNull { arr!!.optJSONObject(it) }.firstOrNull {
-                            (SdRules.s(o, "profile_id").isNotEmpty() && it.optString("profile_id") == SdRules.s(o, "profile_id")) || (SdRules.s(o, "user_id").isNotEmpty() && it.optString("user_id") == SdRules.s(o, "user_id"))
-                        }
-                        storyPremium = s.data.optBoolean("premium")
-                        renderHeader()
-                    }
-                    renderAll()
-                }
-            }
+            if (meId.isNotEmpty()) ChatCache.setMe(meId)
+            meReady = true
+            showMessages()
             chats(0)
         }
     }
@@ -382,7 +407,7 @@ class ChatRoom(
     private fun setTyping(flag: Boolean) { if (matchId.isNotEmpty()) Api.invoke("setTyping", JSONObject().put("match_id", matchId).put("typing", flag)) { } }
     private fun onType(v: String) {
         val now = System.currentTimeMillis()
-        if (v.trim().isNotEmpty() && now - typingPing > 2000) { typingPing = now; setTyping(true) }
+        if (v.trim().isNotEmpty() && now - typingPing > 4000) { typingPing = now; setTyping(true) }
         main.removeCallbacks(typingOff); main.postDelayed(typingOff, 3500)
         renderSendState()
     }
@@ -593,21 +618,11 @@ class ChatRoom(
     private fun renderInfo() {
         infoBox.removeAllViews()
         if (loading || error.isNotEmpty()) return
-        planLeft()?.let { (till, left) ->
-            if (chatApp == "secret") infoBox.addView(infoPill("Chat open till $till · $left left", Lucide.Clock, K.wine, true), lp(WRAP, WRAP, t = 2f, b = 6f))
-        }
+        // (no "Chat open till … · … left" any more: a chat once opened stays open — owner, 20 Nov)
         infoBox.addView(infoPill("Numbers, links, IDs, email & abusive words are not sent", Lucide.ShieldCheck, K.sub, false), lp(WRAP, WRAP, t = 2f, b = 8f))
     }
     private fun infoPill(t: String, icon: String, color: Int, bold: Boolean) = sdText(context, t, if (bold) 13.5f else 13f, color, bold = bold).icon(Icon(icon, K.rose, 15f), 7f).apply {
         gravity = Gravity.CENTER_VERTICAL; background = rounded(Color.WHITE, 99f, 1f, K.line2); setPadding(dpi(13f), dpi(7f), dpi(13f), dpi(7f)); lineHeight(1.1f)
-    }
-    private fun planLeft(): Pair<String, String>? {
-        val until = SdRules.ms(planUntil); val ms = until - System.currentTimeMillis()
-        if (until == 0L || ms <= 0) return null
-        val d = ms / 86_400_000L; val hh = ms / 3_600_000L; val m = max(1L, (ms + 59_999) / 60_000)
-        val left = if (d >= 1) "$d day${if (d == 1L) "" else "s"}${if (hh % 24 != 0L) " ${hh % 24}h" else ""}" else if (hh >= 1) "${hh}h ${(ms % 3_600_000L) / 60_000}m" else "$m min"
-        val till = java.text.SimpleDateFormat("d MMM, h:mm a", Locale.US).format(java.util.Date(until)).replace("AM", "am").replace("PM", "pm")
-        return till to left
     }
 
     private var shownKeys: List<String> = emptyList()
@@ -1806,5 +1821,35 @@ object Voice {
         main.removeCallbacks(tick)
         player?.let { p -> try { if (p.isPlaying) p.stop() } catch (e: Exception) { }; p.release(); cb?.invoke(false, 0.0, 0.0) }
         player = null; uri = ""
+    }
+}
+
+/**
+ * What was last seen of each chat (owner, 20 Nov: "a chat should open the moment it is tapped, with everything on
+ * it"): the chat list's answer and each chat's last 100 messages, for this sign-in only. A chat opens from here
+ * at once, and the server's answer replaces it a moment later.
+ */
+object ChatCache {
+    private var token = ""
+    private var meId = ""
+    private val chats = HashMap<String, JSONObject>()
+    private val msgs = HashMap<String, List<JSONObject>>()
+    private fun check() { if (token != Api.token) { token = Api.token; meId = ""; chats.clear(); msgs.clear() } }
+    fun me(): String { check(); return meId }
+    fun setMe(id: String) { check(); meId = id }
+    fun chat(id: String): JSONObject? { check(); return chats[id] }
+    fun putChat(c: JSONObject) {
+        check()
+        val id = c.optString("match_id").ifEmpty { c.optString("id") }
+        if (id.isNotEmpty() && c.optJSONObject("other") != null) chats[id] = c
+    }
+    fun putChats(a: JSONArray?) { for (i in 0 until (a?.length() ?: 0)) a!!.optJSONObject(i)?.let { putChat(it) } }
+    fun messages(id: String): List<JSONObject>? { check(); return msgs[id]?.map { JSONObject(it.toString()) } }
+    fun putMessages(id: String, list: List<JSONObject>) {
+        check()
+        if (id.isEmpty()) return
+        msgs[id] = list.takeLast(100).map { JSONObject(it.toString()) }
+        // (a phone that keeps many chats open in a day: the oldest are let go)
+        if (msgs.size > 40) msgs.keys.firstOrNull { it != id }?.let { msgs.remove(it) }
     }
 }

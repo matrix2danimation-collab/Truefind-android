@@ -279,8 +279,14 @@ object Perf {
         // the server answers that failed lately (20 Nov): with these, an error on a photo can be traced to its real
         // reason — 429 = the server was busy (too many requests), 5xx = a server failure, 401 = sign-in not accepted
         val bad = Api.failures
-        sb.append("\nSERVER ANSWERS THAT FAILED (the newest last) — when · call · code: start of the answer\n")
+        sb.append("\nSERVER ANSWERS THAT FAILED (the newest last, kept when the app closes) — when · call · code: start of the answer\n")
         if (bad.isEmpty()) sb.append("  (none)\n") else bad.takeLast(25).forEach { sb.append("  $it\n") }
+        // how many requests this phone sent (each one counts against the member's own allowance on the server)
+        val (n1, _) = Api.sentIn(60_000L)
+        val (n5, by5) = Api.sentIn(5 * 60_000L)
+        sb.append("\nREQUESTS THIS PHONE SENT — last minute: $n1 · last 5 minutes: $n5\n")
+        by5.take(12).forEach { (name, n) -> sb.append("  $name ×$n\n") }
+        if (KeepPage.healedAll > 0) sb.append("\nPages laid out again by the safety net: ${KeepPage.healedAll}\n")
         return sb.toString()
     }
 
