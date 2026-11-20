@@ -139,6 +139,12 @@ open class InsetFrame(ctx: Context, private val fixedDp: Float = -1f) : FrameLay
     }
 }
 
+/** a strip as tall as the phone's status bar, in one colour (over a page that scrolls under the bar) */
+class StatusStrip(ctx: Context, color: Int) : View(ctx) {
+    init { setBackgroundColor(color); isClickable = false }
+    override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), SD.topInset)
+}
+
 /** the little grey handle at the top of a white sheet */
 fun sdHandle(ctx: Context, wDp: Float = 80f): View = View(ctx).apply {
     background = GradientDrawable().apply { setColor(SD.HANDLE); cornerRadius = Ui.dp(3f) }

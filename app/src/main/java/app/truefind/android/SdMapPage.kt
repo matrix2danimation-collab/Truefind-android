@@ -84,6 +84,8 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         sheet.addView(col, LayoutParams(-1, -2))
         outer.addView(sheet, lp(MATCH, WRAP, t = -26f))
         scroll.addView(outer, LayoutParams(-1, -2))
+        // the page scrolls under the status bar: the bar keeps the maroon
+        addView(StatusStrip(context, SD.M), LayoutParams(-1, -2))
         noticeBox.background = rounded(Ui.c("#F0FDF4"), 14f, 1f, Color.argb(89, 22, 163, 74))
         noticeBox.setPadding(dpi(14f), dpi(11f), dpi(14f), dpi(11f)); noticeBox.gravity = Gravity.CENTER
         noticeBox.setOnClickListener { h.clearNotice() }

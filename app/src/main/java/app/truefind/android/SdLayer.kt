@@ -34,19 +34,29 @@ class SdLayer(private val host: FrameLayout) {
 
     fun closeAll() { for (i in stack.toList()) remove(i.view, animate = false) }
 
+    /** the views opened as full pages (not sheets or fades) */
+    private val pageViews = HashSet<View>()
+    /** a full page is open (Secret Dating paints the status bar strip to match it) */
+    val hasPage: Boolean get() = stack.any { it.view in pageViews }
+    /** told when a full page opens or closes (besides onChange) */
+    var onPages: (() -> Unit)? = null
+
     private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float) {
         v.elevation = Ui.dp(60f) + z
         host.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         stack.add(Item(v, back, close))
         onChange?.invoke()
+        onPages?.invoke()
     }
 
     fun remove(v: View, animate: Boolean = true) {
         val i = stack.indexOfFirst { it.view === v }
         if (i < 0) return
         stack.removeAt(i)
+        pageViews.remove(v)
         if (animate) v.animate().alpha(0f).setDuration(180).withEndAction { host.removeView(v) }.start() else host.removeView(v)
         onChange?.invoke()
+        onPages?.invoke()
     }
 
     /**
@@ -96,6 +106,7 @@ class SdLayer(private val host: FrameLayout) {
             }
         }
         view.isClickable = true
+        pageViews.add(view)
         add(view, back, close, z)
         if (animate) {
             view.translationX = host.width.toFloat().coerceAtLeast(1000f)

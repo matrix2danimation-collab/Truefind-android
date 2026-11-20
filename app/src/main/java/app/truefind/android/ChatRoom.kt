@@ -208,7 +208,8 @@ class ChatRoom(
         ph.press().onTap { openProfile() }
         sdHeader.addView(ph, LayoutParams(dpi(50f), dpi(50f)))
         val t = vbox(ctxOf(), 3f)
-        t.addView(sdName, lp(MATCH, WRAP))
+        sdName.maxWidth = resources.displayMetrics.widthPixels - dpi(16f + 64f + 60f + 16f)
+        t.addView(sdName, lp(WRAP, WRAP))
         t.addView(sdStatus, lp(MATCH, WRAP))
         t.onTap { openProfile() }
         sdHeader.addView(t, LayoutParams(-1, -2, Gravity.CENTER_VERTICAL).apply { leftMargin = dpi(64f); rightMargin = dpi(60f) })
@@ -1441,10 +1442,25 @@ class ChatRoom(
     }
 
     private fun sheetPanel(): LinearLayout = vbox(context).apply {
+        if (sdLook) {
+            background = SD.sheetBg(); setPadding(dpi(20f), dpi(12f), dpi(20f), dpi(22f))
+            addView(View(context).apply { background = rounded(SD.HANDLE, 3f) }, lp(dpi(44f), dpi(6f), b = 14f, gravity = Gravity.CENTER_HORIZONTAL))
+            return@apply
+        }
         background = K.sheet(); setPadding(dpi(18f), dpi(10f), dpi(18f), dpi(18f))
         addView(View(context).apply { background = rounded(Ui.c("#F2C3D8"), 3f) }, lp(dpi(44f), dpi(5f), b = 14f, gravity = Gravity.CENTER_HORIZONTAL))
     }
     private fun sheetRow(icon: String, label: String, sub: String?, danger: Boolean, onClick: () -> Unit): View {
+        if (sdLook) {
+            // the rows of the chat list's long-press menu (owner's photos, 20 Nov night)
+            val r = hbox(context, 14f).apply { setPadding(dpi(4f), dpi(8f), dpi(4f), dpi(8f)); minimumHeight = dpi(58f) }
+            r.addView(ImageView(context).apply { setImageDrawable(Icon(icon, if (danger) SD.RED else Ui.c("#3A3A44"), 20f)); scaleType = ImageView.ScaleType.CENTER; background = oval(if (danger) SD.RED_TINT else Ui.c("#F4F4F7")) }, lp(dpi(44f), dpi(44f)))
+            val t = vbox(context, 2f)
+            t.addView(jk(context, label, 15.5f, if (danger) SD.RED else SD.TXT, 700))
+            if (sub != null) t.addView(jk(context, sub, 12.5f, SD.SUB, 500))
+            r.addView(t, lp(0, WRAP, 1f))
+            return r.press(0.98f).onTap { onClick() }
+        }
         val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 16f, 1f, if (danger) Ui.c("#F8C9D3") else K.line2); setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(8f)); minimumHeight = dpi(58f) }
         r.addView(ImageView(context).apply { setImageDrawable(Icon(icon, if (danger) CK.red else K.rose, 20f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(if (danger) Ui.c("#FFE4E8") else K.tint, 12f) }, lp(dpi(40f), dpi(40f)))
         val t = vbox(context)
@@ -1456,15 +1472,18 @@ class ChatRoom(
     private fun menu() {
         val p = sheetPanel()
         val head = hbox(context, 12f).apply { setPadding(dpi(4f), 0, dpi(4f), dpi(8f)) }
-        val ring = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-        val w = FrameLayout(context).apply { background = oval(K.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+        val ring = FrameLayout(context).apply {
+            background = if (sdLook) null else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
+            if (!sdLook) setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f))
+        }
+        val w = FrameLayout(context).apply { if (!sdLook) { background = oval(K.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) } }
         val ph = RoundPhoto(context, 42f); ph.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", SdRules.s(other, "profile_id")), Ui.dpi(42f)))
         w.addView(ph, LayoutParams(-1, -1)); ring.addView(w, LayoutParams(-1, -1))
-        head.addView(ring, lp(dpi(50f), dpi(50f)))
-        head.addView(tx(SdRules.s(other, "name"), 22f, K.deep).oneLine(), lp(0, WRAP, 1f))
+        head.addView(ring, lp(dpi(if (sdLook) 46f else 50f), dpi(if (sdLook) 46f else 50f)))
+        head.addView(if (sdLook) jk(context, SdRules.s(other, "name"), 17f, SD.TXT, 700).oneLine() else tx(SdRules.s(other, "name"), 22f, K.deep).oneLine(), lp(0, WRAP, 1f))
         p.addView(head, lp(MATCH, WRAP))
         var close: () -> Unit = {}
-        p.addView(sheetRow(Lucide.User, "View profile", null, false) { close(); profilePage() }, lp(MATCH, WRAP, t = 8f))
+        p.addView(sheetRow(Lucide.User, "View profile", null, false) { close(); profilePage() }, lp(MATCH, WRAP, t = if (sdLook) 0f else 8f))
         if (story != null) p.addView(sheetRow(Lucide.Eye, "Watch story", if (storyPremium) "Posted in the last 24 hours" else "Premium", false) { close(); openStory() }, lp(MATCH, WRAP, t = 8f))
         if (blockRow != null) p.addView(sheetRow(Lucide.Ban, "Unblock", "Let them message you again", false) { close(); unblock() }, lp(MATCH, WRAP, t = 8f))
         else p.addView(sheetRow(Lucide.Ban, "Block", "They won't be able to message you", true) { close(); confirm("block") }, lp(MATCH, WRAP, t = 8f))

@@ -45,7 +45,6 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
     private var cur = 0
     private val card = Pager()
     private val topShade = Shade(top = true)
-    private val bottomShade = Shade(top = false)
     private val empty = vbox(context, 0f, Gravity.CENTER_HORIZONTAL)
     private val loadingDots = LinearLayout(context)
 
@@ -86,8 +85,6 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         for (f in faces) card.addView(f, LayoutParams(-1, -1))
         faces[1].visibility = INVISIBLE
         card.addView(topShade, LayoutParams(-1, -1))
-        card.addView(bottomShade, LayoutParams(-1, -1))
-        bottomShade.isClickable = false; topShade.isClickable = false
 
         // no one online / still loading
         empty.visibility = GONE
@@ -371,6 +368,8 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
 
         init {
             addView(photo, LayoutParams(-1, -1))
+            // the dark fade at the bottom goes under the words (not over them)
+            addView(Shade(top = false), LayoutParams(-1, -1))
             onlineRow.orientation = LinearLayout.HORIZONTAL; onlineRow.gravity = Gravity.CENTER_VERTICAL
             onlineRow.addView(View(context).apply { background = oval(SD.ONLINE) }, lp(dpi(10f), dpi(10f), r = 7f))
             onlineRow.addView(onlineText)

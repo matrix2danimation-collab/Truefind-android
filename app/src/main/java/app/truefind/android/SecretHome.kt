@@ -115,6 +115,7 @@ class SecretHome(
     private var chatPage: SdChatsPage? = null
     /** the Stories block (shown under the map on Online Map) */
     private val storiesBox = vbox(ctx)
+    private val statusCover = StatusStrip(ctx, K.PAGE[0])
     private val storyRow = LinearLayout(ctx)
     private val storyLock = LinearLayout(ctx)
     private val storyLockTitle = jk(ctx, "", 15f, SD.M, 700)
@@ -132,6 +133,11 @@ class SecretHome(
         outlineProvider = android.view.ViewOutlineProvider.BOUNDS
         clipToOutline = true
         setBackgroundColor(Color.WHITE)
+        // a full page open on top (a profile, My profile): the strip under the status bar takes its pink
+        statusCover.visibility = GONE
+        statusCover.elevation = Ui.dp(50f)
+        addView(statusCover, LayoutParams(-1, -2))
+        layer.onPages = { statusCover.visibility = if (layer.hasPage) VISIBLE else GONE }
         buildStories()
         buildToast()
         render()
