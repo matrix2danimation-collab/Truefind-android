@@ -26,9 +26,10 @@ import kotlin.math.min
 
 /**
  * SECRET DATING · Online Map (/dating) — the web's map view of SecretApp.jsx, native:
- * header (back · Online Map · credits), "Verified Boys & Girls Across India", the 3D Earth
- * (Near You / Online filters, full screen), "N People · M Online", the gliding strip of
- * people and the location promise. The bottom bar stays the web's own.
+ * the maroon top of Chat and My Activity (owner, 20 Nov night: same look, no credits here) with
+ * "Online Map", the plan pill and "Verified Boys & Girls Across India", then on the white sheet the 3D Earth
+ * (Near You / Online filters, full screen), "N People · M Online", the Stories (moved here from Home, right
+ * under the map — owner, 20 Nov night), the gliding strip of people and the location promise.
  */
 @SuppressLint("ViewConstructor")
 class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
@@ -61,21 +62,32 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     private var filter = "all"
     private var fullHost: FrameLayout? = null
 
+    val top = SdTop(context, h, "Online Map", bell = true, extra = planBox, subtitle = "Verified Boys & Girls Across India")
+    private var storiesV: View? = null
+
     init {
         clipChildren = false
+        setBackgroundColor(Color.WHITE)
         scroll.isVerticalScrollBarEnabled = false
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         scroll.isFillViewport = true
         addView(scroll, LayoutParams(-1, -1))
-        col.setPadding(dpi(16f), dpi(16f), dpi(16f), dpi(40f))
-        scroll.addView(col, LayoutParams(-1, -2))
-        col.addView(h.pageHeader("Online Map"), lp(MATCH, WRAP))
-        col.addView(h.pageSub("Verified Boys & Girls Across India"), lp(MATCH, WRAP, t = 8f))
-        col.addView(planBox, lp(MATCH, WRAP, t = 8f))
+        // the maroon top, then the white sheet over its lower edge (the page scrolls as one)
+        val outer = vbox(context)
+        val headBox = InsetFrame(context, MAP_SHEET_TOP + 26f).apply { setBackgroundColor(SD.M) }
+        headBox.addView(MaroonDeco(context), LayoutParams(-1, -1))
+        headBox.addView(top, LayoutParams(-1, -2))
+        outer.addView(headBox, lp(MATCH, WRAP))
+        val sheet = FrameLayout(context).apply { background = SD.sheetBg() }
+        sheet.addView(sdHandle(context))
+        col.setPadding(dpi(16f), dpi(26f), dpi(16f), dpi(40f))
+        sheet.addView(col, LayoutParams(-1, -2))
+        outer.addView(sheet, lp(MATCH, WRAP, t = -26f))
+        scroll.addView(outer, LayoutParams(-1, -2))
         noticeBox.background = rounded(Ui.c("#F0FDF4"), 14f, 1f, Color.argb(89, 22, 163, 74))
         noticeBox.setPadding(dpi(14f), dpi(11f), dpi(14f), dpi(11f)); noticeBox.gravity = Gravity.CENTER
         noticeBox.setOnClickListener { h.clearNotice() }
-        col.addView(noticeBox, lp(MATCH, WRAP, t = 12f))
+        col.addView(noticeBox, lp(MATCH, WRAP, b = 12f))
 
         // the map: rounded, white frame; full screen on the button
         mapBox.clipToOutline = true
@@ -98,7 +110,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         mapInner.addView(filters, LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(dpi(12f), dpi(12f), 0, 0) })
         mapBox.addView(mapInner, LayoutParams(-1, -1))
         val vw = resources.displayMetrics.widthPixels / Ui.density
-        col.addView(mapBox, lp(MATCH, dpi(min(vw * 1.18f, 560f)), t = 14f))
+        col.addView(mapBox, lp(MATCH, dpi(min(vw * 1.18f, 560f))))
         mapInner.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> placeEmpty() }
 
         // everyone on the map: verified boys and girls, online first
@@ -113,6 +125,9 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         peopleBtn.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, Color.WHITE, 24f)) }, lp(dpi(24f), dpi(24f), l = 12f))
         peopleBtn.press().onTap { allSheet(h.onlineNow ?: emptyList(), null) }
         col.addView(peopleBtn, lp(MATCH, dpi(58f), t = 14f))
+
+        // Stories: right under the map (owner, 20 Nov night: "मैप के नीचे")
+        storiesV = h.storiesView().also { col.addView(it, lp(MATCH, WRAP, t = 22f)) }
 
         // the first 40 (online first) glide by on their own
         strip.isHorizontalScrollBarEnabled = false; strip.overScrollMode = View.OVER_SCROLL_NEVER; strip.clipToPadding = false
@@ -200,8 +215,9 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         globe.setPeople(shown)
         // plan line
         planBox.removeAllViews()
-        h.planPill()?.let { planBox.addView(it, LayoutParams(-2, dpi(28f), Gravity.CENTER_HORIZONTAL)) }
+        h.planPill()?.let { planBox.addView(it, LayoutParams(-2, dpi(30f), Gravity.CENTER_VERTICAL)) }
         planBox.visibility = if (planBox.childCount > 0) VISIBLE else GONE
+        top.update()
         noticeBox.text = h.noticeNow; noticeBox.visibility = if (h.noticeNow.isNotEmpty()) VISIBLE else GONE
         paintFilters()
         val loaded = h.onlineNow != null
@@ -230,6 +246,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     /** test shots only: the full-screen map, everyone, a filter, the end of the page */
     fun preview(what: String) {
         when (what) {
+            "stories" -> storiesV?.let { v -> scroll.post { scroll.scrollTo(0, maxOf(0, (col.parent as View).top + col.top + v.top - dpi(140f))) } }
             "full" -> setFull(true)
             "all" -> allSheet(h.onlineNow ?: emptyList(), null)
             "near", "online" -> { filter = what; render() }
@@ -379,6 +396,8 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
 
     companion object {
+        /** where the white sheet starts under the maroon top (dp below the status bar) */
+        const val MAP_SHEET_TOP = 148f
         fun shortName(n: String): String {
             val w = n.ifBlank { "Member" }.trim().split(Regex("\\s+"))
             return if (w.size > 1) "${w[0]} ${w[w.size - 1][0]}." else w[0]

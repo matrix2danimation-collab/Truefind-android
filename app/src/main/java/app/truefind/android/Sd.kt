@@ -223,7 +223,8 @@ fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boole
         text = s
         setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp))
         setTextColor(color)
-        typeface = if (italic) Ui.boldItalic else if (bold) Ui.bold else Ui.regular
+        // Secret Dating's pages: the font of the owner's reference photos, everything alike (owner, 20 Nov night)
+        typeface = if (italic || bold) Jk.bold else Jk.medium
         includeFontPadding = false
     }
 

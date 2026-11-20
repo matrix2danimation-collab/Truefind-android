@@ -307,6 +307,39 @@ shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_ope
 fi
 # My Activity (the bell beside Credits): Notifications at its top, then Liked you · You liked · Matches · Requests;
 # and a demo profile (3D face; a request to it is stopped) — their own set, the "sd" set is already long
+# Secret Dating in the maroon look of the owner's photos (20 Nov night): Home card · My Activity (heart) · Chat · one chat · Online Map
+if [ "$SET" = mar ]; then
+shot m01-home home --es tf_preview secret --ez tf_premium true
+shot m02-home-free home --es tf_preview secret
+shot m03-home-join home --es tf_preview secret --ez tf_notjoined true
+shot m04-home-girl home --es tf_preview secret --ez tf_girl true
+shot m05-home-next open --es tf_preview secret --ez tf_premium true --es tf_open next
+shot m06-home-drag open --es tf_preview secret --ez tf_premium true --es tf_open drag
+shot m07-home-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
+shot m08-likes home --es tf_preview secret-likes --ez tf_premium true
+shot m09-likes-free home --es tf_preview secret-likes
+shot m10-likes-match open --es tf_preview secret-likes --ez tf_premium true --es tf_open match
+shot m11-likes-girl home --es tf_preview secret-likes --ez tf_girl true
+shot m12-chats home --es tf_preview secret-chat --ez tf_premium true
+shot m13-chats-free home --es tf_preview secret-chat
+shot m14-chats-swipe open --es tf_preview secret-chat --ez tf_premium true --es tf_open swipe
+shot m15-chats-menu open --es tf_preview secret-chat --ez tf_premium true --es tf_open menu
+shot m16-chats-unread open --es tf_preview secret-chat --ez tf_premium true --es tf_open unread
+shot m17-chats-empty home --es tf_preview secret-chat --ez tf_premium true --ez tf_nochats true
+shot m27-home-toast quick --es tf_preview secret --ez tf_premium true --es tf_open toast
+shot m28-premium open --es tf_preview secret --es tf_open premium
+fi
+if [ "$SET" = mar2 ]; then
+shot m18-room home --es tf_preview chatroom --ez tf_premium true
+shot m19-room-gifs open --es tf_preview chatroom --ez tf_premium true --es tf_open gif
+shot m20-room-menu open --es tf_preview chatroom --ez tf_premium true --es tf_open menu
+shot m21-room-typing open --es tf_preview chatroom --ez tf_premium true --es tf_open typing
+shot m22-room-short home --es tf_preview chatroom --ez tf_premium true --es tf_chat m5
+shot m23-map home --es tf_preview secret-map --ez tf_premium true
+shot m24-map-free home --es tf_preview secret-map
+shot m25-map-stories open --es tf_preview secret-map --ez tf_premium true --es tf_open stories
+shot m26-map-stories-free open --es tf_preview secret-map --es tf_open stories
+fi
 if [ "$SET" = act ]; then
 shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
 shot 23-activity-free open --es tf_preview secret --es tf_open activity
