@@ -165,13 +165,13 @@ class ExploreScreen(
         actions.setPadding(Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f), Ui.dpi(13f))
         // 20 Nov: bigger buttons, each with its own faint doodles (ExploreArt)
         // 20 Nov, design #19 "Glass Chips" (owner's pick): Voice and Random are see-through glass on the purple panel
-        // with white words and white doodles; Video in the middle is solid white with purple words and purple doodles
+        // with white words; Video in the middle is solid white with purple words. Doodles only on Random (owner, 20 Nov)
         val glass = { Ui.round(Color.argb(36, 255, 255, 255), 18f, Color.argb(115, 255, 255, 255), 1.5f) }
         val lilac = Ui.c("#E9DDFF")
         val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Color.WHITE, 18f), Color.WHITE, lilac, glass(),
-            art = ExploreArt.VOICE.replace("#16A34A", "#FFFFFF") to 0.20f) { startRandom("voice") }
+            art = "" to 0f) { startRandom("voice") }
         val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Ui.c("#4C1D95"), 19f), Ui.c("#4C1D95"), Ui.c("#6D4BB0"),
-            Ui.round(Color.WHITE, 18f, Color.argb(115, 255, 255, 255), 1.5f), art = ExploreArt.VIDEO.replace("#FFFFFF", "#7C3AED") to 0.20f) { startRandom("video") }
+            Ui.round(Color.WHITE, 18f, Color.argb(115, 255, 255, 255), 1.5f), art = "" to 0f) { startRandom("video") }
         val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Color.WHITE, 18f, 2.4f), Color.WHITE, lilac,
             glass(), smallText = "match now", coin = false, art = ExploreArt.RANDOM.replace("#6C04CB", "#FFFFFF") to 0.20f) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
         voiceRate = vr; videoRate = dr
@@ -243,7 +243,7 @@ class ExploreScreen(
         val big = art != null
         val b = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = if (art == null) bg else LayerDrawable(arrayOf(bg, ButtonDoodles(Svg.of(art.first), art.second, 17f))).apply {
+            background = if (art == null || art.first.isEmpty()) bg else LayerDrawable(arrayOf(bg, ButtonDoodles(Svg.of(art.first), art.second, 17f))).apply {
                 val line = Ui.dpi(1f)   // the doodles stay inside the button's outline
                 setLayerInset(1, line, line, line, line)
             }
