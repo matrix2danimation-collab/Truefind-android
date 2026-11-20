@@ -2,7 +2,9 @@ package app.truefind.android
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.ColorFilter
+import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
@@ -57,6 +59,65 @@ class ButtonDoodles(private val svg: Svg, private val strength: Float, private v
     }
 
     override fun setAlpha(alpha: Int) { own = alpha / 255f; invalidateSelf() }
+    override fun setColorFilter(cf: ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
+}
+
+/**
+ * The light inside Explore's top box (20 Nov, the owner: dark purple with a soft white light, like a neon lamp,
+ * as the old Explore background had — but without doodles). Drawn over the box's dark purple:
+ *  - a soft white light coming down from the middle of its top edge,
+ *  - two faint coloured glows (violet from the bottom right, pink-violet from the left), as the old background had,
+ *  - a thin line of light along its rounded bottom edge.
+ * [radiusDp] = the box's bottom corners. No doodles, no dots.
+ */
+class TopLight(private val radiusDp: Float) : Drawable() {
+    private val shape = Path()
+    private val edge = Path()
+    private val white = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val violet = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val pink = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = Ui.dp(1.2f); strokeCap = Paint.Cap.ROUND }
+    private var ok = false
+
+    /** a round glow: [rx] × [ry] of the box around ([cx], [cy]) of the box, fading from the first colour to nothing */
+    private fun glow(b: Rect, cx: Float, cy: Float, rx: Float, ry: Float, colors: IntArray, stops: FloatArray?): RadialGradient =
+        RadialGradient(0f, 0f, 1f, colors, stops, Shader.TileMode.CLAMP).apply {
+            setLocalMatrix(Matrix().apply { setScale(rx * b.width(), ry * b.height()); postTranslate(b.left + cx * b.width(), b.top + cy * b.height()) })
+        }
+
+    override fun onBoundsChange(bounds: Rect) {
+        ok = bounds.width() > 0 && bounds.height() > 0
+        if (!ok) return
+        val l = bounds.left.toFloat(); val t = bounds.top.toFloat(); val r = bounds.right.toFloat(); val bt = bounds.bottom.toFloat()
+        val rad = Ui.dp(radiusDp).coerceAtMost(bounds.height() / 2f)
+        shape.rewind()
+        shape.addRoundRect(RectF(l, t, r, bt), floatArrayOf(0f, 0f, 0f, 0f, rad, rad, rad, rad), Path.Direction.CW)
+        // the bottom edge with its two rounded corners (the line of light runs along it)
+        val half = line.strokeWidth / 2f
+        edge.rewind()
+        edge.moveTo(r - half, bt - rad)
+        edge.arcTo(RectF(r - 2 * rad + half, bt - 2 * rad + half, r - half, bt - half), 0f, 90f, false)
+        edge.lineTo(l + rad, bt - half)
+        edge.arcTo(RectF(l + half, bt - 2 * rad + half, l + 2 * rad - half, bt - half), 90f, 90f, false)
+        white.shader = glow(bounds, 0.50f, -0.08f, 0.60f, 0.90f,
+            intArrayOf(Color.argb(107, 255, 255, 255), Color.argb(46, 233, 221, 255), Color.argb(0, 233, 221, 255)), floatArrayOf(0f, 0.40f, 1f))
+        violet.shader = glow(bounds, 1.08f, 1.00f, 0.55f, 0.90f, intArrayOf(Color.argb(115, 139, 92, 246), Color.argb(0, 139, 92, 246)), null)
+        pink.shader = glow(bounds, -0.08f, 0.60f, 0.50f, 0.80f, intArrayOf(Color.argb(56, 192, 72, 214), Color.argb(0, 192, 72, 214)), null)
+        // the line is brightest along the straight bottom and fades out up the corners
+        line.shader = LinearGradient(0f, bt - rad, 0f, bt, Color.argb(0, 255, 255, 255), Color.argb(87, 255, 255, 255), Shader.TileMode.CLAMP)
+    }
+
+    override fun draw(c: Canvas) {
+        if (!ok) return
+        // (each light fills the box's own shape, so its rounded corners stay smooth)
+        c.drawPath(shape, pink)
+        c.drawPath(shape, violet)
+        c.drawPath(shape, white)
+        c.drawPath(edge, line)
+    }
+
+    override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(cf: ColorFilter?) {}
     @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
 }
