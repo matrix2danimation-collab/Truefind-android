@@ -528,12 +528,18 @@ class SecretHome(
         bellDot.visibility = if (n > 0) VISIBLE else GONE
         bellBtn.contentDescription = if (n > 0) "My Activity, $n new" else "My Activity"
     }
-    /** the red dot on the bell: opacity 1 → .55 → 1 every 1.1 s (sd-ndot) */
+    /** the red dot on the bell: opacity 1 → .55 → 1 every 1.1 s (sd-ndot) — only while it can be seen (no work for a hidden page) */
     private class BellDot(ctx: Context) : View(ctx) {
         private val a = android.animation.ObjectAnimator.ofPropertyValuesHolder(this, android.animation.PropertyValuesHolder.ofKeyframe(View.ALPHA,
             android.animation.Keyframe.ofFloat(0f, 1f), android.animation.Keyframe.ofFloat(.6f, .55f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() },
             android.animation.Keyframe.ofFloat(1f, 1f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() })).apply { duration = 1100; repeatCount = -1 }
-        override fun onAttachedToWindow() { super.onAttachedToWindow(); if (!GlobeMap.REDUCED) a.start() }
+        private var seen = false
+        private fun sync() {
+            val on = seen && isAttachedToWindow && !GlobeMap.REDUCED
+            if (on && !a.isStarted) a.start() else if (!on && a.isStarted) { a.cancel(); alpha = 1f }
+        }
+        override fun onVisibilityAggregated(isVisible: Boolean) { super.onVisibilityAggregated(isVisible); seen = isVisible; sync() }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); sync() }
         override fun onDetachedFromWindow() { a.cancel(); super.onDetachedFromWindow() }
     }
 
