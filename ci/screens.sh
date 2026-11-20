@@ -304,7 +304,10 @@ shot 18-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
 shot 19-free-stories open --es tf_preview secret --es tf_open stories
 shot 20-see-all open --es tf_preview secret --ez tf_premium true --es tf_open seeall
 shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
-# My Activity (the bell beside Credits): Notifications at its top, then Liked you · You liked · Matches · Requests
+fi
+# My Activity (the bell beside Credits): Notifications at its top, then Liked you · You liked · Matches · Requests;
+# and a demo profile (3D face; a request to it is stopped) — their own set, the "sd" set is already long
+if [ "$SET" = act ]; then
 shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
 shot 23-activity-free open --es tf_preview secret --es tf_open activity
 shot 24-activity-you open --es tf_preview secret --ez tf_premium true --es tf_open activity-you
@@ -312,6 +315,8 @@ shot 25-activity-match open --es tf_preview secret --ez tf_premium true --es tf_
 shot 26-activity-req open --es tf_preview secret --ez tf_premium true --es tf_open activity-req
 shot 27-activity-girl open --es tf_preview secret --ez tf_girl true --es tf_open activity
 shot 28-activity-match-free open --es tf_preview secret --es tf_open activity-match
+shot 29-demo-profile open --es tf_preview secret --ez tf_premium true --es tf_open demo-profile
+shot 29b-demo-request quick --es tf_preview secret --ez tf_premium true --es tf_open demo-request
 fi
 if [ "$SET" = chat ] || [ "$SET" = all ]; then
 # Online Map (/dating)

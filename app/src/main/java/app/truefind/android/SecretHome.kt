@@ -1337,6 +1337,8 @@ class SecretHome(
             "activity-you" -> openMyActivity("you")
             "activity-match" -> openMyActivity("match")
             "activity-req" -> openMyActivity("req")
+            "demo-profile" -> online?.firstOrNull { SdDemo.isDemo(it) && SdRules.liveOf(it) }?.let { openProfile(it) }
+            "demo-request" -> online?.firstOrNull { SdDemo.isDemo(it) }?.let { askRequest(it) }
             "profileend" -> { openProfile(first); postDelayed({ lastScroll(layer.root)?.let { it.scrollTo(0, it.getChildAt(0).height) } }, 1200) }
         }
     }
