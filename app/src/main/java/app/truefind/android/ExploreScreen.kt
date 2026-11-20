@@ -209,9 +209,12 @@ class ExploreScreen(
         stage.elevation = Ui.dp(40f)
 
         // the feed sits under the header and the buttons by 20 (rounded edges overlap it)
-        header.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> post { placeFeed() } }
+        header.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> post { placeFeed(); (parent as? View)?.invalidate() } }
         actions.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> post { placeFeed() } }
     }
+
+    /** the height of the top box (the strip above it, under the phone's status bar, carries on its light) */
+    val headerHeight: Int get() = header.height
 
     private fun placeFeed() {
         val lp = feed.layoutParams as LayoutParams

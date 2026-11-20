@@ -173,6 +173,46 @@ class PanelLight(private val radiusDp: Float) : Drawable() {
 }
 
 /**
+ * The app's background, which also fills the strip under the phone's status bar (clock, network, battery).
+ * Everywhere it is white, as before; while Explore is open ([purple]) that strip is the purple of Explore's top box,
+ * with the top of the box's soft white light, so box and strip read as one piece (owner, 20 Nov, like YouTube).
+ * [strip] = the strip's height (the status bar), [box] = the height of Explore's top box (for the light).
+ */
+class AppBackground(private val strip: () -> Int, private val box: () -> Int) : Drawable() {
+    var purple = false
+        set(v) { if (field != v) { field = v; invalidateSelf() } }
+    private val white = Paint().apply { color = Color.WHITE }
+    private val base = Paint().apply { color = Ui.c("#4C1D95") }
+    private val light = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var lightFor = -1L
+
+    override fun draw(c: Canvas) {
+        val b = bounds
+        c.drawRect(b, white)
+        val s = strip()
+        if (!purple || s <= 0) return
+        val t = b.top.toFloat(); val bottom = t + s
+        c.drawRect(b.left.toFloat(), t, b.right.toFloat(), bottom, base)
+        // the box's light (TopLight) has its middle 8 % of the box's height above the box's top: drawn here the same way
+        val w = b.width().toFloat(); val h = box().coerceAtLeast(1).toFloat()
+        val key = (w.toLong() shl 32) or (h.toLong() shl 12) or s.toLong()
+        if (key != lightFor) {
+            lightFor = key
+            light.shader = RadialGradient(0f, 0f, 1f,
+                intArrayOf(Color.argb(107, 255, 255, 255), Color.argb(46, 233, 221, 255), Color.argb(0, 233, 221, 255)), floatArrayOf(0f, 0.40f, 1f),
+                Shader.TileMode.CLAMP).apply {
+                setLocalMatrix(Matrix().apply { setScale(0.60f * w, 0.90f * h); postTranslate(b.left + 0.5f * w, bottom - 0.08f * h) })
+            }
+        }
+        c.drawRect(b.left.toFloat(), t, b.right.toFloat(), bottom, light)
+    }
+
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(cf: ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.OPAQUE
+}
+
+/**
  * A soft patch of one colour that fades out towards its edges (an oval as wide and as tall as the view).
  * Explore puts it behind its "no one online" note, so the words read cleanly over the wallpaper's doodles.
  * [strength] is how solid the middle is (0..1); it stays that solid up to [solid] of the way out.
