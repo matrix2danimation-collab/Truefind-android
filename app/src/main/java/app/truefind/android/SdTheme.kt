@@ -3,6 +3,7 @@ package app.truefind.android
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -18,25 +19,33 @@ import android.widget.TextView
 import androidx.core.graphics.PathParser
 
 /**
- * Secret Dating's new look (owner, 20 Nov night, from his five reference photos): a maroon top in the
- * Secret Dating wallet's colour, a white sheet with a little handle, the black tab strip, the grey icon
- * bar at the bottom, and the photos' font (Plus Jakarta Sans) instead of Calibri on these pages.
+ * Secret Dating's new look (owner, 20 Nov night, from his five reference photos): a dark top, a white sheet with a
+ * little handle, the dark tab strip, the grey icon bar at the bottom, and the photos' font (Plus Jakarta Sans)
+ * instead of Calibri on these pages. Colours: the owner's pick of 21 Nov night, "01 · Black + White + Yellow"
+ * (it was maroon the night before): black tops, white sheets, yellow for what is chosen / mine / to tap.
  */
 object SD {
-    val M = Ui.c("#A3154F")          // the Secret Dating wallet's header colour (WalletKit WTheme.SECRET.hdr)
-    val M_DARK = Ui.c("#8C1244")     // round buttons on the maroon (a shade darker, as in the photo)
-    val M_LIGHT = Ui.c("#D18AA7")    // the light send button (maroon half mixed with white, like the photo's light blue)
-    val M_TINT = Ui.c("#FBEFF4")
-    val STRIP = Ui.c("#0A1A35")      // the black strip, as in the photo
+    // owner's pick (21 Nov night, "01 · Black + White + Yellow"): black tops, white sheets, yellow highlights
+    val HEAD = Ui.c("#0F0F12")       // the tops of the pages (black)
+    val M = Ui.c("#FFC727")          // the highlight: chosen tab, my bubbles, like, counts, send
+    val ON_M = Ui.c("#111114")       // words and icons on the yellow
+    val M_TEXT = Ui.c("#9A7300")     // the yellow as words on white (darker, to be read)
+    val M_DARK = Ui.c("#26262B")     // round buttons on the black top
+    val M_LIGHT = Ui.c("#FFE088")    // the light send button (before there is something to send)
+    val M_TINT = Ui.c("#FFF7E0")
+    val STRIP = Ui.c("#1C1C21")      // the tabs strip
     val STRIP_OFF = Ui.c("#C9CDD6")
-    val STRIP_CHIP = Ui.c("#22314F")
+    val STRIP_CHIP = Ui.c("#2E2E34")
     val TXT = Ui.c("#1B1B1F")
     val SUB = Ui.c("#8E8E96")
     val TIME = Ui.c("#A2A2AA")
     val FIELD = Ui.c("#F7F7F7")
     val NAV_BG = Ui.c("#F3F3F3")
     val NAV_LINE = Ui.c("#E8E7EB")
-    val NAV_ON = Ui.c("#E94057")
+    /** the open tab in the bottom bar: yellow (owner, 21 Nov night: "navigation bar click karne pr yellow ho") */
+    val NAV_ON = Ui.c("#FFB800")
+    /** the red dot on the heart (new likes) */
+    val NAV_DOT = Ui.c("#E94057")
     val NAV_OFF = Ui.c("#ADAFBB")
     val GREEN = Ui.c("#3DBE7A")
     val ONLINE = Ui.c("#22C55E")
@@ -111,7 +120,7 @@ fun jk(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, weight: Int = 5
     includeFontPadding = false
 }
 
-/** the soft lighter planes across the maroon (the photo's "edge" look) */
+/** the soft lighter planes across the dark top (the photo's "edge" look) */
 class MaroonDeco(ctx: Context) : View(ctx) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val r = RectF()
@@ -305,8 +314,8 @@ class SdTabs(ctx: Context, private val labels: List<String>, private val pillW: 
         for ((k, c) in cells.withIndex()) {
             val on = k == i
             c.first.background = if (on) rounded(SD.M, 20f) else null
-            c.second.first.setTextColor(if (on) Color.WHITE else SD.STRIP_OFF)
-            c.second.second.setTextColor(if (on) SD.M else Ui.c("#DDE2EA"))
+            c.second.first.setTextColor(if (on) SD.ON_M else SD.STRIP_OFF)
+            c.second.second.setTextColor(if (on) SD.ON_M else Ui.c("#DDE2EA"))
             c.second.second.background = rounded(if (on) Color.WHITE else SD.STRIP_CHIP, 11f)
         }
     }
@@ -317,4 +326,43 @@ class SdTabs(ctx: Context, private val labels: List<String>, private val pillW: 
         v.text = n?.toString() ?: ""
         cells[i].first.parent.let { (it as? View)?.contentDescription = labels[i] + if (n != null) ", $n" else "" }
     }
+}
+
+/** a pink of the old look turned into the black-white-yellow pick (by how light it is): dark → black, mid → yellow, light → cream */
+object SdTone {
+    fun toTheme(c: Int): Int {
+        val hsl = FloatArray(3); androidx.core.graphics.ColorUtils.colorToHSL(c, hsl)
+        val l = hsl[2]
+        val out = when { l < .33f -> 0x1B1B1F; l < .58f -> 0xE0A800; l < .80f -> 0xF0D58C; l < .93f -> 0xFFF0C2; else -> 0xFFF9E8 }
+        return Color.argb(Color.alpha(c), (out shr 16) and 255, (out shr 8) and 255, out and 255)
+    }
+}
+
+/**
+ * The colours of the other Secret Dating pages (a profile, My profile, the sheets, stories) in the owner's pick of
+ * 21 Nov night — black, white and yellow — with the same names as the old pink set (K), so those pages read KY.
+ * Buttons with white words are black now (white on yellow can't be read); yellow marks, black tops.
+ */
+object KY : SdPal {
+    override val wine = Ui.c("#1B1B1F"); override val wine2 = Ui.c("#26262B"); override val rose = Ui.c("#E0A800"); override val hot = Ui.c("#E0A800"); override val deep = Ui.c("#1B1B1F")
+    override val ink = Ui.c("#1B1A1D"); override val ink2 = Ui.c("#24242A"); override val sub = Ui.c("#6E6E76"); override val soft = Ui.c("#8C8C94")
+    override val tint = Ui.c("#FFF7E0"); override val tint2 = Ui.c("#FFFBEF"); override val line = Ui.c("#EFE3BF"); override val line2 = Ui.c("#F2EDE0")
+    override val green = Ui.c("#3DD62A"); override val pill = Ui.c("#111114")
+    /** a page: black at the top (where the white name sits), white below */
+    override val PAGE = intArrayOf(Ui.c("#0F0F12"), Ui.c("#0F0F12"), Ui.c("#1C1C21"), Ui.c("#F4F4F6"), Ui.c("#FFFFFF"))
+    override val PAGE_AT = floatArrayOf(0f, .34f, .46f, .58f, .70f)
+    override fun btn(radiusDp: Float) = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#2A2A30"), Ui.c("#0F0F12"))).apply { cornerRadius = Ui.dp(radiusDp) }
+    override fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFF7E0"), Color.WHITE, Color.WHITE)).apply {
+        cornerRadii = floatArrayOf(Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), 0f, 0f, 0f, 0f)
+    }
+    override fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#2A2A30"), Ui.c("#0F0F12"))).apply { shape = GradientDrawable.OVAL }
+}
+
+/** the page background of those pages (black top, white below) */
+class SdBackdrop(ctx: Context) : View(ctx) {
+    private val p = Paint()
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), KY.PAGE, KY.PAGE_AT, android.graphics.Shader.TileMode.CLAMP)
+    }
+    override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
 }

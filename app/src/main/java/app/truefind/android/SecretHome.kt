@@ -115,15 +115,15 @@ class SecretHome(
     private var chatPage: SdChatsPage? = null
     /** the Stories block (shown under the map on Online Map) */
     private val storiesBox = vbox(ctx)
-    private val statusCover = StatusStrip(ctx, K.PAGE[0])
+    private val statusCover = StatusStrip(ctx, KY.PAGE[0])
     private val storyRow = LinearLayout(ctx)
     private val storyLock = LinearLayout(ctx)
-    private val storyLockTitle = jk(ctx, "", 15f, SD.M, 700)
+    private val storyLockTitle = jk(ctx, "", 15f, SD.TXT, 700)
     private val storyLockSub = jk(ctx, "", 12.5f, SD.SUB, 500)
     private val storyLockIcon = ImageView(ctx)
-    private val addLine = jk(ctx, "You can post a story every day to find your true friend.", 14f, SD.M, 600)
+    private val addLine = jk(ctx, "You can post a story every day to find your true friend.", 14f, SD.M_TEXT, 600)
     private val toast = LinearLayout(ctx)
-    private val toastText = sdText(ctx, "", 15f, K.ink2, bold = false)
+    private val toastText = sdText(ctx, "", 15f, KY.ink2, bold = false)
     private val toastBtn = sdText(ctx, "", 14f, Color.WHITE)
 
     init {
@@ -311,9 +311,9 @@ class SecretHome(
         loadPeople(one); loadStories(one); loadActivity(one); loadMyChats(one)
     }
 
-    // ── pull down to refresh (owner, 19 Nov evening): Home, My Activity and the chats, in Secret Dating's own pink ──
+    // ── pull down to refresh (owner, 19 Nov evening): Home, My Activity and the chats, in Secret Dating's own yellow ──
     private val pull: PagePull = run {
-        PagePull(this, PullSpinner.PINK, PullSpinner.PINK_RING, canPull = {
+        PagePull(this, SD.M_TEXT, SD.M_TINT, canPull = {
             shown && !layer.open && when (page) {
                 "home" -> homeView?.let { it.isShown && !it.dragging } == true
                 "likes" -> likesPage?.let { it.isShown && it.atTop() } == true
@@ -447,11 +447,11 @@ class SecretHome(
         storyLock.addView(storyLockIcon, lp(dpi(42f), dpi(42f), r = 12f))
         val t = vbox(context); t.addView(storyLockTitle); t.addView(storyLockSub, lp(WRAP, WRAP, t = 2f))
         storyLock.addView(t, lp(0, WRAP, 1f))
-        storyLock.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, SD.M, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 8f))
+        storyLock.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, SD.M_TEXT, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 8f))
         storyLock.press().onTap { locked("watch") }
         storiesBox.addView(storyLock, lp(MATCH, WRAP, t = 12f))
         addLine.gravity = Gravity.CENTER; addLine.setLineSpacing(0f, 1.15f)
-        addLine.inlineIcon(Icon(Lucide.Pencil, SD.M, 16f, 2.2f), 7f)
+        addLine.inlineIcon(Icon(Lucide.Pencil, SD.M_TEXT, 16f, 2.2f), 7f)
         addLine.setPadding(dpi(6f), dpi(8f), dpi(6f), dpi(8f)); addLine.minHeight = dpi(44f)
         addLine.press().onTap { addStory() }
         storiesBox.addView(addLine, lp(MATCH, WRAP, t = 6f))
@@ -459,11 +459,11 @@ class SecretHome(
 
     private fun buildToast() {
         toast.orientation = LinearLayout.HORIZONTAL; toast.gravity = Gravity.CENTER_VERTICAL
-        toast.background = rounded(Color.WHITE, 18f, 1f, K.line)
+        toast.background = rounded(Color.WHITE, 18f, 1f, KY.line)
         toast.elevation = Ui.dp(90f)
         toast.setPadding(dpi(16f), dpi(12f), dpi(14f), dpi(12f))
         toast.addView(toastText, lp(0, WRAP, 1f))
-        toastBtn.background = rounded(K.pill, 19f); toastBtn.gravity = Gravity.CENTER; toastBtn.setPadding(dpi(16f), 0, dpi(16f), 0)
+        toastBtn.background = rounded(KY.pill, 19f); toastBtn.gravity = Gravity.CENTER; toastBtn.setPadding(dpi(16f), 0, dpi(16f), 0)
         toast.addView(toastBtn, lp(WRAP, dpi(38f), l = 10f))
         toast.visibility = GONE
     }
@@ -495,7 +495,7 @@ class SecretHome(
         private val lock = Icon(Lucide.Lock, Color.WHITE, 14f, 2.6f)
         override fun onDraw(c: android.graphics.Canvas) {
             val s = width.toFloat()
-            val tone = if (g == "f") intArrayOf(Ui.c("#FF9CC6"), Ui.c("#E3086C")) else intArrayOf(Ui.c("#C9A6F5"), Ui.c("#8E1243"))
+            val tone = if (g == "f") intArrayOf(Ui.c("#FFF0C2"), Ui.c("#E0A800")) else intArrayOf(Ui.c("#C9A6F5"), Ui.c("#1B1B1F"))
             c.save(); c.clipPath(android.graphics.Path().apply { addCircle(s / 2, s / 2, s / 2, android.graphics.Path.Direction.CW) })
             p.shader = android.graphics.LinearGradient(0f, 0f, s, s, tone[0], tone[1], android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f, 0f, s, s, p); p.shader = null
             p.maskFilter = android.graphics.BlurMaskFilter(s * 3.4f / 48f, android.graphics.BlurMaskFilter.Blur.NORMAL)
@@ -562,7 +562,7 @@ class SecretHome(
         }
         if (list.isEmpty()) {
             val empty = when (storiesState) { "missing" -> "Stories are switching on soon."; "loading" -> ""; else -> "No stories within 500 km yet." }
-            if (empty.isNotEmpty()) storyRow.addView(sdText(context, empty, 14f, K.sub, bold = false).apply { lineHeight(1.15f); maxWidth = dpi(230f); setPadding(dpi(8f), 0, dpi(8f), dpi(18f)) },
+            if (empty.isNotEmpty()) storyRow.addView(sdText(context, empty, 14f, KY.sub, bold = false).apply { lineHeight(1.15f); maxWidth = dpi(230f); setPadding(dpi(8f), 0, dpi(8f), dpi(18f)) },
                 LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.CENTER_VERTICAL })
         }
         val locked = premiumKnown && !canUse
@@ -570,11 +570,11 @@ class SecretHome(
         if (locked) {
             storyLockTitle.text = if (girlUnverified) "Verify to use Stories free" else "Stories are Premium Only"
             storyLockSub.text = if (girlUnverified) "Verified girls post and watch stories free." else "Only Premium Members can watch or post stories."
-            storyLockIcon.setImageDrawable(if (girlUnverified) Icon(Lucide.ShieldCheck, Color.WHITE, 24f, 2f) else Icon(Lucide.Crown, Color.WHITE, 23f, 2f, Color.WHITE))
+            storyLockIcon.setImageDrawable(if (girlUnverified) Icon(Lucide.ShieldCheck, SD.ON_M, 24f, 2f) else Icon(Lucide.Crown, SD.ON_M, 23f, 2f, SD.ON_M))
         }
     }
-    private fun eyeSub(views: Int) = sdText(context, views.toString(), 12f, K.sub, bold = false).icon(Icon(Lucide.Eye, K.sub, 12f), 2f)
-    private fun pinSub(t: String) = sdText(context, t, 12f, K.sub, bold = false).icon(Icon(Lucide.MapPin, K.sub, 12f, 2.2f), 2f).oneLine()
+    private fun eyeSub(views: Int) = sdText(context, views.toString(), 12f, KY.sub, bold = false).icon(Icon(Lucide.Eye, KY.sub, 12f), 2f)
+    private fun pinSub(t: String) = sdText(context, t, 12f, KY.sub, bold = false).icon(Icon(Lucide.MapPin, KY.sub, 12f, 2.2f), 2f).oneLine()
 
     private fun storyRing(kind: String, photos: List<String>, label: String, sub: TextView?, crown: Boolean, story: JSONObject?, onClick: () -> Unit): View {
         val size = 54f
@@ -582,16 +582,16 @@ class SecretHome(
         val ringBox = FrameLayout(context).apply { clipChildren = false }
         if (kind == "add") {
             ringBox.addView(ImageView(context).apply {
-                setImageDrawable(Icon(Lucide.Plus, K.hot, size * 0.46f, 2.6f)); scaleType = ImageView.ScaleType.CENTER
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFF3F9"), Ui.c("#FDDDEC"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Ui.c("#EC4E98")) }
+                setImageDrawable(Icon(Lucide.Plus, Ui.c("#E0A800"), size * 0.46f, 2.6f)); scaleType = ImageView.ScaleType.CENTER
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(SD.M_TINT, Ui.c("#FFEFC2"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), SD.M) }
                 elevation = Ui.dp(2f)
             }, FrameLayout.LayoutParams(dpi(size), dpi(size)))
         } else {
             val ring = FrameLayout(context).apply {
                 background = when (kind) {
-                    "seen" -> oval(Ui.c("#EBC9D9"))
-                    "mine" -> RingDrawable(intArrayOf(Ui.c("#F43D95"), Ui.c("#8E1243"), Ui.c("#FF7DBB"), Ui.c("#F43D95")), floatArrayOf(0f, .55f, .85f, 1f))
-                    else -> RingDrawable(intArrayOf(Ui.c("#FF7DBB"), Ui.c("#E3086C"), Ui.c("#8E1243"), Ui.c("#FF9CCB"), Ui.c("#FF7DBB")), floatArrayOf(0f, .4f, .7f, .9f, 1f))
+                    "seen" -> oval(Ui.c("#E2E2E8"))
+                    "mine" -> RingDrawable(intArrayOf(SD.M, SD.HEAD, Ui.c("#FFE088"), SD.M), floatArrayOf(0f, .55f, .85f, 1f))
+                    else -> RingDrawable(intArrayOf(Ui.c("#FFE088"), SD.M, Ui.c("#E0A800"), Ui.c("#FFD54F"), Ui.c("#FFE088")), floatArrayOf(0f, .4f, .7f, .9f, 1f))
                 }
                 setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
             }
@@ -602,11 +602,11 @@ class SecretHome(
             ringBox.addView(ring, FrameLayout.LayoutParams(dpi(size), dpi(size)))
         }
         if (crown) ringBox.addView(ImageView(context).apply {
-            setImageDrawable(Icon(Lucide.Crown, Color.WHITE, 12f, 2.2f, Color.WHITE)); scaleType = ImageView.ScaleType.CENTER
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F23D93"), Ui.c("#C20A5E"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Color.WHITE) }
+            setImageDrawable(Icon(Lucide.Crown, SD.ON_M, 12f, 2.2f, SD.ON_M)); scaleType = ImageView.ScaleType.CENTER
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFD54F"), SD.M)).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Color.WHITE) }
         }, FrameLayout.LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -dpi(4f); bottomMargin = -dpi(2f) })
         col.addView(ringBox, lp(dpi(size), dpi(size)))
-        col.addView(sdText(context, label, 13f, if (kind == "seen") K.soft else K.ink).oneLine().apply { maxWidth = dpi(size + 8f) })
+        col.addView(sdText(context, label, 13f, if (kind == "seen") KY.soft else KY.ink).oneLine().apply { maxWidth = dpi(size + 8f) })
         if (sub != null) col.addView(sub.apply { maxWidth = dpi(size + 8f) }, lp(WRAP, WRAP, t = -2f))
         col.press().onTap(onClick)
         return FrameLayout(context).apply { addView(col, FrameLayout.LayoutParams(dpi(size + 8f), -2)); setPadding(dpi(1f), 0, dpi(1f), 0) }
@@ -655,11 +655,11 @@ class SecretHome(
         val d = daysLeft
         if (!(premiumKnown && premium && d != null)) return null
         val renew = d == "Renew"
-        // the white pill on the maroon top of Online Map (owner, 20 Nov night)
-        val col = if (renew) Ui.c("#B4183C") else SD.M
+        // the yellow pill on the black top of Online Map (owner, 21 Nov night); an ended plan stays red
+        val col = if (renew) Ui.c("#B4183C") else SD.ON_M
         return jk(context, if (renew) "Premium ended · Renew" else "Premium · $d", 12.5f, col, 700)
             .icon(SdIcon(listOf(SdPaths.HOURGLASS to col), 13f, 2.2f), 6f).apply {
-                gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else Color.WHITE, 15f); setPadding(dpi(12f), 0, dpi(12f), 0)
+                gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else SD.M, 15f); setPadding(dpi(12f), 0, dpi(12f), 0)
                 isSingleLine = true; maxLines = 1
                 contentDescription = "${text}. Open Secret Dating wallet"
             }.also { it.press().onTap { wallet() } }
@@ -893,7 +893,7 @@ class SecretHome(
         val bottomGap = host.height - host.paddingBottom - (bottom - dpi(12f))
         (toast.layoutParams as FrameLayout.LayoutParams).bottomMargin = maxOf(dpi(12f), bottomGap)
         toastText.text = text
-        toastText.setTextColor(if (kind == "err") Ui.c("#B4183C") else K.ink2)
+        toastText.setTextColor(if (kind == "err") Ui.c("#B4183C") else KY.ink2)
         toastBtn.visibility = if (kind == "credits" || kind == "premium") VISIBLE else GONE
         toastBtn.text = if (kind == "credits" || freeGirl) "Get a Plan" else "Get Premium"
         toastBtn.setOnClickListener { main.removeCallbacks(hideToast); toast.visibility = GONE; unlock() }
@@ -908,12 +908,12 @@ class SecretHome(
         val kind = x.optString("kind")
         val text = when (kind) { "message" -> if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"; "view" -> "viewed your profile"; else -> if (x.optBoolean("mutual")) "likes you — you liked them too" else "liked your profile" }
         val title = if (items.size > 1) "${items.size} new notifications" else "${p?.let { SdRules.firstName(SdRules.s(it, "name")) } ?: "Someone"} $text"
-        val card = hbox(context, 11f).apply { background = rounded(Color.WHITE, 20f, 1f, Color.argb(46, 214, 40, 120)); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)); elevation = Ui.dp(95f) }
+        val card = hbox(context, 11f).apply { background = rounded(Color.WHITE, 20f, 1f, Color.argb(46, 224, 168, 0)); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)); elevation = Ui.dp(95f) }
         val face: View = if (p != null) RoundPhoto(context, 44f).also { it.set(SdRules.thumbs(p)) } else BlurFace(context, x.optString("g"))
         card.addView(face, lp(dpi(44f), dpi(44f)))
-        val t = vbox(context); t.addView(sdText(context, title, 15.5f, K.ink).oneLine()); t.addView(sdText(context, if (canSee) "Tap to see" else "Tap to see who", 13f, K.hot))
+        val t = vbox(context); t.addView(sdText(context, title, 15.5f, KY.ink).oneLine()); t.addView(sdText(context, if (canSee) "Tap to see" else "Tap to see who", 13f, KY.hot))
         card.addView(t, lp(0, WRAP, 1f))
-        card.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Bell, K.hot, 20f, 2.3f)) }, lp(dpi(20f), dpi(20f)))
+        card.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Bell, KY.hot, 20f, 2.3f)) }, lp(dpi(20f), dpi(20f)))
         host.addView(card, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(12f), dpi(10f), dpi(12f), 0) })
         card.translationY = -dpi(120f).toFloat(); card.alpha = 0f
         card.animate().translationY(0f).alpha(1f).setDuration(380).setInterpolator(android.view.animation.PathInterpolator(.2f, .8f, .2f, 1f)).start()

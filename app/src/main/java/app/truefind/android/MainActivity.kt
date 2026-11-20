@@ -399,7 +399,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // It sits over the pages (under the call screen) and never takes a touch.
         edgeGlow = EdgeGlow(this) {
             val p = pathOnly(path)
-            if (p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p)) K.rose else PullSpinner.BLUE
+            // (Secret Dating's yellow since the owner's pick of 21 Nov night; a True Find chat keeps the pink)
+            if (p == "/secret-app" || p == "/dating") SD.M else if (Regex("^/chat/[^/]+$").matches(p)) (if (chatRoom?.sdLook == false) K.rose else SD.M) else PullSpinner.BLUE
         }
         edgeGlow.elevation = Ui.dp(99f)
         root.addView(edgeGlow, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))

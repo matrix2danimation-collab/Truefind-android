@@ -339,6 +339,10 @@ shot m23-map home --es tf_preview secret-map --ez tf_premium true
 shot m24-map-free home --es tf_preview secret-map
 shot m25-map-stories open --es tf_preview secret-map --ez tf_premium true --es tf_open stories
 shot m26-map-stories-free open --es tf_preview secret-map --es tf_open stories
+shot m29-my-profile open --es tf_preview secret --ez tf_premium true --es tf_open my
+shot m30-request open --es tf_preview secret --ez tf_premium true --es tf_open request
+shot m31-story story --es tf_preview secret --ez tf_premium true --es tf_open story
+shot m32-room-profile open --es tf_preview chatroom --ez tf_premium true --es tf_open profile
 fi
 if [ "$SET" = act ]; then
 shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity

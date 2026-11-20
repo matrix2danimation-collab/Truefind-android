@@ -49,11 +49,11 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     private var fullOn = false
     private val globe = GlobeMap(context, onOpen = { h.openProfile(it) },
         onGroup = { list, title -> allSheet(list, title) }, onFull = { setFull(!fullOn) }, say = { h.say(it) })
-    private val spin = ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.c("#FF9BCB")) }
-    private val empty = sdText(context, "", 14.5f, K.wine).apply { gravity = Gravity.CENTER; background = rounded(Color.argb(240, 255, 255, 255), 16f); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
+    private val spin = ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.c("#FFF0C2")) }
+    private val empty = sdText(context, "", 14.5f, KY.wine).apply { gravity = Gravity.CENTER; background = rounded(Color.argb(240, 255, 255, 255), 16f); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
     private val filters = hbox(context, 8f)
-    private val nearBtn = sdText(context, "Near You", 14.5f, K.wine)
-    private val onlineBtn = sdText(context, "Online", 14.5f, K.wine)
+    private val nearBtn = sdText(context, "Near You", 14.5f, KY.wine)
+    private val onlineBtn = sdText(context, "Online", 14.5f, KY.wine)
     private val peopleBtn = LinearLayout(context)
     private val peopleText = sdText(context, "", 19f, Color.WHITE).oneLine()
     private val peopleDot = FrameLayout(context)
@@ -74,7 +74,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         addView(scroll, LayoutParams(-1, -1))
         // the maroon top, then the white sheet over its lower edge (the page scrolls as one)
         val outer = vbox(context)
-        val headBox = InsetFrame(context, MAP_SHEET_TOP + 26f).apply { setBackgroundColor(SD.M) }
+        val headBox = InsetFrame(context, MAP_SHEET_TOP + 26f).apply { setBackgroundColor(SD.HEAD) }
         headBox.addView(MaroonDeco(context), LayoutParams(-1, -1))
         headBox.addView(top, LayoutParams(-1, -2))
         outer.addView(headBox, lp(MATCH, WRAP))
@@ -85,7 +85,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         outer.addView(sheet, lp(MATCH, WRAP, t = -26f))
         scroll.addView(outer, LayoutParams(-1, -2))
         // the page scrolls under the status bar: the bar keeps the maroon
-        addView(StatusStrip(context, SD.M), LayoutParams(-1, -2))
+        addView(StatusStrip(context, SD.HEAD), LayoutParams(-1, -2))
         noticeBox.background = rounded(Ui.c("#F0FDF4"), 14f, 1f, Color.argb(89, 22, 163, 74))
         noticeBox.setPadding(dpi(14f), dpi(11f), dpi(14f), dpi(11f)); noticeBox.gravity = Gravity.CENTER
         noticeBox.setOnClickListener { h.clearNotice() }
@@ -95,7 +95,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         mapBox.clipToOutline = true
         mapBox.outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { if (fullOn) o.setRect(0, 0, v.width, v.height) else o.setRoundRect(0, 0, v.width, v.height, Ui.dp(26f)) } }
         mapBox.elevation = Ui.dp(8f)
-        mapBox.outlineSpotShadowColorCompat(Color.argb(153, 196, 16, 98))
+        mapBox.outlineSpotShadowColorCompat(Color.argb(153, 224, 168, 0))
         mapBox.setBackgroundColor(Ui.c("#06020f"))
         mapInner.addView(globe, LayoutParams(-1, -1))
         mapInner.addView(spin, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
@@ -140,13 +140,13 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         col.addView(strip, lp(MATCH, WRAP, l = -16f, r = -16f, t = 16f))
 
         // privacy promise
-        val promise = hbox(context, 10f).apply { background = rounded(Color.WHITE, 16f, 1f, K.line); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
+        val promise = hbox(context, 10f).apply { background = rounded(Color.WHITE, 16f, 1f, KY.line); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
         promise.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ShieldCheck, Ui.c("#16a34a"), 22f)) }, lp(dpi(22f), dpi(22f)))
         val pt = android.text.SpannableStringBuilder()
-        val b0 = pt.length; pt.append("Don't worry about your location."); pt.setSpan(android.text.style.ForegroundColorSpan(K.wine), b0, pt.length, 0)
+        val b0 = pt.length; pt.append("Don't worry about your location."); pt.setSpan(android.text.style.ForegroundColorSpan(KY.wine), b0, pt.length, 0)
         pt.setSpan(android.text.style.TypefaceSpan(Ui.bold), b0, pt.length, 0)
         pt.append(" Your exact location is never shared — the map only shows the city you chose in your profile.")
-        promise.addView(sdText(context, pt, 13.5f, K.sub, bold = false).lineHeight(1.25f), lp(0, WRAP, 1f))
+        promise.addView(sdText(context, pt, 13.5f, KY.sub, bold = false).lineHeight(1.25f), lp(0, WRAP, 1f))
         col.addView(promise, lp(MATCH, WRAP, t = 10f))
     }
 
@@ -157,10 +157,10 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
     private fun paintFilters() {
         for ((t, on) in listOf(nearBtn to (filter == "near"), onlineBtn to (filter == "online"))) {
-            t.background = rounded(if (on) K.pill else Color.argb(240, 255, 255, 255), 21f)
-            t.setTextColor(if (on) Color.WHITE else K.wine)
+            t.background = rounded(if (on) KY.pill else Color.argb(240, 255, 255, 255), 21f)
+            t.setTextColor(if (on) Color.WHITE else KY.wine)
             t.compoundDrawablePadding = dpi(7f)
-            if (t === nearBtn) t.setCompoundDrawablesWithIntrinsicBounds(Icon(Lucide.MapPin, if (on) Color.WHITE else K.rose, 17f), null, null, null)
+            if (t === nearBtn) t.setCompoundDrawablesWithIntrinsicBounds(Icon(Lucide.MapPin, if (on) Color.WHITE else KY.rose, 17f), null, null, null)
             else t.setCompoundDrawablesWithIntrinsicBounds(DotDrawable(9f, if (on) 2f else 0f), null, null, null)
             (t as View).contentDescription = (if (t === nearBtn) "Near You" else "Online") + if (on) ", on" else ""
         }
@@ -175,7 +175,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         override fun draw(c: Canvas) {
             val b = bounds; val r = b.width() / 2f
             if (ringDp > 0) { p.color = Color.argb(230, 255, 255, 255); c.drawCircle(b.exactCenterX(), b.exactCenterY(), r, p) }
-            p.color = K.green; c.drawCircle(b.exactCenterX(), b.exactCenterY(), r - Ui.dp(ringDp), p)
+            p.color = KY.green; c.drawCircle(b.exactCenterX(), b.exactCenterY(), r - Ui.dp(ringDp), p)
         }
         override fun setAlpha(a: Int) {}
         override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
@@ -290,13 +290,13 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
     private fun personCard(p: JSONObject): View {
         val live = SdRules.liveOf(p)
-        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line); setPadding(dpi(3f), dpi(8f), dpi(3f), dpi(3f)); elevation = Ui.dp(3f) }
+        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, KY.line); setPadding(dpi(3f), dpi(8f), dpi(3f), dpi(3f)); elevation = Ui.dp(3f) }
         // a round photo with a soft pink ring (owner, 20 Nov: the photos are circles)
         val w = cardW() - dpi(6f)
         val d = (w - dpi(14f)).coerceAtLeast(dpi(40f))
         val photo = FrameLayout(context)
-        val ringV = FrameLayout(context).apply { background = oval(Ui.c("#FFE1EF"), 2f, Ui.c("#F7A8CB")); setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)) }
-        val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true; outlineProvider = SD_CIRCLE_OUTLINE; setBackgroundColor(Ui.c("#F6D6E6")) }
+        val ringV = FrameLayout(context).apply { background = oval(Ui.c("#FFF9E8"), 2f, Ui.c("#FFF0C2")); setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)) }
+        val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true; outlineProvider = SD_CIRCLE_OUTLINE; setBackgroundColor(Ui.c("#FFF0C2")) }
         val raws = listOf(SdRules.s(p, "photo_thumb"), SdRules.s(p, "photo", "profile_picture")).filter { it.isNotBlank() }
         val demo = Demo.cover(p, d, d)
         if (demo != null) img.setImageBitmap(demo)
@@ -306,10 +306,10 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         card.addView(photo, lp(MATCH, d))
         val dot = View(context).apply { background = oval(if (live) Ui.c("#34C759") else Ui.c("#A79FB8"), 2.5f, Color.WHITE); elevation = Ui.dp(3f); outlineProvider = null }
         val texts = vbox(context, 1f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(3f), dpi(7f), dpi(3f), dpi(6f)) }
-        texts.addView(sdText(context, shortName(SdRules.s(p, "name", "full_name")), 14f, K.wine2).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
+        texts.addView(sdText(context, shortName(SdRules.s(p, "name", "full_name")), 14f, KY.wine2).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
         val city = SdRules.cityOf(p)
-        if (city.isNotEmpty()) texts.addView(sdText(context, city, 12f, K.sub, bold = false).oneLine().icon(Icon(Lucide.MapPin, K.rose, 11f), 3f), lp(WRAP, WRAP))
-        texts.addView(sdText(context, if (live) "Online" else SdRules.seenText(p).removePrefix("Last seen "), 11.5f, if (live) Ui.c("#15803D") else K.soft).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
+        if (city.isNotEmpty()) texts.addView(sdText(context, city, 12f, KY.sub, bold = false).oneLine().icon(Icon(Lucide.MapPin, KY.rose, 11f), 3f), lp(WRAP, WRAP))
+        texts.addView(sdText(context, if (live) "Online" else SdRules.seenText(p).removePrefix("Last seen "), 11.5f, if (live) Ui.c("#15803D") else KY.soft).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
         card.addView(texts, lp(MATCH, WRAP))
         val wrap = FrameLayout(context).apply { clipChildren = false }
         wrap.addView(card, LayoutParams(-1, -2))
@@ -344,18 +344,18 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     fun allSheet(people: List<JSONObject>, title: String?) {
         val list = people.filter { SdRules.liveOf(it) } + people.filter { !SdRules.liveOf(it) }
         val liveN = list.count { SdRules.liveOf(it) }
-        val panel = vbox(context).apply { background = K.sheet(); setPadding(dpi(16f), dpi(10f), dpi(16f), dpi(22f)) }
-        panel.addView(View(context).apply { background = rounded(Ui.c("#F2C3D8"), 3f) }, lp(dpi(44f), dpi(5f), b = 12f, gravity = Gravity.CENTER_HORIZONTAL))
+        val panel = vbox(context).apply { background = KY.sheet(); setPadding(dpi(16f), dpi(10f), dpi(16f), dpi(22f)) }
+        panel.addView(View(context).apply { background = rounded(Ui.c("#FFF0C2"), 3f) }, lp(dpi(44f), dpi(5f), b = 12f, gravity = Gravity.CENTER_HORIZONTAL))
         val head = hbox(context, 10f)
         if (liveN > 0) head.addView(LiveDot(context, 10f)) else head.addView(View(context).apply { background = oval(Ui.c("#A79FB8")) }, lp(dpi(10f), dpi(10f)))
         val t = vbox(context)
-        t.addView(sdText(context, title ?: "${list.size} verified across India", 22f, K.wine, italic = true))
-        t.addView(sdText(context, "$liveN online now · ${list.size - liveN} offline", 13.5f, K.sub, bold = false), lp(WRAP, WRAP, t = 2f))
+        t.addView(sdText(context, title ?: "${list.size} verified across India", 22f, KY.wine, italic = true))
+        t.addView(sdText(context, "$liveN online now · ${list.size - liveN} offline", 13.5f, KY.sub, bold = false), lp(WRAP, WRAP, t = 2f))
         head.addView(t, lp(0, WRAP, 1f))
         var close: () -> Unit = {}
-        head.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, K.wine, 24f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Close" }.onTap { close() }, lp(dpi(44f), dpi(44f)))
+        head.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, KY.wine, 24f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Close" }.onTap { close() }, lp(dpi(44f), dpi(44f)))
         panel.addView(head, lp(MATCH, WRAP, b = 14f))
-        if (list.isEmpty()) panel.addView(sdText(context, "No verified members here yet.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 10f, b = 10f))
+        if (list.isEmpty()) panel.addView(sdText(context, "No verified members here yet.", 15f, KY.sub, bold = false).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 10f, b = 10f))
         val cols = 3
         val gap = dpi(10f)
         val tileW = (resources.displayMetrics.widthPixels - dpi(32f) - gap * (cols - 1)) / cols
@@ -370,7 +370,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     private fun tile(p: JSONObject, w: Int, hh: Int, onClick: () -> Unit): View {
         val live = SdRules.liveOf(p)
         val f = FrameLayout(context).apply {
-            background = rounded(Ui.c("#F6D6E6"), 16f, 3f, Color.WHITE); clipToOutline = true; outlineProvider = roundOutline(16f); elevation = Ui.dp(3f)
+            background = rounded(Ui.c("#FFF0C2"), 16f, 3f, Color.WHITE); clipToOutline = true; outlineProvider = roundOutline(16f); elevation = Ui.dp(3f)
             setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f))
         }
         val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
@@ -380,7 +380,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         f.addView(img, LayoutParams(-1, -1))
         f.addView(object : View(context) {
             val pp = Paint()
-            override fun onSizeChanged(w2: Int, h2: Int, ow: Int, oh: Int) { pp.shader = LinearGradient(0f, 0f, 0f, h2.toFloat(), intArrayOf(Color.argb(0, 122, 0, 54), Color.argb(0, 122, 0, 54), Color.argb(230, 92, 0, 40)), floatArrayOf(0f, .42f, 1f), Shader.TileMode.CLAMP) }
+            override fun onSizeChanged(w2: Int, h2: Int, ow: Int, oh: Int) { pp.shader = LinearGradient(0f, 0f, 0f, h2.toFloat(), intArrayOf(Color.argb(0, 27, 27, 31), Color.argb(0, 27, 27, 31), Color.argb(230, 27, 27, 31)), floatArrayOf(0f, .42f, 1f), Shader.TileMode.CLAMP) }
             override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), pp) }
         }, LayoutParams(-1, -1))
         val tx = vbox(context).apply { setPadding(dpi(4f), 0, dpi(3f), dpi(3f)) }

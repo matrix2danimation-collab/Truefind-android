@@ -33,10 +33,10 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
     private val scroll = ScrollView(context)
     private val body = vbox(context)
     private val cta = FrameLayout(context)
-    private val ctaText = jk(context, "", 16f, Color.WHITE, 700)
+    private val ctaText = jk(context, "", 16f, SD.ON_M, 700)
 
     init {
-        setBackgroundColor(SD.M)
+        setBackgroundColor(SD.HEAD)
         isClickable = true
         addView(MaroonDeco(context), LayoutParams(-1, -1))
         val inset = InsetFrame(context)
@@ -57,7 +57,7 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
         // "See who it is" (no plan): stays at the bottom of the sheet
         cta.background = rounded(SD.M, 26f)
         cta.elevation = Ui.dp(10f)
-        cta.outlineSpotShadowColorCompat(Color.argb(160, 120, 10, 50))
+        cta.outlineSpotShadowColorCompat(Color.argb(160, 160, 110, 0))
         cta.addView(ctaText, LayoutParams(-2, -2, Gravity.CENTER))
         cta.press().onTap { h.locked("activity") }
         cta.visibility = GONE
@@ -113,7 +113,7 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
             if (failed) {
                 val b = vbox(context, 10f, Gravity.CENTER_HORIZONTAL)
                 b.addView(jk(context, "Couldn't load your activity.", 15f, SD.SUB, 500).apply { gravity = Gravity.CENTER })
-                b.addView(jk(context, "Try again", 15f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 21f); setPadding(dpi(22f), 0, dpi(22f), 0) }
+                b.addView(jk(context, "Try again", 15f, SD.ON_M, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 21f); setPadding(dpi(22f), 0, dpi(22f), 0) }
                     .press().onTap { load() }, lp(WRAP, dpi(42f)))
                 body.addView(b, lp(MATCH, WRAP, t = 30f))
             } else grid(4) { View(context).apply { background = rounded(Ui.c("#F4F4F7"), 20f) } }
@@ -135,7 +135,7 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
             grid(l.size) { i -> lockedTile(l[i]) }
             val verify = h.verifyFirst
             ctaText.text = if (verify) "Verify free to see who" else if (tab == "match") "See your matches" else "See who it is"
-            ctaText.icon(if (verify) Icon(Lucide.ShieldCheck, Color.WHITE, 19f, 2.3f) else SdIcon(listOf(SdPaths.CROWN to Color.WHITE), 20f), 9f)
+            ctaText.icon(if (verify) Icon(Lucide.ShieldCheck, SD.ON_M, 19f, 2.3f) else SdIcon(listOf(SdPaths.CROWN to SD.ON_M), 20f), 9f)
             cta.contentDescription = ctaText.text
             cta.visibility = VISIBLE
             body.setPadding(dpi(16f), dpi(28f), dpi(16f), dpi(88f))
@@ -191,14 +191,14 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
             else -> listOf(SdRules.s(p, "city"), ago(x.optString("at"))).filter { it.isNotEmpty() }.joinToString(" · ")
         }
         t.addView(foot(name, sub, SdRules.liveOf(p), if (match) 56f else 12f), LayoutParams(-1, -2, Gravity.BOTTOM))
-        t.addView(badge(if (match) SdIcon(listOf(SdPaths.TWO_HEARTS_BACK to SD.M_LIGHT, SdPaths.TWO_HEARTS_FRONT to SD.M), 17f) else SdIcon(listOf(SdPaths.HEART_FILL to SD.M), 16f)),
+        t.addView(badge(if (match) SdIcon(listOf(SdPaths.TWO_HEARTS_BACK to SD.M_LIGHT, SdPaths.TWO_HEARTS_FRONT to Ui.c("#E0A800")), 17f) else SdIcon(listOf(SdPaths.HEART_FILL to Ui.c("#F5B800")), 16f)),
             LayoutParams(dpi(30f), dpi(30f), Gravity.END or Gravity.TOP).apply { topMargin = dpi(10f); rightMargin = dpi(10f) })
         t.contentDescription = "Open $name's profile"
         t.press(0.98f).onTap { h.openProfile(p) }
         if (match) {
             val mid = req?.optString("match_id").orEmpty().takeIf { it.isNotEmpty() && req?.isNull("match_id") == false }
             val chat = FrameLayout(context).apply { background = oval(SD.M); elevation = Ui.dp(6f) }
-            chat.addView(sdIconView(context, SdIcon(listOf(SdPaths.CHAT_FILL to Color.WHITE), 19f)), LayoutParams(dpi(19f), dpi(19f), Gravity.CENTER))
+            chat.addView(sdIconView(context, SdIcon(listOf(SdPaths.CHAT_FILL to SD.ON_M), 19f)), LayoutParams(dpi(19f), dpi(19f), Gravity.CENTER))
             chat.addView(sdIconView(context, SdIcon(listOf(SdPaths.CHAT_LINES to SD.M), 19f, 1.9f)), LayoutParams(dpi(19f), dpi(19f), Gravity.CENTER))
             chat.contentDescription = if (st == "accepted" && mid != null) "Open chat with $name" else "Send Request to $name"
             chat.press().onTap {
@@ -231,11 +231,11 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
         val girl = x.optString("g") == "f"
         val match = tab == "match"
         val t = tileBase()
-        t.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, if (girl) intArrayOf(Ui.c("#E7A3C0"), SD.M) else intArrayOf(Ui.c("#B9A3D9"), Ui.c("#7A1240"))).apply { cornerRadius = Ui.dp(20f) }
+        t.background = GradientDrawable(GradientDrawable.Orientation.TL_BR, if (girl) intArrayOf(Ui.c("#7A7A84"), Ui.c("#26262B")) else intArrayOf(Ui.c("#6A7080"), Ui.c("#1C1C21"))).apply { cornerRadius = Ui.dp(20f) }
         t.addView(BlurShape(context), LayoutParams(-1, -1))
         t.addView(shade(), LayoutParams(-1, -1))
         t.addView(foot(if (girl) "Someone pretty" else "Someone nice", "${if (match) "It's a Match" else "Liked you"} · ${ago(x.optString("at"))}", false, 12f), LayoutParams(-1, -2, Gravity.BOTTOM))
-        t.addView(badge(SdIcon(listOf(SdPaths.LOCK to SD.M), 16f, 2.2f)), LayoutParams(dpi(30f), dpi(30f), Gravity.END or Gravity.TOP).apply { topMargin = dpi(10f); rightMargin = dpi(10f) })
+        t.addView(badge(SdIcon(listOf(SdPaths.LOCK to SD.ON_M), 16f, 2.2f)), LayoutParams(dpi(30f), dpi(30f), Gravity.END or Gravity.TOP).apply { topMargin = dpi(10f); rightMargin = dpi(10f) })
         t.contentDescription = "Someone ${if (match) "matched with you" else "liked you"}, ${ago(x.optString("at"))}. Locked"
         t.press(0.98f).onTap { h.locked("activity") }
         return t

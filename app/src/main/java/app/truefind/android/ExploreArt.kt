@@ -184,7 +184,7 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
     /** a Secret Dating chat is open: the strip under the status bar is its maroon (owner, 20 Nov night) */
     var maroon = false
         set(v) { if (field != v) { field = v; invalidateSelf() } }
-    private val maroonPaint = Paint().apply { color = Ui.c("#A3154F") }
+    private val maroonPaint = Paint().apply { color = Ui.c("#0F0F12") }
     private val white = Paint().apply { color = Color.WHITE }
     private val base = Paint().apply { color = Ui.c("#4C1D95") }
     private val light = Paint(Paint.ANTI_ALIAS_FLAG)

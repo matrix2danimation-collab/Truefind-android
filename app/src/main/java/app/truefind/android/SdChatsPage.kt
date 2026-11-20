@@ -45,7 +45,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     private val scroll = ScrollView(context)
     private val col = vbox(context)
     private val lockBox = LinearLayout(context)
-    private val lockTitle = jk(context, "", 15f, SD.M, 700)
+    private val lockTitle = jk(context, "", 15f, SD.TXT, 700)
     private val lockSub = jk(context, "", 12.5f, SD.SUB, 500)
     private val lockIcon = ImageView(context)
     private val searchBox = LinearLayout(context)
@@ -71,7 +71,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     var failed = false; private set
 
     init {
-        setBackgroundColor(SD.M)
+        setBackgroundColor(SD.HEAD)
         addView(MaroonDeco(context), LayoutParams(-1, -1))
         unreadCircle.apply {
             typeface = Jk.of(600); setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(12.5f)); setTextColor(Color.WHITE); gravity = Gravity.CENTER
@@ -103,7 +103,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         lockBox.addView(lockIcon, lp(dpi(42f), dpi(42f), r = 12f))
         val lt = vbox(context); lt.addView(lockTitle); lt.addView(lockSub, lp(WRAP, WRAP, t = 2f))
         lockBox.addView(lt, lp(0, WRAP, 1f))
-        lockBox.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, SD.M, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 8f))
+        lockBox.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, SD.M_TEXT, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 8f))
         lockBox.press().onTap { h.locked("chat") }
         col.addView(lockBox, lp(MATCH, WRAP, l = 16f, r = 16f, b = 12f))
 
@@ -130,7 +130,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
 
         col.addView(listBox, lp(MATCH, WRAP))
         val foot = jk(context, "Numbers, links and IDs are never shared in chat.", 12f, SD.SUB, 500).apply {
-            gravity = Gravity.CENTER_VERTICAL; icon(SdIcon(listOf(SdPaths.LOCK to SD.M), 13f, 2f), 6f)
+            gravity = Gravity.CENTER_VERTICAL; icon(SdIcon(listOf(SdPaths.LOCK to SD.M_TEXT), 13f, 2f), 6f)
         }
         col.addView(foot, lp(WRAP, WRAP, t = 14f, gravity = Gravity.CENTER_HORIZONTAL))
     }
@@ -210,7 +210,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         val locked = h.premiumInfo.second && !h.isPremium
         lockBox.visibility = if (locked) VISIBLE else GONE
         val verify = h.verifyFirst
-        lockIcon.setImageDrawable(if (verify) Icon(Lucide.ShieldCheck, Color.WHITE, 22f, 2f) else SdIcon(listOf(SdPaths.CROWN to Color.WHITE), 21f))
+        lockIcon.setImageDrawable(if (verify) Icon(Lucide.ShieldCheck, SD.ON_M, 22f, 2f) else SdIcon(listOf(SdPaths.CROWN to SD.ON_M), 21f))
         lockTitle.text = if (verify) "Verify to chat free" else "Chat is Premium"
         lockSub.text = if (verify) "Chat is free for verified girls — no plan needed." else "Get Premium to open your chats."
         lockBox.contentDescription = if (verify) "Verify your profile to chat free" else "Chat is for Premium members. Get Premium"
@@ -234,16 +234,16 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
                 val b = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(18f), dpi(26f), dpi(18f), dpi(10f)) }
                 b.addView(jk(context, "Couldn't load your chats", 17f, SD.TXT, 700), lp(WRAP, WRAP))
                 b.addView(jk(context, "Check your internet and try again.", 14f, SD.SUB, 500), lp(WRAP, WRAP, t = 6f, b = 14f))
-                b.addView(jk(context, "Try again", 15f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 22f); setPadding(dpi(22f), 0, dpi(22f), 0) }
+                b.addView(jk(context, "Try again", 15f, SD.ON_M, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 22f); setPadding(dpi(22f), 0, dpi(22f), 0) }
                     .press().onTap { chats = null; failed = false; render(); load() }, lp(WRAP, dpi(44f)))
                 listBox.addView(b, lp(MATCH, WRAP))
             }
             all.isEmpty() -> {
                 val b = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { setPadding(dpi(24f), dpi(30f), dpi(24f), dpi(10f)) }
-                b.addView(sdIconView(context, SdIcon(listOf(SdPaths.CHAT_FILL to SD.M), 34f)).apply { background = oval(SD.M_TINT); setPadding(dpi(20f), dpi(20f), dpi(20f), dpi(20f)) }, lp(dpi(74f), dpi(74f)))
+                b.addView(sdIconView(context, SdIcon(listOf(SdPaths.CHAT_FILL to Ui.c("#E0A800")), 34f)).apply { background = oval(SD.M_TINT); setPadding(dpi(20f), dpi(20f), dpi(20f), dpi(20f)) }, lp(dpi(74f), dpi(74f)))
                 b.addView(jk(context, "No chats yet", 20f, SD.TXT, 700), lp(WRAP, WRAP, t = 14f))
                 b.addView(jk(context, "Send a request to someone you like. When they accept, your private chat opens here.", 14.5f, SD.SUB, 500).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }, lp(MATCH, WRAP, t = 6f, b = 18f))
-                b.addView(jk(context, "Find people online", 15.5f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 24f); setPadding(dpi(24f), 0, dpi(24f), 0) }
+                b.addView(jk(context, "Find people online", 15.5f, SD.ON_M, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 24f); setPadding(dpi(24f), 0, dpi(24f), 0) }
                     .press().onTap { h.goHome() }, lp(WRAP, dpi(48f)))
                 listBox.addView(b, lp(MATCH, WRAP))
             }
@@ -334,7 +334,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             val end = hbox(context, 8f)
             if (c.id in pins) end.addView(sdIconView(context, SdIcon(listOf(SdPaths.PUSHPIN to Ui.c("#A7A7AF")), 16f)).apply { contentDescription = "Pinned" }, lp(dpi(16f), dpi(16f)))
             when {
-                c.unread > 0 -> end.addView(jk(context, if (c.unread > 99) "99+" else c.unread.toString(), 11f, Color.WHITE, 700).apply {
+                c.unread > 0 -> end.addView(jk(context, if (c.unread > 99) "99+" else c.unread.toString(), 11f, SD.ON_M, 700).apply {
                     gravity = Gravity.CENTER; background = rounded(SD.M, 10f); setPadding(dpi(6f), 0, dpi(6f), 0); minWidth = dpi(20f); contentDescription = "${c.unread} new"
                 }, lp(WRAP, dpi(20f)))
                 locked && !c.open -> end.addView(sdIconView(context, SdIcon(listOf(SdPaths.LOCK to Ui.c("#B9B9C0")), 15f, 2f)).apply { contentDescription = "Locked" }, lp(dpi(15f), dpi(15f)))

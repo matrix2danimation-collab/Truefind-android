@@ -76,7 +76,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         setBackgroundColor(SD.NAV_BG)
         clipChildren = false
         // the card: the photo to the screen's top edge, rounded at the bottom (30)
-        card.setBackgroundColor(Ui.c("#3A0A1F"))
+        card.setBackgroundColor(Ui.c("#1C1C21"))
         card.outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(v: View, o: Outline) { val r = Ui.dp(30f); o.setRoundRect(0, -r.toInt(), v.width, v.height, r) }
         }
@@ -133,7 +133,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         complete.orientation = LinearLayout.HORIZONTAL; complete.gravity = Gravity.CENTER_VERTICAL
         complete.background = SD.glass(dark = true, radiusDp = 20f)
         complete.setPadding(dpi(10f), dpi(9f), dpi(10f), dpi(9f))
-        complete.addView(sdIconView(context, Icon(Lucide.User, Color.WHITE, 20f, 2.2f)).apply { background = oval(SD.M) }, lp(dpi(38f), dpi(38f), r = 10f))
+        complete.addView(sdIconView(context, Icon(Lucide.User, SD.ON_M, 20f, 2.2f)).apply { background = oval(SD.M) }, lp(dpi(38f), dpi(38f), r = 10f))
         val ct = vbox(context)
         ct.addView(jk(context, "Complete your profile", 14.5f, Color.WHITE, 700))
         ct.addView(completeSub, lp(MATCH, WRAP, t = 2f))
@@ -152,11 +152,11 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         roundBtn(skipBtn, SdIcon(listOf(SdPaths.XSQ to Color.WHITE), 28f, 1.7f), "Skip") { step(1) }
         likeBtn.background = oval(SD.M)
         likeBtn.elevation = Ui.dp(8f)
-        likeBtn.outlineSpotShadowColorCompat(Color.argb(150, 120, 10, 50))
+        likeBtn.outlineSpotShadowColorCompat(Color.argb(150, 160, 110, 0))
         likeIcon.scaleType = ImageView.ScaleType.CENTER_INSIDE
         likeBtn.addView(likeIcon, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
         likeBtn.press().onTap { like() }
-        sentMark.setImageDrawable(SdIcon(listOf(SdPaths.CHECK to SD.M), 14f, 3f))
+        sentMark.setImageDrawable(SdIcon(listOf(SdPaths.CHECK to SD.ON_M), 14f, 3f))
         sentMark.background = oval(Color.WHITE); sentMark.setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)); sentMark.visibility = GONE
         chatBtn.addView(sentMark, LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.TOP))
         for ((i, b) in listOf(rewindBtn, chatBtn, skipBtn, likeBtn).withIndex()) buttons.addView(b, lp(dpi(70f), dpi(70f), l = if (i == 0) 0f else 11f))
@@ -490,7 +490,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
 
     /** not a member yet: the maroon top and the Join card on a white sheet */
     private fun joinPage(): View {
-        val outer = FrameLayout(context).apply { setBackgroundColor(SD.M); isClickable = true }
+        val outer = FrameLayout(context).apply { setBackgroundColor(SD.HEAD); isClickable = true }
         outer.addView(MaroonDeco(context), LayoutParams(-1, -1))
         val page = InsetFrame(context)
         outer.addView(page, LayoutParams(-1, -1))

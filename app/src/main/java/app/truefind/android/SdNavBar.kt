@@ -15,8 +15,8 @@ import androidx.core.graphics.PathParser
 
 /**
  * Secret Dating's bottom bar, copied from the owner's photo (20 Nov night): a light grey bar, icons only —
- * cards (Home) · heart (who liked you, My Activity) · chat · map pin (Online Map) — the open tab red with a
- * short red line on the bar's top edge. My profile stays at the top left of the pages, so the photo's
+ * cards (Home) · heart (who liked you, My Activity) · chat · map pin (Online Map) — the open tab yellow with a
+ * short yellow line on the bar's top edge (owner, 21 Nov night; it was red). My profile stays at the top left of the pages, so the photo's
  * 4th (profile) icon became the Online Map. A red dot on the heart while new likes wait.
  * A tap on another tab opens it; a tap on the tab you are on does nothing.
  */
@@ -55,7 +55,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     private val bg = Paint().apply { color = SD.NAV_BG }
     private val line = Paint().apply { color = SD.NAV_LINE }
-    private val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = SD.NAV_ON }
+    private val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = SD.NAV_ON }   // (the line over the open tab: yellow now)
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
     private val heart = PathParser.createPathFromPathData(SdPaths.HEART_FILL)
@@ -135,7 +135,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
                     fill.color = col; c.drawPath(heart, fill)
                     if (heartDot && current != "likes") {
                         fill.color = SD.NAV_BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
-                        fill.color = SD.NAV_ON; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
+                        fill.color = SD.NAV_DOT; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
                     }
                 }
                 "chat" -> {

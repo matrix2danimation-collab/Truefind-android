@@ -38,13 +38,13 @@ object StoryViewer {
         root.addView(object : View(ctx) {
             val p = Paint()
             override fun onSizeChanged(w: Int, hh: Int, ow: Int, oh: Int) {
-                p.shader = RadialGradient(w / 2f, hh * .4f, maxOf(w, hh) * .7f, Ui.c("#3a0820"), Ui.c("#12000a"), Shader.TileMode.CLAMP)
+                p.shader = RadialGradient(w / 2f, hh * .4f, maxOf(w, hh) * .7f, Ui.c("#1B1B1F"), Ui.c("#1B1B1F"), Shader.TileMode.CLAMP)
             }
             override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
         }, FrameLayout.LayoutParams(-1, -1))
         val photo = ImageView(ctx).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         root.addView(photo, FrameLayout.LayoutParams(-1, -1))
-        val spin = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.c("#FF9BCB")) }
+        val spin = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.c("#FFF0C2")) }
         root.addView(spin, FrameLayout.LayoutParams(dpi(28f), dpi(28f), Gravity.CENTER))
         root.addView(shade(ctx, true), FrameLayout.LayoutParams(-1, dpi(150f), Gravity.TOP))
         // progress bars
@@ -60,12 +60,12 @@ object StoryViewer {
         // who
         val who = hbox(ctx, 10f)
         val face = RoundPhoto(ctx, 36f)
-        val faceRing = FrameLayout(ctx).apply { background = oval(K.pill); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+        val faceRing = FrameLayout(ctx).apply { background = oval(KY.pill); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
         val faceWhite = FrameLayout(ctx).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
         faceWhite.addView(face, FrameLayout.LayoutParams(-1, -1)); faceRing.addView(faceWhite, FrameLayout.LayoutParams(-1, -1))
         who.addView(faceRing, lp(dpi(40f), dpi(40f)))
         val nameBox = vbox(ctx)
-        val name = sdText(ctx, "", 17f, Color.WHITE).oneLine().icon(Seal(16f), 6f, end = true)
+        val name = sdText(ctx, "", 17f, Color.WHITE).oneLine().icon(Seal(16f, SD.M, SD.ON_M), 6f, end = true)
         val sub = sdText(ctx, "", 13f, Color.argb(199, 255, 255, 255), bold = false)
         nameBox.addView(name, lp(WRAP, WRAP)); nameBox.addView(sub)
         who.addView(nameBox, lp(0, WRAP, 1f))
@@ -75,7 +75,7 @@ object StoryViewer {
         // caption + owner tools
         val bottom = vbox(ctx, 12f, Gravity.CENTER_HORIZONTAL).apply {
             setPadding(dpi(18f), dpi(48f), dpi(18f), dpi(20f))
-            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 30, 0, 14), Color.argb(219, 30, 0, 14)))
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 27, 27, 31), Color.argb(219, 27, 27, 31)))
         }
         val bottomWrap = bottom
         val caption = sdText(ctx, "", 19f, Color.WHITE).apply { gravity = Gravity.CENTER; lineHeight(1.2f); shadow(6f, 1f, Color.argb(153, 0, 0, 0)) }
@@ -83,7 +83,7 @@ object StoryViewer {
         val tools = hbox(ctx, 10f, Gravity.CENTER)
         val viewsBtn = sdText(ctx, "", 15f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(Color.argb(46, 255, 255, 255), 22f); setPadding(dpi(18f), 0, dpi(18f), 0) }
         val delBtn = sdText(ctx, "Delete", 15f, Ui.c("#ffd0d6"), bold = false).icon(Icon(Lucide.Trash2, Ui.c("#ffd0d6"), 16f), 7f).apply {
-            gravity = Gravity.CENTER; background = rounded(Color.argb(51, 0, 0, 0), 22f, 1f, Color.argb(153, 255, 180, 190)); setPadding(dpi(16f), 0, dpi(16f), 0)
+            gravity = Gravity.CENTER; background = rounded(Color.argb(51, 0, 0, 0), 22f, 1f, Color.argb(153, 255, 240, 194)); setPadding(dpi(16f), 0, dpi(16f), 0)
         }
         tools.addView(viewsBtn, lp(WRAP, dpi(44f))); tools.addView(delBtn, lp(WRAP, dpi(44f)))
         if (mine) bottom.addView(tools, lp(MATCH, WRAP))
@@ -145,21 +145,21 @@ object StoryViewer {
         }
         viewsBtn.press().onTap {
             setPaused(true)
-            val panel = vbox(ctx).apply { background = K.sheet(); setPadding(dpi(18f), dpi(16f), dpi(18f), dpi(18f)) }
-            panel.addView(sdText(ctx, "Seen by", 24f, K.wine, italic = true), lp(WRAP, WRAP, b = 10f))
-            val wait = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(K.rose) }
+            val panel = vbox(ctx).apply { background = KY.sheet(); setPadding(dpi(18f), dpi(16f), dpi(18f), dpi(18f)) }
+            panel.addView(sdText(ctx, "Seen by", 24f, KY.wine, italic = true), lp(WRAP, WRAP, b = 10f))
+            val wait = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(KY.rose) }
             panel.addView(wait, lp(dpi(22f), dpi(22f)))
             h.layer.sheet(panel, z = 40f, onClose = { setPaused(false) })
             h.viewersOfMine { vs ->
                 panel.removeView(wait)
-                if (vs.isEmpty()) panel.addView(sdText(ctx, "No views yet.", 15f, K.sub, bold = false))
+                if (vs.isEmpty()) panel.addView(sdText(ctx, "No views yet.", 15f, KY.sub, bold = false))
                 for (v in vs) {
                     val r = hbox(ctx, 12f).apply { setPadding(0, dpi(8f), 0, dpi(8f)) }
                     r.addView(RoundPhoto(ctx, 40f).also { it.set(listOf(SdRules.s(v, "photo"))) }, lp(dpi(40f), dpi(40f)))
-                    r.addView(sdText(ctx, SdRules.s(v, "name").ifEmpty { "Member" }, 16f, K.wine2), lp(0, WRAP, 1f))
-                    r.addView(sdText(ctx, SdRules.timeAgo(SdRules.s(v, "created_date")), 13f, K.soft, bold = false))
+                    r.addView(sdText(ctx, SdRules.s(v, "name").ifEmpty { "Member" }, 16f, KY.wine2), lp(0, WRAP, 1f))
+                    r.addView(sdText(ctx, SdRules.timeAgo(SdRules.s(v, "created_date")), 13f, KY.soft, bold = false))
                     panel.addView(r, lp(MATCH, WRAP))
-                    panel.addView(View(ctx).apply { setBackgroundColor(K.line2) }, lp(MATCH, dpi(1f)))
+                    panel.addView(View(ctx).apply { setBackgroundColor(KY.line2) }, lp(MATCH, dpi(1f)))
                 }
             }
         }
