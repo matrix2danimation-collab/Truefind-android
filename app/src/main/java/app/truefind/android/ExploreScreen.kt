@@ -8,10 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Handler
 import android.os.Looper
-import android.text.SpannableString
-import android.text.Spanned
 import android.text.TextUtils
-import android.text.style.ForegroundColorSpan
 import android.util.Base64
 import android.view.Gravity
 import android.view.View
@@ -81,6 +78,8 @@ class ExploreScreen(
     private val feed = FeedView(ctx) { p -> tap(p) }
     private val header = LinearLayout(ctx)
     private val coinText: TextView
+    private val myName: TextView
+    private var nameAsked = false
     private val chipViews = ArrayList<TextView>()
     private val actions = LinearLayout(ctx)
     private val voiceRate: TextView
@@ -116,10 +115,9 @@ class ExploreScreen(
         header.outlineSpotShadowColorCompat(Ui.c("#18043C"))
         header.setPadding(Ui.dpi(14f), Ui.dpi(32f), Ui.dpi(14f), Ui.dpi(13f))
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val brand = SpannableString("True Find").apply {
-            setSpan(ForegroundColorSpan(Ui.c("#E3D0FF")), 5, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
-        row.addView(Ui.text(ctx, brand, 18f, Color.WHITE), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        // 20 Nov (owner): the signed-in person's name in place of "True Find" ([showMyName])
+        myName = Ui.text(ctx, "", 18f, Color.WHITE).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
+        row.addView(myName, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = Ui.dpi(8f) })
         val coin = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             background = Ui.round(Color.argb(36, 255, 255, 255), 20f, Color.argb(64, 255, 255, 255))
@@ -154,10 +152,14 @@ class ExploreScreen(
 
         // ── Voice / Video / Random ──
         actions.orientation = LinearLayout.HORIZONTAL
-        // no outline: the panel flows into the white bottom bar under it (the bar drops its own line here too)
-        actions.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F8F3FF"), Color.WHITE, Color.WHITE)).apply {
-            cornerRadii = floatArrayOf(Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), 0f, 0f, 0f, 0f)
-        }
+        // 20 Nov (owner): the panel is dark purple with a soft white light, like the top box; the bottom bar's Explore
+        // tab is the same purple and joins it (NavBar), so the two read as one piece. The buttons stay as they were.
+        actions.background = LayerDrawable(arrayOf(
+            GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#4C1D95"), Ui.c("#3F1487"))).apply {
+                cornerRadii = floatArrayOf(Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), Ui.dp(22f), 0f, 0f, 0f, 0f)
+            },
+            PanelLight(22f),
+        ))
         actions.elevation = Ui.dp(10f)
         actions.isClickable = true
         actions.setPadding(Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f), Ui.dpi(13f))
@@ -439,6 +441,7 @@ class ExploreScreen(
                 pollMs = if (pm > 0) pm.coerceIn(POLL_MIN, POLL_MAX) else POLL_MS
             } else pollMs = 30000L
             d.optJSONObject("me")?.let { me = it }
+            showMyName()
             // photos of the first people the feed shows: fetched straight away
             fresh.take(24).forEach { if (it.photoUrls.isNotEmpty()) Photos.load(it.photoUrls, feed.faceSize) { } }
             profiles = fresh
@@ -447,6 +450,15 @@ class ExploreScreen(
             pushToFeed()
             done?.invoke()
         }
+    }
+
+    /** The top box's name: from the online list's "me"; if that has none, asked once from the account. */
+    private fun showMyName() {
+        val n = me?.let { it.optString("name").ifBlank { it.optString("full_name") } }.orEmpty().trim()
+        if (n.isNotEmpty()) { if (myName.text.toString() != n) myName.text = n; return }
+        if (nameAsked || !Api.ready) return
+        nameAsked = true
+        Api.me { r -> val f = r.data.optString("full_name").trim(); if (r.ok && f.isNotEmpty() && myName.text.isEmpty()) myName.text = f }
     }
 
     private fun myGender(): String = Person.genderOf(me?.optString("gender", "") ?: "")

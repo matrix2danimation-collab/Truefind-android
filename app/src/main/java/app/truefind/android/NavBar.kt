@@ -106,6 +106,9 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
         val iconPx = Ui.dp(f(40f, 22f)); val gap = Ui.dp(f(6f, 3f)); val labelPx = Ui.dp(f(27f, 12f))
         text.textSize = labelPx; text.textAlign = Paint.Align.CENTER
         val on = lit()
+        // Explore (owner, 20 Nov): its tab is a purple box joined to the purple Voice / Video / Random panel above it
+        val exploreBox = seamless && on == "explore"
+        if (exploreBox) drawExploreBox(c, x0 + cell * 1, cell, top, h)
         val fm = text.fontMetrics
         val labelH = fm.descent - fm.ascent
         val blockH = iconPx + gap + labelPx
@@ -115,7 +118,8 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
             c.save()
             val s = scale[i]
             if (s != 1f) c.scale(s, s, cx, top + h / 2f)
-            if (isOn) {
+            val box = exploreBox && it.key == "explore"
+            if (isOn && !box) {
                 // radial glow: 68 % × 80 % at 4 % from the top
                 val gw = cell * 0.68f; val gh = h * 0.80f; val gy = top + h * 0.04f
                 val g = RadialGradient(0f, 0f, 1f, Color.argb(51, 167, 121, 247), Color.argb(0, 167, 121, 247), Shader.TileMode.CLAMP)
@@ -124,7 +128,7 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
                 val rr = Ui.dp(u(30f)); c.drawRoundRect(rect, rr, rr, p); p.shader = null
             }
             val iy = top + (h - blockH) / 2f
-            val col = if (isOn) ON else OFF
+            val col = if (box) Color.WHITE else if (isOn) ON else OFF
             when (it.key) {
                 "home" -> (if (isOn) homeOn else homeOff).draw(c, cx - iconPx / 2f, iy, iconPx, iconPx, col)
                 "explore" -> search.draw(c, cx - iconPx / 2f, iy, iconPx, iconPx, col)
@@ -148,13 +152,44 @@ class NavBar(ctx: Context, private val onTab: (key: String, path: String) -> Uni
             if (tw > fit) text.textSize = labelPx * fit / tw
             c.drawText(it.label, cx, ly + (labelPx - labelH) / 2f - fm.ascent, text)
             text.textSize = labelPx
-            if (isOn) {
+            if (isOn && !box) {
                 val uw = cell * 0.60f; val uh = Ui.dp(f(5f, 2.5f)); val by = top + h - Ui.dp(f(8f, 4f))
                 p.shader = LinearGradient(cx - uw / 2f, 0f, cx + uw / 2f, 0f, Ui.c("#6a06c4"), Ui.c("#8a2cf0"), Shader.TileMode.CLAMP)
                 rect.set(cx - uw / 2f, by - uh, cx + uw / 2f, by); val rr = Ui.dp(u(3f)); c.drawRoundRect(rect, rr, rr, p); p.shader = null
             }
             c.restore()
         }
+    }
+
+    private val boxPath = android.graphics.Path()
+    private val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val boxGlow = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val boxLine = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+
+    /**
+     * Explore's tab: one purple shape that comes down out of the panel above (no line between them), its two top
+     * corners curving softly into the panel and its bottom corners a little rounded; a faint glow inside and a thin
+     * line of light along its bottom. [left] and [cell] = Explore's place in the bar; [top] / [h] = the bar.
+     */
+    private fun drawExploreBox(c: Canvas, left: Float, cell: Float, top: Float, h: Float) {
+        val pad = cell * 0.08f
+        val l = left + pad; val r = left + cell - pad; val b = top + h * 0.90f
+        val f = Ui.dp(14f); val k = Ui.dp(14f)
+        boxPath.rewind()
+        boxPath.moveTo(l - f, top); boxPath.lineTo(r + f, top)
+        boxPath.quadTo(r, top, r, top + f)
+        boxPath.lineTo(r, b - k); boxPath.quadTo(r, b, r - k, b)
+        boxPath.lineTo(l + k, b); boxPath.quadTo(l, b, l, b - k)
+        boxPath.lineTo(l, top + f); boxPath.quadTo(l, top, l - f, top)
+        boxPath.close()
+        // the panel ends in #3F1487; the box carries on from there
+        boxPaint.shader = LinearGradient(0f, top, 0f, b, Ui.c("#3F1487"), Ui.c("#2F0B6B"), Shader.TileMode.CLAMP)
+        c.drawPath(boxPath, boxPaint)
+        val cx = (l + r) / 2f
+        boxGlow.shader = RadialGradient(cx, b, (r - l) * 0.9f, Color.argb(120, 167, 139, 250), Color.argb(0, 167, 139, 250), Shader.TileMode.CLAMP)
+        c.save(); c.clipPath(boxPath); c.drawPaint(boxGlow); c.restore()
+        boxLine.strokeWidth = Ui.dp(1.2f); boxLine.color = Color.argb(90, 255, 255, 255)
+        c.drawLine(l + k, b - Ui.dp(0.6f), r - k, b - Ui.dp(0.6f), boxLine)
     }
 
     /** red count at the heart's top-right: only the number in its red badge (white edge), steady — no ring, no blinking */

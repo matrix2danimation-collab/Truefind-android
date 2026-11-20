@@ -360,14 +360,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         // the ring: white when free, red when busy, grey when gone
         pFill.color = if (gone) GREY else if (busy) RED else Color.WHITE
         c.drawCircle(0f, 0f, r, pFill)
-        if (!gone && !busy) {
-            // ring pulse
-            val ph = ((now - (born[v] ?: now)) % 2400L) / 2400f
-            val e = 1f - (1f - ph) * (1f - ph)
-            pStroke.color = VIOLET; pStroke.strokeWidth = Ui.dp(2f)
-            pStroke.alpha = ((0.34f * 0.85f * (1f - e)) * 255).roundToInt().coerceIn(0, 255)
-            c.drawCircle(0f, 0f, (r + Ui.dp(3f) - Ui.dp(1f)) * (1f + 0.45f * e), pStroke)
-        }
+        // (no pulsing circle around the photo any more: owner, 20 Nov — the bubbles only move)
         val fr = r - Ui.dp(4f)
         val face = faceOf(p)
         tmpRect.set(-fr, -fr, fr, fr)

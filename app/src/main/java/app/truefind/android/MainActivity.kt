@@ -1427,7 +1427,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
         screen.layoutParams = lp
         val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; else -> "home" }
-        if (screen === explore) explore.setShown(true) else {
+        if (screen === explore) {
+            explore.setShown(true)
+            // the bottom bar under Explore too, as in the app (its Explore tab joins the Voice / Video / Random panel)
+            pages.nav.visibility = View.VISIBLE; pages.nav.current = "explore"; pages.nav.seamless = true
+            root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(explore, innerH - pages.nav.barPx) }
+        } else {
             secret.setShown(true, view, "")
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
