@@ -166,13 +166,14 @@ class ExploreScreen(
         // 20 Nov: bigger buttons, each with its own faint doodles (ExploreArt)
         // 20 Nov, design #19 "Glass Chips" (owner's pick): Voice and Random are see-through glass on the purple panel
         // with white words; Video in the middle is solid white with purple words. Doodles only on Random (owner, 20 Nov)
-        val glass = { Ui.round(Color.argb(36, 255, 255, 255), 18f, Color.argb(115, 255, 255, 255), 1.5f) }
+        // (20 Nov, owner: the three buttons 25 % smaller — 74 → 56 high, words 18.5 → 14, icons 18 → 13.5)
+        val glass = { Ui.round(Color.argb(36, 255, 255, 255), 14f, Color.argb(115, 255, 255, 255), 1.5f) }
         val lilac = Ui.c("#E9DDFF")
-        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Color.WHITE, 18f), Color.WHITE, lilac, glass(),
+        val (vb, vr) = actionButton(ctx, "Voice", PathIcon(PathIcon.PHONE, Color.WHITE, 13.5f), Color.WHITE, lilac, glass(),
             art = "" to 0f) { startRandom("voice") }
-        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Ui.c("#4C1D95"), 19f), Ui.c("#4C1D95"), Ui.c("#6D4BB0"),
-            Ui.round(Color.WHITE, 18f, Color.argb(115, 255, 255, 255), 1.5f), art = "" to 0f) { startRandom("video") }
-        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Color.WHITE, 18f, 2.4f), Color.WHITE, lilac,
+        val (db, dr) = actionButton(ctx, "Video", PathIcon(PathIcon.VIDEO, Ui.c("#4C1D95"), 14f), Ui.c("#4C1D95"), Ui.c("#6D4BB0"),
+            Ui.round(Color.WHITE, 14f, Color.argb(115, 255, 255, 255), 1.5f), art = "" to 0f) { startRandom("video") }
+        val (rb, _) = actionButton(ctx, "Random", PathIcon(PathIcon.RANDOM, Color.WHITE, 13.5f, 2.4f), Color.WHITE, lilac,
             glass(), smallText = "match now", coin = false, art = ExploreArt.RANDOM.replace("#6C04CB", "#FFFFFF") to 0.20f) { startRandom(if (Math.random() < 0.5) "voice" else "video") }
         voiceRate = vr; videoRate = dr
         listOf(vb, db, rb).forEachIndexed { i, b ->
@@ -243,30 +244,30 @@ class ExploreScreen(
         val big = art != null
         val b = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = if (art == null || art.first.isEmpty()) bg else LayerDrawable(arrayOf(bg, ButtonDoodles(Svg.of(art.first), art.second, 17f))).apply {
+            background = if (art == null || art.first.isEmpty()) bg else LayerDrawable(arrayOf(bg, ButtonDoodles(Svg.of(art.first), art.second, 13f))).apply {
                 val line = Ui.dpi(1f)   // the doodles stay inside the button's outline
                 setLayerInset(1, line, line, line, line)
             }
             // (big: almost no side padding — the words are centred anyway, and on a narrow phone "Random" needs the room)
             setPadding(Ui.dpi(if (big) 2f else 6f), Ui.dpi(8f), Ui.dpi(if (big) 2f else 6f), Ui.dpi(8f))
-            if (big) minimumHeight = Ui.dpi(74f)
+            if (big) minimumHeight = Ui.dpi(56f)
             setOnClickListener { onClick() }
         }
         Ui.pressable(b)
-        val top = Ui.text(ctx, label, if (big) 18.5f else 14f, color).apply {
+        val top = Ui.text(ctx, label, 14f, color).apply {
             gravity = Gravity.CENTER
-            compoundDrawablePadding = Ui.dpi(if (big) 7f else 5f)
+            compoundDrawablePadding = Ui.dpi(5f)
             setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)
-            if (big) { minHeight = Ui.dpi(20f); maxLines = 1 }
+            if (big) { minHeight = Ui.dpi(15f); maxLines = 1 }
         }
         if (big) b.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)) else b.addView(top)
-        val small = Ui.text(ctx, smallText ?: "", if (big) 12.5f else 10.5f, smallColor).apply {
+        val small = Ui.text(ctx, smallText ?: "", if (big) 9.5f else 10.5f, smallColor).apply {
             gravity = Gravity.CENTER
-            compoundDrawablePadding = Ui.dpi(if (big) 4f else 3f)
-            if (coin) setCompoundDrawablesWithIntrinsicBounds(CoinDrawable(if (big) 14f else 12f), null, null, null)
-            if (big) { minHeight = Ui.dpi(14f); maxLines = 1 }
+            compoundDrawablePadding = Ui.dpi(3f)
+            if (coin) setCompoundDrawablesWithIntrinsicBounds(CoinDrawable(if (big) 10.5f else 12f), null, null, null)
+            if (big) { minHeight = Ui.dpi(11f); maxLines = 1 }
         }
-        b.addView(small, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(if (big) 6f else 2f) })
+        b.addView(small, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(if (big) 4f else 2f) })
         return b to small
     }
 

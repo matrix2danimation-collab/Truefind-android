@@ -55,9 +55,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     private val BLOCK_W = Ui.dp(128f)
     private val NAME_H = Ui.dp(23f)    // name line 18 + gap 5
     private val BLOCK_H = Ui.dp(150f)
-    private val TAG_GAP = Ui.dp(5f)    // a city tag never comes closer than this to the name beside it
-    private val TAG_MIN = Ui.dp(60f)   // …and is never made narrower than this
-    private val TAG_SLIM = Ui.dp(10f)  // side padding a tight city tag gives up before its text is cut
+    private val TAG_GAP = Ui.dp(5f)    // a city never comes closer than this to the name pill beside it
     private val HALO_R = Ui.dp(88f)    // the soft patch behind a bubble
     private val DOT = Ui.dp(7f)        // the blinking dot after the name…
     private val DOT_GAP = Ui.dp(6f)    // …and its gap
@@ -150,7 +148,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     private val INK = Ui.c("#2B0B57")
     private val pText = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = Ui.dp(14f); color = INK }
     private val pAge = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.regular; textSize = Ui.dp(14f); color = INK }
-    private val pLoc = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = Ui.dp(12.5f); color = Ui.c("#3B0D7A") }
+    private val pLoc = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textSize = Ui.dp(12.5f); color = Ui.c("#5B3E8C") }
     private val pFill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val pStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val pBmp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -279,36 +277,42 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         c.restore()
     }
 
-    // ── a city tag and a name never touch ──
-    // Rows are 125 apart and a bubble is 150 tall, so a city tag and the name of the profile in the next row are on
-    // the same line. Both take the width their text needs. Only when the two would come closer than TAG_GAP does the
-    // city tag give way: first it gives up TAG_SLIM of its side padding, and if that is not enough its text is cut (…).
-    // A name is cut only when it is so long that even the shortest tag (TAG_MIN) would not fit beside it.
+    // ── the city (top, a little right of the middle) and the name pill (under the photo) never touch ──
+    // Rows are 125 apart and a bubble is 150 tall, so the name pill of a bubble and the city of a bubble in the next
+    // row are on the same line. The name pill takes the width its text needs (cut with … only past NAME_MAX); the city
+    // gives way: it is cut (…) so that it keeps TAG_GAP from every name pill beside it (never narrower than CITY_MIN).
+    private val CITY_O = Ui.dp(14f)      // the city's middle sits this far right of the bubble's middle (owner, 20 Nov)
+    private val CITY_MIN = Ui.dp(44f)
+    private val PILL_PAD = Ui.dp(12f)    // the name pill's side padding (+ 1 + 1 outline)
     private val nameWidths = HashMap<Person, Float>()   // (a new list of people brings new Person objects: the old ones go when it is emptied)
 
-    /** what a city tag and the name beside it may take together */
-    private fun reach(): Float = 2f * (abs(SLOT_X[2] - SLOT_X[0]) * width - TAG_GAP)
+    /** the widest a name pill may be: room for the shortest city beside it on the tighter side */
+    private fun pillMax(): Float = min(BLOCK_W, 2f * (abs(SLOT_X[2] - SLOT_X[0]) * width - CITY_O - CITY_MIN / 2f - TAG_GAP))
 
-    /** the most a name line (name, age, dot) may take */
-    private fun nameCap(): Float = min(BLOCK_W, reach() - TAG_MIN)
-
-    /** how wide the name line of the bubble in slot [u] is drawn (0 = nobody there) */
-    private fun nameWidthAt(u: Int): Float {
+    /** how wide the name pill of the bubble in slot [u] is drawn (0 = nobody there) */
+    private fun pillWidthAt(u: Int): Float {
         val p = assigned[u]?.let { byId[it] } ?: return 0f
         val full = nameWidths[p] ?: run {
             if (nameWidths.size > 600) nameWidths.clear()
-            val w = pText.measureText(p.firstName.ifBlank { "Someone" }) + (if (p.age > 0) pAge.measureText(", ${p.age}") else 0f) + DOT_GAP + DOT
+            val w = pText.measureText(p.firstName.ifBlank { "Someone" }) + (if (p.age > 0) pAge.measureText(", ${p.age}") else 0f) + DOT_GAP + DOT + 2 * PILL_PAD + Ui.dp(2f)
             nameWidths[p] = w
             w
         }
-        return min(full, nameCap())
+        return min(full, pillMax())
     }
 
-    /** the room the city tag of slot [v] has: up to the name(s) in the row below it */
-    private fun tagRoom(v: Int): Float {
-        val g = Math.floorDiv(v, 3)
-        val widest = if (Math.floorMod(v, 3) == 2) max(nameWidthAt(3 * g + 3), nameWidthAt(3 * g + 4)) else nameWidthAt(3 * g + 2)
-        return if (widest <= 0f) BLOCK_W else min(BLOCK_W, reach() - widest)
+    /** the widest the city of slot [u] may be: it keeps TAG_GAP from the name pills of the row above it */
+    private fun cityRoom(u: Int): Float {
+        val g = Math.floorDiv(u, 3)
+        val above = if (Math.floorMod(u, 3) == 2) intArrayOf(3 * g, 3 * g + 1) else intArrayOf(3 * g - 1)
+        val cx = slotX(u) + CITY_O
+        var half = BLOCK_W / 2f
+        for (v in above) {
+            val pw = pillWidthAt(v)
+            if (pw <= 0f) continue
+            half = min(half, abs(cx - slotX(v)) - pw / 2f - TAG_GAP)
+        }
+        return max(CITY_MIN, 2f * half)
     }
 
     private fun drawBubble(c: Canvas, v: Int, p: Person, cx: Float, top: Float, now: Long) {
@@ -323,27 +327,14 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         c.translate(cx, top)
         if (sc < 1f) c.scale(sc, sc, 0f, BLOCK_H * 0.4f)
 
-        // ── name, age and the blinking dot ──
-        val name = p.firstName.ifBlank { "Someone" }
-        val age = if (p.age > 0) ", ${p.age}" else ""
-        val dot = DOT; val gap = DOT_GAP
-        var nw = pText.measureText(name); val aw = pAge.measureText(age)
-        val maxW = nameCap() - dot - gap
-        var shown = name
-        if (nw + aw > maxW) {
-            while (shown.length > 1 && pText.measureText("$shown…") + aw > maxW) shown = shown.dropLast(1)
-            shown = "$shown…"; nw = pText.measureText(shown)
+        // ── the city: top, a little right of the middle (owner, 20 Nov) ──
+        var place = p.place.ifBlank { "India" }
+        val room = cityRoom(v)
+        if (pLoc.measureText(place) > room) {
+            while (place.length > 1 && pLoc.measureText("$place…") > room) place = place.dropLast(1)
+            place = "$place…"
         }
-        val total = nw + aw + gap + dot
-        var x = -total / 2f
-        val base = Ui.dp(13f)
-        c.drawText(shown, x, base, pText); x += nw
-        if (age.isNotEmpty()) { c.drawText(age, x, base, pAge); x += aw }
-        x += gap
-        pFill.color = if (gone) DOT_OFF else if (busy) RED else GREEN
-        if (!gone) pFill.alpha = (255 * blink(now)).roundToInt()
-        c.drawCircle(x + dot / 2f, Ui.dp(9.6f), dot / 2f, pFill)
-        pFill.alpha = 255
+        c.drawText(place, CITY_O - pLoc.measureText(place) / 2f, Ui.dp(13f), pLoc)
 
         // ── avatar ──
         val cy = NAME_H + AVA / 2f
@@ -394,29 +385,34 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         }
         c.restore()
 
-        // ── city pill under the photo ──
-        var place = p.place.ifBlank { "India" }
-        var padX = Ui.dp(14f); val line = Ui.dp(2f)   // side padding; the 1 + 1 outline
-        var tw = pLoc.measureText(place)
-        val room = tagRoom(v)
-        if (tw + 2 * padX + line > room) {
-            // too wide for the room it has: first it gives up some side padding, then its text is cut
-            padX -= TAG_SLIM / 2f
-            val maxText = max(TAG_MIN, room) - 2 * padX - line
-            if (tw > maxText) {
-                while (place.length > 1 && pLoc.measureText("$place…") > maxText) place = place.dropLast(1)
-                place = "$place…"
-                tw = pLoc.measureText(place)
-            }
+        // ── name, age and the blinking dot, in the pill under the photo (owner, 20 Nov: where the city was) ──
+        val name = p.firstName.ifBlank { "Someone" }
+        val age = if (p.age > 0) ", ${p.age}" else ""
+        val dot = DOT; val gap = DOT_GAP
+        var nw = pText.measureText(name); val aw = pAge.measureText(age)
+        val maxText = pillWidthAt(v).takeIf { it > 0f }?.let { it - 2 * PILL_PAD - Ui.dp(2f) - dot - gap } ?: (BLOCK_W - 2 * PILL_PAD)
+        var shown = name
+        if (nw + aw > maxText) {
+            while (shown.length > 1 && pText.measureText("$shown…") + aw > maxText) shown = shown.dropLast(1)
+            shown = "$shown…"; nw = pText.measureText(shown)
         }
+        val tw = nw + aw + gap + dot
         val pillTop = NAME_H + AVA + Ui.dp(18f); val pillH = Ui.dp(25f)
-        tmpRect.set(-tw / 2f - padX - Ui.dp(1f), pillTop, tw / 2f + padX + Ui.dp(1f), pillTop + pillH)
+        tmpRect.set(-tw / 2f - PILL_PAD - Ui.dp(1f), pillTop, tw / 2f + PILL_PAD + Ui.dp(1f), pillTop + pillH)
         pFill.color = PILL
         c.drawRoundRect(tmpRect, pillH / 2f, pillH / 2f, pFill)
         pStroke.color = PILL_LINE; pStroke.strokeWidth = Ui.dp(1f)
         tmpRect.inset(Ui.dp(0.5f), Ui.dp(0.5f))
         c.drawRoundRect(tmpRect, pillH / 2f, pillH / 2f, pStroke)
-        c.drawText(place, -tw / 2f, pillTop + Ui.dp(15f), pLoc)
+        var x = -tw / 2f
+        val base = pillTop + Ui.dp(17.3f)
+        c.drawText(shown, x, base, pText); x += nw
+        if (age.isNotEmpty()) { c.drawText(age, x, base, pAge); x += aw }
+        x += gap
+        pFill.color = if (gone) DOT_OFF else if (busy) RED else GREEN
+        if (!gone) pFill.alpha = (255 * blink(now)).roundToInt()
+        c.drawCircle(x + dot / 2f, pillTop + pillH / 2f, dot / 2f, pFill)
+        pFill.alpha = 255
 
         c.restoreToCount(save)
     }
