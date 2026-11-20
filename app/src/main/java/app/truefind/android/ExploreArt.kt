@@ -123,6 +123,56 @@ class TopLight(private val radiusDp: Float) : Drawable() {
 }
 
 /**
+ * The light on Explore's Voice / Video / Random panel (owner, 20 Nov): the same dark purple and soft white light as
+ * the top box, here coming from the middle of its top edge, a thin line of light along its rounded top edge and a
+ * faint violet glow from the bottom right. [radiusDp] = the panel's top corners.
+ */
+class PanelLight(private val radiusDp: Float) : Drawable() {
+    private val shape = Path()
+    private val edge = Path()
+    private val white = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val violet = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = Ui.dp(1.2f); strokeCap = Paint.Cap.ROUND }
+    private var ok = false
+
+    override fun onBoundsChange(bounds: Rect) {
+        ok = bounds.width() > 0 && bounds.height() > 0
+        if (!ok) return
+        val l = bounds.left.toFloat(); val t = bounds.top.toFloat(); val r = bounds.right.toFloat(); val b = bounds.bottom.toFloat()
+        val rad = Ui.dp(radiusDp).coerceAtMost(bounds.height() / 2f)
+        shape.rewind()
+        shape.addRoundRect(RectF(l, t, r, b), floatArrayOf(rad, rad, rad, rad, 0f, 0f, 0f, 0f), Path.Direction.CW)
+        val half = line.strokeWidth / 2f
+        edge.rewind()
+        edge.moveTo(l + half, t + rad)
+        edge.arcTo(RectF(l + half, t + half, l + 2 * rad - half, t + 2 * rad - half), 180f, 90f, false)
+        edge.lineTo(r - rad, t + half)
+        edge.arcTo(RectF(r - 2 * rad + half, t + half, r - half, t + 2 * rad - half), 270f, 90f, false)
+        val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
+        white.shader = RadialGradient(0f, 0f, 1f, intArrayOf(Color.argb(107, 255, 255, 255), Color.argb(36, 233, 221, 255), Color.argb(0, 233, 221, 255)),
+            floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP).apply {
+            setLocalMatrix(Matrix().apply { setScale(0.62f * w, 0.62f * w * 0.42f); postTranslate(l + w / 2f, t - Ui.dp(30f)) })
+        }
+        violet.shader = RadialGradient(0f, 0f, 1f, Color.argb(115, 139, 92, 246), Color.argb(0, 139, 92, 246), Shader.TileMode.CLAMP).apply {
+            setLocalMatrix(Matrix().apply { setScale(0.5f * w, 0.5f * w); postTranslate(l + 1.05f * w, b) })
+        }
+        line.shader = LinearGradient(0f, t, 0f, t + Ui.dp(30f), Color.argb(140, 255, 255, 255), Color.argb(0, 255, 255, 255), Shader.TileMode.CLAMP)
+        if (h <= 0f) ok = false
+    }
+
+    override fun draw(c: Canvas) {
+        if (!ok) return
+        c.drawPath(shape, violet)
+        c.drawPath(shape, white)
+        c.drawPath(edge, line)
+    }
+
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(cf: ColorFilter?) {}
+    @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
+}
+
+/**
  * A soft patch of one colour that fades out towards its edges (an oval as wide and as tall as the view).
  * Explore puts it behind its "no one online" note, so the words read cleanly over the wallpaper's doodles.
  * [strength] is how solid the middle is (0..1); it stays that solid up to [solid] of the way out.
