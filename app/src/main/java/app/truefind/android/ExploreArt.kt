@@ -113,7 +113,7 @@ class TopLight(private val radiusDp: Float) : Drawable() {
         // (each light fills the box's own shape, so its rounded corners stay smooth)
         c.drawPath(shape, pink)
         c.drawPath(shape, violet)
-        c.drawPath(shape, white)
+        // (no white light any more: owner, 20 Nov — the top box is plain purple)
         c.drawPath(edge, line)
     }
 
@@ -204,7 +204,7 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
                 setLocalMatrix(Matrix().apply { setScale(0.60f * w, 0.90f * h); postTranslate(b.left + 0.5f * w, bottom - 0.08f * h) })
             }
         }
-        c.drawRect(b.left.toFloat(), t, b.right.toFloat(), bottom, light)
+        // (no white light here either: the top box is plain purple since 20 Nov)
     }
 
     override fun setAlpha(alpha: Int) {}
