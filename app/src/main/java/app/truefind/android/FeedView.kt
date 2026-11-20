@@ -283,6 +283,17 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     // gives way: it is cut (…) so that it keeps TAG_GAP from every name pill beside it (never narrower than CITY_MIN).
     private val CITY_O = Ui.dp(14f)      // the city's middle sits this far right of the bubble's middle (owner, 20 Nov)
     private val CITY_MIN = Ui.dp(44f)
+    private val PIN_W = Ui.dp(10f); private val PIN_H = Ui.dp(12.5f); private val PIN_GAP = Ui.dp(3f)
+    private val PIN_RED = Ui.c("#EF4444")
+    /** a location pin in a 24 × 30 box: round head, pointed foot */
+    private val pinPath = Path().apply {
+        moveTo(12f, 30f)
+        cubicTo(12f, 30f, 1f, 18.5f, 1f, 11.5f)
+        cubicTo(1f, 5.2f, 5.9f, 0.5f, 12f, 0.5f)
+        cubicTo(18.1f, 0.5f, 23f, 5.2f, 23f, 11.5f)
+        cubicTo(23f, 18.5f, 12f, 30f, 12f, 30f)
+        close()
+    }
     private val PILL_PAD = Ui.dp(12f)    // the name pill's side padding (+ 1 + 1 outline)
     private val nameWidths = HashMap<Person, Float>()   // (a new list of people brings new Person objects: the old ones go when it is emptied)
 
@@ -328,13 +339,22 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         if (sc < 1f) c.scale(sc, sc, 0f, BLOCK_H * 0.4f)
 
         // ── the city: top, a little right of the middle (owner, 20 Nov) ──
+        // a small red location pin in front of the city (owner, 20 Nov)
         var place = p.place.ifBlank { "India" }
-        val room = cityRoom(v)
+        val room = cityRoom(v) - PIN_W - PIN_GAP
         if (pLoc.measureText(place) > room) {
             while (place.length > 1 && pLoc.measureText("$place…") > room) place = place.dropLast(1)
             place = "$place…"
         }
-        c.drawText(place, CITY_O - pLoc.measureText(place) / 2f, Ui.dp(13f), pLoc)
+        val cw = PIN_W + PIN_GAP + pLoc.measureText(place)
+        val cx0 = CITY_O - cw / 2f
+        c.save()
+        c.translate(cx0, Ui.dp(13f) - PIN_H + Ui.dp(1f))
+        c.scale(PIN_W / 24f, PIN_H / 30f)
+        pFill.color = PIN_RED; c.drawPath(pinPath, pFill)
+        pFill.color = Color.WHITE; c.drawCircle(12f, 11.5f, 4.2f, pFill)
+        c.restore()
+        c.drawText(place, cx0 + PIN_W + PIN_GAP, Ui.dp(13f), pLoc)
 
         // ── avatar ──
         val cy = NAME_H + AVA / 2f
