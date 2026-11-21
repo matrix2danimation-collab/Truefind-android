@@ -136,6 +136,8 @@ class WalletScreen(
     private var rateDraft = "0"
     private var firstOffer = false
     private var loading = true
+    /** the first load took too long: the page stops waiting and says so (a late answer still fills it) */
+    private var loadSlow = false
     private var savingRate = false
     private var note = ""
     private var showAllTx = false
@@ -406,8 +408,18 @@ class WalletScreen(
     private fun load(initial: Boolean = false, quiet: Boolean = false, done: ((Boolean) -> Unit)? = null) {
         val id = ++reqId
         val forApp = app
+        // (21 Nov, owner: the Secret Dating wallet kept loading forever. A first load that has no answer in 12 s
+        // stops the spinner and says so; pull down tries again, and a late answer still fills the page.)
+        if (loading) main.postDelayed({
+            if (id == reqId && forApp == app && loading) {
+                loading = false; loadSlow = true
+                note = "Could not load your wallet. Pull down to try again."
+                renderAll()
+            }
+        }, 12_000)
         source.fn("getWallet", JSONObject().put("app", forApp)) { r ->
             if (id != reqId || forApp != app) { done?.invoke(false); return@fn }
+            if (loadSlow && r.ok) { loadSlow = false; if (note.startsWith("Could not load")) note = "" }
             if (!r.ok) {
                 if (initial) note = axiosMessage(r).ifEmpty { "Could not load wallet." }
                 if (loading) { loading = false }
@@ -651,7 +663,7 @@ class WalletScreen(
         val ctx = context
         body.removeAllViews()
         packTiles.clear(); planRows.clear(); txSection = null; helpSection = null; draftBox = null
-        if (loading) {
+        if (loading && !secret) {
             val f = FrameLayout(ctx)
             f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
             body.addView(f, WV.lp(WV.MATCH, Ui.dpi(150f)))
@@ -688,7 +700,12 @@ class WalletScreen(
         if (isCreator && !showEarnings) section(WV.box(context, true).apply { setPadding(0, 0, 0, Ui.dpi(14f)); addView(rateCard(earned), WV.lp(WV.MATCH, WV.WRAP)) })
 
         if (coinsView) {
-            section(transactionsSection())
+            if (loading) {
+                // (Secret Dating: only the coin history still waits for its answer)
+                val f = FrameLayout(ctx)
+                f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
+                section(f.also { it.minimumHeight = Ui.dpi(120f) })
+            } else section(transactionsSection())
             section(helpBlock())
         }
     }
@@ -980,7 +997,7 @@ class WalletScreen(
             minimumHeight = Ui.dpi(64f)
         }
         r.addView(WCoins.flat(ctx, 26f))
-        val amt = SpannableStringBuilder(wRupees(coins)).append(" ")
+        val amt = SpannableStringBuilder(if (wallet == null) "–" else wRupees(coins)).append(" ")
         val s0 = amt.length
         amt.append("coins")
         amt.setSpan(AbsoluteSizeSpan(Ui.dpi(14f)), s0, amt.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -1518,7 +1535,7 @@ class WalletScreen(
 
     private fun renderPayBar() {
         val t = T
-        val show = !loading && coinsView && flow == null && txOpen == null && (if (secret) planPicked != null else picked != null)
+        val show = (!loading || secret) && coinsView && flow == null && txOpen == null && (if (secret) planPicked != null else picked != null)
         if (!show) {
             payBar?.let { payHost.removeView(it) }
             payBar = null; payKey = ""
