@@ -51,7 +51,8 @@ object WalletNet : WalletSource {
     private val pool = Executors.newFixedThreadPool(2)
     private val main = Handler(Looper.getMainLooper())
 
-    override fun fn(name: String, body: JSONObject, done: (Api.Result) -> Unit) = Api.invoke(name, body, 30000, done)
+    // (the front lane: the Wallet's asks never wait behind other pages' reads — Api.invokeFront)
+    override fun fn(name: String, body: JSONObject, done: (Api.Result) -> Unit) = Api.invokeFront(name, body, 30000, done)
 
     override fun me(done: (user: JSONObject?, profile: JSONObject?, ok: Boolean) -> Unit) {
         pool.execute {
@@ -136,8 +137,18 @@ class WalletScreen(
     private var rateDraft = "0"
     private var firstOffer = false
     private var loading = true
+    /** the first load took too long: the page stops waiting and says so (a late answer still fills it) */
+    private var loadSlow = false
+    /** the credits could not be read (no answer in 12 s, or an error): the header says so instead of an endless "–" */
+    private var creditsFailed = false
+    private var credReq = 0
+    /** the credits Secret Dating Home read a moment ago (used only while fresh: at most 2 minutes old) */
+    private var offeredCredits: JSONObject? = null
+    private var offeredAt = 0L
     private var savingRate = false
+    // (any new note is not a "could not load" one until [loadFailedNote] is set again)
     private var note = ""
+        set(v) { field = v; loadFailedNote = false }
     private var showAllTx = false
     private var txFilter = "all"
     private var txOpen: JSONObject? = null
@@ -373,6 +384,7 @@ class WalletScreen(
     // ═════════════════ data ═════════════════
 
     private fun startLoad() {
+        if (app == "secret") takeOfferedCredits()
         val c = cache[app]
         applyCached(c)
         loading = c?.wallet == null
@@ -402,14 +414,51 @@ class WalletScreen(
             d.str("my_profile_id").ifEmpty { null }, d.num("chat_rate_coins"), d.opt("first_offer") == true)
     }
 
+    /**
+     * Secret Dating Home has just read the credits (the very answer this page asks for): kept, so the Secret
+     * Dating wallet opens with them at once instead of "–". The server is still asked; its answer replaces them.
+     * Never older than 2 minutes, so a number on screen is never an old one.
+     */
+    fun offerCredits(d: JSONObject) {
+        if (d.optJSONObject("credits") == null) return
+        offeredCredits = d; offeredAt = System.currentTimeMillis()
+    }
+    private fun takeOfferedCredits(): Boolean {
+        val d = offeredCredits ?: return false
+        offeredCredits = null
+        if (System.currentTimeMillis() - offeredAt > 120_000) return false
+        applyCredits(d)
+        return true
+    }
+    private fun applyCredits(d: JSONObject) {
+        credits = d.optJSONObject("credits")
+        creditsPurchases = list(d.optJSONArray("purchases"))
+        sdPlan = d.optJSONObject("plan")
+        sdIntro = d.optJSONObject("intro")
+        sdMember = d.optJSONObject("member")
+        creditsFailed = credits == null
+    }
+
     /** getWallet for the wallet on screen. A slow answer for the other wallet is dropped. */
     private fun load(initial: Boolean = false, quiet: Boolean = false, done: ((Boolean) -> Unit)? = null) {
         val id = ++reqId
         val forApp = app
+        // (21 Nov, owner: the Secret Dating wallet kept loading forever. A first load that has no answer in 12 s
+        // stops the spinner and says so; pull down tries again, and a late answer still fills the page.)
+        if (loading) main.postDelayed({
+            if (id == reqId && forApp == app && loading) {
+                loading = false; loadSlow = true
+                note = "Could not load your wallet. Pull down to try again."
+                loadFailedNote = true
+                renderAll()
+            }
+        }, 12_000)
         source.fn("getWallet", JSONObject().put("app", forApp)) { r ->
             if (id != reqId || forApp != app) { done?.invoke(false); return@fn }
+            // an answer at last: the "could not load" note (12 s without an answer, or an error before) goes
+            if (r.ok) { loadSlow = false; if (loadFailedNote) note = "" }
             if (!r.ok) {
-                if (initial) note = axiosMessage(r).ifEmpty { "Could not load wallet." }
+                if (initial) { note = axiosMessage(r).ifEmpty { "Could not load wallet." }; loadFailedNote = true }
                 if (loading) { loading = false }
                 drawnFrom.remove(forApp)
                 renderAll()
@@ -462,32 +511,55 @@ class WalletScreen(
 
     /** Secret Dating: credits, the running plan, the first-time offer and the True Find coins. */
     private fun loadCredits(done: (() -> Unit)? = null) {
-        var left = 2
+        val id = ++credReq
+        // True Find coins (only for the "Unlock for 1 coin" offer): the True Find wallet already read by Home or
+        // this page is used, so the server is not asked for it again. Asked only when not known yet, or 0 (then
+        // a fresh number matters: the button is off at 0).
+        val known = cache["truefind"]?.wallet?.num("coins")
+        val askTf = known == null || known <= 0.0
+        if (known != null) tfCoins = known
+        var left = if (askTf) 2 else 1
         var res: Api.Result? = null
         var tf: Api.Result? = null
-        val finish = {
-            left -= 1
-            if (left == 0) {
-                val r = res
-                if (r != null && r.ok) {
-                    val d = r.data
-                    credits = d.optJSONObject("credits")
-                    creditsPurchases = list(d.optJSONArray("purchases"))
-                    sdPlan = d.optJSONObject("plan")
-                    sdIntro = d.optJSONObject("intro")
-                    sdMember = d.optJSONObject("member")
-                    val w = tf?.takeIf { it.ok }?.data?.optJSONObject("wallet")
-                    if (w != null) tfCoins = w.num("coins")
-                } else {
-                    credits = null
-                    creditsPurchases = emptyList()
-                }
-                if (app == "secret") { renderHeader(); renderBody(); renderPayBar() }
-                done?.invoke()
+        var over = false
+        // (21 Nov, owner: "Request credits –" stayed for ever. No answer in 12 s: the header says so, pull down tries
+        // again, and a late answer still fills it.)
+        main.postDelayed({
+            if (id == credReq && !over && credits == null) {
+                creditsFailed = true
+                if (app == "secret") renderHeader()
             }
+        }, 12_000)
+        val finish = finish@{
+            left -= 1
+            if (left > 0) return@finish
+            over = true
+            // (an older ask that answers after a newer one changes nothing)
+            if (id != credReq) { done?.invoke(); return@finish }
+            val r = res
+            if (r != null && r.ok) {
+                applyCredits(r.data)
+            } else {
+                // the last numbers read stay on screen; with none, the header says they could not be read
+                creditsFailed = credits == null
+            }
+            val w = tf?.takeIf { it.ok }?.data?.optJSONObject("wallet")
+            if (w != null) tfCoins = w.num("coins")
+            if (app == "secret") { renderHeader(); renderBody(); renderPayBar() }
+            done?.invoke()
+            Unit
         }
         source.fn("getRequestCredits", JSONObject()) { res = it; finish() }
-        source.fn("getWallet", JSONObject().put("app", "truefind")) { tf = it; finish() }
+        if (askTf) source.fn("getWallet", JSONObject().put("app", "truefind")) { r ->
+            tf = r
+            // (kept for the True Find tab too: it opens with this number at once)
+            r.data.optJSONObject("wallet")?.takeIf { r.ok }?.let { w ->
+                val c = cache["truefind"]
+                cache["truefind"] = Cached(w, c?.transactions ?: list(r.data.optJSONArray("transactions")), c?.accountType ?: r.data.str("account_type").ifEmpty { "user" },
+                    c?.profileId ?: r.data.str("my_profile_id").ifEmpty { null }, c?.rate ?: r.data.num("chat_rate_coins"), c?.firstOffer ?: (r.data.opt("first_offer") == true))
+            }
+            finish()
+        }
     }
 
     private fun refreshQuietly() {
@@ -525,7 +597,9 @@ class WalletScreen(
         sel = null
         planSel = null
         credits = null
+        creditsFailed = false
         creditsPurchases = emptyList()
+        if (next == "secret") takeOfferedCredits()
         setAddress(next)
         renderAll()
         load(initial = true)
@@ -610,6 +684,7 @@ class WalletScreen(
             col.addView(row, WV.lp(WV.WRAP, Ui.dpi(48f), t = 6f))
             val until = if (sdPlan?.opt("active") == true && sdPlan.str("until").isNotEmpty()) wDate(sdPlan.str("until")) else ""
             val status = when {
+                c == null && creditsFailed -> "Couldn't load credits · pull down to try again"
                 sdPlan?.opt("active") == true -> "${sdPlan.str("name").ifEmpty { "Premium" }} · ends $until"
                 sdGirl && !sdMustVerify -> "Chat is free for you · a plan adds credits"
                 else -> "No active plan"
@@ -617,6 +692,8 @@ class WalletScreen(
             col.addView(WV.text(context, status, 13f, t.off, false, 18f).apply {
                 background = WV.round(t.track, 8f)
                 setPadding(Ui.dpi(10f), Ui.dpi(3f), Ui.dpi(10f), Ui.dpi(3f))
+                // (could not be read: a tap tries again too, not only pulling down)
+                if (c == null && creditsFailed) { isClickable = true; setOnClickListener { if (!spinner.spinning) refreshNow() } }
             }, WV.lp(WV.WRAP, WV.WRAP, t = 8f))
         } else {
             col.addView(WV.text(context, "Your balance", 14f, t.sub, false, 20f))
@@ -651,7 +728,7 @@ class WalletScreen(
         val ctx = context
         body.removeAllViews()
         packTiles.clear(); planRows.clear(); txSection = null; helpSection = null; draftBox = null
-        if (loading) {
+        if (loading && !secret) {
             val f = FrameLayout(ctx)
             f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
             body.addView(f, WV.lp(WV.MATCH, Ui.dpi(150f)))
@@ -688,7 +765,12 @@ class WalletScreen(
         if (isCreator && !showEarnings) section(WV.box(context, true).apply { setPadding(0, 0, 0, Ui.dpi(14f)); addView(rateCard(earned), WV.lp(WV.MATCH, WV.WRAP)) })
 
         if (coinsView) {
-            section(transactionsSection())
+            if (loading) {
+                // (Secret Dating: only the coin history still waits for its answer)
+                val f = FrameLayout(ctx)
+                f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
+                section(f.also { it.minimumHeight = Ui.dpi(120f) })
+            } else section(transactionsSection())
             section(helpBlock())
         }
     }
@@ -700,13 +782,24 @@ class WalletScreen(
     private fun noteBox(): View? {
         if (note.isEmpty()) return null
         val t = T
-        return WV.text(context, note, 14f, t.ink).apply {
+        val text = WV.text(context, note, 14f, t.ink).apply {
             gravity = Gravity.CENTER
             background = WV.round(t.tint, 14f, t.tintLine)
             setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f))
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }
+        // the wallet could not be read: a "Try again" button under the note (pulling down still works too)
+        if (!loadFailedNote) return text
+        val box = WV.box(context, true, Gravity.CENTER_HORIZONTAL)
+        box.addView(text, WV.lp(WV.MATCH, WV.WRAP))
+        box.addView(WV.button(context, "Try again", t.accent, Color.WHITE, 40f, 12f, 14f).apply {
+            setPadding(Ui.dpi(18f), 0, Ui.dpi(18f), 0)
+            setOnClickListener { if (!spinner.spinning) refreshNow() }
+        }, WV.lp(WV.WRAP, Ui.dpi(40f), t = 10f))
+        return box
     }
+    /** the note says the wallet could not be read (12 s without an answer, or a server error) */
+    private var loadFailedNote = false
 
     /** "Title ........ small grey line" */
     private fun titleRow(title: String, right: View?): LinearLayout {
@@ -980,7 +1073,7 @@ class WalletScreen(
             minimumHeight = Ui.dpi(64f)
         }
         r.addView(WCoins.flat(ctx, 26f))
-        val amt = SpannableStringBuilder(wRupees(coins)).append(" ")
+        val amt = SpannableStringBuilder(if (wallet == null) "–" else wRupees(coins)).append(" ")
         val s0 = amt.length
         amt.append("coins")
         amt.setSpan(AbsoluteSizeSpan(Ui.dpi(14f)), s0, amt.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -1518,7 +1611,7 @@ class WalletScreen(
 
     private fun renderPayBar() {
         val t = T
-        val show = !loading && coinsView && flow == null && txOpen == null && (if (secret) planPicked != null else picked != null)
+        val show = (!loading || secret) && coinsView && flow == null && txOpen == null && (if (secret) planPicked != null else picked != null)
         if (!show) {
             payBar?.let { payHost.removeView(it) }
             payBar = null; payKey = ""

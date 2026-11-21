@@ -271,6 +271,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (BuildConfig.SELF_UPDATE) PageFx.slow = try { getSharedPreferences("tf_test", MODE_PRIVATE).getFloat("fx_slow", 1f).coerceIn(1f, 3f) } catch (e: Exception) { 1f }
         if (BuildConfig.SELF_UPDATE) Perf.start(this)
         pages.onWallet = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offer(d) }
+        secret.onCredits = { d -> if (::wallet.isInitialized && !walletPreviewing) wallet.offerCredits(d) }
         pages.askCamera = { cb ->
             if (has(Manifest.permission.CAMERA) && has(Manifest.permission.RECORD_AUDIO)) cb(true)
             else { camDone = cb; try { askCam.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)) } catch (e: Exception) { camDone = null; cb(false) } }

@@ -14,7 +14,9 @@ import java.util.TimeZone
  *
  * Scene words: "new" (first-recharge offer), "earn" (creator with earnings),
  * "pending" (a withdrawal in process), "girl" (Secret Dating girl not verified
- * yet), "plan" (a Secret Dating plan running), "admin", "empty" (no history).
+ * yet), "plan" (a Secret Dating plan running), "admin", "empty" (no history),
+ * "wallethang" (the Secret Dating coin wallet never answers), "credhang" (the
+ * credits never answer), "fail" (both answer 500) — the owner's endless loading, 21 Nov.
  */
 class WalletDemo(private val scene: String) : WalletSource {
     private val main = Handler(Looper.getMainLooper())
@@ -26,6 +28,11 @@ class WalletDemo(private val scene: String) : WalletSource {
     private val admin = scene.contains("admin")
     private val empty = scene.contains("empty") || isNew
     private var coins = if (isNew) 0L else 1240L
+    private val walletHang = scene.contains("wallethang")
+    private val credHang = scene.contains("credhang")
+    private val fail = scene.contains("fail")
+    /** how many times each function was asked (the test log shows it: no needless asks) */
+    private val asked = HashMap<String, Int>()
 
     private fun iso(hoursAgo: Double): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
@@ -37,6 +44,15 @@ class WalletDemo(private val scene: String) : WalletSource {
 
     override fun fn(name: String, body: JSONObject, done: (Api.Result) -> Unit) {
         val app = body.optString("app", "truefind")
+        val key = "$name:$app"
+        asked[key] = (asked[key] ?: 0) + 1
+        android.util.Log.i("TFWALLET", "asked $key x${asked[key]}")
+        if (walletHang && name == "getWallet" && app == "secret") return   // never answers
+        if (credHang && name == "getRequestCredits") return               // never answers
+        if (fail && (name == "getRequestCredits" || (name == "getWallet" && app == "secret"))) {
+            later { done(Api.Result(500, JSONObject().put("error", "Something went wrong. Please try again."), "Something went wrong. Please try again.")) }
+            return
+        }
         later {
             done(when (name) {
                 "getWallet" -> ok(JSONObject()
