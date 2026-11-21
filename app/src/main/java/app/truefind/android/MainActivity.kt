@@ -218,6 +218,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Push.onMessage = { t -> runOnUiThread { if (::work.isInitialized && (t == "msg" || t == "like" || t == "info")) work.unreadSoon(300) } }
         Push.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // no grey veil of the phone's own over the strips at the top and bottom: they take the page's colours (owner, 21 Nov)
+        if (android.os.Build.VERSION.SDK_INT >= 29) { window.isNavigationBarContrastEnforced = false; window.isStatusBarContrastEnforced = false }
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true
@@ -1482,7 +1484,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             preview.startsWith("et") || preview.startsWith("dash") || preview.startsWith("earn") || preview.startsWith("recent")) {
             Demo.girl = intent.getBooleanExtra("tf_girl", false)
             watchFrames()
-            root.post { pages.startPreview(preview, intent.getStringExtra("tf_open").orEmpty()) }
+            root.post { pages.startPreview(preview, intent.getStringExtra("tf_open").orEmpty()); if (preview.startsWith("home")) pageStrip(HOME_TOP) }
             return
         }
         Demo.on = true
