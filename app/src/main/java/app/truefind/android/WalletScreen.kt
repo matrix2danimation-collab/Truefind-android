@@ -138,6 +138,9 @@ class WalletScreen(
     private var loading = true
     /** the first load took too long: the page stops waiting and says so (a late answer still fills it) */
     private var loadSlow = false
+    /** the credits could not be read (no answer in 12 s, or an error): the header says so instead of an endless "–" */
+    private var creditsFailed = false
+    private var credReq = 0
     private var savingRate = false
     private var note = ""
     private var showAllTx = false
@@ -474,32 +477,61 @@ class WalletScreen(
 
     /** Secret Dating: credits, the running plan, the first-time offer and the True Find coins. */
     private fun loadCredits(done: (() -> Unit)? = null) {
-        var left = 2
+        val id = ++credReq
+        // True Find coins (only for the "Unlock for 1 coin" offer): the True Find wallet already read by Home or
+        // this page is used, so the server is not asked for it again. Asked only when not known yet, or 0 (then
+        // a fresh number matters: the button is off at 0).
+        val known = cache["truefind"]?.wallet?.num("coins")
+        val askTf = known == null || known <= 0.0
+        if (known != null) tfCoins = known
+        var left = if (askTf) 2 else 1
         var res: Api.Result? = null
         var tf: Api.Result? = null
-        val finish = {
-            left -= 1
-            if (left == 0) {
-                val r = res
-                if (r != null && r.ok) {
-                    val d = r.data
-                    credits = d.optJSONObject("credits")
-                    creditsPurchases = list(d.optJSONArray("purchases"))
-                    sdPlan = d.optJSONObject("plan")
-                    sdIntro = d.optJSONObject("intro")
-                    sdMember = d.optJSONObject("member")
-                    val w = tf?.takeIf { it.ok }?.data?.optJSONObject("wallet")
-                    if (w != null) tfCoins = w.num("coins")
-                } else {
-                    credits = null
-                    creditsPurchases = emptyList()
-                }
-                if (app == "secret") { renderHeader(); renderBody(); renderPayBar() }
-                done?.invoke()
+        var over = false
+        // (21 Nov, owner: "Request credits –" stayed for ever. No answer in 12 s: the header says so, pull down tries
+        // again, and a late answer still fills it.)
+        main.postDelayed({
+            if (id == credReq && !over && credits == null) {
+                creditsFailed = true
+                if (app == "secret") renderHeader()
             }
+        }, 12_000)
+        val finish = finish@{
+            left -= 1
+            if (left > 0) return@finish
+            over = true
+            // (an older ask that answers after a newer one changes nothing)
+            if (id != credReq) { done?.invoke(); return@finish }
+            val r = res
+            if (r != null && r.ok) {
+                val d = r.data
+                credits = d.optJSONObject("credits")
+                creditsPurchases = list(d.optJSONArray("purchases"))
+                sdPlan = d.optJSONObject("plan")
+                sdIntro = d.optJSONObject("intro")
+                sdMember = d.optJSONObject("member")
+                creditsFailed = credits == null
+            } else {
+                // the last numbers read stay on screen; with none, the header says they could not be read
+                creditsFailed = credits == null
+            }
+            val w = tf?.takeIf { it.ok }?.data?.optJSONObject("wallet")
+            if (w != null) tfCoins = w.num("coins")
+            if (app == "secret") { renderHeader(); renderBody(); renderPayBar() }
+            done?.invoke()
+            Unit
         }
         source.fn("getRequestCredits", JSONObject()) { res = it; finish() }
-        source.fn("getWallet", JSONObject().put("app", "truefind")) { tf = it; finish() }
+        if (askTf) source.fn("getWallet", JSONObject().put("app", "truefind")) { r ->
+            tf = r
+            // (kept for the True Find tab too: it opens with this number at once)
+            r.data.optJSONObject("wallet")?.takeIf { r.ok }?.let { w ->
+                val c = cache["truefind"]
+                cache["truefind"] = Cached(w, c?.transactions ?: list(r.data.optJSONArray("transactions")), c?.accountType ?: r.data.str("account_type").ifEmpty { "user" },
+                    c?.profileId ?: r.data.str("my_profile_id").ifEmpty { null }, c?.rate ?: r.data.num("chat_rate_coins"), c?.firstOffer ?: (r.data.opt("first_offer") == true))
+            }
+            finish()
+        }
     }
 
     private fun refreshQuietly() {
@@ -537,6 +569,7 @@ class WalletScreen(
         sel = null
         planSel = null
         credits = null
+        creditsFailed = false
         creditsPurchases = emptyList()
         setAddress(next)
         renderAll()
@@ -622,6 +655,7 @@ class WalletScreen(
             col.addView(row, WV.lp(WV.WRAP, Ui.dpi(48f), t = 6f))
             val until = if (sdPlan?.opt("active") == true && sdPlan.str("until").isNotEmpty()) wDate(sdPlan.str("until")) else ""
             val status = when {
+                c == null && creditsFailed -> "Couldn't load credits · pull down to try again"
                 sdPlan?.opt("active") == true -> "${sdPlan.str("name").ifEmpty { "Premium" }} · ends $until"
                 sdGirl && !sdMustVerify -> "Chat is free for you · a plan adds credits"
                 else -> "No active plan"

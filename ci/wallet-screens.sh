@@ -16,6 +16,9 @@ shot() {
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  # which server functions the Wallet asked for (made-up data): no needless asks
+  adb logcat -d -s TFWALLET:I | grep "asked" > "$OUT/$name.asked.txt"
+  [ -s "$OUT/$name.asked.txt" ] || rm -f "$OUT/$name.asked.txt"
 }
 shot 01-truefind 7 --es tf_wallet tf
 shot 02-first-offer 7 --es tf_wallet tf-new
@@ -38,5 +41,12 @@ shot 17-earnings 9 --es tf_wallet tf-earn --es tf_open earnings
 shot 18-earnings-pending 9 --es tf_wallet tf-earn-pending --es tf_open earnings
 shot 19-earnings-amount 10 --es tf_wallet tf-earn --es tf_open draft
 shot 20-coins-tab-creator 8 --es tf_wallet tf-earn
+# the owner's endless Secret Dating loading (21 Nov): plans show at once; with no answer the page stops after 12 s
+shot 21-secret-wallet-hang-4s 4 --es tf_wallet secret-wallethang
+shot 22-secret-wallet-hang-15s 15 --es tf_wallet secret-wallethang
+shot 23-secret-credits-hang-4s 4 --es tf_wallet secret-credhang
+shot 24-secret-credits-hang-15s 15 --es tf_wallet secret-credhang
+shot 25-secret-fail 6 --es tf_wallet secret-fail
+shot 26-secret-both-hang-15s 15 --es tf_wallet secret-wallethang-credhang
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"
