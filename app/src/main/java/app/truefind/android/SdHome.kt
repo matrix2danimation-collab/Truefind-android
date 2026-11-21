@@ -85,6 +85,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         for (f in faces) card.addView(f, LayoutParams(-1, -1))
         faces[1].visibility = INVISIBLE
         card.addView(topShade, LayoutParams(-1, -1))
+        topShade.translationZ = 3f
 
         // no one online / still loading
         empty.visibility = GONE
@@ -147,15 +148,15 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
 
         // the four buttons
         buttons.orientation = LinearLayout.HORIZONTAL; buttons.gravity = Gravity.CENTER
-        roundBtn(rewindBtn, SdIcon(listOf(SdPaths.REWIND to Color.WHITE), 28f, 1.7f), "The last profile again") { step(-1) }
+        roundBtn(rewindBtn, SdIcon(listOf(SdPaths.REWIND to Color.WHITE), 28f, 1.7f), "The last profile again") { back() }
         roundBtn(chatBtn, SdIcon(listOf(SdPaths.CHATS to Color.WHITE), 28f, 1.7f), "Send Request") { now()?.let { h.askRequest(it) } }
-        roundBtn(skipBtn, SdIcon(listOf(SdPaths.XSQ to Color.WHITE), 28f, 1.7f), "Skip") { step(1) }
+        roundBtn(skipBtn, SdIcon(listOf(SdPaths.XSQ to Color.WHITE), 28f, 1.7f), "Skip") { if (anim?.isRunning != true) fly(-1) }
         likeBtn.background = oval(SD.M)
         likeBtn.elevation = Ui.dp(8f)
         likeBtn.outlineSpotShadowColorCompat(Color.argb(150, 160, 110, 0))
         likeIcon.scaleType = ImageView.ScaleType.CENTER_INSIDE
         likeBtn.addView(likeIcon, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
-        likeBtn.press().onTap { like() }
+        likeBtn.press().onTap { likeTap() }
         sentMark.setImageDrawable(SdIcon(listOf(SdPaths.CHECK to SD.ON_M), 14f, 3f))
         sentMark.background = oval(Color.WHITE); sentMark.setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)); sentMark.visibility = GONE
         chatBtn.addView(sentMark, LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.TOP))
@@ -249,51 +250,59 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         }
     }
 
-    // ═════════════ moving between people ═════════════
+    // ═════════════ moving between people (owner, 21 Nov morning) ═════════════
+    // Swipe right / the heart: a heart is stamped on the photo, they are liked and the card flies off to the right.
+    // Swipe left / the cross: a cross is stamped on it and it flies off to the left. The next person waits underneath.
+    // The rewind button brings the last person back in from the left.
     private var anim: ValueAnimator? = null
     private var dragDx = 0f
-    private var other = -1          // the person coming in (index), -1 = none
+    private var under = -1          // the person bound under the top card (index), -1 = none
     val dragging get() = dragDx != 0f || anim?.isRunning == true
 
-    /** faces back in place: the current one in the middle, the other hidden */
+    /** faces back in place: the current one on top in the middle, the other hidden */
     private fun settle() {
         anim?.cancel(); anim = null
-        dragDx = 0f; other = -1
-        faces[cur].translationX = 0f; faces[cur].visibility = VISIBLE
-        faces[1 - cur].translationX = 0f; faces[1 - cur].visibility = INVISIBLE
+        dragDx = 0f; under = -1
+        for (f in faces) { f.translationX = 0f; f.rotation = 0f; f.stamp(0f) }
+        faces[cur].visibility = VISIBLE; faces[cur].translationZ = 1f
+        faces[1 - cur].visibility = INVISIBLE; faces[1 - cur].translationZ = 0f
     }
 
+    /** the top card [dx] off the middle, turned a little, with its stamp; the next person underneath */
     private fun place(dx: Float) {
         dragDx = dx
         val w = width.toFloat().coerceAtLeast(1f)
-        if (people.size < 2) { faces[cur].translationX = dx; return }
-        val want = mod(idx + if (dx < 0) 1 else -1)
-        val f = faces[1 - cur]
-        if (other != want || f.visibility != VISIBLE) { other = want; f.bind(people[want]); f.visibility = VISIBLE }
-        faces[cur].translationX = dx
-        f.translationX = if (dx < 0) dx + w else dx - w
+        val top = faces[cur]
+        top.pivotX = w / 2f; top.pivotY = top.height * 1.15f
+        top.translationX = dx; top.rotation = dx / w * 12f
+        top.stamp(dx / w)
+        if (people.size >= 2) {
+            val want = mod(idx + 1)
+            val f = faces[1 - cur]
+            if (under != want || f.visibility != VISIBLE) { under = want; f.bind(people[want]); f.visibility = VISIBLE; f.translationX = 0f; f.rotation = 0f; f.stamp(0f) }
+        }
     }
 
-    /** -1: the last person · +1: the next */
-    private fun step(dir: Int) {
-        if (people.size < 2 || anim?.isRunning == true) return
-        place(if (dir > 0) -1f else 1f)
-        finish(dir)
-    }
-
-    private fun finish(dir: Int) {
-        val w = width.toFloat()
+    /** +1: liked, off to the right · -1: skipped, off to the left · 0: back to the middle */
+    private fun fly(dir: Int) {
+        val w = width.toFloat().coerceAtLeast(1f)
+        if (dir > 0) now()?.let { p -> if (!p.optBoolean("liked_by_me")) like() }
         val from = dragDx
-        val to = if (dir == 0) 0f else if (dir > 0) -w else w
+        val to = if (dir == 0 || people.size < 2) 0f else dir * w * 1.45f
         anim?.cancel()
-        anim = ValueAnimator.ofFloat(from, to).apply {
-            duration = if (PageFx.off(context)) 0 else (180 + 160 * abs(to - from) / w.coerceAtLeast(1f)).toLong()
-            interpolator = PathInterpolator(.2f, .8f, .2f, 1f)
-            addUpdateListener { v -> place(v.animatedValue as Float) }
+        val out = to != 0f
+        anim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = if (PageFx.off(context)) 0 else if (out) 420 else if (dir != 0) 620 else 260
+            interpolator = PathInterpolator(.3f, .6f, .3f, 1f)
+            addUpdateListener { v ->
+                val f = v.animatedValue as Float
+                // one person only: the stamp shows, then the card comes back
+                place(if (!out && dir != 0) dir * w * .3f * (if (f < .5f) f * 2 else (1 - f) * 2) else from + (to - from) * f)
+            }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(a: Animator) {
                     if (anim !== a) return
-                    if (dir != 0 && people.size > 1) { idx = mod(idx + dir); cur = 1 - cur }
+                    if (out) { idx = mod(idx + 1); cur = 1 - cur }
                     anim = null
                     settle()
                     faces[cur].bind(now())
@@ -302,6 +311,36 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
             })
             start()
         }
+    }
+
+    /** the rewind button: the last person comes back in from the left */
+    private fun back() {
+        if (people.size < 2 || anim?.isRunning == true) return
+        val w = width.toFloat().coerceAtLeast(1f)
+        val f = faces[1 - cur]
+        f.bind(people[mod(idx - 1)]); f.visibility = VISIBLE; f.translationZ = 2f; f.stamp(0f)
+        f.pivotX = w / 2f; f.pivotY = f.height * 1.15f
+        anim = ValueAnimator.ofFloat(-w * 1.45f, 0f).apply {
+            duration = if (PageFx.off(context)) 0 else 380
+            interpolator = PathInterpolator(.2f, .8f, .2f, 1f)
+            addUpdateListener { v -> val x = v.animatedValue as Float; f.translationX = x; f.rotation = x / w * 12f }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(a: Animator) {
+                    if (anim !== a) return
+                    idx = mod(idx - 1); cur = 1 - cur; anim = null
+                    settle(); faces[cur].bind(now()); paintNow()
+                }
+            })
+            start()
+        }
+    }
+
+    /** the heart button: like → stamp and off to the right; already liked → take the like back (as before) */
+    private fun likeTap() {
+        val p = now() ?: return
+        if (anim?.isRunning == true) return
+        if (p.optBoolean("liked_by_me") || h.isSameGender(p)) { like(); return }
+        fly(1)
     }
 
     /** the photo: drag sideways to move, tap to open the profile */
@@ -329,24 +368,24 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
                 MotionEvent.ACTION_MOVE -> {
                     val dx = e.x - downX
                     if (!horizontal && abs(dx) > slop && abs(dx) > abs(e.y - downY) * 1.2f && people.isNotEmpty()) { horizontal = true; parent?.requestDisallowInterceptTouchEvent(true) }
-                    if (horizontal) { anim?.cancel(); anim = null; place(if (people.size < 2) dx * .3f else dx) }
+                    if (horizontal) { anim?.cancel(); anim = null; place(dx) }
                 }
                 MotionEvent.ACTION_UP -> {
                     if (horizontal) {
                         vt?.computeCurrentVelocity(1000)
                         val v = vt?.xVelocity ?: 0f
                         val w = width.toFloat()
+                        // far enough (or fast) to the right = like, to the left = skip; else it comes back
                         val dir = when {
-                            people.size < 2 -> 0
-                            dragDx < -w * .22f || (v < -Ui.dp(700f) && dragDx < 0) -> 1
-                            dragDx > w * .22f || (v > Ui.dp(700f) && dragDx > 0) -> -1
+                            dragDx > w * .25f || (v > Ui.dp(800f) && dragDx > 0) -> 1
+                            dragDx < -w * .25f || (v < -Ui.dp(800f) && dragDx < 0) -> -1
                             else -> 0
                         }
-                        finish(dir)
+                        if (dir != 0 && people.size < 2) { if (dir > 0) now()?.let { p -> if (!p.optBoolean("liked_by_me")) like() }; fly(0) } else fly(dir)
                     } else if (abs(e.x - downX) < slop && abs(e.y - downY) < slop) { performClick(); now()?.let { h.openProfile(it) } }
                     horizontal = false; vt?.recycle(); vt = null
                 }
-                MotionEvent.ACTION_CANCEL -> { if (horizontal) finish(0); horizontal = false; vt?.recycle(); vt = null }
+                MotionEvent.ACTION_CANCEL -> { if (horizontal) fly(0); horizontal = false; vt?.recycle(); vt = null }
             }
             return true
         }
@@ -363,6 +402,8 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         private val chips = LinearLayout(context)
         private val city = jk(context, "", 15f, Color.WHITE, 500).oneLine()
         private val cityRow = LinearLayout(context)
+        private val heartStamp = stampView(SdIcon(listOf(SdPaths.HEART_FILL to SD.ON_M), 56f), SD.M)
+        private val crossStamp = stampView(SdIcon(listOf(SdPaths.X to Color.WHITE), 56f, 3.2f), SD.RED)
         private var boundId = ""
         private var boundKey = ""
 
@@ -382,6 +423,21 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
             cityRow.addView(city)
             info.addView(cityRow, lp(WRAP, dpi(22f), t = 12f))
             addView(info, LayoutParams(-1, -2, Gravity.BOTTOM).apply { leftMargin = dpi(16f); rightMargin = dpi(16f); bottomMargin = dpi(130f) })
+            for (st in listOf(heartStamp, crossStamp)) addView(st, LayoutParams(dpi(124f), dpi(124f), Gravity.CENTER).apply { bottomMargin = dpi(120f) })
+        }
+        private fun stampView(icon: SdIcon, bg: Int) = ImageView(context).apply {
+            setImageDrawable(icon); scaleType = ImageView.ScaleType.CENTER
+            background = oval(bg, 4f, Color.WHITE); elevation = Ui.dp(10f); alpha = 0f; visibility = INVISIBLE
+        }
+        /** how far the card is pushed (–1…1 of its width): the heart (right) or the cross (left) shows */
+        fun stamp(f: Float) {
+            val a = (abs(f) / .2f).coerceIn(0f, 1f)
+            val on = if (f > 0) heartStamp else crossStamp
+            val off = if (f > 0) crossStamp else heartStamp
+            off.alpha = 0f; off.visibility = INVISIBLE
+            on.alpha = a; on.visibility = if (a > 0f) VISIBLE else INVISIBLE
+            val sc = .6f + .4f * a; on.scaleX = sc; on.scaleY = sc
+            on.rotation = if (f > 0) -12f else 12f
         }
 
         fun bind(p: JSONObject?, force: Boolean = true) {
@@ -509,7 +565,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
     }
 
     /** test shots */
-    fun preview(what: String) { when (what) { "next" -> step(1); "drag" -> place(-width * .35f) } }
+    fun preview(what: String) { when (what) { "next" -> fly(-1); "drag" -> place(width * .35f); "dragleft" -> place(-width * .35f) } }
 }
 
 /** a run of text in another weight of the photos' font (TypefaceSpan(Typeface) needs Android 9) */

@@ -315,6 +315,7 @@ shot m03-home-join home --es tf_preview secret --ez tf_notjoined true
 shot m04-home-girl home --es tf_preview secret --ez tf_girl true
 shot m05-home-next open --es tf_preview secret --ez tf_premium true --es tf_open next
 shot m06-home-drag open --es tf_preview secret --ez tf_premium true --es tf_open drag
+shot m06b-home-dragleft open --es tf_preview secret --ez tf_premium true --es tf_open dragleft
 shot m07-home-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
 shot m08-likes home --es tf_preview secret-likes --ez tf_premium true
 shot m09-likes-free home --es tf_preview secret-likes

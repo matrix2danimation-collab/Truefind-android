@@ -852,6 +852,7 @@ class SecretHome(
             "pop" -> showPop(list(activity?.optJSONArray("items")).take(1))
             "next" -> homeView?.preview("next")
             "drag" -> homeView?.preview("drag")
+            "dragleft" -> homeView?.preview("dragleft")
             "activity" -> goLikes("liked")
             "activity-match" -> goLikes("match")
             "demo-profile" -> online?.firstOrNull { SdDemo.isDemo(it) && SdRules.liveOf(it) }?.let { openProfile(it) }
