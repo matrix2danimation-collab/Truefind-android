@@ -181,10 +181,6 @@ class PanelLight(private val radiusDp: Float) : Drawable() {
 class AppBackground(private val strip: () -> Int, private val box: () -> Int) : Drawable() {
     var purple = false
         set(v) { if (field != v) { field = v; invalidateSelf() } }
-    /** a Secret Dating chat is open: the strip under the status bar is its maroon (owner, 20 Nov night) */
-    var maroon = false
-        set(v) { if (field != v) { field = v; invalidateSelf() } }
-    private val maroonPaint = Paint().apply { color = Ui.c("#0F0F12") }
     private val white = Paint().apply { color = Color.WHITE }
     private val base = Paint().apply { color = Ui.c("#4C1D95") }
     private val light = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -194,7 +190,6 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
         val b = bounds
         c.drawRect(b, white)
         val s = strip()
-        if (maroon && !purple && s > 0) { c.drawRect(b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.top + s.toFloat(), maroonPaint); return }
         if (!purple || s <= 0) return
         val t = b.top.toFloat(); val bottom = t + s
         c.drawRect(b.left.toFloat(), t, b.right.toFloat(), bottom, base)

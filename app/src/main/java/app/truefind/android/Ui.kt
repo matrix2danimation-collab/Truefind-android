@@ -25,8 +25,6 @@ object Ui {
         regular = load(ctx, "fonts/Carlito-Regular.ttf") ?: Typeface.SANS_SERIF
         bold = load(ctx, "fonts/Carlito-Bold.ttf") ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         boldItalic = load(ctx, "fonts/Carlito-BoldItalic.ttf") ?: Typeface.create(bold, Typeface.BOLD_ITALIC)
-        // Secret Dating's pages use the font of the owner's reference photos (Plus Jakarta Sans, 20 Nov night)
-        Jk.init(ctx)
     }
 
     private fun load(ctx: Context, path: String): Typeface? = try {

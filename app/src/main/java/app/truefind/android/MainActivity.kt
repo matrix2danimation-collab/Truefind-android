@@ -235,11 +235,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
-            // Secret Dating's grey bar runs on down over the phone's own button strip (as in the owner's photo)
-            if (::sdNav.isInitialized && sdNav.below != bars.bottom) {
-                sdNav.below = bars.bottom
-                (sdNav.layoutParams as? FrameLayout.LayoutParams)?.let { it.bottomMargin = -bars.bottom; sdNav.layoutParams = it }
-            }
             WindowInsetsCompat.CONSUMED
         }
 
@@ -255,7 +250,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // Secret Dating's own bottom bar (Online Map · Home · Chat)
         sdNav = SdNavBar(this) { to -> navigate(to) }
         sdNav.visibility = View.GONE
-        secret.onLikesDot = { on -> sdNav.heartDot = on }
         root.addView(sdNav, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
         // native Home, Profile, Recent … and the bottom bar
@@ -404,8 +398,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // It sits over the pages (under the call screen) and never takes a touch.
         edgeGlow = EdgeGlow(this) {
             val p = pathOnly(path)
-            // (Secret Dating's yellow since the owner's pick of 21 Nov night; a True Find chat keeps the pink)
-            if (p == "/secret-app" || p == "/dating") SD.M else if (Regex("^/chat/[^/]+$").matches(p)) (if (chatRoom?.sdLook == false) K.rose else SD.M) else PullSpinner.BLUE
+            if (p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p)) K.rose else PullSpinner.BLUE
         }
         edgeGlow.elevation = Ui.dp(99f)
         root.addView(edgeGlow, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -980,8 +973,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         it.visibility = View.GONE
         root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         chatRoom = it
-        // a Secret Dating chat: the maroon strip under the status bar (a True Find chat keeps the white one)
-        it.onLook = { if (it.visibility == View.VISIBLE) secretBars(secret.visibility == View.VISIBLE && sdNav.visibility == View.VISIBLE, it.sdLook) }
     }
 
     /** The app's own history changed: the pages follow (and move the way that change asks for). */
@@ -1227,36 +1218,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun exploreStatusBar(on: Boolean) {
         if (appBg.purple == on) return
         appBg.purple = on
-        barsDark = null   // (Secret Dating's check after this sets the final colours again)
         // the phone paints its status bar in the theme's white; on Explore it is see-through, so the purple strip shows
         @Suppress("DEPRECATION")
         window.statusBarColor = if (on) Color.TRANSPARENT else Color.WHITE
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
-    }
-
-    /**
-     * Secret Dating's pages run up under the phone's status bar (the Home photo, the maroon tops; owner, 20 Nov night):
-     * the page starts at the screen's top, its own content keeps clear of the bar (SD.topInset). A chat's maroon top
-     * gets a maroon strip under the bar. The bar's icons are white there.
-     */
-    private var barsDark: Boolean? = null
-    private fun secretBars(onSecret: Boolean, onRoom: Boolean) {
-        appBg.maroon = onRoom
-        root.clipToPadding = !onSecret
-        // white icons over the photo / the maroon / Explore's purple; dark icons over the white strip elsewhere
-        val dark = onSecret || onRoom || appBg.purple
-        if (barsDark != dark) {
-            barsDark = dark
-            @Suppress("DEPRECATION")
-            window.statusBarColor = if (dark) Color.TRANSPARENT else Color.WHITE
-            WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
-        }
-    }
-    private fun placeSecret(innerH: Int) {
-        SD.topInset = root.paddingTop
-        val lp = secret.layoutParams as FrameLayout.LayoutParams
-        val h = if (innerH > 0) innerH - sdNav.barPx + root.paddingTop else ViewGroup.LayoutParams.MATCH_PARENT
-        if (lp.height != h || lp.topMargin != -root.paddingTop) { lp.height = h; lp.topMargin = -root.paddingTop; secret.layoutParams = lp }
     }
 
     private fun sizeTo(v: View, h: Int) {
@@ -1300,7 +1265,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val onExplore = p == "/explore"
         // Secret Dating: which page (the web's SecretApp view)
         val tab = try { Uri.parse("x://x$search").getQueryParameter("tab") } catch (e: Exception) { null }
-        val secretView = when (p) { "/secret-app" -> when (tab) { "chat" -> "chat"; "likes" -> "likes"; else -> "home" }; "/dating" -> "map"; else -> "" }
+        val secretView = when (p) { "/secret-app" -> if (tab == "chat") "chat" else "home"; "/dating" -> "map"; else -> "" }
         val chatId = Regex("^/chat/([^/]+)$").find(p)?.groupValues?.get(1).orEmpty()
         val show = onExplore && inApp
         val showSecret = secretView.isNotEmpty() && inApp
@@ -1311,13 +1276,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // Explore ends where the bottom bar starts; the Secret Dating pages end where their own bar starts
         val innerH = root.height - root.paddingTop - root.paddingBottom
         sizeTo(explore, if (pages.navShown && navTop > 0) navTop else ViewGroup.LayoutParams.MATCH_PARENT)
-        placeSecret(innerH)
+        sizeTo(secret, if (innerH > 0) innerH - sdNav.barPx else ViewGroup.LayoutParams.MATCH_PARENT)
         // (its own "open" state counts too: a page move may hold its view visible or hidden for a moment, and the
         // two must never be left disagreeing — that left Explore on screen with its bubbles stopped. While Explore
         // is open, every screen update also makes sure its bubbles are moving: setShown(true) again only checks that.)
         if (show || explore.visibility == View.VISIBLE || explore.isOn) explore.setShown(show)
         exploreStatusBar(show)
-        secretBars(showSecret, showRoom && chatRoom?.sdLook == true)
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
         if (secretView.isNotEmpty()) sdNav.current = secretView
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
@@ -1496,7 +1460,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val r = room()
             r.visibility = View.VISIBLE
             r.open(intent.getStringExtra("tf_chat") ?: "m1")
-            secretBars(false, r.sdLook)
             if (open.isNotEmpty()) root.postDelayed({ r.preview(open) }, 1500)
             return
         }
@@ -1504,7 +1467,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         val lp = screen.layoutParams as FrameLayout.LayoutParams
         lp.height = (resources.displayMetrics.heightPixels - 90 * resources.displayMetrics.density).toInt()
         screen.layoutParams = lp
-        val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; "secret-likes" -> "likes"; else -> "home" }
+        val view = when (preview) { "secret-map" -> "map"; "secret-chat" -> "chat"; else -> "home" }
         if (screen === explore) {
             explore.setShown(true)
             exploreStatusBar(true)
@@ -1512,11 +1475,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             pages.nav.visibility = View.VISIBLE; pages.nav.current = "explore"; pages.nav.seamless = true
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(explore, innerH - pages.nav.barPx) }
         } else {
-            secretBars(true, false)
-            root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) placeSecret(innerH) }
             secret.setShown(true, view, "")
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
+            root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
         }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }

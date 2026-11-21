@@ -37,35 +37,23 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** the names every Secret Dating colour set has (the pink K, the black-white-yellow KY of 21 Nov night) */
-interface SdPal {
-    val wine: Int; val wine2: Int; val rose: Int; val hot: Int; val deep: Int
-    val ink: Int; val ink2: Int; val sub: Int; val soft: Int
-    val tint: Int; val tint2: Int; val line: Int; val line2: Int
-    val green: Int; val pill: Int
-    val PAGE: IntArray; val PAGE_AT: FloatArray
-    fun btn(radiusDp: Float): GradientDrawable
-    fun sheet(): GradientDrawable
-    fun badge(): GradientDrawable
-}
-
 /** Secret Dating colours — the web's K. */
-object K : SdPal {
-    override val wine = Ui.c("#8E1243"); override val wine2 = Ui.c("#9E1447"); override val rose = Ui.c("#E3086C"); override val hot = Ui.c("#D80F6E"); override val deep = Ui.c("#8A0E3C")
-    override val ink = Ui.c("#1B1A1D"); override val ink2 = Ui.c("#2A1F25"); override val sub = Ui.c("#6E5562"); override val soft = Ui.c("#8C878B")
-    override val tint = Ui.c("#FDE1EF"); override val tint2 = Ui.c("#FFF0F7"); override val line = Ui.c("#F4BFD7"); override val line2 = Ui.c("#F6DAE7")
-    override val green = Ui.c("#3DD62A"); override val pill = Ui.c("#D80F6E")
+object K {
+    val wine = Ui.c("#8E1243"); val wine2 = Ui.c("#9E1447"); val rose = Ui.c("#E3086C"); val hot = Ui.c("#D80F6E"); val deep = Ui.c("#8A0E3C")
+    val ink = Ui.c("#1B1A1D"); val ink2 = Ui.c("#2A1F25"); val sub = Ui.c("#6E5562"); val soft = Ui.c("#8C878B")
+    val tint = Ui.c("#FDE1EF"); val tint2 = Ui.c("#FFF0F7"); val line = Ui.c("#F4BFD7"); val line2 = Ui.c("#F6DAE7")
+    val green = Ui.c("#3DD62A"); val pill = Ui.c("#D80F6E")
     /** every Secret Dating page: light pink at the top, white at the bottom */
-    override val PAGE = intArrayOf(Ui.c("#FB5C94"), Ui.c("#FD6FA3"), Ui.c("#FD82B0"), Ui.c("#FE94BC"), Ui.c("#FEA6C8"), Ui.c("#FDB9D3"), Ui.c("#FED8E6"), Ui.c("#FFFFFF"))
-    override val PAGE_AT = floatArrayOf(0f, .18f, .34f, .48f, .60f, .69f, .80f, .90f)
+    val PAGE = intArrayOf(Ui.c("#FB5C94"), Ui.c("#FD6FA3"), Ui.c("#FD82B0"), Ui.c("#FE94BC"), Ui.c("#FEA6C8"), Ui.c("#FDB9D3"), Ui.c("#FED8E6"), Ui.c("#FFFFFF"))
+    val PAGE_AT = floatArrayOf(0f, .18f, .34f, .48f, .60f, .69f, .80f, .90f)
     /** K.btn: linear-gradient(90deg,#F23D93,#D80F6E) */
-    override fun btn(radiusDp: Float) = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#F23D93"), Ui.c("#D80F6E"))).apply { cornerRadius = Ui.dp(radiusDp) }
+    fun btn(radiusDp: Float) = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#F23D93"), Ui.c("#D80F6E"))).apply { cornerRadius = Ui.dp(radiusDp) }
     /** K.sheet: linear-gradient(180deg,#FFD6E6 0%,#FFFFFF 50%) */
-    override fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFD6E6"), Color.WHITE, Color.WHITE)).apply {
+    fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFD6E6"), Color.WHITE, Color.WHITE)).apply {
         cornerRadii = floatArrayOf(Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), 0f, 0f, 0f, 0f)
     }
     /** the round pink icon box: linear-gradient(180deg,#F43D95,#C80962) */
-    override fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F43D95"), Ui.c("#C80962"))).apply { shape = GradientDrawable.OVAL }
+    fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F43D95"), Ui.c("#C80962"))).apply { shape = GradientDrawable.OVAL }
 }
 
 /** The page background, drawn once and kept still while the page scrolls (sticky in the web). */
@@ -235,10 +223,7 @@ fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boole
         text = s
         setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp))
         setTextColor(color)
-        // Secret Dating's pages: the font of the owner's reference photos, everything alike (owner, 20 Nov night)
-        typeface = if (italic || bold) Jk.semibold else Jk.medium
-        // these sizes were made for Calibri, which is narrower: a little smaller in this font (owner, 21 Nov morning)
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp * .93f))
+        typeface = if (italic) Ui.boldItalic else if (bold) Ui.bold else Ui.regular
         includeFontPadding = false
     }
 

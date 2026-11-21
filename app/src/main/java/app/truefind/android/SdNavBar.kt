@@ -7,34 +7,33 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.os.Build
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
-import androidx.core.graphics.PathParser
 
 /**
- * Secret Dating's bottom bar, copied from the owner's photo (20 Nov night): a light grey bar, icons only —
- * cards (Home) · heart (who liked you, My Activity) · chat · map pin (Online Map) — the open tab yellow with a
- * short yellow line on the bar's top edge (owner, 21 Nov night; it was red). My profile stays at the top left of the pages, so the photo's
- * 4th (profile) icon became the Online Map. A red dot on the heart while new likes wait.
- * A tap on another tab opens it; a tap on the tab you are on does nothing.
+ * Secret Dating's bottom bar — Online Map · Home · Chat — drawn by the phone (SecretNav of SecretApp.jsx).
+ * It used to be the web page's own bar, showing through under the native Secret Dating pages.
+ * Same look: a flat white bar (70 high, 14 from the sides, 10 from the bottom, corners 24, a hairline pink
+ * edge and one soft shadow) and the pink pill that slides to the tab you are on (.32 s); the tab's icon and
+ * word turn white on it (.25 s). A tap on another tab opens it; a tap on the tab you are on does nothing.
  */
 @SuppressLint("ViewConstructor")
 class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
-    private class Item(val key: String, val label: String, val path: String)
+    private class Item(val key: String, val label: String, val path: String, val icon: String)
     private val items = listOf(
-        Item("home", "Home", "/secret-app"),
-        Item("likes", "My Activity", "/secret-app?tab=likes"),
-        Item("chat", "Chats", "/secret-app?tab=chat"),
-        Item("map", "Online Map", "/dating"),
+        Item("map", "Online Map", "/dating", Lucide.MapPin),
+        Item("home", "Home", "/secret-app", Lucide.Home),
+        Item("chat", "Chat", "/secret-app?tab=chat", Lucide.MessageCircleMore),
     )
 
-    /** the bar's height: the Secret Dating pages end where this starts */
-    val barPx: Int get() = Ui.dpi(60f)
+    /** the bar with its 10 below it: the Secret Dating pages end where this starts */
+    val barPx: Int get() = Ui.dpi(80f)
 
-    /** which page is open: "home" · "likes" · "chat" · "map" */
+    /** which page is open: "map" · "home" · "chat" */
     var current = "home"
         set(v) {
             if (field == v) return
@@ -42,43 +41,36 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             field = v
             val to = items.indexOfFirst { it.key == v }.coerceAtLeast(0)
             slide(from, to)
-            playIcon(v)
-            contentDescription = "Secret Dating, ${items[to].label}"
         }
 
-    /** the phone's own button strip under the bar: the grey runs on over it (MainActivity sets it) */
-    var below = 0
-        set(v) { if (field != v) { field = v; requestLayout() } }
+    private val white = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val strip = Paint().apply { color = Ui.c("#FEFEFF") }
+    private val edge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = maxOf(1f, Ui.dp(1f)); color = Color.argb(36, 214, 40, 120) }
+    private val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val pill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = K.hot }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = Ui.bold; textSize = Ui.dp(14f); letterSpacing = 0.01f }
+    private val icons = items.map { Icon(it.icon, Color.BLACK, 23f, 2f) }
+    private val rect = RectF()
+    private val OFF = Ui.c("#111111")
 
-    /** new likes are waiting: a red dot on the heart */
-    var heartDot = false
-        set(v) { if (field != v) { field = v; invalidate() } }
-
-    private val bg = Paint().apply { color = SD.NAV_BG }
-    private val line = Paint().apply { color = SD.NAV_LINE }
-    private val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = SD.NAV_ON }   // (the line over the open tab: yellow now)
-    private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
-    private val heart = PathParser.createPathFromPathData(SdPaths.HEART_FILL)
-    private val chat = PathParser.createPathFromPathData(SdPaths.CHAT_FILL)
-    private val chatLines = PathParser.createPathFromPathData(SdPaths.CHAT_LINES)
-    private val pin = PathParser.createPathFromPathData(SdPaths.PIN_FILL)
-    private val r = RectF()
-
-    private var at = 0f
-    private var fromAt = 0; private var toAt = 0
-    private var tint = 1f
-    private val ease = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
+    // the pill's place (0..2, between two tabs while it slides) and how far each tab's colour has turned
+    private var at = 1f
+    private var fromAt = 1; private var toAt = 1
+    private var tint = 1f            // 0..1: from the old tab's colours to the new tab's
+    private val pillEase = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
+    private val colourEase = PathInterpolator(0.25f, 0.1f, 0.25f, 1f)
     private var anim: ValueAnimator? = null
     private var pressed = -1
-    private val scale = FloatArray(4) { 1f }
+    private val scale = FloatArray(3) { 1f }
 
     init {
         isClickable = true
-        contentDescription = "Secret Dating, Home"
+        contentDescription = "Secret Dating"
+        // (the soft shadow under the bar)
+        if (Build.VERSION.SDK_INT >= 28) shade.setShadowLayer(Ui.dp(16f), 0f, Ui.dp(14f), Color.argb(102, 140, 10, 70))
     }
 
-    override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), barPx + below)
+    override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), barPx)
 
     private fun slide(from: Int, to: Int) {
         anim?.cancel()
@@ -86,12 +78,12 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
         if (!isShown || PageFx.off(context)) { at = to.toFloat(); tint = 1f; invalidate(); return }
         val start = at
         anim = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 280
+            duration = 320
             interpolator = LinearInterpolator()
             addUpdateListener {
                 val f = it.animatedValue as Float
-                at = start + (to - start) * ease.getInterpolation(f)
-                tint = minOf(1f, f * 1.3f)
+                at = start + (to - start) * pillEase.getInterpolation(f)
+                tint = colourEase.getInterpolation(minOf(1f, f * 320f / 250f))
                 invalidate()
             }
             start()
@@ -100,127 +92,84 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     override fun onDetachedFromWindow() { anim?.cancel(); at = toAt.toFloat(); tint = 1f; super.onDetachedFromWindow() }
 
+    /** the bar's own box (max 430 wide, in the middle) */
+    private fun bar(): RectF {
+        val side = Ui.dp(14f)
+        val w = minOf(width - 2 * side, Ui.dp(430f))
+        val l = (width - w) / 2f
+        rect.set(l, 0f, l + w, Ui.dp(70f))
+        return rect
+    }
+
     private fun mix(a: Int, b: Int, t: Float): Int {
         val u = t.coerceIn(0f, 1f)
-        return Color.rgb((Color.red(a) + (Color.red(b) - Color.red(a)) * u).toInt(), (Color.green(a) + (Color.green(b) - Color.green(a)) * u).toInt(), (Color.blue(a) + (Color.blue(b) - Color.blue(a)) * u).toInt())
+        return Color.argb(255, (Color.red(a) + (Color.red(b) - Color.red(a)) * u).toInt(), (Color.green(a) + (Color.green(b) - Color.green(a)) * u).toInt(), (Color.blue(a) + (Color.blue(b) - Color.blue(a)) * u).toInt())
     }
+    /** how "on" tab [i] is right now (0 = black, 1 = white) */
     private fun onness(i: Int): Float = when {
         fromAt == toAt -> if (i == toAt) 1f else 0f
         i == toAt -> tint
         i == fromAt -> 1f - tint
         else -> 0f
     }
-    private fun cell(): Float = (width - 2 * Ui.dp(10f)) / 4f
 
     override fun onDraw(c: Canvas) {
-        // the grey runs on under the bar, down over the phone's own button strip (this view's height includes it)
-        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bg)
-        c.drawRect(0f, 0f, width.toFloat(), maxOf(1f, Ui.dp(1f)), line)
-        val pad = Ui.dp(10f); val cw = cell()
-        // the red line over the open tab (62 wide, on the top edge)
-        val lx = pad + at * cw + cw / 2f
-        r.set(lx - Ui.dp(31f), 0f, lx + Ui.dp(31f), Ui.dp(3f))
-        c.drawRoundRect(r, Ui.dp(1.5f), Ui.dp(1.5f), red)
-        c.drawRect(r.left, 0f, r.right, Ui.dp(1.5f), red)
-        // (the owner tried them 70% bigger on 21 Nov morning, then asked for the old size back)
-        val s = Ui.dp(24f) / 24f
+        // the page under the bar ends in white: the strip behind the bar is white
+        // (only this view's own strip: the app's pages are not clipped to their box, a fill would cover the page above)
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), strip)
+        val b = bar()
+        val l = b.left; val t = b.top; val r = b.right; val btm = b.bottom
+        val rr = Ui.dp(24f)
+        // one soft shadow (0 14px 32px -20px): a smaller shape under the bar carries it
+        if (Build.VERSION.SDK_INT >= 28) {
+            val inset = Ui.dp(20f)
+            if (r - l > 2 * inset + Ui.dp(40f)) c.drawRoundRect(l + inset, t + inset, r - inset, btm - inset, rr, rr, shade)
+        }
+        c.drawRoundRect(l, t, r, btm, rr, rr, white)
+        c.drawRoundRect(l, t, r, btm, rr, rr, edge)
+        // the pink pill (inside the bar's 6 padding; 3 from its cell's sides)
+        val pad = Ui.dp(6f)
+        val cell = (r - l - 2 * pad) / 3f
+        val px = l + pad + at * cell
+        val pr = Ui.dp(18f)
+        c.drawRoundRect(px + Ui.dp(3f), t + pad, px + cell - Ui.dp(3f), btm - pad, pr, pr, pill)
+        // icon (23) + 3 + word (14 bold)
+        val iconPx = Ui.dp(23f); val gap = Ui.dp(3f)
+        val fm = text.fontMetrics
+        val lineH = Ui.dp(14f) * 1.2f
+        val blockH = iconPx + gap + lineH
         for ((i, it) in items.withIndex()) {
-            val cx = pad + cw * i + cw / 2f
-            val cy = Ui.dp(30f)
-            val col = mix(SD.NAV_OFF, SD.NAV_ON, onness(i))
+            val cx = l + pad + cell * i + cell / 2f
+            val on = onness(i)
+            val col = mix(OFF, Color.WHITE, on)
             c.save()
-            if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, cy)
-            c.translate(cx - 12f * s, cy - 12f * s); c.scale(s, s)
-            when (it.key) {
-                "home" -> cards(c, col)
-                "likes" -> {
-                    fill.color = col
-                    if (iconKey == "likes") {
-                        // two soft blinks: a little bigger and lighter, then back
-                        val b = kotlin.math.abs(kotlin.math.sin(iconT * Math.PI * 2)).toFloat()
-                        val sc = 1f + .14f * b
-                        c.save(); c.scale(sc, sc, 12f, 12f)
-                        fill.alpha = (255 * (1f - .45f * b)).toInt(); c.drawPath(heart, fill); fill.alpha = 255
-                        c.restore()
-                    } else c.drawPath(heart, fill)
-                    if (heartDot && current != "likes") {
-                        fill.color = SD.NAV_BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
-                        fill.color = SD.NAV_DOT; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
-                    }
-                }
-                "chat" -> {
-                    fill.color = col; c.drawPath(chat, fill)
-                    stroke.color = SD.NAV_BG; stroke.strokeWidth = 1.9f; c.drawPath(chatLines, stroke)
-                }
-                else -> {
-                    fill.color = col; c.drawPath(pin, fill)
-                    fill.color = SD.NAV_BG; c.drawCircle(12f, 9.9f, 2.9f, fill)
-                }
-            }
+            if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, (t + btm) / 2f)
+            val iy = t + (btm - t - blockH) / 2f
+            val ic = icons[i]
+            // Home is filled white on the pill (as the web's fill="#fff")
+            ic.tint(col, if (it.key == "home" && on > 0.5f) Color.WHITE else null)
+            ic.setBounds((cx - iconPx / 2f).toInt(), iy.toInt(), (cx + iconPx / 2f).toInt(), (iy + iconPx).toInt())
+            ic.draw(c)
+            text.color = col
+            val base = iy + iconPx + gap + (lineH - (fm.descent - fm.ascent)) / 2f - fm.ascent
+            c.drawText(it.label, cx, base, text)
             c.restore()
         }
     }
 
-    /** two cards: one upright behind, the front one tilted, with a thin gap of the bar's grey */
-    // ── a small animation on the tab just opened (owner, 21 Nov morning): Home's cards swipe (the front card slides
-    //    off to the right and the next one comes up), the heart blinks softly ──
-    private var iconKey = ""
-    private var iconT = 0f
-    private var iconAnim: ValueAnimator? = null
-    private fun playIcon(key: String) {
-        if (key != "home" && key != "likes") return
-        iconAnim?.cancel()
-        if (!isShown || PageFx.off(context)) { iconKey = ""; return }
-        iconKey = key
-        iconAnim = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = if (key == "home") 560 else 700
-            interpolator = LinearInterpolator()
-            addUpdateListener { iconT = it.animatedValue as Float; invalidate() }
-            addListener(object : android.animation.AnimatorListenerAdapter() {
-                override fun onAnimationEnd(a: android.animation.Animator) { iconKey = ""; invalidate() }
-            })
-            start()
-        }
-    }
-
-    private fun cards(c: Canvas, col: Int) {
-        if (iconKey == "home") { cardsSwipe(c, col, iconT); return }
-        fill.color = col
-        r.set(10.4f, 6.4f, 20.6f, 21f); c.drawRoundRect(r, 1.8f, 1.8f, fill)
-        c.save(); c.rotate(-12f, 8.7f, 10.7f)
-        r.set(3.4f, 3.2f, 14f, 18.2f)
-        stroke.color = SD.NAV_BG; stroke.strokeWidth = 1.6f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        c.drawRoundRect(r, 1.8f, 1.8f, fill)
-        c.restore()
-    }
-
-    private fun cardsSwipe(c: Canvas, col: Int, t: Float) {
-        val e = PathInterpolator(.3f, 0f, .2f, 1f).getInterpolation(t)
-        fill.color = col
-        // the back card comes forward: from its spot to the front card's spot, turning to the same tilt
-        c.save(); c.translate(-6.9f * e, -3.2f * e); c.rotate(-12f * e, 15.5f, 13.7f)
-        r.set(10.4f, 6.4f, 20.6f, 21f); c.drawRoundRect(r, 1.8f, 1.8f, fill)
-        c.restore()
-        // the front card swipes off to the right and fades
-        c.save(); c.translate(14f * e, 0f); c.rotate(-12f + 30f * e, 8.7f, 10.7f)
-        fill.alpha = (255 * (1f - e)).toInt()
-        r.set(3.4f, 3.2f, 14f, 18.2f)
-        stroke.color = SD.NAV_BG; stroke.strokeWidth = 1.6f; stroke.alpha = fill.alpha; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        c.drawRoundRect(r, 1.8f, 1.8f, fill)
-        fill.alpha = 255; stroke.alpha = 255
-        c.restore()
-    }
-
     private fun hit(x: Float, y: Float): Int {
-        if (y < 0 || y > barPx || x < 0 || x > width) return -1
-        val pad = Ui.dp(10f)
-        return ((x - pad) / cell()).toInt().coerceIn(0, 3)
+        val b = bar()
+        if (x < b.left || x > b.right || y < b.top || y > b.bottom) return -1
+        val pad = Ui.dp(6f)
+        val cell = (b.width() - 2 * pad) / 3f
+        return ((x - b.left - pad) / cell).toInt().coerceIn(0, 2)
     }
 
     private fun press(i: Int, down: Boolean) {
-        if (i !in 0..3) return
-        ValueAnimator.ofFloat(scale[i], if (down) 0.9f else 1f).apply {
-            duration = 120
+        if (i !in 0..2) return
+        val target = if (down) 0.96f else 1f
+        ValueAnimator.ofFloat(scale[i], target).apply {
+            duration = 140
             addUpdateListener { scale[i] = it.animatedValue as Float; invalidate() }
             start()
         }

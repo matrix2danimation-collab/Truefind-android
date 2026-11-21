@@ -34,31 +34,19 @@ class SdLayer(private val host: FrameLayout) {
 
     fun closeAll() { for (i in stack.toList()) remove(i.view, animate = false) }
 
-    /** the views opened as full pages (not sheets or fades) */
-    private val pageViews = HashSet<View>()
-    /** a full page is open (Secret Dating paints the status bar strip to match it) */
-    val hasPage: Boolean get() = stack.any { it.view in pageViews }
-    /** the shade behind a sheet (Secret Dating's yellow look: a plain dark one) */
-    var dimColor: Int = Color.argb(115, 60, 0, 25)
-    /** told when a full page opens or closes (besides onChange) */
-    var onPages: (() -> Unit)? = null
-
     private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float) {
         v.elevation = Ui.dp(60f) + z
         host.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         stack.add(Item(v, back, close))
         onChange?.invoke()
-        onPages?.invoke()
     }
 
     fun remove(v: View, animate: Boolean = true) {
         val i = stack.indexOfFirst { it.view === v }
         if (i < 0) return
         stack.removeAt(i)
-        pageViews.remove(v)
         if (animate) v.animate().alpha(0f).setDuration(180).withEndAction { host.removeView(v) }.start() else host.removeView(v)
         onChange?.invoke()
-        onPages?.invoke()
     }
 
     /**
@@ -68,7 +56,7 @@ class SdLayer(private val host: FrameLayout) {
     fun sheet(panel: View, z: Float = 37f, locked: () -> Boolean = { false }, onClose: () -> Unit = {}, maxVh: Float = 0f): () -> Unit {
         val ctx = host.context
         val box = FrameLayout(ctx)
-        val dim = View(ctx).apply { setBackgroundColor(dimColor); alpha = 0f }
+        val dim = View(ctx).apply { setBackgroundColor(Color.argb(115, 60, 0, 25)); alpha = 0f }
         box.addView(dim, FrameLayout.LayoutParams(-1, -1))
         // the web's max-height: N vh = N % of the page's own height (the screen inside the phone's bars)
         val maxH = if (maxVh > 0f) (maxVh * (host.height - host.paddingTop - host.paddingBottom)).toInt().coerceAtLeast(Ui.dpi(300f))
@@ -108,7 +96,6 @@ class SdLayer(private val host: FrameLayout) {
             }
         }
         view.isClickable = true
-        pageViews.add(view)
         add(view, back, close, z)
         if (animate) {
             view.translationX = host.width.toFloat().coerceAtLeast(1000f)

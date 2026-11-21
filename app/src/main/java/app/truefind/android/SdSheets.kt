@@ -30,17 +30,17 @@ object SdSheets {
 
     // ── shared pieces ──
     fun panel(h: SecretHome, padSide: Float = 22f): LinearLayout = vbox(h.context).apply {
-        background = KY.sheet()
+        background = K.sheet()
         setPadding(dpi(padSide), dpi(10f), dpi(padSide), dpi(22f))
         elevation = Ui.dp(8f)
-        addView(View(h.context).apply { background = rounded(Ui.c("#FFF0C2"), 3f) }, lp(dpi(44f), dpi(5f), b = 16f, gravity = Gravity.CENTER_HORIZONTAL))
+        addView(View(h.context).apply { background = rounded(Ui.c("#F2C3D8"), 3f) }, lp(dpi(44f), dpi(5f), b = 16f, gravity = Gravity.CENTER_HORIZONTAL))
     }
     fun head(h: SecretHome, icon: android.graphics.drawable.Drawable, title: String, sub: String, titleSize: Float = 28f): View {
         val row = hbox(h.context, 12f)
-        row.addView(ImageView(h.context).apply { setImageDrawable(icon); scaleType = ImageView.ScaleType.CENTER; background = KY.badge(); elevation = Ui.dp(3f) }, lp(dpi(52f), dpi(52f)))
+        row.addView(ImageView(h.context).apply { setImageDrawable(icon); scaleType = ImageView.ScaleType.CENTER; background = K.badge(); elevation = Ui.dp(3f) }, lp(dpi(52f), dpi(52f)))
         val t = vbox(h.context)
-        t.addView(sdText(h.context, title, titleSize, KY.wine, italic = true))
-        t.addView(sdText(h.context, sub, 15f, KY.sub, bold = false).lineHeight(1.15f), lp(WRAP, WRAP, t = 2f))
+        t.addView(sdText(h.context, title, titleSize, K.wine, italic = true))
+        t.addView(sdText(h.context, sub, 15f, K.sub, bold = false).lineHeight(1.15f), lp(WRAP, WRAP, t = 2f))
         row.addView(t, lp(0, WRAP, 1f))
         return row
     }
@@ -48,8 +48,8 @@ object SdSheets {
         val box = vbox(h.context, 10f)
         for (t in list) {
             val r = hbox(h.context, 10f)
-            r.addView(ImageView(h.context).apply { setImageDrawable(Icon(Lucide.Check, KY.hot, 14f, 3.2f)); scaleType = ImageView.ScaleType.CENTER; background = oval(KY.tint) }, lp(dpi(24f), dpi(24f)))
-            r.addView(sdText(h.context, t, 16f, KY.ink2), lp(0, WRAP, 1f))
+            r.addView(ImageView(h.context).apply { setImageDrawable(Icon(Lucide.Check, K.hot, 14f, 3.2f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.tint) }, lp(dpi(24f), dpi(24f)))
+            r.addView(sdText(h.context, t, 16f, K.ink2), lp(0, WRAP, 1f))
             box.addView(r, lp(MATCH, WRAP))
         }
         return box
@@ -57,13 +57,13 @@ object SdSheets {
     fun bigButton(h: SecretHome, text: String, icon: android.graphics.drawable.Drawable? = null, size: Float = 21f, onClick: () -> Unit): FrameLayout {
         val tv = sdText(h.context, text, size, Color.WHITE).apply { gravity = Gravity.CENTER; if (icon != null) icon(icon, 10f) }
         return FrameLayout(h.context).apply {
-            background = KY.btn(29f); elevation = Ui.dp(5f); outlineSpotShadowColorCompat(Color.argb(191, 224, 168, 0))
+            background = K.btn(29f); elevation = Ui.dp(5f); outlineSpotShadowColorCompat(Color.argb(191, 190, 0, 85))
             addView(tv, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
             press().onTap(onClick)
         }
     }
     fun textButton(h: SecretHome, text: String, onClick: () -> Unit): TextView =
-        sdText(h.context, text, 16f, KY.wine).apply { gravity = Gravity.CENTER; setOnClickListener { onClick() } }
+        sdText(h.context, text, 16f, K.wine).apply { gravity = Gravity.CENTER; setOnClickListener { onClick() } }
 
     // ── Go Premium (Free members tapping a Premium feature) ──
     fun premium(h: SecretHome, what: String, girl: Boolean, intro: JSONObject?, onGet: () -> Unit) {
@@ -80,21 +80,21 @@ object SdSheets {
             r.addView(sdText(h.context, t, 14.5f, Ui.c("#7C3A06"), bold = false).lineHeight(1.1f), lp(0, WRAP, 1f))
             p.addView(r, lp(MATCH, WRAP, t = 14f))
         }
-        val plans = vbox(h.context).apply { background = rounded(Color.WHITE, 18f, 1f, KY.line2); setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(10f)) }
+        val plans = vbox(h.context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line2); setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(10f)) }
         for (row in PLANS.chunked(2)) {
             val r = hbox(h.context, 8f)
             for ((name, price, dc) in row) {
-                val cell = hbox(h.context, 8f).apply { background = rounded(KY.tint2, 14f, 1f, KY.line2); setPadding(dpi(10f), dpi(9f), dpi(10f), dpi(9f)) }
+                val cell = hbox(h.context, 8f).apply { background = rounded(K.tint2, 14f, 1f, K.line2); setPadding(dpi(10f), dpi(9f), dpi(10f), dpi(9f)) }
                 cell.addView(ImageView(h.context).apply { setImageDrawable(Coins(24f)) }, lp(dpi(24f), dpi(24f)))
                 val t = vbox(h.context)
-                t.addView(sdText(h.context, "$name · ₹$price", 15.5f, KY.wine).oneLine())
-                t.addView(sdText(h.context, "${daysText(dc.first)} · ${dc.second} credits", 13f, KY.ink2, bold = false).oneLine())
+                t.addView(sdText(h.context, "$name · ₹$price", 15.5f, K.wine).oneLine())
+                t.addView(sdText(h.context, "${daysText(dc.first)} · ${dc.second} credits", 13f, K.ink2, bold = false).oneLine())
                 cell.addView(t, lp(0, WRAP, 1f))
                 r.addView(cell, lp(0, WRAP, 1f))
             }
             plans.addView(r, lp(MATCH, WRAP, t = if (plans.childCount == 0) 0f else 8f))
         }
-        plans.addView(sdText(h.context, "Credits come with your plan. Unused credits end when the plan ends.", 13.5f, KY.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.1f) }, lp(MATCH, WRAP, t = 8f))
+        plans.addView(sdText(h.context, "Credits come with your plan. Unused credits end when the plan ends.", 13.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.1f) }, lp(MATCH, WRAP, t = 8f))
         p.addView(plans, lp(MATCH, WRAP, t = 14f))
         p.addView(bigButton(h, if (girl) "See Plans" else "Get Premium") { close(); onGet() }, lp(MATCH, dpi(58f), t = 20f))
         p.addView(textButton(h, "Not now") { close() }, lp(MATCH, dpi(46f), t = 6f))
@@ -126,12 +126,12 @@ object SdSheets {
             val r = hbox(h.context, 8f)
             for (k in row) {
                 val miss = k in missing
-                val cell = hbox(h.context, 8f).apply { background = rounded(Color.WHITE, 14f, 1f, if (miss) Ui.c("#FFF0C2") else KY.line2); setPadding(dpi(12f), 0, dpi(12f), 0) }
-                val mark: View = if (miss) FrameLayout(h.context).apply { background = oval(Ui.c("#FFF9E8")); addView(View(h.context).apply { background = oval(KY.hot) }, FrameLayout.LayoutParams(dpi(8f), dpi(8f), Gravity.CENTER)) }
+                val cell = hbox(h.context, 8f).apply { background = rounded(Color.WHITE, 14f, 1f, if (miss) Ui.c("#F3A7C6") else K.line2); setPadding(dpi(12f), 0, dpi(12f), 0) }
+                val mark: View = if (miss) FrameLayout(h.context).apply { background = oval(Ui.c("#FFE4EF")); addView(View(h.context).apply { background = oval(K.hot) }, FrameLayout.LayoutParams(dpi(8f), dpi(8f), Gravity.CENTER)) }
                 else ImageView(h.context).apply { setImageDrawable(Icon(Lucide.Check, Ui.c("#16A34A"), 13f, 3.4f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Ui.c("#E7F8EA")) }
                 cell.addView(mark, lp(dpi(22f), dpi(22f)))
-                cell.addView(sdText(h.context, SdRules.NEED_LABEL[k] ?: k, 16f, if (miss) KY.wine else KY.ink2), lp(0, WRAP, 1f))
-                cell.addView(sdText(h.context, if (miss) "Needed" else "Done", 12.5f, if (miss) KY.hot else Ui.c("#16A34A"), bold = false))
+                cell.addView(sdText(h.context, SdRules.NEED_LABEL[k] ?: k, 16f, if (miss) K.wine else K.ink2), lp(0, WRAP, 1f))
+                cell.addView(sdText(h.context, if (miss) "Needed" else "Done", 12.5f, if (miss) K.hot else Ui.c("#16A34A"), bold = false))
                 r.addView(cell, lp(0, dpi(46f), 1f))
             }
             grid.addView(r, lp(MATCH, WRAP))
@@ -152,27 +152,27 @@ object SdSheets {
         val name = SdRules.firstName(SdRules.s(person, "name")).ifEmpty { "they" }
         val where = SdRules.cityOf(person)
         val row = hbox(ctx, 14f)
-        val ring = FrameLayout(ctx).apply { background = grad(GradientDrawable.Orientation.TL_BR, intArrayOf(KY.rose, Ui.c("#F0D58C"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f)) }
+        val ring = FrameLayout(ctx).apply { background = grad(GradientDrawable.Orientation.TL_BR, intArrayOf(K.rose, Ui.c("#FF84BD"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f)) }
         val wb = FrameLayout(ctx).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
         wb.addView(RoundPhoto(ctx, 62f).also { it.set(SdRules.thumbs(person), Demo.round(person, dpi(62f))) }, FrameLayout.LayoutParams(-1, -1))
         ring.addView(wb, FrameLayout.LayoutParams(-1, -1))
         row.addView(ring, lp(dpi(62f), dpi(62f)))
         val t = vbox(ctx)
-        t.addView(sdText(ctx, "Send Request", 28f, KY.wine, italic = true))
-        t.addView(sdText(ctx, "to ${SdRules.firstName(SdRules.s(person, "name"))}${SdRules.s(person, "age").let { if (it.isNotEmpty()) ", $it" else "" }}${if (where.isNotEmpty()) " · $where" else ""}", 16.5f, KY.ink2, bold = false).oneLine(), lp(WRAP, WRAP, t = 3f))
+        t.addView(sdText(ctx, "Send Request", 28f, K.wine, italic = true))
+        t.addView(sdText(ctx, "to ${SdRules.firstName(SdRules.s(person, "name"))}${SdRules.s(person, "age").let { if (it.isNotEmpty()) ", $it" else "" }}${if (where.isNotEmpty()) " · $where" else ""}", 16.5f, K.ink2, bold = false).oneLine(), lp(WRAP, WRAP, t = 3f))
         row.addView(t, lp(0, WRAP, 1f))
         p.addView(row, lp(MATCH, WRAP))
-        val box = hbox(ctx, 12f).apply { background = rounded(Color.WHITE, 18f, 1f, KY.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
+        val box = hbox(ctx, 12f).apply { background = rounded(Color.WHITE, 18f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
         box.addView(ImageView(ctx).apply { setImageDrawable(Coins(30f)) }, lp(dpi(30f), dpi(30f)))
         val bt = vbox(ctx)
-        bt.addView(sdText(ctx, "1 credit per request", 17f, KY.ink2))
+        bt.addView(sdText(ctx, "1 credit per request", 17f, K.ink2))
         val until = h.until
         bt.addView(sdText(ctx, when { credits == null -> "Credits come with your Premium plan."; none -> "You have no credits left in this plan."
             else -> "You have ${SdRules.inr(credits)} ${if (credits == 1) "credit" else "credits"}${if (until.isNotEmpty()) " · they end $until" else ""}." },
-            15f, if (none) Ui.c("#B4183C") else KY.sub, bold = false), lp(WRAP, WRAP, t = 1f))
+            15f, if (none) Ui.c("#B4183C") else K.sub, bold = false), lp(WRAP, WRAP, t = 1f))
         box.addView(bt, lp(0, WRAP, 1f))
         p.addView(box, lp(MATCH, WRAP, t = 16f))
-        p.addView(sdText(ctx, "When $name accepts, your private chat opens in Chat, and then you can chat without limits.", 15f, KY.sub, bold = false).lineHeight(1.15f), lp(MATCH, WRAP, l = 2f, r = 2f, t = 12f))
+        p.addView(sdText(ctx, "When $name accepts, your private chat opens in Chat, and then you can chat without limits.", 15f, K.sub, bold = false).lineHeight(1.15f), lp(MATCH, WRAP, l = 2f, r = 2f, t = 12f))
         var sending = false
         if (none) p.addView(bigButton(h, "Get More Credits", Coins(24f)) { close(); h.showWallet() }, lp(MATCH, dpi(58f), t = 16f))
         else {
@@ -199,17 +199,17 @@ object SdSheets {
         var mime = "image/jpeg"
         var busy = false
         val top = hbox(ctx)
-        top.addView(sdText(ctx, "Add to your story", 26f, KY.wine, italic = true), lp(0, WRAP, 1f))
-        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, KY.wine, 24f)); scaleType = ImageView.ScaleType.CENTER }.press().onTap { if (!busy) close() }, lp(dpi(44f), dpi(44f)))
+        top.addView(sdText(ctx, "Add to your story", 26f, K.wine, italic = true), lp(0, WRAP, 1f))
+        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, K.wine, 24f)); scaleType = ImageView.ScaleType.CENTER }.press().onTap { if (!busy) close() }, lp(dpi(44f), dpi(44f)))
         p.addView(top, lp(MATCH, WRAP))
         // the photo box (9 : 14), dashed until a photo is chosen
         val w = (ctx.resources.displayMetrics.widthPixels * 0.6f).toInt()
         val pic = FrameLayout(ctx).apply { background = DashedBox(); clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND }
         val preview = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
         val empty = vbox(ctx, 8f, Gravity.CENTER_HORIZONTAL)
-        empty.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, KY.rose, 34f, 1.6f)) }, lp(dpi(34f), dpi(34f)))
-        empty.addView(sdText(ctx, "Choose a photo", 17f, KY.ink2), lp(WRAP, WRAP))
-        val change = sdText(ctx, "Change", 13f, KY.wine).apply { background = rounded(Color.argb(230, 255, 255, 255), 12f); setPadding(dpi(10f), dpi(4f), dpi(10f), dpi(4f)); visibility = View.GONE }
+        empty.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, K.rose, 34f, 1.6f)) }, lp(dpi(34f), dpi(34f)))
+        empty.addView(sdText(ctx, "Choose a photo", 17f, K.ink2), lp(WRAP, WRAP))
+        val change = sdText(ctx, "Change", 13f, K.wine).apply { background = rounded(Color.argb(230, 255, 255, 255), 12f); setPadding(dpi(10f), dpi(4f), dpi(10f), dpi(4f)); visibility = View.GONE }
         pic.addView(preview, FrameLayout.LayoutParams(-1, -1))
         pic.addView(empty, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         pic.addView(change, FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.BOTTOM).apply { setMargins(0, 0, dpi(8f), dpi(8f)) })
@@ -217,25 +217,25 @@ object SdSheets {
         // caption
         val capBox = FrameLayout(ctx)
         val cap = EditText(ctx).apply {
-            hint = "Say something (optional)"; setHintTextColor(KY.soft); setTextColor(KY.ink); typeface = Ui.regular; textSize = 16f
+            hint = "Say something (optional)"; setHintTextColor(K.soft); setTextColor(K.ink); typeface = Ui.regular; textSize = 16f
             filters = arrayOf(InputFilter.LengthFilter(140)); maxLines = 1; isSingleLine = true
-            background = rounded(Color.WHITE, 25f, 1f, Ui.c("#FFF0C2")); setPadding(dpi(18f), 0, dpi(60f), 0)
+            background = rounded(Color.WHITE, 25f, 1f, Ui.c("#F2C3D8")); setPadding(dpi(18f), 0, dpi(60f), 0)
         }
-        val count = sdText(ctx, "0/140", 13f, KY.soft, bold = false)
+        val count = sdText(ctx, "0/140", 13f, K.soft, bold = false)
         capBox.addView(cap, FrameLayout.LayoutParams(-1, dpi(50f)))
         capBox.addView(count, FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL).apply { rightMargin = dpi(18f) })
         p.addView(capBox, lp(MATCH, WRAP, t = 14f))
         val err = sdText(ctx, "", 14f, Ui.c("#c0153d"), bold = false).lineHeight(1.2f).apply { visibility = View.GONE }
         p.addView(err, lp(MATCH, WRAP, l = 2f, r = 2f, t = 10f))
-        val rule = hbox(ctx, 10f, Gravity.TOP).apply { background = rounded(Ui.c("#FFF9E8"), 16f, 1f, KY.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
-        rule.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, KY.rose, 18f)) }, lp(dpi(18f), dpi(18f), t = 1f))
-        rule.addView(sdText(ctx, "No phone numbers, links or social IDs — in the text or written on the photo. Stories with them are removed automatically. Your story disappears after 24 hours.", 13.5f, KY.sub, bold = false).lineHeight(1.15f), lp(0, WRAP, 1f))
+        val rule = hbox(ctx, 10f, Gravity.TOP).apply { background = rounded(Ui.c("#FFF6FA"), 16f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
+        rule.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, K.rose, 18f)) }, lp(dpi(18f), dpi(18f), t = 1f))
+        rule.addView(sdText(ctx, "No phone numbers, links or social IDs — in the text or written on the photo. Stories with them are removed automatically. Your story disappears after 24 hours.", 13.5f, K.sub, bold = false).lineHeight(1.15f), lp(0, WRAP, 1f))
         p.addView(rule, lp(MATCH, WRAP, t = 14f))
         lateinit var post: FrameLayout
         fun refresh() {
             val capErr = SdRules.findContact(cap.text.toString())
             count.text = "${cap.text.length}/140"
-            cap.background = rounded(Color.WHITE, 25f, 1f, if (capErr.isNotEmpty()) Ui.c("#f87171") else Ui.c("#FFF0C2"))
+            cap.background = rounded(Color.WHITE, 25f, 1f, if (capErr.isNotEmpty()) Ui.c("#f87171") else Ui.c("#F2C3D8"))
             val e = err.tag as? String ?: ""
             val shownErr = e.ifEmpty { if (capErr.isNotEmpty()) "$capErr Please remove it." else "" }
             err.text = shownErr; err.visibility = if (shownErr.isEmpty()) View.GONE else View.VISIBLE
@@ -257,7 +257,7 @@ object SdSheets {
                 val o = BitmapFactory.Options().apply { inSampleSize = 4 }
                 preview.setImageBitmap(BitmapFactory.decodeByteArray(b, 0, b.size, o))
                 preview.visibility = View.VISIBLE; empty.visibility = View.GONE; change.visibility = View.VISIBLE
-                pic.background = rounded(Color.WHITE, 20f, 2f, KY.line)
+                pic.background = rounded(Color.WHITE, 20f, 2f, K.line)
                 refresh()
             })
         }
@@ -295,16 +295,16 @@ object SdSheets {
         close = h.layer.sheet(p, z = 35f, locked = { busy })
     }
 
-    /** the dashed pink box of "Choose a photo" (2px dashed #EE6AA9, radius 20, KY.tile inside) */
+    /** the dashed pink box of "Choose a photo" (2px dashed #EE6AA9, radius 20, K.tile inside) */
     private class DashedBox : android.graphics.drawable.Drawable() {
         private val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val line = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            style = android.graphics.Paint.Style.STROKE; strokeWidth = Ui.dp(2f); color = Ui.c("#F0D58C")
+            style = android.graphics.Paint.Style.STROKE; strokeWidth = Ui.dp(2f); color = Ui.c("#EE6AA9")
             pathEffect = android.graphics.DashPathEffect(floatArrayOf(Ui.dp(6f), Ui.dp(4f)), 0f)
         }
         override fun draw(c: android.graphics.Canvas) {
             val b = android.graphics.RectF(bounds); val r = Ui.dp(20f)
-            fill.shader = android.graphics.LinearGradient(0f, b.top, 0f, b.bottom, Ui.c("#FFF9E8"), Color.WHITE, android.graphics.Shader.TileMode.CLAMP)
+            fill.shader = android.graphics.LinearGradient(0f, b.top, 0f, b.bottom, Ui.c("#FDE5F1"), Color.WHITE, android.graphics.Shader.TileMode.CLAMP)
             c.drawRoundRect(b, r, r, fill)
             b.inset(Ui.dp(1f), Ui.dp(1f)); c.drawRoundRect(b, r, r, line)
         }
