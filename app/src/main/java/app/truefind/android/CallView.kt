@@ -1191,6 +1191,9 @@ class CallView(
             "hidden" -> { hideUi = true; conn.bind() }
             // voice → video: Video tapped, she says yes after a moment (the call screen is drawn again as video)
             "switch" -> session.askVideo()
+            // the end-call question (small card in the middle): the red End button / the phone's Back
+            "exitask" -> askExitOrEnd()
+            "endask" -> askEnd()
             "toast" -> toast("Date request sent to ${CallKit.firstName(session.otherName)}", 60000)
             "liketoast" -> toast("${CallKit.firstName(session.otherName)} liked you for a date", 60000)
         }

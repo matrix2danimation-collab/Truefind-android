@@ -58,6 +58,10 @@ shot c27-voice-ended 12 $C voice-ended-charged
 shot c28-voice-ended-out-of-coins 12 $C voice-ended-ranout-charged
 # voice → video: Video tapped on a voice call, she says yes (the app used to close here: owner, 21 Nov)
 shot c29-voice-to-video 16 $C voice-talkp --es tf_open switch
+# the end-call question, a small card in the middle (owner, 21 Nov): End button, then the phone's Back
+shot c29b-end-exit-or-end 13 $C voice-talkp --es tf_open exitask
+shot c29c-end-back 13 $C voice-talkp --es tf_open endask
+shot c29d-end-video 13 $C video-talkp --es tf_open exitask
 # after the call: the stars
 shot c30-rating 13 $C voice-ended --es tf_open rating
 shot c31-rating-report 13 $C voice-ended --es tf_open rating2
