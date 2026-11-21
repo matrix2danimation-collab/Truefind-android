@@ -42,6 +42,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             field = v
             val to = items.indexOfFirst { it.key == v }.coerceAtLeast(0)
             slide(from, to)
+            playIcon(v)
             contentDescription = "Secret Dating, ${items[to].label}"
         }
 
@@ -133,7 +134,15 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             when (it.key) {
                 "home" -> cards(c, col)
                 "likes" -> {
-                    fill.color = col; c.drawPath(heart, fill)
+                    fill.color = col
+                    if (iconKey == "likes") {
+                        // two soft blinks: a little bigger and lighter, then back
+                        val b = kotlin.math.abs(kotlin.math.sin(iconT * Math.PI * 2)).toFloat()
+                        val sc = 1f + .14f * b
+                        c.save(); c.scale(sc, sc, 12f, 12f)
+                        fill.alpha = (255 * (1f - .45f * b)).toInt(); c.drawPath(heart, fill); fill.alpha = 255
+                        c.restore()
+                    } else c.drawPath(heart, fill)
                     if (heartDot && current != "likes") {
                         fill.color = SD.NAV_BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
                         fill.color = SD.NAV_DOT; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
@@ -153,13 +162,52 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     }
 
     /** two cards: one upright behind, the front one tilted, with a thin gap of the bar's grey */
+    // ── a small animation on the tab just opened (owner, 21 Nov morning): Home's cards swipe (the front card slides
+    //    off to the right and the next one comes up), the heart blinks softly ──
+    private var iconKey = ""
+    private var iconT = 0f
+    private var iconAnim: ValueAnimator? = null
+    private fun playIcon(key: String) {
+        if (key != "home" && key != "likes") return
+        iconAnim?.cancel()
+        if (!isShown || PageFx.off(context)) { iconKey = ""; return }
+        iconKey = key
+        iconAnim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = if (key == "home") 560 else 700
+            interpolator = LinearInterpolator()
+            addUpdateListener { iconT = it.animatedValue as Float; invalidate() }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(a: android.animation.Animator) { iconKey = ""; invalidate() }
+            })
+            start()
+        }
+    }
+
     private fun cards(c: Canvas, col: Int) {
+        if (iconKey == "home") { cardsSwipe(c, col, iconT); return }
         fill.color = col
         r.set(10.4f, 6.4f, 20.6f, 21f); c.drawRoundRect(r, 1.8f, 1.8f, fill)
         c.save(); c.rotate(-12f, 8.7f, 10.7f)
         r.set(3.4f, 3.2f, 14f, 18.2f)
         stroke.color = SD.NAV_BG; stroke.strokeWidth = 1.6f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
         c.drawRoundRect(r, 1.8f, 1.8f, fill)
+        c.restore()
+    }
+
+    private fun cardsSwipe(c: Canvas, col: Int, t: Float) {
+        val e = PathInterpolator(.3f, 0f, .2f, 1f).getInterpolation(t)
+        fill.color = col
+        // the back card comes forward: from its spot to the front card's spot, turning to the same tilt
+        c.save(); c.translate(-6.9f * e, -3.2f * e); c.rotate(-12f * e, 15.5f, 13.7f)
+        r.set(10.4f, 6.4f, 20.6f, 21f); c.drawRoundRect(r, 1.8f, 1.8f, fill)
+        c.restore()
+        // the front card swipes off to the right and fades
+        c.save(); c.translate(14f * e, 0f); c.rotate(-12f + 30f * e, 8.7f, 10.7f)
+        fill.alpha = (255 * (1f - e)).toInt()
+        r.set(3.4f, 3.2f, 14f, 18.2f)
+        stroke.color = SD.NAV_BG; stroke.strokeWidth = 1.6f; stroke.alpha = fill.alpha; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
+        c.drawRoundRect(r, 1.8f, 1.8f, fill)
+        fill.alpha = 255; stroke.alpha = 255
         c.restore()
     }
 
