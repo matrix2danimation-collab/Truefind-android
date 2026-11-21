@@ -236,7 +236,9 @@ fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boole
         setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp))
         setTextColor(color)
         // Secret Dating's pages: the font of the owner's reference photos, everything alike (owner, 20 Nov night)
-        typeface = if (italic || bold) Jk.bold else Jk.medium
+        typeface = if (italic || bold) Jk.semibold else Jk.medium
+        // these sizes were made for Calibri, which is narrower: a little smaller in this font (owner, 21 Nov morning)
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp * .93f))
         includeFontPadding = false
     }
 

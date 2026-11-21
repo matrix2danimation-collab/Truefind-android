@@ -132,7 +132,7 @@ class SecretHome(
         // nothing of these pages may be drawn below their bottom edge: the Secret Dating bar is there
         outlineProvider = android.view.ViewOutlineProvider.BOUNDS
         clipToOutline = true
-        setBackgroundColor(Color.WHITE)
+        setBackgroundColor(SD.NAV_BG)
         // a full page open on top (a profile, My profile): the strip under the status bar takes its pink
         statusCover.visibility = GONE
         statusCover.elevation = Ui.dp(50f)
@@ -247,6 +247,13 @@ class SecretHome(
         if (view == "likes" && likesPage == null) likesPage = SdLikesPage(this).also { addView(it, LayoutParams(-1, -1)); likesStart?.let { s -> it.pick(s) }; likesStart = null }
         if (view == "map" && mapPage == null) mapPage = SdMapPage(this).also { addView(it, LayoutParams(-1, -1)) }
         if (view == "chat" && chatPage == null) chatPage = SdChatsPage(this).also { addView(it, LayoutParams(-1, -1)) }
+        // every page ends with the Home card's round bottom corners over the grey bar (owner, 21 Nov morning)
+        for (v in listOf(likesPage, mapPage, chatPage)) if (v != null && !v.clipToOutline) {
+            v.outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, o: android.graphics.Outline) { val r = Ui.dp(30f); o.setRoundRect(0, -r.toInt(), view.width, view.height, r) }
+            }
+            v.clipToOutline = true
+        }
         homeView?.visibility = if (view == "home") VISIBLE else GONE
         likesPage?.visibility = if (view == "likes") VISIBLE else GONE
         mapPage?.visibility = if (view == "map") VISIBLE else GONE

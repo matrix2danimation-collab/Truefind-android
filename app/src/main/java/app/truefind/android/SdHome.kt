@@ -150,7 +150,11 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         buttons.orientation = LinearLayout.HORIZONTAL; buttons.gravity = Gravity.CENTER
         roundBtn(rewindBtn, SdIcon(listOf(SdPaths.REWIND to Color.WHITE), 28f, 1.7f), "The last profile again") { back() }
         roundBtn(chatBtn, SdIcon(listOf(SdPaths.CHATS to Color.WHITE), 28f, 1.7f), "Send Request") { now()?.let { h.askRequest(it) } }
-        roundBtn(skipBtn, SdIcon(listOf(SdPaths.XSQ to Color.WHITE), 28f, 1.7f), "Skip") { if (anim?.isRunning != true) fly(-1) }
+        roundBtn(skipBtn, SdIcon(listOf(SdPaths.X to Color.WHITE), 30f, 2.6f), "Skip") { if (anim?.isRunning != true) fly(-1) }
+        // the cross stands out like the heart (owner, 21 Nov morning): a solid round button
+        skipBtn.background = oval(Color.WHITE)
+        skipBtn.elevation = Ui.dp(8f)
+        (skipBtn.getChildAt(0) as ImageView).setImageDrawable(SdIcon(listOf(SdPaths.X to SD.RED), 30f, 2.8f))
         likeBtn.background = oval(SD.M)
         likeBtn.elevation = Ui.dp(8f)
         likeBtn.outlineSpotShadowColorCompat(Color.argb(150, 160, 110, 0))
@@ -160,9 +164,57 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         sentMark.setImageDrawable(SdIcon(listOf(SdPaths.CHECK to SD.ON_M), 14f, 3f))
         sentMark.background = oval(Color.WHITE); sentMark.setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)); sentMark.visibility = GONE
         chatBtn.addView(sentMark, LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.TOP))
-        for ((i, b) in listOf(rewindBtn, chatBtn, skipBtn, likeBtn).withIndex()) buttons.addView(b, lp(dpi(70f), dpi(70f), l = if (i == 0) 0f else 11f))
+        // cross on the left, heart on the right (owner, 21 Nov morning)
+        for ((i, b) in listOf(skipBtn, rewindBtn, chatBtn, likeBtn).withIndex()) buttons.addView(b, lp(dpi(70f), dpi(70f), l = if (i == 0) 0f else 11f))
         addView(buttons, LayoutParams(-1, dpi(70f), Gravity.BOTTOM).apply { bottomMargin = dpi(35f) })
         paintLike(false)
+    }
+
+    // ── the like: a small pink pop, like a heart tapped on Instagram / WhatsApp (owner, 21 Nov morning) ──
+    private val PINK = Ui.c("#FF2D6F")
+    private val pop = PopView()
+    private fun pinkPop() {
+        if (pop.parent == null) addView(pop, LayoutParams(dpi(150f), dpi(150f)))
+        val loc = IntArray(2); val me = IntArray(2)
+        likeBtn.getLocationInWindow(loc); getLocationInWindow(me)
+        pop.x = loc[0] - me[0] + likeBtn.width / 2f - dpi(75f)
+        pop.y = loc[1] - me[1] + likeBtn.height / 2f - dpi(75f)
+        pop.translationZ = 20f
+        pop.play()
+        if (PageFx.off(context)) return
+        likeIcon.animate().cancel()
+        likeIcon.scaleX = .4f; likeIcon.scaleY = .4f
+        likeIcon.animate().scaleX(1f).scaleY(1f).setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(3.2f)).start()
+    }
+    /** a pink ring that opens and fades, and seven little hearts / dots flying out */
+    private inner class PopView : View(this@SdHomeView.context) {
+        private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        private var t = 1f
+        private var a: ValueAnimator? = null
+        init { isClickable = false }
+        fun play() {
+            a?.cancel()
+            a = ValueAnimator.ofFloat(0f, 1f).apply { duration = if (PageFx.off(context)) 0 else 560; addUpdateListener { t = it.animatedValue as Float; invalidate() }; start() }
+        }
+        override fun onDraw(c: Canvas) {
+            if (t >= 1f) return
+            val cx = width / 2f; val cy = height / 2f; val d = Ui.density
+            // the ring
+            val rt = (t / .55f).coerceAtMost(1f)
+            p.style = Paint.Style.STROKE; p.strokeWidth = d * 6f * (1f - rt) + d
+            p.color = PINK; p.alpha = (255 * (1f - rt)).toInt()
+            c.drawCircle(cx, cy, d * (26f + 30f * rt), p)
+            // the little dots
+            p.style = Paint.Style.FILL
+            val dt = ((t - .12f) / .88f).coerceIn(0f, 1f)
+            for (i in 0 until 7) {
+                val ang = Math.toRadians(-90.0 + i * 360.0 / 7)
+                val r = d * (34f + 34f * dt)
+                p.color = if (i % 2 == 0) PINK else Ui.c("#FF8FB1")
+                p.alpha = (255 * (1f - dt)).toInt()
+                c.drawCircle(cx + (r * Math.cos(ang)).toFloat(), cy + (r * Math.sin(ang)).toFloat(), d * (4.2f * (1f - dt * .6f)), p)
+            }
+        }
     }
 
     private fun roundBtn(b: FrameLayout, icon: SdIcon, label: String, onClick: () -> Unit) {
@@ -224,7 +276,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         chatBtn.contentDescription = if (p != null && h.chatIdFor(p).isNotEmpty()) "Open chat" else if (sent) "Request sent" else "Send Request"
     }
     private fun paintLike(on: Boolean) {
-        likeIcon.setImageDrawable(if (on) SdIcon(listOf(SdPaths.HEART_FILL to Color.WHITE), 30f) else SdIcon(listOf(SdPaths.HEART to Color.WHITE), 30f, 1.9f))
+        likeIcon.setImageDrawable(if (on) SdIcon(listOf(SdPaths.HEART_FILL to PINK), 30f) else SdIcon(listOf(SdPaths.HEART to Color.WHITE), 30f, 1.9f))
         likeBtn.contentDescription = if (on) "Liked. Tap to take back" else "Like"
     }
 
@@ -234,7 +286,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         if (liking) return
         if (h.isSameGender(p)) return
         val next = !p.optBoolean("liked_by_me")
-        if (next) HeartBurst.play(likeBtn, h.layer.root, likeIcon)
+        if (next) pinkPop()
         p.put("liked_by_me", next); paintLike(next)
         if (SdDemo.isDemo(p)) { if (next) h.say("Demo profile: likes reach real members only"); return }
         liking = true

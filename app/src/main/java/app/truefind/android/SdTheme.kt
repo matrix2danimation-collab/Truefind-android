@@ -108,7 +108,8 @@ object Jk {
     }
     fun of(weight: Int): Typeface {
         if (!ready) return if (weight >= 600) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-        return when { weight >= 800 -> extrabold; weight >= 700 -> bold; weight >= 600 -> semibold; weight >= 500 -> medium; else -> regular }
+        // one step lighter for the heavy ones (owner, 21 Nov morning: the words looked too fat)
+        return when { weight >= 800 -> bold; weight >= 600 -> semibold; weight >= 500 -> medium; else -> regular }
     }
 }
 
