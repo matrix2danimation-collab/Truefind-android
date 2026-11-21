@@ -171,8 +171,6 @@ class ChatRoom(
         colv.addView(buildSdHeader(), lp(MATCH, WRAP))
         // the messages and the composer: on the white sheet in a Secret Dating chat
         sheet.addView(sheetCol, LayoutParams(-1, -1))
-        sheet.addView(sheetHandle)
-        sheetHandle.visibility = GONE
         colv.addView(sheet, lp(MATCH, 0, 1f))
         errorBox.background = rounded(Ui.c("#FFF1F3"), 16f, 1f, Ui.c("#F8B4C2"))
         errorBox.setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(12f)); errorBox.visibility = GONE

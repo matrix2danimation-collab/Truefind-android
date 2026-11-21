@@ -22,6 +22,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.view.Gravity
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -442,6 +444,13 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
                     if (leaving) return
                     // the page before; nothing behind: the app's own steps (Wallet → Recent → Explore → Home,
                     // Profile → Home); the app is left only from Home
+                    // True Find Home: "Tap again to exit" (black, white words); a second Back within 2 s leaves the app
+                    // (owner, 21 Nov morning — the history behind Home is not walked any more)
+                    if (pathOnly(path).let { it == "/" || it == "/home" }) {
+                        val t = uptime()
+                        if (t - exitAskAt < 2000) { finish(); return }
+                        exitAskAt = t; exitTip(); return
+                    }
                     if (router.back()) return
                     if (router.up()) return
                     finish()
@@ -936,6 +945,18 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         router.go(t, if (t == full) state else null, replace)
     }
     /** [n] pages back; false when there is no page behind */
+    private var exitAskAt = 0L
+    private fun exitTip() {
+        val v = TextView(this).apply {
+            text = "Tap again to exit"; setTextColor(Color.WHITE); textSize = 14f; typeface = Ui.bold; gravity = Gravity.CENTER
+            background = android.graphics.drawable.GradientDrawable().apply { setColor(Color.parseColor("#111114")); cornerRadius = Ui.dp(22f) }
+            setPadding(Ui.dpi(20f), Ui.dpi(11f), Ui.dpi(20f), Ui.dpi(11f)); elevation = Ui.dp(30f); alpha = 0f
+        }
+        root.addView(v, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = Ui.dpi(96f) })
+        v.animate().alpha(1f).setDuration(150).start()
+        v.postDelayed({ v.animate().alpha(0f).setDuration(200).withEndAction { root.removeView(v) }.start() }, 2000)
+    }
+
     private fun goBack(n: Int = 1): Boolean {
         if (!native) {
             val w = web ?: return false
