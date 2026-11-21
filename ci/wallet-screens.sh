@@ -13,6 +13,8 @@ shot() {
   adb logcat -c
   adb shell am start -W -n $PKG/.MainActivity "$@" > /dev/null
   sleep "$wait"
+  # the emulator's own "Pixel Launcher isn't responding" box covered the middle of the pictures: closed first
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 1
   adb exec-out screencap -p > "$OUT/$name.png"
   adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
