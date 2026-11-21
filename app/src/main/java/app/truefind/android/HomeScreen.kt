@@ -754,69 +754,38 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         sheets.refreshPerson()
     }
 
-    /** Random Match: find someone online and free (the other gender only), then call them (up to 4 tries). */
+    /**
+     * Random Match: searches without stopping until someone picks up — no "No one is free" pop-up, no second tap
+     * (owner, 21 Nov). One creator at a time rings for 12 s, then the next (RandomSearch). Cancel / Back stops it.
+     */
+    private var search: RandomSearch? = null
     fun startRandom(type: String) {
         if (sheets.matching) return
         val run = ++matchRun
         sheets.closeConfirm()
         sheets.showMatching(type, "search", "") { cancelRandom() }
-        val t0 = System.currentTimeMillis()
-        Api.invoke("getOnlineNow", JSONObject()) { r ->
-            val live = if (r.ok) r.data.optJSONArray("profiles")?.let { Tf.arr(it) } else null
-            fun go2(fresh: List<JSONObject>?) {
-                val wait = (1700 - (System.currentTimeMillis() - t0)).coerceAtLeast(0)
-                main.postDelayed({
-                    if (run != matchRun) return@postDelayed
-                    val list = (live ?: fresh ?: profiles ?: emptyList()).filter { !isMe(it) && HomeRules.isFree(it) && HomeRules.idOf(it).isNotEmpty() }
-                    val myG = myGender()
-                    val opposite = if (myG.isNotEmpty()) list.filter { val g = HomeRules.genderOf(it); g.isNotEmpty() && g != myG } else list
-                    var pool = opposite.shuffled()
-                    if (pool.size > 1 && HomeRules.idOf(pool[0]) == lastMatch) pool = pool.drop(1) + pool[0]
-                    if (pool.isEmpty()) {
-                        sheets.hideMatching()
-                        sheets.dialog("No one is free right now", "Everyone online is on another call. Please try again in a minute.")
-                        return@postDelayed
-                    }
-                    tryNext(run, type, pool.take(4), 0, null)
-                }, wait)
+        val s = RandomSearch(type, object : RandomSearch.Host {
+            override fun stage(stage: String, name: String, photo: String) {
+                if (run != matchRun) return
+                // ("random": the calling screen with its Cancel — the search can be stopped while she rings too)
+                if (stage == "search") sheets.showMatching(type, "search", "") { cancelRandom() }
+                else sheets.showMatching(type, "random", name) { cancelRandom() }
             }
-            if (live != null) go2(null) else loadPeople { fresh -> go2(fresh) }
-        }
+            override fun found(callId: String, peer: JSONObject) {
+                if (run != matchRun) return
+                search = null
+                lastMatch = ""
+                sheets.hideMatching()
+                pages.go("/call/$callId", JSONObject().put("peer", peer).put("type", type))
+            }
+            override fun onCoins(data: JSONObject) { if (run != matchRun) return; search = null; sheets.hideMatching(); showCoins(type, data) }
+            override fun onStop(title: String, text: String) { if (run != matchRun) return; search = null; sheets.hideMatching(); sheets.dialog(title, text) }
+        })
+        search = s
+        s.start()
     }
 
-    private fun tryNext(run: Int, type: String, pool: List<JSONObject>, i: Int, lastErr: Api.Result?) {
-        if (run != matchRun) return
-        if (i >= pool.size) {
-            sheets.hideMatching()
-            if (lastErr != null) sheets.dialog("Couldn't connect", Tf.err(lastErr, "Something went wrong. Please try again."))
-            else sheets.dialog("No one is free right now", "Everyone online is on another call. Please try again in a minute.")
-            return
-        }
-        val p = pool[i]
-        sheets.showMatching(type, "connecting", HomeRules.firstName(p)) { }
-        Api.invoke("startCall", JSONObject().put("to_user_id", HomeRules.idOf(p)).put("type", type).put("app", "truefind")) { r ->
-            if (run != matchRun) return@invoke
-            val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
-            if (r.ok && id.isNotEmpty()) {
-                lastMatch = HomeRules.idOf(p)
-                sheets.hideMatching()
-                pages.go("/call/$id", peerHint(p).put("type", type))
-                return@invoke
-            }
-            val err = r.data.optString("error")
-            if (r.status == 402 || err == "insufficient_coins") { sheets.hideMatching(); showCoins(type, r.data); return@invoke }
-            // a problem with MY account won't change with another person: stop at once
-            if (r.status == 403 && (err == "banned" || Regex("complete your profile", RegexOption.IGNORE_CASE).containsMatchIn(err))) {
-                sheets.hideMatching()
-                sheets.dialog("Couldn't connect", if (err == "banned") "Your account can't make calls right now." else err)
-                return@invoke
-            }
-            val next = if (r.status == 409 || err == "busy" || r.ok) lastErr else r
-            tryNext(run, type, pool, i + 1, next)
-        }
-    }
-
-    fun cancelRandom() { matchRun += 1; sheets.hideMatching() }
+    fun cancelRandom() { matchRun += 1; search?.cancel(); search = null; sheets.hideMatching() }
 
     /** what the call screen shows before it has loaded anything (the web's location.state.peer) */
     private fun peerHint(p: JSONObject) = JSONObject().put("peer", JSONObject().put("name", HomeRules.firstName(p)).put("photo", HomeRules.listPhoto(p, HomeRules.photoOf(p))))
