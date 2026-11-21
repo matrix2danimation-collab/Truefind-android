@@ -282,33 +282,49 @@ object CallSheets {
      * (owner, 19 Nov). "Stay on call" (or Back again, or a tap outside) keeps the call; "End call" ends it. Returns close().
      */
     fun endCall(host: CallView, ringing: Boolean, onStay: () -> Unit, onEnd: () -> Unit): () -> Unit {
+        var ending = false
+        lateinit var close: () -> Unit
+        close = smallAsk(host, if (ringing) "Stop calling?" else "End this call?",
+            if (ringing) "They haven't picked up yet. Do you want to stop this call?" else "Your call is still going on. Do you want to end it?",
+            "Stay on call", "Stay on call", { close() },
+            "End call", "End call", { ending = true; close(); onEnd() },
+            onClose = { if (!ending) onStay() })
+        return { close() }
+    }
+
+    /**
+     * The end-call question as a small card in the middle of the screen, popping in (owner, 21 Nov: the sheet
+     * sliding up from the bottom looked odd). Left: the plain white button, right: the red one. A tap outside or
+     * the phone's Back closes it ([onClose]). Returns close().
+     */
+    private fun smallAsk(host: CallView, title: String, body: String,
+                         leftLabel: String, leftDesc: String, onLeft: () -> Unit,
+                         rightLabel: String, rightDesc: String, onRight: () -> Unit,
+                         onClose: () -> Unit): () -> Unit {
         val ctx = host.context
         val p = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            background = Tf.topRound(Color.WHITE, 24f)
-            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f))
-            isClickable = true
+            gravity = Gravity.CENTER_HORIZONTAL
+            background = Tf.box(Color.WHITE, 22f)
+            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(18f))
+            elevation = Ui.dp(12f)
         }
-        p.addView(CallKit.t(ctx, if (ringing) "Stop calling?" else "End this call?", 18f, CallKit.INK, 700))
-        p.addView(CallKit.t(ctx, if (ringing) "They haven't picked up yet. Do you want to stop this call?" else "Your call is still going on. Do you want to end it?",
-            14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
+        p.addView(CallKit.t(ctx, title, 17f, CallKit.INK, 700).apply { gravity = Gravity.CENTER })
+        p.addView(CallKit.t(ctx, body, 13.5f, CallKit.SUB, 400).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }, Tf.ll(t = 6f))
         val row = Tf.row(ctx)
-        var close: () -> Unit = {}
-        var ending = false
-        val stay = CallKit.t(ctx, "Stay on call", 15f, CallKit.INK, 600).apply {
-            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#E9E6EE")); contentDescription = "Stay on call"
-            setOnClickListener { close() }
+        val left = CallKit.t(ctx, leftLabel, 14.5f, CallKit.INK, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 14f, 1f, Ui.c("#E9E6EE")); contentDescription = leftDesc
+            setOnClickListener { onLeft() }
         }
-        val end = CallKit.t(ctx, "End call", 15f, Color.WHITE, 600).apply {
-            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#E5484D"), 16f); contentDescription = "End call"
-            setOnClickListener { ending = true; close(); onEnd() }
+        val right = CallKit.t(ctx, rightLabel, 14.5f, Color.WHITE, 600).apply {
+            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#E5484D"), 14f); contentDescription = rightDesc
+            setOnClickListener { onRight() }
         }
-        Ui.pressable(stay, .97f); Ui.pressable(end, .97f)
-        row.addView(stay, Tf.ll(0, Ui.dpi(44f), 1f, r = 12f))
-        row.addView(end, Tf.ll(0, Ui.dpi(44f), 1f))
+        Ui.pressable(left, .97f); Ui.pressable(right, .97f)
+        row.addView(left, Tf.ll(0, Ui.dpi(44f), 1f, r = 10f))
+        row.addView(right, Tf.ll(0, Ui.dpi(44f), 1f))
         p.addView(row, Tf.ll(Tf.M, Tf.W, t = 16f))
-        close = host.layer.sheet(p, Color.argb(128, 0, 0, 0), onClose = { if (!ending) onStay() })
-        return { close() }
+        return host.layer.dialog(p, Color.argb(128, 0, 0, 0), widthDp = 300f, onClose = onClose)
     }
 
     /**
@@ -359,30 +375,13 @@ object CallSheets {
      * "Call in progress · Return" brings it back) and "End call" under it. Tapping outside: nothing changes.
      */
     fun exitOrEnd(host: CallView, onExit: () -> Unit, onEnd: () -> Unit, onStay: () -> Unit): () -> Unit {
-        val ctx = host.context
-        val p = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            background = Tf.topRound(Color.WHITE, 24f)
-            setPadding(Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f), Ui.dpi(20f))
-            isClickable = true
-        }
-        p.addView(CallKit.t(ctx, "Exit or end the call?", 18f, CallKit.INK, 700))
-        p.addView(CallKit.t(ctx, "Exit: the call keeps going and you can come back with Return. End call: the call stops.",
-            14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
-        var close: () -> Unit = {}
         var chose = false
-        val exit = CallKit.t(ctx, "Exit", 15f, CallKit.INK, 600).apply {
-            gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#E9E6EE")); contentDescription = "Exit, the call keeps going"
-            setOnClickListener { if (!chose) { chose = true; close(); onExit() } }
-        }
-        val end = CallKit.t(ctx, "End call", 15f, Color.WHITE, 600).apply {
-            gravity = Gravity.CENTER; background = Tf.box(Ui.c("#E5484D"), 16f); contentDescription = "End call"
-            setOnClickListener { if (!chose) { chose = true; close(); onEnd() } }
-        }
-        Ui.pressable(exit, .97f); Ui.pressable(end, .97f)
-        p.addView(exit, Tf.ll(Tf.M, Ui.dpi(48f), t = 16f))
-        p.addView(end, Tf.ll(Tf.M, Ui.dpi(48f), t = 10f))
-        close = host.layer.sheet(p, Color.argb(128, 0, 0, 0), onClose = { if (!chose) onStay() })
+        lateinit var close: () -> Unit
+        close = smallAsk(host, "Exit or end the call?",
+            "Exit: the call keeps going and you can come back with Return. End call: the call stops.",
+            "Exit", "Exit, the call keeps going", { if (!chose) { chose = true; close(); onExit() } },
+            "End call", "End call", { if (!chose) { chose = true; close(); onEnd() } },
+            onClose = { if (!chose) onStay() })
         return { close() }
     }
 
