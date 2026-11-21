@@ -235,6 +235,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            // Secret Dating's grey bar runs on down over the phone's own button strip (as in the owner's photo)
+            if (::sdNav.isInitialized && sdNav.below != bars.bottom) {
+                sdNav.below = bars.bottom
+                (sdNav.layoutParams as? FrameLayout.LayoutParams)?.let { it.bottomMargin = -bars.bottom; sdNav.layoutParams = it }
+            }
             WindowInsetsCompat.CONSUMED
         }
 
@@ -247,8 +252,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret = SecretHome(this, root) { p, state -> navigate(p, state) }
         secret.visibility = View.GONE
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        // Secret Dating's own bottom bar (Online Map · Home · Chat)
-        sdNav = SdNavBar(this) { to -> navigate(to) }
+        // Secret Dating's own bottom bar (Home · My Activity · Chat · Online Map); the heart opens My Activity over the page
+        sdNav = SdNavBar(this) { to -> if (to == "likes") secret.openMyActivity("liked") else navigate(to) }
+        secret.onLikesDot = { on -> sdNav.heartDot = on }
         sdNav.visibility = View.GONE
         root.addView(sdNav, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }

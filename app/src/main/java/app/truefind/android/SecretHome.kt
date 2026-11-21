@@ -528,6 +528,7 @@ class SecretHome(
         val n = activity?.optJSONObject("counts")?.optInt("total") ?: 0
         bellIcon.tint(Color.WHITE, if (n > 0) Color.WHITE else null)
         bellDot.visibility = if (n > 0) VISIBLE else GONE
+        onLikesDot?.invoke(n > 0)
         bellBtn.contentDescription = if (n > 0) "My Activity, $n new" else "My Activity"
     }
     /** the red dot on the bell: opacity 1 → .55 → 1 every 1.1 s (sd-ndot) — only while it can be seen (no work for a hidden page) */
@@ -721,6 +722,8 @@ class SecretHome(
         if (page == "chat") chatPage?.render()
     }
 
+    /** the heart in the bottom bar gets a red dot while new likes / messages wait (MainActivity sets this) */
+    var onLikesDot: ((Boolean) -> Unit)? = null
     /** Secret Dating Home has just read the credits (MainActivity hands them to the Wallet) */
     var onCredits: ((JSONObject) -> Unit)? = null
     private fun renderNotice() {
