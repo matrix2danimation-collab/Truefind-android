@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Play Store build (gradle bundleRelease -PtfStore=true, see app/build.gradle.kts).
+     Google Play does not allow an app to update itself, so the install permission that the
+     test builds' Update button needs is taken out here. Test builds keep it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+
+</manifest>

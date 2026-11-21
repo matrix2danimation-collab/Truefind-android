@@ -20,6 +20,10 @@ import android.widget.TextView
 import app.truefind.android.rupees
 import org.json.JSONObject
 
+/** "More games coming soon" (Crush · Flirty · Deep) is hidden until these games are made — a store
+ *  build should not show games that can't be played. true = show it again (same switch as Games.jsx). */
+private const val SHOW_SOON_GAMES = false
+
 /** Native Games page — port of Games.jsx (header, Top Games card, the four games, coming soon). */
 @SuppressLint("ViewConstructor")
 class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
@@ -111,15 +115,17 @@ class GamesHub(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer) {
         live.forEachIndexed { i, g -> cards.addView(gameCard(ctx, g, i), G.lp(G.MATCH, G.WRAP)) }
         col.addView(cards, G.lp(G.MATCH, G.WRAP).m(14f, 12f, 14f, 0f))
 
-        // ── More games coming soon ──
-        col.addView(sectionTitle(ctx, G.icon(ctx, "Hourglass", TG.vivid, 19f, 2.3f), 19f, 19f, "More games coming soon"), G.lp(G.MATCH, G.WRAP).m(18f, 24f, 18f, 0f))
-        val soon = G.hbox(ctx, 10f, Gravity.TOP)
-        listOf(Triple("Crush", "Sweet first-call questions", HubArt.soonCrush to (34f to 30f)),
-            Triple("Flirty", "Playful, never pushy", HubArt.soonFlirty to (26f to 32f)),
-            Triple("Deep", "Real talk, real you", HubArt.soonDeep to (32f to 32f))).forEachIndexed { i, (t, s, art) ->
-            soon.addView(soonTile(ctx, t, s, art.first, art.second.first, art.second.second, i), G.lpw(1f))
+        // ── More games coming soon (hidden for now: SHOW_SOON_GAMES) ──
+        if (SHOW_SOON_GAMES) {
+            col.addView(sectionTitle(ctx, G.icon(ctx, "Hourglass", TG.vivid, 19f, 2.3f), 19f, 19f, "More games coming soon"), G.lp(G.MATCH, G.WRAP).m(18f, 24f, 18f, 0f))
+            val soon = G.hbox(ctx, 10f, Gravity.TOP)
+            listOf(Triple("Crush", "Sweet first-call questions", HubArt.soonCrush to (34f to 30f)),
+                Triple("Flirty", "Playful, never pushy", HubArt.soonFlirty to (26f to 32f)),
+                Triple("Deep", "Real talk, real you", HubArt.soonDeep to (32f to 32f))).forEachIndexed { i, (t, s, art) ->
+                soon.addView(soonTile(ctx, t, s, art.first, art.second.first, art.second.second, i), G.lpw(1f))
+            }
+            col.addView(soon, G.lp(G.MATCH, G.WRAP).m(14f, 12f, 14f, 0f))
         }
-        col.addView(soon, G.lp(G.MATCH, G.WRAP).m(14f, 12f, 14f, 0f))
 
         toast = Toast(this, G.round(G.ca("#1e0a3c", 0.92f), 99f), Color.WHITE, 14.5f, false, 24f).padding(18f, 11f, 18f, 11f)
 

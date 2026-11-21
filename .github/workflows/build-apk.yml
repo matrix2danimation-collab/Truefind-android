@@ -57,6 +57,22 @@ jobs:
       - name: Build
         run: gradle assembleDebug --no-daemon --stacktrace
 
+      # the Play Store build (release, -PtfStore=true) must not ask for the install permission that only the test
+      # builds' Update button uses (Google Play doesn't allow self-updates); test builds keep it. Checked with the
+      # real manifest merge on work branches only, so builds on main stay as quick as before.
+      - name: Check the Play build has no install permission
+        if: github.ref != 'refs/heads/main'
+        run: |
+          gradle :app:processReleaseManifest -PtfStore=true --no-daemon -q
+          rel=$(find app/build/intermediates -path '*release*' -name AndroidManifest.xml | grep -vi androidtest || true)
+          dbg=$(find app/build/intermediates -path '*debug*' -name AndroidManifest.xml | grep -vi androidtest || true)
+          echo "Play build manifests:"; echo "$rel"
+          [ -n "$rel" ] || { echo "no merged release manifest found"; exit 1; }
+          if grep -l REQUEST_INSTALL_PACKAGES $rel; then echo "the Play build still asks for REQUEST_INSTALL_PACKAGES"; exit 1; fi
+          grep -q REQUEST_INSTALL_PACKAGES $dbg || { echo "the test build lost REQUEST_INSTALL_PACKAGES (its Update button needs it)"; exit 1; }
+          grep -q 'android.permission.FOREGROUND_SERVICE_MICROPHONE' $rel || { echo "the Play build lost the call service permission"; exit 1; }
+          echo "OK: Play build without the install permission, test build still with it, call service in both"
+
       - name: Name the file (+ version.json for the app's Update button)
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk

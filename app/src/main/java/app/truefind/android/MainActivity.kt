@@ -1606,6 +1606,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Push.visible = true
         Push.clearCalls(this) // the app rings it itself now
         calls.onAppVisible(true)
+        // a call's "call in progress" service the phone refused while True Find was away starts now (CallService)
+        CallService.refresh(this)
         explore.onAppVisible(true)
         secret.onAppVisible(true)
         pages.onAppVisible(true)

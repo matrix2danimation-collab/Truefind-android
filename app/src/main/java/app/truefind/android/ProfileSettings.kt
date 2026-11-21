@@ -64,6 +64,7 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         "blocked" to "block unblock people",
         "security" to "safety safe rules otp password bank money meet report ban",
         "help" to "faq question contact email whatsapp report problem complaint withdrawal screenshot",
+        "legal" to "terms privacy policy refund rules guidelines child safety grievance legal",
         "logout" to "logout sign out signout exit",
         "delete" to "delete remove permanently close")
 
@@ -126,7 +127,10 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
             Item("privacy", "Privacy", if (ps.profile?.opt("location_visible") == false) "Location hidden" else "Location visible", Lu.Eye, PC.tPrivacy),
             Item("blocked", "Blocked users", "${ps.blocked.size} blocked", Lu.Ban, PC.tBlocked),
             Item("security", "Security & guidelines", "Stay safe on the app", Lu.Lock, PC.tSecurity),
-            Item("help", "Help & support", "Reports and account help", Lu.HelpCircle, PC.tHelp))
+            Item("help", "Help & support", "Reports and account help", Lu.HelpCircle, PC.tHelp),
+            // Terms, Privacy, Refund, Community Guidelines, Child Safety: the public pages on the
+            // website (web pages/Legal.jsx), opened in the phone's browser. Google Play needs them in the app.
+            Item("legal", "Terms & policies", "Privacy, terms, refunds, child safety", Lu.FileText, Ui.c("#475569"), action = { openLegal() }))
         val g3 = listOf(
             Item("logout", "Log out", null, Lu.LogOut, PC.tLogout, action = { ps.doLogout() }),
             Item("delete", "Delete account", "Permanently remove your account", Lu.Trash2, PC.tDelete, action = { ps.doDelete() }, danger = true))
@@ -284,6 +288,11 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
             }
             col.addView(box, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
         }
+    }
+
+    /** the public policy pages (/legal on the website) in the phone's browser */
+    private fun openLegal() {
+        try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Api.origin.trimEnd('/') + "/legal"))) } catch (e: Exception) { }
     }
 
     private fun onItem(it: Item) {

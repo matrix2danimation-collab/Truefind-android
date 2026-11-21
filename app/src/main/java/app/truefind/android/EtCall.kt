@@ -68,7 +68,21 @@ class EtCallPage(et: ExpertTalkScreen, private val bookingId: String, private va
         return true
     }
 
-    override fun onDispose() { voice.stop() }
+    override fun onDispose() { voice.stop(); holdService(false) }
+
+    /** the service is held for this call (CallService) */
+    private var kept = false
+    /**
+     * Expert Talk is a call too: while it is live, its microphone keeps working when True Find leaves the screen
+     * (Home button, another app, screen locked) — CallService, with the quiet "call in progress" notification. A tap
+     * on it only brings the app back (this page is still open under it). Not in the test pictures (EtDemo).
+     */
+    private fun holdService(on: Boolean) {
+        if (on == kept || (on && EtDemo.on)) return
+        kept = on
+        if (on) CallService.hold(ctx, "expert:$bookingId", "Expert Talk call in progress", "Tap to return to your call", "", false, 0L)
+        else CallService.release(ctx, "expert:$bookingId")
+    }
 
     private fun poll() {
         Et.call("state", JSONObject().put("booking_id", bookingId)) { r ->
@@ -77,8 +91,8 @@ class EtCallPage(et: ExpertTalkScreen, private val bookingId: String, private va
                 val st = r.data.optJSONObject("state") ?: return@call
                 s = st
                 paint()
-                if (OVER.contains(Et.s(st, "status")) && !done) { done = true; voice.stop(); onDone(st) }
-            } else if (r.status == 403 || r.status == 404) { if (!done) { done = true; voice.stop(); onDone(null) } }
+                if (OVER.contains(Et.s(st, "status")) && !done) { done = true; voice.stop(); holdService(false); onDone(st) }
+            } else if (r.status == 403 || r.status == 404) { if (!done) { done = true; voice.stop(); holdService(false); onDone(null) } }
         }
     }
 
@@ -147,6 +161,7 @@ class EtCallPage(et: ExpertTalkScreen, private val bookingId: String, private va
         val live = stt == "live"
         val missed = Et.i(st, "missed_rings")
         voice.setSession(if (live) bookingId else null)
+        holdService(live)
         leftPill.visibility = if (live) View.VISIBLE else View.INVISIBLE
         leftPill.text = "${Et.mmss(left())} left"
         warn.visibility = if (role == "member" && Et.i(st, "report_count") == 1 && live) View.VISIBLE else View.GONE
