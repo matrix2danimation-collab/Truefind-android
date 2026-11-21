@@ -75,7 +75,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         addView(MaroonDeco(context), LayoutParams(-1, -1))
         unreadCircle.apply {
             typeface = Jk.of(600); setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(12.5f)); setTextColor(Color.WHITE); gravity = Gravity.CENTER
-            background = oval(SD.STRIP); includeFontPadding = false; visibility = GONE
+            background = oval(SD.GREEN); includeFontPadding = false; visibility = GONE
             layoutParams = LinearLayout.LayoutParams(dpi(32f), dpi(32f)).apply { leftMargin = dpi(14f) }
         }
         val inset = InsetFrame(context)
@@ -89,7 +89,6 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         scroll.isFillViewport = true
         sheet.addView(scroll, LayoutParams(-1, -1))
-        sheet.addView(sdHandle(context))
         col.setPadding(0, dpi(28f), 0, dpi(24f))
         scroll.addView(col, LayoutParams(-1, -2))
         scroll.setOnScrollChangeListener { _, _, _, _, _ -> closeOpen(true) }
@@ -335,7 +334,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             if (c.id in pins) end.addView(sdIconView(context, SdIcon(listOf(SdPaths.PUSHPIN to Ui.c("#A7A7AF")), 16f)).apply { contentDescription = "Pinned" }, lp(dpi(16f), dpi(16f)))
             when {
                 c.unread > 0 -> end.addView(jk(context, if (c.unread > 99) "99+" else c.unread.toString(), 11f, SD.ON_M, 700).apply {
-                    gravity = Gravity.CENTER; background = rounded(SD.M, 10f); setPadding(dpi(6f), 0, dpi(6f), 0); minWidth = dpi(20f); contentDescription = "${c.unread} new"
+                    gravity = Gravity.CENTER; background = rounded(SD.GREEN, 10f); setPadding(dpi(6f), 0, dpi(6f), 0); minWidth = dpi(20f); contentDescription = "${c.unread} new"
                 }, lp(WRAP, dpi(20f)))
                 locked && !c.open -> end.addView(sdIconView(context, SdIcon(listOf(SdPaths.LOCK to Ui.c("#B9B9C0")), 15f, 2f)).apply { contentDescription = "Locked" }, lp(dpi(15f), dpi(15f)))
                 c.mine == true && c.text.isNotEmpty() -> end.addView(sdIconView(context, if (c.read) SdIcon(listOf(SdPaths.CHECK2 to SD.GREEN), 17f, 1.9f) else SdIcon(listOf(SdPaths.CHECK to Ui.c("#B9B9C0")), 16f, 2f))

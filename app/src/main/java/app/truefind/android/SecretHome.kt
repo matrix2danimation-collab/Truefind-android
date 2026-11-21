@@ -275,7 +275,27 @@ class SecretHome(
     fun back(): Boolean {
         if (layer.back()) return true
         mapPage?.let { if (page == "map" && it.isFull) { it.setFull(false); return true } }
-        return false
+        // Back on My Activity / Chat / Online Map → Home; Back on Home → "Stay" or "Switch to True Find", a small
+        // card in the middle (owner, 21 Nov morning: it used to go back to the tab opened before)
+        if (!shown) return false
+        if (page != "home") { go("/secret-app", null); return true }
+        leaveAsk()
+        return true
+    }
+    private fun leaveAsk() {
+        val box = FrameLayout(context).apply { setBackgroundColor(Color.argb(140, 10, 10, 14)); setPadding(dpi(28f), dpi(24f), dpi(28f), dpi(24f)) }
+        val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 26f); setPadding(dpi(20f), dpi(24f), dpi(20f), dpi(18f)); elevation = Ui.dp(16f); isClickable = true }
+        card.addView(sdIconView(context, SdIcon(listOf(SdPaths.HEART_FILL to SD.ON_M), 26f)).apply { background = oval(SD.M); setPadding(dpi(15f), dpi(15f), dpi(15f), dpi(15f)) }, lp(dpi(56f), dpi(56f)))
+        card.addView(jk(context, "Leave Secret Dating?", 19f, SD.TXT, 700).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 14f))
+        card.addView(jk(context, "Stay here, or go back to True Find.", 14f, SD.SUB, 500).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 6f, b = 20f))
+        var close: () -> Unit = {}
+        card.addView(jk(context, "Stay", 15.5f, SD.ON_M, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.M, 24f); contentDescription = "Stay in Secret Dating" }
+            .press().onTap { close() }, lp(MATCH, dpi(48f)))
+        card.addView(jk(context, "Switch to True Find", 15.5f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; background = rounded(SD.HEAD, 24f) }
+            .press().onTap { close(); go("/", null) }, lp(MATCH, dpi(48f), t = 10f))
+        box.addView(card, FrameLayout.LayoutParams(minOf(dpi(330f), resources.displayMetrics.widthPixels - dpi(56f)), -2, Gravity.CENTER))
+        box.setOnClickListener { close() }
+        close = layer.fade(box, z = 90f)
     }
     private val poll = object : Runnable {
         override fun run() {
@@ -860,6 +880,7 @@ class SecretHome(
             "next" -> homeView?.preview("next")
             "drag" -> homeView?.preview("drag")
             "dragleft" -> homeView?.preview("dragleft")
+            "leave" -> leaveAsk()
             "activity" -> goLikes("liked")
             "activity-match" -> goLikes("match")
             "demo-profile" -> online?.firstOrNull { SdDemo.isDemo(it) && SdRules.liveOf(it) }?.let { openProfile(it) }

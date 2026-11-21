@@ -241,7 +241,7 @@ class ChatRoom(
         sdHeader.visibility = if (sd) VISIBLE else GONE
         sheet.background = if (sd) SD.sheetBg() else null
         sheet.clipToOutline = sd; sheet.outlineProvider = if (sd) android.view.ViewOutlineProvider.BACKGROUND else null
-        sheetHandle.visibility = if (sd) VISIBLE else GONE
+        sheetHandle.visibility = GONE   // (no handle line on the chat: owner, 21 Nov morning)
         layer.dimColor = if (sd) Color.argb(115, 12, 12, 16) else Color.argb(115, 60, 0, 25)
         spinner.indeterminateTintList = android.content.res.ColorStateList.valueOf(pk.rose)
         sheetCol.setPadding(0, if (sd) dpi(16f) else 0, 0, 0)

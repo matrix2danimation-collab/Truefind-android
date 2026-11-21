@@ -53,7 +53,6 @@ class SdLikesPage(private val h: SecretHome) : FrameLayout(h.context) {
         body.setPadding(dpi(16f), dpi(28f), dpi(16f), dpi(24f))
         scroll.addView(body, LayoutParams(-1, -2))
         sheet.addView(scroll, LayoutParams(-1, -1))
-        sheet.addView(sdHandle(context))
         // "See who it is" (no plan): stays at the bottom of the sheet
         cta.background = rounded(SD.M, 26f)
         cta.elevation = Ui.dp(10f)

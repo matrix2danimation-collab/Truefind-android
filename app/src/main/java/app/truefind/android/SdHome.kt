@@ -605,7 +605,6 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         page.addView(jk(context, "Secret Dating", 33f, Color.WHITE, 700), LayoutParams(-2, -2).apply { leftMargin = dpi(16f); topMargin = dpi(SD.TITLE_TOP) })
         page.addView(jk(context, "Serious singles only", 12.5f, Color.argb(204, 255, 255, 255), 600), LayoutParams(-2, -2).apply { leftMargin = dpi(16f); topMargin = dpi(SD.TITLE_TOP + 44f) })
         val sheet = FrameLayout(context).apply { background = SD.sheetBg() }
-        sheet.addView(sdHandle(context))
         val sc = ScrollView(context).apply { isVerticalScrollBarEnabled = false; isFillViewport = true }
         val col = vbox(context)
         col.setPadding(dpi(16f), dpi(28f), dpi(16f), dpi(24f))

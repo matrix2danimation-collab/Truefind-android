@@ -317,8 +317,9 @@ class SdTabs(ctx: Context, private val labels: List<String>, private val pillW: 
             val on = k == i
             c.first.background = if (on) rounded(SD.M, 20f) else null
             c.second.first.setTextColor(if (on) SD.ON_M else SD.STRIP_OFF)
-            c.second.second.setTextColor(if (on) SD.ON_M else Ui.c("#DDE2EA"))
-            c.second.second.background = rounded(if (on) Color.WHITE else SD.STRIP_CHIP, 11f)
+            // the counts in green (owner, 21 Nov morning)
+            c.second.second.setTextColor(Color.WHITE)
+            c.second.second.background = rounded(SD.GREEN, 11f)
         }
     }
     /** a count beside a tab's name (null = none) */

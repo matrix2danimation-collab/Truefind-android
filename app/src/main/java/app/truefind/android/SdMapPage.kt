@@ -79,7 +79,6 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         headBox.addView(top, LayoutParams(-1, -2))
         outer.addView(headBox, lp(MATCH, WRAP))
         val sheet = FrameLayout(context).apply { background = SD.sheetBg() }
-        sheet.addView(sdHandle(context))
         col.setPadding(dpi(16f), dpi(26f), dpi(16f), dpi(40f))
         sheet.addView(col, LayoutParams(-1, -2))
         outer.addView(sheet, lp(MATCH, WRAP, t = -26f))

@@ -206,11 +206,12 @@ object SdProfileView {
 
         // ── verification ──
         val ver = vbox(ctx).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
-        ver.addView(sdText(ctx, "Verification", 21f, Ui.c("#E0A800")))
-        val vb = hbox(ctx, 12f).apply { background = grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FFF9E8"), Ui.c("#FFF9E8")), 18f, 1f, Ui.c("#FFF0C2")); setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
-        vb.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, if (verified) KY.rose else KY.soft, 38f, 1.8f)) }, lp(dpi(38f), dpi(38f)))
+        ver.addView(sdText(ctx, "Verification", 21f, Ui.c("#15803D")))
+        // the box is green (owner, 21 Nov morning)
+        val vb = hbox(ctx, 12f).apply { background = grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#ECFDF3"), Ui.c("#E3F9EC")), 18f, 1f, Ui.c("#B7EBCB")); setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
+        vb.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, if (verified) Ui.c("#16A34A") else KY.soft, 38f, 1.8f)) }, lp(dpi(38f), dpi(38f)))
         val vt = vbox(ctx)
-        vt.addView(sdText(ctx, if (verified) "Verified Member" else "Not verified yet", 17f, if (verified) Ui.c("#E0A800") else KY.ink2))
+        vt.addView(sdText(ctx, if (verified) "Verified Member" else "Not verified yet", 17f, if (verified) Ui.c("#15803D") else KY.ink2))
         vt.addView(sdText(ctx, if (verified) "Identity & profile verified for a safer experience." else "This member hasn't finished verification yet.", 14f, KY.ink2, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 2f))
         vb.addView(vt, lp(0, WRAP, 1f))
         ver.addView(vb, lp(MATCH, WRAP, t = 10f))
