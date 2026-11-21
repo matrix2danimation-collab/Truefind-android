@@ -101,7 +101,7 @@ class SdHomeView(private val h: SecretHome) : FrameLayout(h.context) {
         // top (clear of the status bar): my profile · credits · bell
         val over = InsetFrame(context)
         addView(over, LayoutParams(-1, -1))
-        val top = dpi(6f)
+        val top = dpi(12f)
         meBtn.background = SD.glass(dark = true)
         meBtn.setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f))
         meBtn.addView(mePhoto, LayoutParams(-1, -1))

@@ -140,7 +140,7 @@ class ChatRoom(
     private val sdHeader = FrameLayout(ctx)
     private val sdPhoto = RoundPhoto(ctx, 50f)
     private val sdDot = View(ctx)
-    private val sdName = jk(ctx, "", 17f, Color.WHITE, 600).oneLine()
+    private val sdName = jk(ctx, "", 16f, Color.WHITE, 600).oneLine()
     private val sdStatus = jk(ctx, "", 12.5f, Color.argb(189, 255, 255, 255), 500).oneLine()
     private val sdMenu = FrameLayout(ctx)
     private val sheet = FrameLayout(ctx)
@@ -207,7 +207,7 @@ class ChatRoom(
 
     /** the maroon top of a Secret Dating chat: their photo, name (big) and status · ⋮ */
     private fun buildSdHeader(): View {
-        sdHeader.setPadding(dpi(16f), dpi(6f), dpi(16f), dpi(20f))
+        sdHeader.setPadding(dpi(16f), dpi(12f), dpi(16f), dpi(18f))
         val ph = FrameLayout(ctxOf())
         ph.addView(sdPhoto, LayoutParams(-1, -1))
         sdDot.background = oval(SD.GREEN, 2f, Color.WHITE)

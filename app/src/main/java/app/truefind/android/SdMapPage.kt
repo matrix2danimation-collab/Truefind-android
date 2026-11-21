@@ -399,7 +399,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
 
     companion object {
         /** where the white sheet starts under the maroon top (dp below the status bar) */
-        const val MAP_SHEET_TOP = 148f
+        const val MAP_SHEET_TOP = 154f
         fun shortName(n: String): String {
             val w = n.ifBlank { "Member" }.trim().split(Regex("\\s+"))
             return if (w.size > 1) "${w[0]} ${w[w.size - 1][0]}." else w[0]

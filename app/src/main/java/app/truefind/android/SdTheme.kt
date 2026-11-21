@@ -57,9 +57,10 @@ object SD {
     var topInset = 0
 
     /** where things sit on the maroon pages (dp below the status bar), the same on Chat, My Activity and Online Map */
-    const val TITLE_TOP = 68f
-    const val STRIP_TOP = 130f
-    const val SHEET_TOP = 194f
+    // (owner, 21 Nov morning: everything a bit lower under the status bar, the words smaller and lighter)
+    const val TITLE_TOP = 78f
+    const val STRIP_TOP = 136f
+    const val SHEET_TOP = 200f
 
     fun sheetBg(): GradientDrawable = GradientDrawable().apply {
         setColor(Color.WHITE)
@@ -242,11 +243,11 @@ fun sdIconView(ctx: Context, d: android.graphics.drawable.Drawable): ImageView =
  */
 class SdTop(ctx: Context, private val h: SecretHome, title: String, bell: Boolean, val extra: View? = null, subtitle: String? = null) : FrameLayout(ctx) {
     private val photo = RoundPhoto(ctx, 46f)
-    private val hello = jk(ctx, SD.greeting(), 12f, Color.argb(220, 255, 255, 255), 500)
-    private val name = jk(ctx, "", 17.5f, Color.WHITE, 800).oneLine()
+    private val hello = jk(ctx, SD.greeting(), 11.5f, Color.argb(200, 255, 255, 255), 500)
+    private val name = jk(ctx, "", 15.5f, Color.WHITE, 700).oneLine()
     private val bellBox = FrameLayout(ctx)
     private val bellDot = View(ctx)
-    val titleView = jk(ctx, title, 33f, Color.WHITE, 700).oneLine()
+    val titleView = jk(ctx, title, 27f, Color.WHITE, 600).oneLine()
     private val titleRow = LinearLayout(ctx)
 
     init {
@@ -254,10 +255,10 @@ class SdTop(ctx: Context, private val h: SecretHome, title: String, bell: Boolea
         val me = FrameLayout(ctx).apply { contentDescription = "My profile" }
         me.addView(photo, LayoutParams(-1, -1))
         me.press().onTap { h.openMyProfile(false) }
-        addView(me, LayoutParams(dpi(46f), dpi(46f)).apply { leftMargin = dpi(16f); topMargin = dpi(1f) })
+        addView(me, LayoutParams(dpi(42f), dpi(42f)).apply { leftMargin = dpi(16f); topMargin = dpi(14f) })
         val texts = vbox(ctx)
         texts.addView(hello); texts.addView(name, lp(WRAP, WRAP, t = 3f))
-        addView(texts, LayoutParams(-1, -2).apply { leftMargin = dpi(74f); rightMargin = dpi(if (bell) 70f else 16f); topMargin = dpi(4f) })
+        addView(texts, LayoutParams(-1, -2).apply { leftMargin = dpi(68f); rightMargin = dpi(if (bell) 66f else 16f); topMargin = dpi(16f) })
         if (bell) {
             bellBox.background = oval(SD.M_DARK)
             bellBox.addView(sdIconView(ctx, SdIcon(listOf(SdPaths.BELL_FILL to Color.WHITE), 21f)), LayoutParams(dpi(21f), dpi(21f), Gravity.CENTER))
@@ -267,14 +268,14 @@ class SdTop(ctx: Context, private val h: SecretHome, title: String, bell: Boolea
             bellBox.addView(bellDot, LayoutParams(dpi(9f), dpi(9f)).apply { leftMargin = dpi(13f); topMargin = dpi(11f) })
             bellBox.contentDescription = "My Activity"
             bellBox.press().onTap { h.goLikes() }
-            addView(bellBox, LayoutParams(dpi(44f), dpi(44f), Gravity.END).apply { rightMargin = dpi(16f); topMargin = dpi(2f) })
+            addView(bellBox, LayoutParams(dpi(40f), dpi(40f), Gravity.END).apply { rightMargin = dpi(16f); topMargin = dpi(15f) })
         }
         titleRow.orientation = LinearLayout.HORIZONTAL; titleRow.gravity = Gravity.CENTER_VERTICAL
         titleRow.addView(titleView)
         if (extra != null) titleRow.addView(extra, lp(WRAP, WRAP, l = 14f))
         addView(titleRow, LayoutParams(-1, dpi(40f)).apply { leftMargin = dpi(16f); rightMargin = dpi(16f); topMargin = dpi(SD.TITLE_TOP) })
-        if (subtitle != null) addView(jk(ctx, subtitle, 12.5f, Color.argb(204, 255, 255, 255), 600),
-            LayoutParams(-2, -2).apply { leftMargin = dpi(16f); topMargin = dpi(SD.TITLE_TOP + 44f) })
+        if (subtitle != null) addView(jk(ctx, subtitle, 12f, Color.argb(190, 255, 255, 255), 500),
+            LayoutParams(-2, -2).apply { leftMargin = dpi(16f); topMargin = dpi(SD.TITLE_TOP + 38f) })
         update()
     }
 
@@ -298,7 +299,7 @@ class SdTabs(ctx: Context, private val labels: List<String>, private val pillW: 
         for ((i, l) in labels.withIndex()) {
             val cell = FrameLayout(ctx)
             val pill = LinearLayout(ctx).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER }
-            val t = jk(ctx, l, 14f, SD.STRIP_OFF, 600)
+            val t = jk(ctx, l, 13.5f, SD.STRIP_OFF, 500)
             val n = jk(ctx, "", 11.5f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; minWidth = dpi(22f); setPadding(dpi(6f), 0, dpi(6f), 0); visibility = GONE }
             pill.addView(t); pill.addView(n, lp(WRAP, dpi(22f), l = 8f))
             cell.addView(pill, FrameLayout.LayoutParams(dpi(pillW), dpi(40f), Gravity.CENTER))
