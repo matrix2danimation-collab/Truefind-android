@@ -1232,6 +1232,17 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
     }
 
+    /** Secret Dating's bar is showing: its grey (#F3F3F3) runs on under the phone's own button strip — the strip is
+     *  painted the same grey (older phones paint it themselves) and the bar may draw over the padding (owner, 21 Nov) */
+    private var sdBottomOn: Boolean? = null
+    private fun sdBottom(on: Boolean) {
+        root.clipToPadding = !on
+        if (sdBottomOn == on) return
+        sdBottomOn = on
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = if (on) Color.rgb(243, 243, 243) else Color.WHITE
+    }
+
     private fun sizeTo(v: View, h: Int) {
         val lp = v.layoutParams as FrameLayout.LayoutParams
         if (lp.height != h) { lp.height = h; v.layoutParams = lp }
@@ -1294,7 +1305,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (secretView.isNotEmpty()) sdNav.current = secretView
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
         // the bar's grey runs on down under the phone's own button strip (it may draw over the padding there; owner, 21 Nov)
-        root.clipToPadding = !showSecret
+        sdBottom(showSecret)
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp
         // opened afresh (a tap, not Back): the Wallet starts at its top on the tab its address asks for (owner, 19 Nov)
@@ -1488,7 +1499,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             secret.setShown(true, view, "")
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
-            root.clipToPadding = false
+            sdBottom(true)
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
         }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
