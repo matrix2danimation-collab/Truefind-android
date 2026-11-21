@@ -139,11 +139,9 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         vd.addView(dailyBox, LinearLayout.LayoutParams(-1, m.pi(64f)).apply { topMargin = m.pi(8f) })
         addBody(vd)
 
-        // ── Random Match ──
-        addBody(randomMatch(ctx))
-        // ── Online (owner, 19 Nov evening): moved up from under Live Rooms to right under Random Match, and made like
-        //    the Weekly Top Creators box — the same card size (three on the screen, more to the side), always shown
-        //    (a line when no one is online). Tap → the Voice / Video sheet, as before. ──
+        // ── Online (owner, 19 Nov evening): made like the Weekly Top Creators box — the same card size (three on the
+        //    screen, more to the side), always shown (a line when no one is online). Tap → the Voice / Video sheet.
+        //    Order (owner, 21 Nov): Verification · Daily Free Coins · Online · Live Rooms · Serious Single · Random Match. ──
         onlineBox.orientation = LinearLayout.VERTICAL
         onlineBox.clipChildren = false
         val oh = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -186,6 +184,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         addBody(HomeTiles.grid(ctx, m, { p -> pages.go(p) }, { goEarn() }), m.pi(202f))
         // ── Serious Single ──
         addBody(HomeTiles.serious(ctx, m) { pages.go("/secret-app") }, m.pi(236f))
+        // ── Random Match (owner, 21 Nov: moved down from under Daily Free Coins to under Serious Single) ──
+        addBody(randomMatch(ctx))
         // ── Weekly Top Creators ──
         addBody(sectionHead(ctx, "Weekly Top Creators", SvgView(ctx, Svg.of(HomeArt.CROWN_HEAD18)), "See all") { sheets.allCreators() }, m.pi(24f))
         creatorsRow = CardRow(ctx, { m.pi(113f) + m.pi(10f) }, glide = true)
