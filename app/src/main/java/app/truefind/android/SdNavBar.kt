@@ -32,7 +32,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     )
 
     /** the bar's height: the Secret Dating pages end where this starts */
-    val barPx: Int get() = Ui.dpi(72f)   // (60 → 72: room for the bigger icons, owner 21 Nov morning)
+    val barPx: Int get() = Ui.dpi(60f)
 
     /** which page is open: "home" · "likes" · "chat" · "map" */
     var current = "home"
@@ -122,11 +122,11 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
         r.set(lx - Ui.dp(31f), 0f, lx + Ui.dp(31f), Ui.dp(3f))
         c.drawRoundRect(r, Ui.dp(1.5f), Ui.dp(1.5f), red)
         c.drawRect(r.left, 0f, r.right, Ui.dp(1.5f), red)
-        // the icons about 70% bigger (owner, 21 Nov morning): 24 → 41
-        val s = Ui.dp(41f) / 24f
+        // (the owner tried them 70% bigger on 21 Nov morning, then asked for the old size back)
+        val s = Ui.dp(24f) / 24f
         for ((i, it) in items.withIndex()) {
             val cx = pad + cw * i + cw / 2f
-            val cy = Ui.dp(36f)
+            val cy = Ui.dp(30f)
             val col = mix(SD.NAV_OFF, SD.NAV_ON, onness(i))
             c.save()
             if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, cy)
