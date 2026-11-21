@@ -1226,6 +1226,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun exploreStatusBar(on: Boolean) {
         if (appBg.purple == on) return
         appBg.purple = on
+        stripNow = -1   // (the page's own strip colour is set again after this)
         // the phone paints its status bar in the theme's white; on Explore it is see-through, so the purple strip shows
         @Suppress("DEPRECATION")
         window.statusBarColor = if (on) Color.TRANSPARENT else Color.WHITE
@@ -1235,6 +1236,21 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     /** Secret Dating's bar is showing: its grey (#F3F3F3) runs on under the phone's own button strip — the strip is
      *  painted the same grey (older phones paint it themselves) and the bar may draw over the padding (owner, 21 Nov) */
     private var sdBottomOn: Boolean? = null
+
+    private val SD_TOP = Color.rgb(251, 92, 148)    // Secret Dating's pink page, at its top (#FB5C94)
+    private val HOME_TOP = Color.rgb(250, 248, 253) // True Find Home's light lilac page (#FAF8FD)
+    private var stripNow: Int? = -1
+    /** the status bar's strip in [col] (null: white as before); white clock and icons on the pink, dark elsewhere.
+     *  Explore keeps its own purple strip (exploreStatusBar). */
+    private fun pageStrip(col: Int?) {
+        if (appBg.purple) return
+        if (stripNow == col) return
+        stripNow = col
+        appBg.top = col
+        @Suppress("DEPRECATION")
+        window.statusBarColor = col ?: Color.WHITE
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = col != SD_TOP
+    }
     private fun sdBottom(on: Boolean) {
         root.clipToPadding = !on
         if (sdBottomOn == on) return
@@ -1306,6 +1322,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
         // the bar's grey runs on down under the phone's own button strip (it may draw over the padding there; owner, 21 Nov)
         sdBottom(showSecret)
+        // the strip under the phone's status bar in the page's own top colour: no separate white strip (owner, 21 Nov)
+        pageStrip(if (show) null else if (showSecret && !showRoom) SD_TOP else if (inApp && !showRoom && (p.isEmpty() || p == "/home")) HOME_TOP else null)
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp
         // opened afresh (a tap, not Back): the Wallet starts at its top on the tab its address asks for (owner, 19 Nov)
@@ -1500,6 +1518,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
             sdBottom(true)
+            pageStrip(SD_TOP)
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
         }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)

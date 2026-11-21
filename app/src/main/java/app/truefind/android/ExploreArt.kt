@@ -181,6 +181,10 @@ class PanelLight(private val radiusDp: Float) : Drawable() {
 class AppBackground(private val strip: () -> Int, private val box: () -> Int) : Drawable() {
     var purple = false
         set(v) { if (field != v) { field = v; invalidateSelf() } }
+    /** the strip under the status bar in the page's own top colour (Secret Dating pink, Home's light lilac; owner, 21 Nov) */
+    var top: Int? = null
+        set(v) { if (field != v) { field = v; invalidateSelf() } }
+    private val topPaint = Paint()
     private val white = Paint().apply { color = Color.WHITE }
     private val base = Paint().apply { color = Ui.c("#4C1D95") }
     private val light = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -190,6 +194,8 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
         val b = bounds
         c.drawRect(b, white)
         val s = strip()
+        val tc = top
+        if (!purple && tc != null && s > 0) { topPaint.color = tc; c.drawRect(b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.top + s.toFloat(), topPaint); return }
         if (!purple || s <= 0) return
         val t = b.top.toFloat(); val bottom = t + s
         c.drawRect(b.left.toFloat(), t, b.right.toFloat(), bottom, base)
