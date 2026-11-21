@@ -359,6 +359,8 @@ class SecretHome(
         }
         Api.invoke("getRequestCredits") { r ->
             if (r.ok) {
+                // the same answer the Secret Dating wallet asks for: handed over, so it opens with fresh credits at once
+                onCredits?.invoke(r.data)
                 val c = r.data.optJSONObject("credits")
                 credits = if (c != null && c.has("available_request_credits") && !c.isNull("available_request_credits")) c.optInt("available_request_credits") else null
                 r.data.optJSONObject("member")?.let { member = it }
@@ -489,6 +491,8 @@ class SecretHome(
     private fun renderNotice() = render()
     /** the heart in the bottom bar gets a red dot while new likes wait (MainActivity sets this) */
     var onLikesDot: ((Boolean) -> Unit)? = null
+    /** Secret Dating Home has just read the credits (MainActivity hands them to the Wallet) */
+    var onCredits: ((JSONObject) -> Unit)? = null
 
     /** blurred face: soft pink / lilac circle with a blurred person shape and a lock */
     private class BlurFace(ctx: Context, val g: String) : View(ctx) {

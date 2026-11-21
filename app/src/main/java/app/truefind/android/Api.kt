@@ -25,6 +25,13 @@ object Api {
     }
 
     private val pool = Executors.newFixedThreadPool(3)
+    /**
+     * Its own lane for what the member is waiting for on screen right now (the Wallet, 21 Nov): the 3 lanes
+     * above are shared by every page's reads and the background work (online pings, the number on Find …).
+     * When the server answers slowly they can all be taken for up to 30 s each, and the Wallet's own asks
+     * then waited in the queue behind them — "loading" for a long time with nothing wrong on the Wallet.
+     */
+    private val frontPool = Executors.newFixedThreadPool(2)
     private val main = Handler(Looper.getMainLooper())
     /**
      * What was read from the server (a page's people, coins, lists, pictures) goes back to the screen that
@@ -38,11 +45,16 @@ object Api {
 
     val ready: Boolean get() = Demo.on || (appId.isNotEmpty() && token.isNotEmpty())
 
-    fun invoke(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) {
+    fun invoke(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) =
+        invokeOn(pool, name, payload, timeoutMs, done)
+    /** the same as [invoke], on the front lane: for the page the member is looking at and waiting for */
+    fun invokeFront(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) =
+        invokeOn(frontPool, name, payload, timeoutMs, done)
+    private fun invokeOn(ex: java.util.concurrent.ExecutorService, name: String, payload: JSONObject, timeoutMs: Int, done: (Result) -> Unit) {
         // reading something (getWallet, getOnlineNow, getChats …) is safe to ask again
-        if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done); return }
-        if (name in NOT_AGAIN) { invokeOnce(name, payload, timeoutMs, done); return }
-        actWithBusyRetry({ call(name, payload, timeoutMs) }, done, 0, PATIENT[name] ?: 2)
+        if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done, 0, ex); return }
+        if (name in NOT_AGAIN) { ex.execute { val r = call(name, payload, timeoutMs); main.post { done(r) } }; return }
+        actWithBusyRetry({ call(name, payload, timeoutMs) }, done, 0, PATIENT[name] ?: 2, ex)
     }
     /**
      * Actions that wait out a busy server longer by themselves (more tries, each wait at most 5 s): a call must
@@ -71,12 +83,12 @@ object Api {
             Regex("rate.?limit|too many requests", RegexOption.IGNORE_CASE).containsMatchIn(json.optString("error") + " " + json.optString("message") + " " + text.take(300)))
     /** seconds the server asked to wait (1–10; 4 when it didn't say) */
     fun busyWaitMs(r: Result): Long = (r.data.optDouble("retry_after", 4.0).takeIf { !it.isNaN() } ?: 4.0).let { (it * 1000).toLong().coerceIn(1000L, 10_000L) }
-    private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0, most: Int = 2) {
-        pool.execute {
+    private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0, most: Int = 2, ex: java.util.concurrent.ExecutorService = pool) {
+        ex.execute {
             val r = work()
             main.post {
                 val again = tries < most && ready && !Demo.on && r.status == 429 && r.data.optBoolean("server_busy") && r.data.optBoolean("retry_safe")
-                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1, most) }, if (most > 2) minOf(busyWaitMs(r), 5000L) else busyWaitMs(r))
+                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1, most, ex) }, if (most > 2) minOf(busyWaitMs(r), 5000L) else busyWaitMs(r))
                 else done(r)
             }
         }
@@ -105,11 +117,11 @@ object Api {
     // try worked: the page showed "Try again" / an empty list for nothing. A read (never a payment, a call
     // or a message) is now asked again up to 2 times, 0.7 s and then 1.8 s later, before it counts as failed.
     private fun passing(r: Result) = r.status == 0 || r.status == 408 || r.status == 429 || r.status in 500..599
-    private fun readWithRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0) {
-        pool.execute {
+    private fun readWithRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0, ex: java.util.concurrent.ExecutorService = pool) {
+        ex.execute {
             val r = work()
             main.post {
-                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1) }, if (r.status == 429) busyWaitMs(r) else if (tries == 0) 700L else 1800L)
+                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1, ex) }, if (r.status == 429) busyWaitMs(r) else if (tries == 0) 700L else 1800L)
                 else PageFx.whenStill { done(r) }
             }
         }
