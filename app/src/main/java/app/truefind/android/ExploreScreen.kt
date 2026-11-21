@@ -615,7 +615,9 @@ class ExploreScreen(
 
     private var searching = false
 
-    // Voice / Video / Random: someone online and free, of the other gender
+    // Voice / Video / Random: searches without stopping until someone picks up — no "No one is free" pop-up, no second
+    // tap (owner, 21 Nov). One creator at a time rings for 12 s, then the next (RandomSearch). Cancel / Back stops it.
+    private var search: RandomSearch? = null
     private fun startRandom(type: String) {
         if (stage.visibility == View.VISIBLE || calling) return
         val run = ++matchRun
@@ -623,75 +625,55 @@ class ExploreScreen(
         stage.onCancel = { cancelMatch() }
         stage.show("search", type, rateOf(type), null, "")
         feed.blocked = true
-        val t0 = System.currentTimeMillis()
-        Api.invoke("getOnlineNow") { r ->
-            val live: List<Person>? = r.data.optJSONArray("profiles")?.let { a ->
-                (0 until a.length()).mapNotNull { a.optJSONObject(it)?.let { o -> Person.from(o) } }
-            }
-            val wait = (1500 - (System.currentTimeMillis() - t0)).coerceAtLeast(0)
-            main.postDelayed({
-                if (run != matchRun) return@postDelayed
-                val myG = myGender()
-                val cand = (live ?: profiles).filter { it.online && !it.busy && it.callId.isNotEmpty() && (myG.isEmpty() || it.gender.isEmpty() || it.gender != myG) }
-                var pool = cand.shuffled()
-                if (pool.size > 1 && pool[0].callId == lastMatch) pool = pool.drop(1) + pool[0]
-                if (pool.isEmpty()) {
-                    // nobody real is free: while demo profiles are on, try the call screen with one of them (nothing billed)
-                    val demos = if (Person.SHOW_DEMO) Person.demoPeople(myG).filter { !it.busy } else emptyList()
-                    if (demos.isNotEmpty()) {
-                        val d = demos.random()
-                        searching = false
-                        stage.show("calling", type, rateOf(type), AvatarArt.forPerson(d, Ui.dpi(140f)), d.firstName)
-                        main.postDelayed({
-                            if (run != matchRun) return@postDelayed
-                            go("/demo-call", JSONObject().put("type", type).put("skipRing", true).put("peer", peerJson(d)))
-                            main.postDelayed({ hideStage() }, 400)
-                        }, 1200)
-                        return@postDelayed
-                    }
-                    hideStage()
-                    openDialog("No one is free right now", "Everyone online is on another call. Please try again in a minute.")
-                    return@postDelayed
+        var emptyLooks = 0   // searches in a row with nobody called
+        val s = RandomSearch(type, object : RandomSearch.Host {
+            override fun stage(stage: String, name: String, photo: String) {
+                if (run != matchRun) return
+                if (stage == "search") {
+                    // nobody real is free on the first look: while demo profiles are on, the demo call as before (nothing billed)
+                    if (++emptyLooks >= 2 && demoFallback(run, type)) return
+                    searching = true
+                    this@ExploreScreen.stage.show("search", type, rateOf(type), null, "")
+                    return
                 }
-                tryNext(run, type, pool.take(4), 0, null)
-            }, wait)
-        }
-    }
-
-    private fun tryNext(run: Int, type: String, pool: List<Person>, i: Int, lastErr: String?) {
-        if (run != matchRun) return
-        if (i >= pool.size) {
-            hideStage()
-            if (lastErr != null) openDialog("Couldn't connect", lastErr)
-            else openDialog("No one is free right now", "Everyone online is on another call. Please try again in a minute.")
-            return
-        }
-        val p = pool[i]
-        searching = false
-        stage.show("calling", type, rateOf(type), bigFace(p), p.firstName)
-        Api.invoke("startCall", JSONObject().put("to_user_id", p.callId).put("type", type).put("app", "truefind")) { r ->
-            if (run != matchRun) return@invoke
-            val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
-            if (r.ok && id.isNotEmpty()) {
-                lastMatch = p.callId
+                emptyLooks = 0
+                searching = true // (Back / Cancel stop the search while she rings too)
+                this@ExploreScreen.stage.show("calling", type, rateOf(type), null, name)
+                if (photo.isNotEmpty()) Photos.loadRaw(listOf(photo), Ui.dpi(140f)) { b ->
+                    if (b != null && run == matchRun && search != null) this@ExploreScreen.stage.show("calling", type, rateOf(type), b, name)
+                }
+            }
+            override fun found(callId: String, peer: JSONObject) {
+                if (run != matchRun) return
+                search = null; searching = false
                 coinsAt = 0L
-                go("/call/$id", JSONObject().put("peer", peerJson(p)).put("type", type))
+                go("/call/$callId", JSONObject().put("peer", peer).put("type", type))
                 main.postDelayed({ hideStage() }, 400)
-                return@invoke
             }
-            val err = r.data.optString("error")
-            if (r.status == 402 || err == "insufficient_coins") { hideStage(); showCoins(type, r.data); return@invoke }
-            if (r.status == 403 && (err == "banned" || err.contains("complete your profile", true))) {
-                hideStage()
-                openDialog("Couldn't connect", if (err == "banned") "Your account can't make calls right now." else err)
-                return@invoke
-            }
-            val next = if (r.status == 409 || err == "busy") lastErr else (r.error ?: lastErr)
-            tryNext(run, type, pool, i + 1, next)
-        }
+            override fun onCoins(data: JSONObject) { if (run != matchRun) return; search = null; searching = false; hideStage(); showCoins(type, data) }
+            override fun onStop(title: String, text: String) { if (run != matchRun) return; search = null; searching = false; hideStage(); openDialog(title, text) }
+        })
+        search = s
+        s.start()
     }
 
-    private fun cancelMatch() { matchRun += 1; searching = false; hideStage() }
+    /** nobody real is free: with demo profiles on (testing), one of them takes the demo call as before. true: done */
+    private fun demoFallback(run: Int, type: String): Boolean {
+        val demos = if (Person.SHOW_DEMO) Person.demoPeople(myGender()).filter { !it.busy } else emptyList()
+        if (demos.isEmpty()) return false
+        search?.cancel(); search = null
+        val d = demos.random()
+        searching = false
+        stage.show("calling", type, rateOf(type), AvatarArt.forPerson(d, Ui.dpi(140f)), d.firstName)
+        main.postDelayed({
+            if (run != matchRun) return@postDelayed
+            go("/demo-call", JSONObject().put("type", type).put("skipRing", true).put("peer", peerJson(d)))
+            main.postDelayed({ hideStage() }, 400)
+        }, 1200)
+        return true
+    }
+
+    private fun cancelMatch() { matchRun += 1; search?.cancel(); search = null; searching = false; hideStage() }
 
     private fun hideStage() {
         stage.hide()

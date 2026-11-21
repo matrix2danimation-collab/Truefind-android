@@ -283,6 +283,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             override fun askPerms(video: Boolean, done: (Boolean) -> Unit) = askCallPerms(video, done)
         })
         pages.calls = calls
+        // Random Match asks for the microphone (+ camera) before it starts searching
+        RandomSearch.perms = { v, done -> askCallPerms(v, done) }
         var lastH = 0
         root.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ -> val h = bottom - top; if (h != lastH) { lastH = h; root.post { update() } } }
 
