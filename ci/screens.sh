@@ -312,6 +312,7 @@ fi
 # and a demo profile (3D face; a request to it is stopped) — their own set, the "sd" set is already long
 if [ "$SET" = act ]; then
 shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
+shot 22b-activity-heart open --es tf_preview secret --ez tf_premium true --es tf_open heart
 shot 23-activity-free open --es tf_preview secret --es tf_open activity
 shot 24-activity-you open --es tf_preview secret --ez tf_premium true --es tf_open activity-you
 shot 25-activity-match open --es tf_preview secret --ez tf_premium true --es tf_open activity-match

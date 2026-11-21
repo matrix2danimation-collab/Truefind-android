@@ -144,7 +144,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
                 "home" -> cards(c, col)
                 "likes" -> {
                     fill.color = col; c.drawPath(heart, fill)
-                    if (heartDot) {
+                    if (heartDot && current != "likes") {
                         fill.color = NavLook.BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
                         fill.color = NavLook.ON; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
                     }

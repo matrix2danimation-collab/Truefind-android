@@ -34,9 +34,9 @@ class SdLayer(private val host: FrameLayout) {
 
     fun closeAll() { for (i in stack.toList()) remove(i.view, animate = false) }
 
-    private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float) {
+    private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float, bottom: Int = 0) {
         v.elevation = Ui.dp(60f) + z
-        host.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        host.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT).apply { bottomMargin = bottom })
         stack.add(Item(v, back, close))
         onChange?.invoke()
     }
@@ -86,7 +86,8 @@ class SdLayer(private val host: FrameLayout) {
     }
 
     /** A full page sliding in from the right (sd-in). [back] may handle Back itself (e.g. leave the edit form). */
-    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}, animate: Boolean = true): () -> Unit {
+    /** [bottom]: the page ends that far above the bottom (Secret Dating's bar stays in sight under it) */
+    fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}, animate: Boolean = true, bottom: Int = 0): () -> Unit {
         var closed = false
         val close: () -> Unit = {
             if (!closed) {
@@ -96,7 +97,7 @@ class SdLayer(private val host: FrameLayout) {
             }
         }
         view.isClickable = true
-        add(view, back, close, z)
+        add(view, back, close, z, bottom)
         if (animate) {
             view.translationX = host.width.toFloat().coerceAtLeast(1000f)
             view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()

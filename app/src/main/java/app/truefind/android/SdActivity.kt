@@ -23,11 +23,12 @@ import org.json.JSONObject
  * else (it asks before 1 credit is used). Without a plan (or a girl not verified yet) "Liked you" and "Matches" stay
  * blurred: the server (getMyActivity) sends no names or photos then.
  */
-class SdActivity private constructor(private val h: SecretHome, start: String) {
+class SdActivity private constructor(private val h: SecretHome, start: String, private val aboveBar: Int) {
     companion object {
         /** tab · its name · the list in getMyActivity's answer */
         private val TABS = listOf(Triple("liked", "Liked you", "liked_you"), Triple("you", "You liked", "you_liked"), Triple("match", "Matches", "matches"), Triple("req", "Requests", "requests"))
-        fun open(h: SecretHome, start: String = "liked") = SdActivity(h, start)
+        /** [aboveBar]: opened from the heart in the bottom bar — the page ends above the bar, which stays in sight */
+        fun open(h: SecretHome, start: String = "liked", aboveBar: Int = 0) = SdActivity(h, start, aboveBar)
     }
 
     private val ctx = h.context
@@ -49,7 +50,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String) {
     init {
         build()
         load()
-        closeFn = h.layer.page(root, z = 29f, onClose = { closed() })
+        closeFn = h.layer.page(root, z = 29f, onClose = { closed() }, bottom = aboveBar)
         // also when every pop-up is cleared at once (leaving Secret Dating)
         root.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}

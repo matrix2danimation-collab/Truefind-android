@@ -253,8 +253,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret.visibility = View.GONE
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         // Secret Dating's own bottom bar (Home · My Activity · Chat · Online Map); the heart opens My Activity over the page
-        sdNav = SdNavBar(this) { to -> if (to == "likes") secret.openMyActivity("liked") else navigate(to) }
+        // (owner, 21 Nov: the bar stays under My Activity, the heart lit; another tab closes My Activity and opens)
+        sdNav = SdNavBar(this) { to -> if (to == "likes") secret.openMyActivity("liked", aboveBar = sdNav.barPx) else { secret.closeMyActivity(); navigate(to) } }
         secret.onLikesDot = { on -> sdNav.heartDot = on }
+        secret.onActivityBar = { on -> sdNav.current = if (on) "likes" else secret.page }
         sdNav.visibility = View.GONE
         root.addView(sdNav, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
@@ -1291,6 +1293,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret.setShown(showSecret, secretView.ifEmpty { secret.page }, search)
         if (secretView.isNotEmpty()) sdNav.current = secretView
         sdNav.visibility = if (showSecret) View.VISIBLE else View.GONE
+        // the bar's grey runs on down under the phone's own button strip (it may draw over the padding there; owner, 21 Nov)
+        root.clipToPadding = !showSecret
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp
         // opened afresh (a tap, not Back): the Wallet starts at its top on the tab its address asks for (owner, 19 Nov)
@@ -1484,6 +1488,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             secret.setShown(true, view, "")
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
+            root.clipToPadding = false
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
         }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)

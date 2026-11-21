@@ -978,11 +978,12 @@ class SecretHome(
 
     // ── My Activity (the bell): Notifications at its top, then Liked you · You liked · Matches · Requests ──
     private var actPage: SdActivity? = null
-    fun openMyActivity(start: String = "liked", all: Boolean = false) {
+    fun openMyActivity(start: String = "liked", all: Boolean = false, aboveBar: Int = 0) {
         if (needSecret) return
         if (actPage?.isOpen == true) return
         actAll = all   // the Notifications list starts short each time (See all N opens it in place)
-        actPage = SdActivity.open(this, start)
+        actPage = SdActivity.open(this, start, aboveBar)
+        if (aboveBar > 0) onActivityBar?.invoke(true)
         watchSeen()
     }
     /** the Notifications box goes into the My Activity page that is opening */
@@ -991,7 +992,11 @@ class SecretHome(
         parent.addView(actBox, params)
         renderActivity()
     }
-    fun activityClosed(page: SdActivity) { if (actPage === page) actPage = null }
+    fun activityClosed(page: SdActivity) { if (actPage === page) { actPage = null; onActivityBar?.invoke(false) } }
+    /** My Activity is open from the bottom bar's heart (true) / has closed (false): the bar lights the heart */
+    var onActivityBar: ((Boolean) -> Unit)? = null
+    /** close My Activity if it is open (another tab of the bottom bar was tapped) */
+    fun closeMyActivity() { actPage?.takeIf { it.isOpen }?.close() }
     /** a credits pill made for a page that has closed (its number no longer needs keeping up to date) */
     fun forgetPill(wrapper: View) { (wrapper as? android.view.ViewGroup)?.getChildAt(0)?.let { pills.remove(it) } }
     fun openChatId(id: String) { layer.closeAll(); go("/chat/$id", JSONObject().put("openChat", 1)) }
@@ -1341,6 +1346,7 @@ class SecretHome(
             "stories" -> scroll.scrollTo(0, (storyRow.parent as View).top - dpi(260f))
             "seeall" -> openMyActivity("liked", all = true)
             "activity" -> openMyActivity("liked")
+            "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(60f))   // as from the bottom bar's heart (its height)
             "activity-you" -> openMyActivity("you")
             "activity-match" -> openMyActivity("match")
             "activity-req" -> openMyActivity("req")
