@@ -9,4 +9,14 @@
         android:name="android.permission.REQUEST_INSTALL_PACKAGES"
         tools:node="remove" />
 
+    <!-- No screen of the app asks for the phone's location (the profile uses the city the member types),
+         and the Privacy Policy says GPS location is not collected; Google Play rejects apps that ask for
+         permissions they don't use. Test builds keep them (unused). -->
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        tools:node="remove" />
+
 </manifest>

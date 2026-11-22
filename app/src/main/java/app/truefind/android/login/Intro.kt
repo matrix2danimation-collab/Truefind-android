@@ -239,8 +239,8 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         col.addView(btn, LK.lp(-1, Ui.dpi(48f), t = 12f))
         col.addView(View(ctx).apply { setBackgroundColor(LK.div) }, LK.lp(-1, Ui.dpi(1f), t = 12f, b = 8f))
         col.addView(WK.linked(ctx, 11.5f, LK.c("#6F6880"), LK.link, 1.4f,
-            "By continuing I accept the " to null, "Community Guidelines" to { openInfo("rules") }, ", " to null,
-            "Terms of Use" to { openInfo("rules") }, " & " to null, "Privacy Policy" to { openInfo("privacy") }, "." to null), LK.lp(-1, -2))
+            "By continuing I accept the " to null, "Community Guidelines" to { page.layer.openSite("/community-guidelines") }, ", " to null,
+            "Terms of Use" to { page.layer.openSite("/terms") }, " & " to null, "Privacy Policy" to { page.layer.openSite("/privacy") }, "." to null), LK.lp(-1, -2))
         return col
     }
 

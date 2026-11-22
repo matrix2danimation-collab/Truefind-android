@@ -437,6 +437,14 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
     private var toastV: View? = null
     private val toastHide = Runnable { toastV?.let { v -> v.animate().alpha(0f).setDuration(180).withEndAction { removeView(v) }.start() }; toastV = null }
     /** a short message at the bottom (test mode: where a tap would go) */
+    /** A public page of the website (truefindapp.com/terms, /privacy, …), full screen in the phone's browser tab. */
+    internal fun openSite(path: String) {
+        if (preview.isNotEmpty()) { toast("→ $path"); return }
+        val url = Api.origin.trimEnd('/') + path
+        if (host.openTab(url)) return
+        try { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { }
+    }
+
     internal fun toast(text: String) {
         main.removeCallbacks(toastHide)
         toastV?.let { removeView(it) }

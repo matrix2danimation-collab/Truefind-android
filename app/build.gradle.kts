@@ -49,8 +49,21 @@ android {
         }
     }
 
+    // The Play Store upload key: only on GitHub, from the repo secrets (never in this repo). The CI step
+    // "Play Store bundle" writes the key file and sets these; without them the release build stays unsigned.
+    val uploadStore = System.getenv("TF_UPLOAD_STORE_FILE")
+    if (!uploadStore.isNullOrEmpty() && file(uploadStore).exists()) {
+        signingConfigs.create("upload") {
+            storeFile = file(uploadStore)
+            storePassword = System.getenv("TF_UPLOAD_STORE_PASSWORD")
+            keyAlias = System.getenv("TF_UPLOAD_KEY_ALIAS")
+            keyPassword = System.getenv("TF_UPLOAD_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

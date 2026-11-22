@@ -115,8 +115,8 @@ internal class PhoneStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         sheet.addView(trust, LK.lp(-1, -2, t = 22f))
         sheet.addView(LK.grow(ctx, 16f))
         sheet.addView(WK.linked(ctx, 12f, LK.sub, LK.link, 1.45f,
-            "By continuing I accept the " to null, "Community Guidelines" to { InfoSheet.open(page.layer, "rules") }, ", " to null,
-            "Terms of Use" to { InfoSheet.open(page.layer, "rules") }, " & " to null, "Privacy Policy" to { InfoSheet.open(page.layer, "privacy") }, "." to null))
+            "By continuing I accept the " to null, "Community Guidelines" to { page.layer.openSite("/community-guidelines") }, ", " to null,
+            "Terms of Use" to { page.layer.openSite("/terms") }, " & " to null, "Privacy Policy" to { page.layer.openSite("/privacy") }, "." to null))
         addView(WK.page(ctx, WK.head(ctx, 1, "Welcome Back", "Login with your mobile number", WK.ART_LOGIN, false) { page.goBack("login") }, sheet), LayoutParams(-1, -1))
 
         input.put(page.phone)
