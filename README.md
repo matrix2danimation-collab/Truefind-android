@@ -2,7 +2,7 @@
 
 The Android app of True Find.
 
-- **Every screen is drawn by the phone itself** (native). The backend stays on Base44: the same functions and data as the website (`https://true-find.base44.app`), called directly by the app.
+- **Every screen is drawn by the phone itself** (native). The backend stays on Base44: the same functions and data as the website (`https://truefindapp.com`, earlier `https://true-find.base44.app`), called directly by the app.
 - **Signed in, there is no web page at all.** The app keeps where you are and where Back goes (`Router.kt`), keeps the sign-in (`Session.kt`) and does what the web page used to do in the background: online / offline for Explore, the red number on Find, "who am I", expert accounts, the small photo copy (`SessionWork`, `ThumbBackfill`). Before, the whole web app ran hidden under the native screens and every page change went through it — two apps at once, which made page moves hang.
 - **Only signing in and signing out still use a web page for a moment**, hidden under the native sign-in pages (`LoginLayer`): Base44's one-time sign-in link, Google's page and the server's log-out only work in a browser. It is made when it is needed and thrown away as soon as you are in.
 - Notifications while the app is closed (calls ring, messages, missed calls) come through Firebase (`Push.kt`) when the build has `GOOGLE_SERVICES_JSON` (GitHub → Settings → Secrets → Actions).

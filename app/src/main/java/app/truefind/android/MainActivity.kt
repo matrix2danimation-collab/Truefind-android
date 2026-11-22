@@ -63,8 +63,10 @@ private const val FAST_SCREEN = true
 class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     companion object {
-        const val START_URL = "https://true-find.base44.app/"
-        val ORIGINS = setOf("https://true-find.base44.app", "https://truefindapp.in", "https://www.truefindapp.in")
+        const val START_URL = "https://truefindapp.com/"
+        /** the old Base44 address: the same app and server, only no longer shown (a sign-in saved with it moves to START_URL) */
+        const val OLD_ORIGIN = "https://true-find.base44.app"
+        val ORIGINS = setOf("https://truefindapp.com", "https://www.truefindapp.com", OLD_ORIGIN, "https://truefindapp.in", "https://www.truefindapp.in")
     }
 
     private lateinit var root: FrameLayout
@@ -1021,7 +1023,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // arrives while the web view is on someone else's page (Google's, a payment page) is not taken
         val at = try { w.url.orEmpty() } catch (e: Throwable) { "" }
         if (at.startsWith("http") && !(try { isOurs(Uri.parse(at)) } catch (e: Exception) { false })) return
-        if (MainActivity.ORIGINS.contains(origin)) Api.origin = origin
+        if (MainActivity.ORIGINS.contains(origin) && origin != OLD_ORIGIN) Api.origin = origin
         if (appId.isNotEmpty() && appId != Api.appId) { Api.appId = appId; Session.rememberAppId(this, appId) }
         if (native) {
             // On the way to a sign-in page: the app's own sign-in is what counts until that page is up. The web

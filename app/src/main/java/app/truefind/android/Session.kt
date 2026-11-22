@@ -26,7 +26,8 @@ object Session {
         val appId = p.getString("app_id", "").orEmpty()
         val origin = p.getString("origin", "").orEmpty()
         if (token.isEmpty() || appId.isEmpty()) return false
-        if (origin.startsWith("https://") && MainActivity.ORIGINS.contains(origin)) Api.origin = origin
+        // a sign-in saved on the old Base44 address stays on the new one (START_URL): same app, same server
+        if (origin.startsWith("https://") && MainActivity.ORIGINS.contains(origin) && origin != MainActivity.OLD_ORIGIN) Api.origin = origin
         Api.appId = appId
         Api.token = token
         return true
