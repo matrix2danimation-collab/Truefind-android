@@ -183,7 +183,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         "reports" -> JSONObject().put("reports", arr(
             JSONObject().put("id", "rep1").put("kind", "profile").put("status", "open").put("reason", "Asking for money").put("details", "She asked me to send money on GPay before talking.").put("match_id", "m1").put("call_id", "call9")
                 .put("created_date", iso(35.0)).put("reporter", card(2, false)).put("reported", card(6, true).put("creator", true).put("warnings", 1)).put("reports_against", 3),
-            JSONObject().put("id", "rep2").put("kind", "profile").put("status", "open").put("reason", "Fake photos").put("details", "").put("evidence_uris", arr(face(true, 12), face(true, 13)))
+            JSONObject().put("id", "rep2").put("kind", "profile").put("status", "open").put("reason", "Fake photos").put("details", "").put("evidence_uris", arr(face(true, 12), face(true, 13))).put("held_photos", arr(face(true, 14), face(true, 15)))
                 .put("created_date", iso(140.0)).put("reporter", card(3, false)).put("reported", card(7, true)).put("reports_against", 1)))
             .put("room_reports", arr(JSONObject().put("id", "rr1").put("kind", "room").put("status", "open").put("reason", "Abusive language").put("details", "Host was abusing listeners.").put("created_date", iso(400.0)).put("reporter", card(4, false)).put("reported", card(2, true)).put("reports_against", 0)))
         "report_chat" -> JSONObject().put("reporter_id", "u-b2").put("reported_id", "u-g6").put("messages", arr(

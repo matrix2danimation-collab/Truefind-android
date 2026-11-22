@@ -519,10 +519,12 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
         val coins = G.vbox(ctx).apply { background = G.round(G.ca("#ffd477", 0.07f), 18f, G.ca("#ffd477", 0.35f), 1f); pad(14f) }
         if (host) {
             coins.addView(G.text(ctx, "Entry ${entry()} coins", 15f, C.gold).lineH(1.45f))
-            coins.addView(G.text(ctx, "Win and ${rules?.let { if (it.hasNum("win_back")) it.long("win_back") else 5L } ?: 5L} coins come back to you. Your partner earns her share either way.", 15f, Color.WHITE, bold = false).lineH(1.45f))
+            coins.addView(G.text(ctx, "The entry is the same whoever wins — the game is just for fun. Your partner earns her share for every game.", 15f, Color.WHITE, bold = false).lineH(1.45f))
         } else {
             coins.addView(G.text(ctx, "Free for you", 15f, C.gold).lineH(1.45f))
-            coins.addView(G.text(ctx, "You earn ${rules?.let { if (it.hasNum("her_win")) it.long("her_win") else 5L } ?: 5L} coins for a win and ${rules?.let { if (it.hasNum("her_lose")) it.long("her_lose") else 3L } ?: 3L} for a loss, plus 70% of every gift he sends.", 15f, Color.WHITE, bold = false).lineH(1.45f))
+            val share = rules?.let { if (it.hasNum("her_share")) it.long("her_share") else if (it.hasNum("her_lose")) it.long("her_lose") else 4L } ?: 4L
+            val giftPct = Math.round((rules?.optDouble("gift_share", 1.0)?.takeIf { !it.isNaN() } ?: 1.0) * 100)
+            coins.addView(G.text(ctx, "You earn $share coins for every game, whoever wins, plus $giftPct% of every gift he sends.", 15f, Color.WHITE, bold = false).lineH(1.45f))
         }
         body.addView(coins, G.lp(G.MATCH, G.WRAP))
         body.addView(Btn(ctx, "pink", if (host) "Find a partner · ${entry()} coins" else "Wait for a game", icon = "Play", iconFill = true) { start() }, btnLp())
@@ -734,7 +736,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
         if (res != null) {
             box.addView(G.text(ctx, if (iWon) "All 4 hearts found in ${res.int("tries")} tries" else "$pn found all 4 first", 15f, C.muted, bold = false).apply { gravity = Gravity.CENTER })
             val grid = G.hbox(ctx, 10f)
-            val left = if (host) (if (res.int("coins_back") > 0) "+${res.int("coins_back")} coins back" else "No coins back") else "+${res.int("her_earned")} coins earned"
+            val left = if (host) "Thanks for playing" else "+${res.int("her_earned")} coins earned"
             grid.addView(statBox(ctx, left, C.gold), G.lpw(1f))
             grid.addView(statBox(ctx, "${s.obj("theirs").int("found")}/4 hearts found", C.pink), G.lpw(1f))
             box.addView(grid, G.lp(G.MATCH, G.WRAP))

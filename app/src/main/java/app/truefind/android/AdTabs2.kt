@@ -60,6 +60,16 @@ class AdReports(a: AdminScreen) : AdTab(a) {
             ev.forEachIndexed { i, u -> row.addView(AdImg(ctx, src, false, 76f, 96f).also { it.set(u); it.onOpen = { x -> a.zoom(x) } }, LinearLayout.LayoutParams(Ui.dpi(76f), Ui.dpi(96f)).apply { if (i > 0) leftMargin = Ui.dpi(8f) }) }
             c.addView(row, AU.lp(-1, -2, t = 10f))
         }
+        // photos taken off the profile after a nude / fake report (server shared/photoHold.ts)
+        val held = AF.strs(r, "held_photos")
+        if (held.isNotEmpty()) {
+            val box = AU.col(ctx).apply { background = Tf.box(AK.redBg, 12f); setPadding(Ui.dpi(12f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f)) }
+            box.addView(AU.t(ctx, "Photos hidden from everyone until you decide. Dismiss the report → they come back within a few minutes. Ban or warn → they stay hidden.", 12.5f, AK.red, true), AU.lp(-1, -2, b = 8f))
+            val row = AU.row(ctx)
+            held.forEachIndexed { i, u -> row.addView(AdImg(ctx, src, false, 76f, 96f).also { it.set(u); it.onOpen = { x -> a.zoom(x) } }, LinearLayout.LayoutParams(Ui.dpi(76f), Ui.dpi(96f)).apply { if (i > 0) leftMargin = Ui.dpi(8f) }) }
+            box.addView(android.widget.HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false; addView(row) }, AU.lp(-1, -2))
+            c.addView(box, AU.lp(-1, -2, t = 10f))
+        }
         val byLine = AU.row(ctx)
         byLine.addView(AU.t(ctx, "Reported by ", 12.5f, AK.sub))
         byLine.addView(AU.t(ctx, AF.s(by, "name").ifEmpty { "a member" }, 12.5f, AK.deep, true).apply { setOnClickListener { a.openMember(AF.s(by, "user_id")) } })
