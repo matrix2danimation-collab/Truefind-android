@@ -14,7 +14,8 @@ import android.view.animation.PathInterpolator
 import androidx.core.graphics.PathParser
 
 private object NavLook {
-    val BG = Ui.c("#F3F3F3")
+    val BG = Color.WHITE   // owner, 22 Nov: white bar (was #F3F3F3)
+    val INK = Ui.c("#111114")   // icons: bold outline; the open tab filled black (owner, 22 Nov)
     val LINE = Ui.c("#E8E7EB")
     val ON = Ui.c("#E94057")
     val OFF = Ui.c("#ADAFBB")
@@ -136,26 +137,29 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
         for ((i, it) in items.withIndex()) {
             val cx = pad + cw * i + cw / 2f
             val cy = Ui.dp(30f)
-            val col = mix(NavLook.OFF, NavLook.ON, onness(i))
+            val o = onness(i)
+            val inner = mix(NavLook.INK, NavLook.BG, o)   // inside details: black lines on the outline, white on the filled icon
+            stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f
             c.save()
             if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, cy)
             c.translate(cx - 12f * s, cy - 12f * s); c.scale(s, s)
             when (it.key) {
-                "home" -> cards(c, col)
+                "home" -> cards(c, o)
                 "likes" -> {
-                    fill.color = col; c.drawPath(heart, fill)
+                    outlined(c, heart, o)
                     if (heartDot && current != "likes") {
                         fill.color = NavLook.BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
                         fill.color = NavLook.ON; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
                     }
                 }
                 "chat" -> {
-                    fill.color = col; c.drawPath(chat, fill)
-                    stroke.color = NavLook.BG; stroke.strokeWidth = 1.9f; c.drawPath(chatLines, stroke)
+                    outlined(c, chat, o)
+                    stroke.color = inner; stroke.strokeWidth = 1.7f; c.drawPath(chatLines, stroke)
                 }
                 else -> {
-                    fill.color = col; c.drawPath(pin, fill)
-                    fill.color = NavLook.BG; c.drawCircle(12f, 9.9f, 2.9f, fill)
+                    outlined(c, pin, o)
+                    if (o > 0f) { fill.color = NavLook.BG; fill.alpha = (255 * o).toInt(); c.drawCircle(12f, 9.9f, 2.6f, fill); fill.alpha = 255 }
+                    stroke.color = NavLook.INK; stroke.strokeWidth = 1.7f; c.drawCircle(12f, 9.9f, 2.6f, stroke)
                 }
             }
             c.restore()
@@ -163,13 +167,23 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     }
 
     /** two cards: one upright behind, the front one tilted, with a thin gap of the bar's grey */
-    private fun cards(c: Canvas, col: Int) {
-        fill.color = col
-        r.set(10.4f, 6.4f, 20.6f, 21f); c.drawRoundRect(r, 1.8f, 1.8f, fill)
+    /** a bold black outline; the open tab's icon fills black inside ([o] 0..1 while the tab slides) */
+    private fun outlined(c: Canvas, p: android.graphics.Path, o: Float) {
+        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawPath(p, fill); fill.alpha = 255 }
+        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawPath(p, stroke)
+    }
+
+    private fun cards(c: Canvas, o: Float) {
+        r.set(10.4f, 6.4f, 20.6f, 21f)
+        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawRoundRect(r, 1.8f, 1.8f, fill); fill.alpha = 255 }
+        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
         c.save(); c.rotate(-12f, 8.7f, 10.7f)
         r.set(3.4f, 3.2f, 14f, 18.2f)
-        stroke.color = NavLook.BG; stroke.strokeWidth = 1.6f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        c.drawRoundRect(r, 1.8f, 1.8f, fill)
+        // the front card hides the back one: white under it, then its own outline / fill
+        fill.color = NavLook.BG; c.drawRoundRect(r, 1.8f, 1.8f, fill)
+        stroke.color = NavLook.BG; stroke.strokeWidth = 3.4f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
+        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawRoundRect(r, 1.8f, 1.8f, fill); fill.alpha = 255 }
+        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
         c.restore()
     }
 

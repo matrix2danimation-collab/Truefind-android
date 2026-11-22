@@ -1258,7 +1258,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (sdBottomOn == on) return
         sdBottomOn = on
         @Suppress("DEPRECATION")
-        window.navigationBarColor = if (on) Color.rgb(243, 243, 243) else Color.WHITE
+        window.navigationBarColor = Color.WHITE   // the bar is white now too (owner, 22 Nov)
     }
 
     private fun sizeTo(v: View, h: Int) {
