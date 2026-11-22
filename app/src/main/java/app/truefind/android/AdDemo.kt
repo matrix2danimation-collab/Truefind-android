@@ -44,7 +44,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
             }
             if (i == 3) iso(2000.0).let { at -> p.put("creator_submitted_at", at).put("creator_status", "approved").put("creator_reviewed_for", at) }
             if (i == 3) p.put("creator_reviewed_at", iso(1900.0))
-                .put("creator_reviewed_by", "owner@truefindapp.in").put("creator_upi_name", n).put("creator_upi_id", "isha@ybl").put("creator_approved_upi_id", "isha@ybl").put("creator_selfie_uri", face(true, 4))
+                .put("creator_reviewed_by", "owner@truefindapp.com").put("creator_upi_name", n).put("creator_upi_id", "isha@ybl").put("creator_approved_upi_id", "isha@ybl").put("creator_selfie_uri", face(true, 4))
             if (i == 4) {
                 iso(5000.0).let { at -> p.put("creator_submitted_at", at).put("creator_status", "approved").put("creator_reviewed_for", at) }
                 p.put("host_applied_at", iso(45.0)).put("host_status", "pending").put("host_types", arr("audio_room", "video_room")).put("host_video_uri", "asset:demo-video")
@@ -65,7 +65,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         out
     }
 
-    override fun me(done: (Api.Result) -> Unit) = later(ok(JSONObject().put("id", "admin-1").put("email", "owner@truefindapp.in").put("role", "admin")), done)
+    override fun me(done: (Api.Result) -> Unit) = later(ok(JSONObject().put("id", "admin-1").put("email", "owner@truefindapp.com").put("role", "admin")), done)
     override fun page(entity: String, query: JSONObject, sort: String?, limit: Int, done: (Api.Result) -> Unit) {
         val items = when (entity) {
             "UserProfile" -> if (query.length() == 0) JSONArray(profiles) else JSONArray()
@@ -140,13 +140,13 @@ class AdDemo(private val ctx: Context) : AdSrc {
             JSONObject().put("id", "e2").put("message", "Android: java.lang.IllegalStateException: Not attached").put("source", "manual").put("page", "/wallet").put("count", 3).put("people", 1).put("first_seen", iso(500.0)).put("last_seen", iso(240.0)).put("status", "open")))
         "config_get" -> JSONObject().put("config", JSONObject().put("maintenance_mode", false).put("maintenance_message", "").put("announcement", "Diwali offer: 2x coins on every recharge today!").put("announcement_id", "a1")
             .put("signups_enabled", true).put("calls_enabled", true).put("games_enabled", false).put("live_enabled", true).put("voice_rate", 10).put("video_rate", 30).put("voice_creator_rate", 3).put("video_creator_rate", 8)
-            .put("support_email", "matrixsupportworld@gmail.com").put("support_whatsapp", "").put("daily_coins", 10).put("streak_bonus", 20).put("referral_reward", 50).put("version", 14).put("updated_at", iso(1440.0)).put("updated_by", "owner@truefindapp.in"))
+            .put("support_email", "matrixsupportworld@gmail.com").put("support_whatsapp", "").put("daily_coins", 10).put("streak_bonus", 20).put("referral_reward", 50).put("version", 14).put("updated_at", iso(1440.0)).put("updated_by", "owner@truefindapp.com"))
         "jobs" -> JSONObject().put("status", JSONObject().put("last_started_at", iso(1.5)).put("last_trigger", "app").put("last_duration_ms", 2380).put("runs", 9311).put("last_cleanup_at", iso(300.0))
             .put("last_result", JSONObject().put("calls_ended", 2).put("rings_closed", 5).put("settlements_flagged", 0).put("people_freed", 3)))
         "audit_log" -> JSONObject().put("actions", arr(
-            JSONObject().put("id", "x1").put("action", "payout_paid").put("amount", 1340).put("details", "to isha@ybl ref 431512345678").put("created_date", iso(50.0)).put("admin_email", "owner@truefindapp.in"),
-            JSONObject().put("id", "x2").put("action", "config_saved").put("details", "games_enabled: true → false").put("created_date", iso(1440.0)).put("admin_email", "owner@truefindapp.in"),
-            JSONObject().put("id", "x3").put("action", "wallet_adjust").put("amount", 50).put("details", "Refund for a call that dropped").put("created_date", iso(2900.0)).put("admin_email", "owner@truefindapp.in")))
+            JSONObject().put("id", "x1").put("action", "payout_paid").put("amount", 1340).put("details", "to isha@ybl ref 431512345678").put("created_date", iso(50.0)).put("admin_email", "owner@truefindapp.com"),
+            JSONObject().put("id", "x2").put("action", "config_saved").put("details", "games_enabled: true → false").put("created_date", iso(1440.0)).put("admin_email", "owner@truefindapp.com"),
+            JSONObject().put("id", "x3").put("action", "wallet_adjust").put("amount", 50).put("details", "Refund for a call that dropped").put("created_date", iso(2900.0)).put("admin_email", "owner@truefindapp.com")))
         "offers" -> JSONObject().put("phones", 9214).put("offers", arr(JSONObject().put("id", "o1").put("title", "50% extra coins today").put("body", "Buy any pack before midnight and get 50% extra coins.").put("status", "done").put("sent", 9102).put("total", 9188).put("created_date", iso(2880.0))))
         else -> JSONObject().put("ok", true)
     }
@@ -177,7 +177,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
                 .put("counts", JSONObject().put("reports_against", 1).put("reports_made", 0).put("blocked_by", 2))
                 .put("devices", arr(JSONObject().put("device_id", "d1").put("user_agent", "Android 14 · True Find app").put("last_seen", iso(1.0)).put("ip", "49.36.xx.xx")))
                 .put("same_device_accounts", arr(JSONObject().put("user_id", "u-b5").put("name", "Karan Malhotra").put("gender", "male").put("city", "Delhi")))
-                .put("admin_actions", arr(JSONObject().put("id", "aa1").put("action", "creator_approved").put("details", "Live video checked").put("created_date", iso(2000.0)).put("admin_email", "owner@truefindapp.in")))
+                .put("admin_actions", arr(JSONObject().put("id", "aa1").put("action", "creator_approved").put("details", "Live video checked").put("created_date", iso(2000.0)).put("admin_email", "owner@truefindapp.com")))
                 .put("payouts", arr(JSONObject().put("id", "py1").put("net", 1340).put("status", "paid").put("decided_at", iso(50.0))))
         }
         "reports" -> JSONObject().put("reports", arr(
@@ -201,8 +201,8 @@ class AdDemo(private val ctx: Context) : AdSrc {
             JSONObject().put("profile_id", "p-b0").put("user_id", "u-b0").put("name", "Rahul Kumar").put("phone", "9712345678").put("photo", face(false, 1)).put("requested_at", iso(60.0)).put("amount", 900)
                 .put("breakdown", JSONObject().put("gross", 900).put("fee", 297).put("share", 603).put("tds", 60).put("net", 543).put("tdsApplies", true))
                 .put("earned", 700).put("paid_total", 0).put("available", 700).put("too_much", true).put("verified", false).put("upi", "").put("upi_name", "").put("pan", "none")))
-        "history" -> JSONObject().put("records", arr(JSONObject().put("id", "h1").put("name", "Isha Gupta").put("status", "paid").put("net", 1340).put("gross", 2000).put("upi_id", "isha@ybl").put("utr", "431512345678").put("decided_at", iso(50.0)).put("decided_by", "owner@truefindapp.in"),
-            JSONObject().put("id", "h2").put("name", "Neha Yadav").put("status", "rejected").put("net", 400).put("gross", 600).put("reason", "UPI name does not match").put("decided_at", iso(3000.0)).put("decided_by", "owner@truefindapp.in")))
+        "history" -> JSONObject().put("records", arr(JSONObject().put("id", "h1").put("name", "Isha Gupta").put("status", "paid").put("net", 1340).put("gross", 2000).put("upi_id", "isha@ybl").put("utr", "431512345678").put("decided_at", iso(50.0)).put("decided_by", "owner@truefindapp.com"),
+            JSONObject().put("id", "h2").put("name", "Neha Yadav").put("status", "rejected").put("net", 400).put("gross", 600).put("reason", "UPI name does not match").put("decided_at", iso(3000.0)).put("decided_by", "owner@truefindapp.com")))
         "export" -> JSONObject().put("fy", "2026-27").put("count", 2).put("totals", JSONObject().put("net", 1880).put("tds", 60)).put("csv", "name,upi,net\nIsha Gupta,isha@ybl,1340")
         else -> JSONObject().put("ok", true)
     }

@@ -561,9 +561,9 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
         val t = what.substringBefore('-').substringBefore(':')
         shown = true; visibility = View.VISIBLE
         tab = if (TABS.any { it.first == t }) t else "overview"
-        me = JSONObject().put("id", "admin-1").put("email", "owner@truefindapp.in").put("role", "admin")
+        me = JSONObject().put("id", "admin-1").put("email", "owner@truefindapp.com").put("role", "admin")
         allowed = true; gateToken = Api.token
-        emailLine.text = "True Find · only you can see this · owner@truefindapp.in"
+        emailLine.text = "True Find · only you can see this · owner@truefindapp.com"
         gateView.visibility = View.GONE
         loadOverview(); loadProfiles()
         openTab(tab, true)

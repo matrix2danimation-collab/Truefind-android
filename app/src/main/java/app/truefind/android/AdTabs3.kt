@@ -254,7 +254,8 @@ class AdErrors(a: AdminScreen) : AdTab(a) {
 class AdSettings(a: AdminScreen) : AdTab(a) {
     companion object {
         val FIELDS = listOf("maintenance_mode", "maintenance_message", "announcement", "signups_enabled", "calls_enabled", "games_enabled", "live_enabled",
-            "voice_rate", "video_rate", "voice_creator_rate", "video_creator_rate", "support_email", "support_whatsapp", "daily_coins", "streak_bonus", "referral_reward")
+            "voice_rate", "video_rate", "voice_creator_rate", "video_creator_rate", "support_email", "support_whatsapp", "daily_coins", "streak_bonus", "referral_reward",
+            "grievance_name", "grievance_email", "business_name", "business_address")
         val RATES = listOf("voice_rate", "video_rate", "voice_creator_rate", "video_creator_rate")
         val REWARDS = listOf("daily_coins", "streak_bonus", "referral_reward")
         val NUMBERS = RATES + REWARDS
@@ -477,8 +478,18 @@ class AdSettings(a: AdminScreen) : AdTab(a) {
         root.addView(AU.section(ctx, "Support contact"))
         root.addView(AU.card(ctx).apply {
             addView(head(AdIc.LifeBuoy, "Shown in Settings → Help & support", "Members can also write to you in the app (Support tab)."))
-            addView(textField("support_email", "Support email", "support@truefind.in", 0, 0, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS))
+            addView(textField("support_email", "Support email", "support@truefindapp.com", 0, 0, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS))
             addView(textField("support_whatsapp", "WhatsApp number", "+91 98765 43210", 0, 0, InputType.TYPE_CLASS_PHONE))
+        })
+
+        // same as the web Control Center (SettingsTab.jsx): shown on truefindapp.com/contact and the policy pages
+        root.addView(AU.section(ctx, "Legal & business details"))
+        root.addView(AU.card(ctx).apply {
+            addView(head(AdIc.LifeBuoy, "Shown on the website's Contact and policy pages", "Indian IT Rules ask for a Grievance Officer; Razorpay and Google Play ask for the business name and address."))
+            addView(textField("grievance_name", "Grievance Officer name", "Full name", 0, 80))
+            addView(textField("grievance_email", "Grievance Officer email", "grievance@truefindapp.com", 0, 120, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS))
+            addView(textField("business_name", "Business name", "Your registered business name (as on MSME / bank)", 0, 120))
+            addView(textField("business_address", "Business address", "Full postal address with city, state and PIN code", 3, 300))
         })
 
         val at = AF.s(c, "updated_at")

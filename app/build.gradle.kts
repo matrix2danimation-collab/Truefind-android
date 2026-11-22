@@ -61,6 +61,13 @@ android {
         }
     }
 
+    // lint only reports (the test-branch CI step prints it); it never stops a build
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        textReport = true
+    }
+
     buildTypes {
         release {
             signingConfigs.findByName("upload")?.let { signingConfig = it }

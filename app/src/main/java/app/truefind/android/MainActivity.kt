@@ -66,7 +66,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         const val START_URL = "https://truefindapp.com/"
         /** the old Base44 address: the same app and server, only no longer shown (a sign-in saved with it moves to START_URL) */
         const val OLD_ORIGIN = "https://true-find.base44.app"
-        val ORIGINS = setOf("https://truefindapp.com", "https://www.truefindapp.com", OLD_ORIGIN, "https://truefindapp.in", "https://www.truefindapp.in")
+        // only addresses True Find owns: the app's sign-in and bridges are given to these pages alone
+        // (truefindapp.in was removed: it is not ours, so a page there must never be treated as the app)
+        val ORIGINS = setOf("https://truefindapp.com", "https://www.truefindapp.com", OLD_ORIGIN)
     }
 
     private lateinit var root: FrameLayout

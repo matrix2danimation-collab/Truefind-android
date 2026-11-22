@@ -127,7 +127,7 @@ object DemoHome {
                 .put("stats", JSONObject().put("joined", 3).put("rewarded", 1).put("coins", 50)).put("can_enter_code", true).put("enter_days_left", 5)
                 .put("friends", JSONArray().apply { put(JSONObject().put("name", "Rohit").put("status", "rewarded").put("coins", 50)); put(JSONObject().put("name", "Simran").put("status", "pending")) })
                 else JSONObject().put("ok", true).put("inviter", "Rohit").put("reward", 50).put("min_recharge", 49)
-            "support" -> if (payload.optString("action") == "mine") JSONObject().put("contact", JSONObject().put("email", "help@truefindapp.in").put("whatsapp", "")).put("tickets", JSONArray().apply {
+            "support" -> if (payload.optString("action") == "mine") JSONObject().put("contact", JSONObject().put("email", "help@truefindapp.com").put("whatsapp", "")).put("tickets", JSONArray().apply {
                 put(JSONObject().put("id", "t1").put("category", "payment").put("subject", "Coins not added").put("status", "answered").put("user_unread", true).put("created_date", iso(300))
                     .put("messages", JSONArray().apply {
                         put(JSONObject().put("from", "user").put("text", "I paid ₹99 but the coins did not come.").put("at", iso(300)))

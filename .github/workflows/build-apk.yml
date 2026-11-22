@@ -60,6 +60,19 @@ jobs:
       # the Play Store build (release, -PtfStore=true) must not ask for the install permission that only the test
       # builds' Update button uses (Google Play doesn't allow self-updates); test builds keep it. Checked with the
       # real manifest merge on work branches only, so builds on main stay as quick as before.
+      # Android's own checker (lint) on test branches: finds crashes on older phones (calls that need a newer
+      # Android), wrong resources and other mistakes. Only reports; never stops the build.
+      - name: Android lint report (test branches)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          gradle lintDebug --no-daemon -q || true
+          f=app/build/reports/lint-results-debug.txt
+          if [ -f "$f" ]; then
+            echo "=== LINT SUMMARY ==="; tail -3 "$f"
+            echo "=== LINT ERRORS ==="; grep -E "^[^ ].*: Error: " "$f" | head -150 || true
+            echo "=== LINT WARNINGS (by id) ==="; grep -oE "Warning: .*\[[A-Za-z]+\]$" "$f" | grep -oE "\[[A-Za-z]+\]$" | sort | uniq -c | sort -rn | head -40 || true
+            echo "=== LINT WARNINGS (crash-risk ids) ==="; grep -E "\[(NewApi|InlinedApi|UnspecifiedRegisterReceiverFlag|WrongConstant|Range|ResourceType|MissingPermission|UnsafeOptInUsageError|StaticFieldLeak|HandlerLeak|DiscouragedApi|ObsoleteSdkInt|WebViewApiAvailability|SetJavaScriptEnabled|JavascriptInterface|ExportedReceiver|UnprotectedSMSBroadcastReceiver|MutableImplicitPendingIntent|UnsafeImplicitIntentLaunch)\]" "$f" | head -150 || true
+          fi
       - name: Check the Play build has no install permission
         if: github.ref != 'refs/heads/main'
         run: |
