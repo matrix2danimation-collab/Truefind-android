@@ -134,10 +134,11 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
     // ── 2 · 1 · 3 ──
     private fun podium(ctx: Context, top: List<TopRank.Row>): View {
         val card = FrameLayout(ctx).apply {
-            // the purple card with premium doodles: crowns (some gold), hearts, rings and sparkles (owner, 20 Nov)
+            // the winners' card (owner, 22 Nov: design "02 · Champagne Gold", without the white glow behind the 1st):
+            // a champagne-gold gradient with bubbles, sparkles, stars and confetti
             background = android.graphics.drawable.LayerDrawable(arrayOf(
-                GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#6C2BD9"), DEEP)).apply { cornerRadius = Ui.dp(24f) },
-                CrownDoodles(24f)))
+                GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#FFE7A3"), Ui.c("#F6C453"), Ui.c("#D99A1E"))).apply { cornerRadius = Ui.dp(24f) },
+                ChampagneDoodles(24f)))
             elevation = Ui.dp(6f)
         }
         val row = Tf.row(ctx, Gravity.BOTTOM).apply { setPadding(Ui.dpi(10f), Ui.dpi(18f), Ui.dpi(10f), 0) }
@@ -171,14 +172,17 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
         }, LayoutParams(Ui.dpi(24f), Ui.dpi(24f), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(size - 12f) })
         c.addView(holder, Tf.ll(Tf.W, Ui.dpi(size + 12f)))
         val age = HomeRules.ageOf(r.p)
-        c.addView(Tf.t(ctx, "${HomeRules.firstName(r.p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}", if (first) 15f else 13.5f, Color.WHITE).apply {
+        c.addView(Tf.t(ctx, "${HomeRules.firstName(r.p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}", if (first) 15f else 13.5f, Ui.c("#4A2C00")).apply {
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
         }, Tf.ll(Tf.M, Tf.W, t = 6f))
-        c.addView(Tf.t(ctx, TopRank.timeText(r.minutes), 12f, Ui.c("#E4D9F7"), false).apply { gravity = Gravity.CENTER }, Tf.ll(Tf.M, Tf.W, t = 1f))
+        c.addView(Tf.t(ctx, TopRank.timeText(r.minutes), 12f, Ui.c("#6B4300"), false).apply { gravity = Gravity.CENTER }, Tf.ll(Tf.M, Tf.W, t = 1f))
         // the step it stands on: the middle one is the tallest
         val step = TextView(ctx).apply {
-            text = "${r.rank}"; textSize = if (first) 30f else 24f; setTextColor(Color.argb(150, 255, 255, 255)); typeface = Ui.bold; gravity = Gravity.CENTER
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(if (first) 70 else 48, 255, 255, 255), Color.argb(10, 255, 255, 255))).apply {
+            text = "${r.rank}"; textSize = if (first) 30f else 24f; setTextColor(Ui.c("#C88A12")); typeface = Ui.bold; gravity = Gravity.CENTER
+            // cream steps with a white top edge (champagne-gold card)
+            background = GradientDrawable().apply {
+                setColor(Ui.c(when (k) { 0 -> "#FFFBEA"; 1 -> "#FFF4D2"; else -> "#FFEFC2" }))
+                setStroke(Ui.dpi(1.5f), Color.WHITE)
                 cornerRadii = floatArrayOf(Ui.dp(14f), Ui.dp(14f), Ui.dp(14f), Ui.dp(14f), 0f, 0f, 0f, 0f)
             }
         }
@@ -325,4 +329,76 @@ class CrownDoodles(private val radiusDp: Float) : android.graphics.drawable.Draw
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
     @Deprecated("Deprecated in Java") override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+}
+
+/**
+ * The Weekly Top card's doodles, champagne-gold version (owner, 22 Nov, design "02 · Champagne Gold"): an even,
+ * quiet pattern of bubbles (rings), four-point sparkles, stars and small confetti strips — white, cream and a
+ * deep gold — each a little turned. Drawn inside the card's rounded corners. No glow circle behind the 1st.
+ */
+class ChampagneDoodles(private val radiusDp: Float) : android.graphics.drawable.Drawable() {
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { strokeJoin = android.graphics.Paint.Join.ROUND; strokeCap = android.graphics.Paint.Cap.ROUND }
+    private val clip = android.graphics.Path()
+    private val shape = android.graphics.Path()
+    private val box = android.graphics.RectF()
+    private val white = android.graphics.Color.argb(150, 255, 255, 255)
+    private val cream = android.graphics.Color.argb(140, 255, 246, 216)
+    private val gold = android.graphics.Color.argb(95, 184, 115, 10)
+    override fun draw(c: android.graphics.Canvas) {
+        val b = bounds; if (b.isEmpty) return
+        c.save()
+        box.set(b); clip.reset(); clip.addRoundRect(box, Ui.dp(radiusDp), Ui.dp(radiusDp), android.graphics.Path.Direction.CW)
+        c.clipPath(clip)
+        val cell = Ui.dp(46f)
+        val cols = (b.width() / cell).toInt() + 2; val rows = (b.height() / cell).toInt() + 2
+        for (j in 0 until rows) for (i in 0 until cols) {
+            val k = (i * 7 + j * 13 + i * j * 3) and 0x7fffffff
+            val x = b.left + (i + if (j % 2 == 1) 0.5f else 0f) * cell + ((k % 9) - 4) * Ui.dp(1.4f)
+            val y = b.top + (j + 0.5f) * cell + (((k / 9) % 9) - 4) * Ui.dp(1.4f)
+            val turn = (((k / 81) % 7) - 3) * 8f
+            val size = Ui.dp(10f + (k % 4) * 1.6f)
+            val col = when ((i + 2 * j) % 3) { 0 -> white; 1 -> cream; else -> gold }
+            c.save(); c.translate(x, y); c.rotate(turn)
+            when (k % 5) {
+                0, 3 -> bubble(c, size * 0.4f, white)
+                1 -> sparkle(c, size * 0.6f, col)
+                2 -> star(c, size * 0.55f, col)
+                else -> confetti(c, size, col)
+            }
+            c.restore()
+        }
+        c.restore()
+    }
+    private fun bubble(c: android.graphics.Canvas, r: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = Ui.dp(1.4f); p.color = col
+        c.drawCircle(0f, 0f, r, p)
+    }
+    private fun sparkle(c: android.graphics.Canvas, r: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.FILL; p.color = col
+        val q = r * 0.28f
+        shape.reset()
+        shape.moveTo(0f, -r); shape.quadTo(q, -q, r, 0f); shape.quadTo(q, q, 0f, r); shape.quadTo(-q, q, -r, 0f); shape.quadTo(-q, -q, 0f, -r); shape.close()
+        c.drawPath(shape, p)
+    }
+    private fun star(c: android.graphics.Canvas, r: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.FILL; p.color = col
+        shape.reset()
+        for (n in 0 until 10) {
+            val a = Math.toRadians(-90.0 + n * 36.0)
+            val rr = if (n % 2 == 0) r else r * 0.45f
+            val px = (rr * Math.cos(a)).toFloat(); val py = (rr * Math.sin(a)).toFloat()
+            if (n == 0) shape.moveTo(px, py) else shape.lineTo(px, py)
+        }
+        shape.close()
+        c.drawPath(shape, p)
+    }
+    private fun confetti(c: android.graphics.Canvas, s: Float, col: Int) {
+        p.style = android.graphics.Paint.Style.FILL; p.color = col
+        val w = s * 0.32f; val h = s * 0.85f
+        c.drawRoundRect(-w / 2f, -h / 2f, w / 2f, h / 2f, Ui.dp(1.5f), Ui.dp(1.5f), p)
+    }
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
 }
