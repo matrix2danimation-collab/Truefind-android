@@ -399,8 +399,18 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
         busy = true
         incomingView?.busy = true
         fun done() { busy = false; incomingView?.busy = false }
+        var tries = 0
         fun send() {
+            tries++
             Api.invoke("respondCall", JSONObject().put("call_id", id).put("action", action)) { r ->
+                // Decline lost on a weak network: tried once more, so the caller hears "declined" at once
+                // instead of ringing until the call times out (a 4xx answer means the call is already over)
+                if (!r.ok && action == "decline" && tries < 2 && r.status !in 400..499) {
+                    clearIncoming(id)
+                    main.postDelayed({ send() }, 1500L)
+                    return@invoke
+                }
+                if (action == "decline" && tries > 1) { done(); return@invoke }
                 if (Tf.s(incoming, "id") != id) { done(); return@invoke }
                 if (r.ok) {
                     if (action == "accept") {

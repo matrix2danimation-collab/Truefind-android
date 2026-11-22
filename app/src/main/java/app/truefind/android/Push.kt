@@ -220,16 +220,23 @@ object Push {
         val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null }
         if (auth == null) { done(); return }
         pool.execute {
-            var c: HttpURLConnection? = null
+            // tried twice: a Decline lost on a weak network would leave the caller ringing until the call times out
             try {
-                c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/respondCall").openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"; connectTimeout = 8000; readTimeout = 8000; doOutput = true
-                    setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
-                    setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer ${auth.optString("t")}")
+                for (attempt in 0 until 2) {
+                    var c: HttpURLConnection? = null
+                    val code = try {
+                        c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/respondCall").openConnection() as HttpURLConnection).apply {
+                            requestMethod = "POST"; connectTimeout = 5000; readTimeout = 5000; doOutput = true
+                            setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
+                            setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer ${auth.optString("t")}")
+                        }
+                        c.outputStream.use { it.write(JSONObject().put("call_id", callId).put("action", "decline").toString().toByteArray()) }
+                        c.responseCode
+                    } catch (e: Throwable) { -1 } finally { c?.disconnect() }
+                    if (code in 200..499) break // done, or the call is already over
+                    if (attempt == 0) try { Thread.sleep(1500) } catch (e: InterruptedException) { break }
                 }
-                c.outputStream.use { it.write(JSONObject().put("call_id", callId).put("action", "decline").toString().toByteArray()) }
-                c.responseCode
-            } catch (e: Throwable) { } finally { c?.disconnect(); done() }
+            } finally { done() }
         }
     }
 }
