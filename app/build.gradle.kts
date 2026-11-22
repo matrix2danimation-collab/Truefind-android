@@ -62,6 +62,8 @@ android {
     }
 
     // lint only reports (the test-branch CI step prints it); it never stops a build
+    testOptions { unitTests.isReturnDefaultValues = true }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -132,6 +134,9 @@ dependencies {
     // an old Fragment library came in through other libraries; with it, permission answers (microphone,
     // camera, notifications) can be lost on some phones. Android's checker asks for 1.3.0 or newer.
     implementation("androidx.fragment:fragment:1.8.5")
+    // plain-logic unit tests (app/src/test): JUnit, and the real org.json (Android's own is only a stub in tests)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20231013")
     implementation("androidx.webkit:webkit:1.14.0")
     // Profile → Become a Host / Creator: the live selfie video (camera only)
     implementation("androidx.camera:camera-camera2:1.4.1")

@@ -62,6 +62,9 @@ jobs:
       # real manifest merge on work branches only, so builds on main stay as quick as before.
       # Android's own checker (lint) on test branches: finds crashes on older phones (calls that need a newer
       # Android), wrong resources and other mistakes. Only reports; never stops the build.
+      - name: Unit tests (test branches)
+        if: github.ref != 'refs/heads/main'
+        run: gradle testDebugUnitTest --no-daemon -q
       - name: Android lint report (test branches)
         if: github.ref != 'refs/heads/main'
         run: |

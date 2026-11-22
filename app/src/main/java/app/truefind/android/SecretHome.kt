@@ -1187,8 +1187,12 @@ class SecretHome(
         if (c.pid.isNotEmpty()) Api.filter("UserProfile", JSONObject().put("id", c.pid), null, 1) { r -> r.data.optJSONArray("items")?.optJSONObject(0)?.let { merge(it) } ?: byUser() }
         else byUser()
     }
-    /** Chat list: tap the name / message → the chat (a locked chat opens the plans straight away) */
+    /** the chat was pinned / unpinned (ChatRoom's ⋮ menu) */
+    fun chatPinned(id: String, on: Boolean) { chatPage?.setPinned(id, on) }
+        /** Chat list: tap the name / message → the chat (a locked chat opens the plans straight away) */
     fun openChatRow(c: SdChatsPage.Chat) {
+        // a demo chat (testing only) has no real chat behind it: its demo profile opens instead
+        if (c.demo) { openFromChat(c); return }
         if (premiumKnown && !canUse && !(c.open || chatOpen(c.id))) { unlock(); return }
         chatPage?.markRead(c.id)
         go("/chat/${c.id}", JSONObject().put("openChat", 1))

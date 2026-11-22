@@ -28,7 +28,27 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     class Chat(val id: String, val name: String, val photo: String, val photoThumb: String, val age: String, val pid: String, val uid: String,
                val online: Boolean, val verified: Boolean, val text: String, val from: String, val time: String, var unread: Int,
                /** opened once (a paid request, or a message with a plan): opens without a plan, for good (owner, 20 Nov) */
-               val open: Boolean = false)
+               val open: Boolean = false,
+               /** pinned to the top of my list (pinChat, owner 21 Nov) */
+               var pinned: Boolean = false,
+               /** a demo chat (testing only, SdDemo): opens the demo profile, never a real chat */
+               val demo: Boolean = false,
+               /** the last message is mine ("You: …") — demo chats only */
+               val mine: Boolean = false)
+
+    companion object {
+        /** "4:05 PM" today · "Yesterday" · "7 Nov" */
+        fun chatTime(t: String): String {
+            val ms = SdRules.ms(t); if (ms == 0L) return ""
+            val d = Calendar.getInstance().apply { timeInMillis = ms }
+            val now = Calendar.getInstance()
+            fun same(a: Calendar, b: Calendar) = a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
+            if (same(d, now)) return java.text.SimpleDateFormat("h:mm a", Locale.US).format(d.time).uppercase()
+            val y = (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
+            if (same(d, y)) return "Yesterday"
+            return java.text.SimpleDateFormat("d MMM", Locale.US).format(d.time)
+        }
+    }
 
     private val scroll = ScrollView(context)
     private val col = vbox(context)
@@ -116,7 +136,9 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             loadingNow = false
             // each chat opens at once from here (ChatCache)
             ChatCache.putChats(arr)
-            chats = list(arr).map { norm(it) }.filter { it.id.isNotEmpty() }.sortedByDescending { SdRules.ms(it.time) }
+            val real = SdChatList.sorted(list(arr).map { norm(it) }.filter { it.id.isNotEmpty() })
+            // demo chats (testing only, like the web's SHOW_SD_DEMO): after the real ones
+            chats = if (SdDemo.SHOW) real + SdChatList.demoChats(h.gender) else real
             failed = false
             render()
             told()
@@ -137,6 +159,13 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
     /** opened: its unread count goes to 0 at once */
     fun markRead(id: String) { chats?.firstOrNull { it.id == id }?.unread = 0; renderList() }
+    /** pinned / unpinned in the chat (ChatRoom's ⋮ menu): moved at once, the server's list follows */
+    fun setPinned(id: String, on: Boolean) {
+        val all = chats ?: return
+        all.firstOrNull { it.id == id }?.pinned = on
+        chats = SdChatList.sorted(all.filter { !it.demo }) + all.filter { it.demo }
+        renderList()
+    }
 
     private fun list(a: JSONArray) = (0 until a.length()).mapNotNull { a.optJSONObject(it) }
     private fun pick(vararg v: Any?): String { for (x in v) { if (x == null || x == JSONObject.NULL) continue; val s = x.toString(); if (s.isNotEmpty()) return s }; return "" }
@@ -160,6 +189,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             time = pick(c.opt("last_message_at"), m?.opt("created_date"), c.opt("updated_date"), c.opt("created_date")),
             unread = pick(c.opt("unread_count"), c.opt("unread"), c.opt("unreadCount")).toDoubleOrNull()?.toInt() ?: 0,
             open = c.optBoolean("open", false),
+            pinned = c.optBoolean("pinned", false),
         )
     }
 
@@ -235,8 +265,14 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         // the name (cut with … when long) and the verified seal right after it
         val nm = sdText(context, c.name + if (c.age.isNotEmpty()) ", ${c.age}" else "", 17f, K.ink2).oneLine()
         if (c.verified) nm.icon(Seal(16f), 6f, end = true)
-        t.addView(nm, lp(WRAP, WRAP))
-        t.addView(sdText(context, if (c.text.isNotEmpty()) "${if (c.from.isNotEmpty() && c.from == h.myIdNow) "You: " else ""}${c.text}" else "Say hi 👋", 14.5f, if (c.unread > 0) K.ink2 else K.sub, bold = c.unread > 0).oneLine(), lp(MATCH, WRAP, t = 3f))
+        if (c.pinned) {
+            // the pin right after the name (pinned chats stay on top)
+            val nr = hbox(context, 6f)
+            nr.addView(nm, lp(WRAP, WRAP, gravity = Gravity.CENTER_VERTICAL))
+            nr.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Pin, K.rose, 14f, 2.2f)); contentDescription = "Pinned" }, lp(dpi(14f), dpi(14f), gravity = Gravity.CENTER_VERTICAL))
+            t.addView(nr, lp(WRAP, WRAP))
+        } else t.addView(nm, lp(WRAP, WRAP))
+        t.addView(sdText(context, if (c.text.isNotEmpty()) "${if ((c.from.isNotEmpty() && c.from == h.myIdNow) || c.mine) "You: " else ""}${c.text}" else "Say hi 👋", 14.5f, if (c.unread > 0) K.ink2 else K.sub, bold = c.unread > 0).oneLine(), lp(MATCH, WRAP, t = 3f))
         mid.addView(t, lp(0, WRAP, 1f))
         val end = vbox(context, 6f, Gravity.END)
         end.addView(sdText(context, chatTime(c.time), 12.5f, if (c.unread > 0) K.hot else K.soft, bold = c.unread > 0), lp(WRAP, WRAP))
@@ -247,23 +283,30 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         }
         mid.addView(end, lp(WRAP, WRAP))
         mid.setPadding(0, dpi(4f), 0, dpi(4f))
-        mid.contentDescription = "Chat with ${c.name}${if (c.unread > 0) ", ${c.unread} new" else ""}"
+        mid.contentDescription = "Chat with ${c.name}${if (c.pinned) ", pinned" else ""}${if (c.unread > 0) ", ${c.unread} new" else ""}"
         mid.onTap { h.openChatRow(c) }
         r.addView(mid, lp(0, WRAP, 1f))
         return r
     }
 
-    companion object {
-        /** "4:05 PM" today · "Yesterday" · "7 Nov" */
-        fun chatTime(t: String): String {
-            val ms = SdRules.ms(t); if (ms == 0L) return ""
-            val d = Calendar.getInstance().apply { timeInMillis = ms }
-            val now = Calendar.getInstance()
-            fun same(a: Calendar, b: Calendar) = a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
-            if (same(d, now)) return java.text.SimpleDateFormat("h:mm a", Locale.US).format(d.time).uppercase()
-            val y = (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
-            if (same(d, y)) return "Yesterday"
-            return java.text.SimpleDateFormat("d MMM", Locale.US).format(d.time)
+}
+
+/** the chat list's order and demo chats — plain logic, no screen (tested in ChatListTest) */
+object SdChatList {
+    /** pinned chats first, then newest first (same as the server's getChats and the web) */
+    fun sorted(list: List<SdChatsPage.Chat>): List<SdChatsPage.Chat> = list.sortedWith(compareByDescending<SdChatsPage.Chat> { it.pinned }.thenByDescending { SdRules.ms(it.time) })
+
+    /** the web's sdDemoChats (lib/sdDemo.js): the first 5 demo people, the same texts, times and unread */
+    fun demoChats(myGender: String, now: Long = System.currentTimeMillis()): List<SdChatsPage.Chat> {
+        val msgs = listOf("Hey! How are you? 😊", "Nice to meet you!", "Let's talk soon 💕", "Hi 👋", "Good morning!")
+        return SdDemo.people(myGender).take(5).mapIndexed { i, p ->
+            val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                .format(java.util.Date(now - (5L + i * 23L) * 60_000L))
+            SdChatsPage.Chat(id = "demo-chat-$i", name = p.optString("name"), photo = p.optString("photo"), photoThumb = p.optString("photo_thumb"),
+                age = p.opt("age")?.toString().orEmpty(), pid = p.optString("id"), uid = "",
+                online = p.optBoolean("online"), verified = p.optBoolean("verified"),
+                text = msgs[i % msgs.size], from = "", time = iso, unread = if (i == 0) 2 else 0,
+                demo = true, mine = i % 2 == 0)
         }
     }
 }

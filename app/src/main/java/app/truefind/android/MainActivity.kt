@@ -989,6 +989,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun chatBack() { if (!goBack()) navigate("/secret-app?tab=chat", null, true) }
     private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> navigate(p, st) }, goBack = { chatBack() }, replace = { navigate(it, null, true) }).also {
         it.visibility = View.GONE
+        // pinned / unpinned in the chat: the Secret Dating chat list moves it at once
+        it.onPinned = { id, on -> if (::secret.isInitialized) secret.chatPinned(id, on) }
         root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         chatRoom = it
     }

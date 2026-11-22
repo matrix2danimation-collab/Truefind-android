@@ -49,6 +49,15 @@ object Realtime {
     /** live updates are flowing (joined the socket) */
     val connected: Boolean get() = joined
 
+    /** told when the live connection comes up or goes down (the chat's "Connecting…" bar); returns "stop telling me" */
+    private val stateCbs = mutableListOf<(Boolean) -> Unit>()
+    fun onState(cb: (Boolean) -> Unit): () -> Unit { stateCbs.add(cb); return { stateCbs.remove(cb) } }
+    private fun setJoined(v: Boolean) {
+        if (joined == v) return
+        joined = v
+        for (cb in stateCbs.toList()) try { cb(v) } catch (e: Exception) { }
+    }
+
     /** the login changed (another account): connect again with the new token */
     fun tokenChanged() { if (ws != null && Api.token.isNotEmpty() && Api.token != usedToken) { close(); if (rooms.isNotEmpty()) open() } }
 
@@ -60,13 +69,13 @@ object Realtime {
         val base = Api.origin.replaceFirst("https://", "wss://").replaceFirst("http://", "ws://")
         val url = "$base/ws-user-apps/socket.io/?app_id=${enc(Api.appId)}&token=${enc(Api.token)}&EIO=4&transport=websocket"
         usedToken = Api.token
-        joined = false
+        setJoined(false)
         ws = Api.http.newWebSocket(Request.Builder().url(url).build(), listener)
     }
 
     private fun close() {
         main.removeCallbacks(reopen)
-        val w = ws; ws = null; joined = false
+        val w = ws; ws = null; setJoined(false)
         try { w?.close(1000, null) } catch (e: Exception) { /* gone */ }
     }
 
@@ -79,8 +88,8 @@ object Realtime {
 
     private val listener = object : WebSocketListener() {
         override fun onMessage(webSocket: WebSocket, text: String) { main.post { if (webSocket === ws) packet(text) } }
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { main.post { if (webSocket === ws) { ws = null; joined = false; later() } } }
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { main.post { if (webSocket === ws) { ws = null; joined = false; later() } } }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { main.post { if (webSocket === ws) { ws = null; setJoined(false); later() } } }
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { main.post { if (webSocket === ws) { ws = null; setJoined(false); later() } } }
     }
 
     // engine.io v4: 0 open · 2 ping · 3 pong · 4 message · 1 close
@@ -98,7 +107,7 @@ object Realtime {
     private fun socketIo(p: String) {
         if (p.isEmpty()) return
         when (p[0]) {
-            '0' -> { joined = true; tries = 0; for (room in rooms.keys) emit("join", room) }
+            '0' -> { setJoined(true); tries = 0; for (room in rooms.keys) emit("join", room) }
             '1', '4' -> { close(); later() }
             '2' -> {
                 val at = p.indexOf('[')

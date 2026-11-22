@@ -73,6 +73,9 @@ class ChatRoom(
 
     // ── state (same names as the web) ──
     var matchId = ""; private set
+    /** pinned to the top of my chat list (pinChat, only for me) */
+    private var pinned = false
+    private var pinBusy = false
     private var other: JSONObject? = null
     private var otherPhotoRaw = ""
     private val messages = ArrayList<JSONObject>()
@@ -123,6 +126,28 @@ class ChatRoom(
     private val blockedBar = LinearLayout(ctx)
     private val blockedText = sdText(ctx, "", 15.5f, K.ink2, bold = false)
     private var fx: GiftFxView? = null
+    // "Connecting…" / "No internet" under the header, only while the live connection is down (ConnWatch)
+    private val conn = ConnWatch()
+    private val connBar = sdText(ctx, "", 13.5f, K.ink2).apply {
+        gravity = Gravity.CENTER; setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f))
+        background = rounded(Ui.c("#FFF7E0"), 14f, 1f, Ui.c("#F5D98B")); visibility = GONE
+        contentDescription = "Connection status"
+    }
+    private var unsubConn: (() -> Unit)? = null
+    private val connCheck = Runnable { renderConn() }
+    private fun phoneOffline(): Boolean = try {
+        val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        @Suppress("DEPRECATION") val ni = cm.activeNetworkInfo
+        ni == null || !ni.isConnected
+    } catch (e: Exception) { false }
+    private fun renderConn() {
+        main.removeCallbacks(connCheck)
+        val now = android.os.SystemClock.elapsedRealtime()
+        val t = if (shownNow && !Demo.on) conn.text(now, phoneOffline()) else ""
+        if (t.isEmpty()) connBar.visibility = GONE else { connBar.text = t; connBar.visibility = VISIBLE }
+        val w = conn.waitMs(now)
+        if (shownNow && w >= 0) main.postDelayed(connCheck, if (t.isEmpty()) w + 50L else 3000L)
+    }
 
     init {
         isClickable = true
@@ -130,6 +155,7 @@ class ChatRoom(
         val colv = vbox(ctx)
         addView(colv, LayoutParams(-1, -1))
         colv.addView(buildHeader(), lp(MATCH, WRAP))
+        colv.addView(connBar, lp(WRAP, WRAP, t = 8f, gravity = Gravity.CENTER_HORIZONTAL))
         errorBox.background = rounded(Ui.c("#FFF1F3"), 16f, 1f, Ui.c("#F8B4C2"))
         errorBox.setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(12f)); errorBox.visibility = GONE
         colv.addView(errorBox, lp(MATCH, WRAP, l = 14f, r = 14f, t = 12f))
@@ -174,7 +200,9 @@ class ChatRoom(
         listCol.removeAllViews(); tailCol.removeAllViews()
         // what was seen of this chat before (the chat list, the last visit) shows at once; the server's answer
         // follows quietly (owner, 20 Nov: the chat took half a minute to show anything)
+        pinned = false; pinBusy = false
         ChatCache.chat(id)?.let { c ->
+            pinned = c.optBoolean("pinned", false)
             other = JSONObject((c.optJSONObject("other") ?: JSONObject()).toString())
             chatApp = if (c.optString("app") == "truefind") "truefind" else "secret"
             otherPhotoRaw = SdRules.s(other, "photo")
@@ -187,6 +215,9 @@ class ChatRoom(
         load(g)
         unsubMsg = Realtime.subscribe("Message") { ev -> onMessageEvent(ev) }
         unsubMatch = Realtime.subscribe("Match") { ev -> onMatchEvent(ev) }
+        conn.state(Realtime.connected, android.os.SystemClock.elapsedRealtime())
+        unsubConn = Realtime.onState { up -> conn.state(up, android.os.SystemClock.elapsedRealtime()); renderConn() }
+        renderConn()
         main.removeCallbacks(presence); main.postDelayed(presence, 60_000)
         main.removeCallbacks(fallback); main.postDelayed(fallback, 4000)
     }
@@ -217,6 +248,7 @@ class ChatRoom(
         if (matchId.isNotEmpty() && !loading && error.isEmpty()) ChatCache.putMessages(matchId, messages)
         gen++
         unsubMsg?.invoke(); unsubMsg = null; unsubMatch?.invoke(); unsubMatch = null
+        unsubConn?.invoke(); unsubConn = null; main.removeCallbacks(connCheck); connBar.visibility = GONE
         main.removeCallbacks(presence); main.removeCallbacks(fallback); main.removeCallbacks(typingOff); main.removeCallbacks(typingHide); main.removeCallbacks(fxEnd)
         layer.closeAll()
         fx?.let { (it.parent as? ViewGroup)?.removeView(it) }; fx = null
@@ -761,7 +793,8 @@ class ChatRoom(
     private fun paintTick(v: ImageView, m: JSONObject) {
         val onWhite = v.tag == true
         val read = m.optBoolean("read")
-        v.setImageDrawable(if (read) Icon(Lucide.CheckCheck, if (onWhite) K.rose else Ui.c("#C4F1FF"), 14f) else Icon(Lucide.Check, if (onWhite) K.soft else Color.argb(217, 255, 255, 255), 14f))
+        // same as the web (ChatRoom.jsx): two ticks always — blue when read, grey / soft white when only sent
+        v.setImageDrawable(if (read) Icon(Lucide.CheckCheck, Ui.c("#3B82F6"), 14f) else Icon(Lucide.CheckCheck, if (onWhite) Color.argb(179, 140, 135, 139) else Color.argb(179, 255, 255, 255), 14f))
         v.contentDescription = if (read) "Read" else "Sent"
     }
     private fun heldView(h: JSONObject): View {
@@ -1284,6 +1317,7 @@ class ChatRoom(
         p.addView(head, lp(MATCH, WRAP))
         var close: () -> Unit = {}
         p.addView(sheetRow(Lucide.User, "View profile", null, false) { close(); profilePage() }, lp(MATCH, WRAP, t = 8f))
+        p.addView(sheetRow(if (pinned) Lucide.PinOff else Lucide.Pin, if (pinned) "Unpin chat" else "Pin chat", if (pinned) "It goes back to its normal place" else "Keep it at the top of your chats", false) { close(); togglePin() }, lp(MATCH, WRAP, t = 8f))
         if (story != null) p.addView(sheetRow(Lucide.Eye, "Watch story", if (storyPremium) "Posted in the last 24 hours" else "Premium", false) { close(); openStory() }, lp(MATCH, WRAP, t = 8f))
         if (blockRow != null) p.addView(sheetRow(Lucide.Ban, "Unblock", "Let them message you again", false) { close(); unblock() }, lp(MATCH, WRAP, t = 8f))
         else p.addView(sheetRow(Lucide.Ban, "Block", "They won't be able to message you", true) { close(); confirm("block") }, lp(MATCH, WRAP, t = 8f))
@@ -1307,6 +1341,26 @@ class ChatRoom(
         box.setOnClickListener { close() }
         close = layer.fade(box, z = 85f)
     }
+
+    /** "Pin chat" / "Unpin chat": only my own list changes (pinChat); the chat list puts it on top at once */
+    private fun togglePin() {
+        if (pinBusy || matchId.isEmpty()) return
+        val id = matchId
+        val next = !pinned
+        if (Demo.on) { pinned = next; ChatCache.chat(id)?.put("pinned", next); onPinned?.invoke(id, next); say(if (next) "Chat pinned to the top." else "Chat unpinned."); return }
+        pinBusy = true
+        Api.invoke("pinChat", JSONObject().put("match_id", id).put("pin", next)) { r ->
+            pinBusy = false
+            if (id != matchId) return@invoke
+            if (!r.ok) { say(r.data.optString("error").ifEmpty { "Couldn't ${if (next) "pin" else "unpin"} the chat. Try again." }, "err"); return@invoke }
+            pinned = next
+            ChatCache.chat(id)?.put("pinned", next)
+            onPinned?.invoke(id, next)
+            say(if (next) "Chat pinned to the top." else "Chat unpinned.")
+        }
+    }
+    /** the chat list moves the chat at once (SecretHome) */
+    var onPinned: ((String, Boolean) -> Unit)? = null
 
     private fun block() {
         val o = other ?: return
