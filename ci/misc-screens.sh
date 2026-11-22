@@ -77,6 +77,7 @@ if [ "$SET" = misc ]; then
   shot m09-notify 4 notify
   shot m10-notify-on 3 notify-on
   shot m11-notify-blocked 3 notify-blocked
+  shot m12-rules-reminder 4 rules
 fi
 
 if [ "$SET" = admin ]; then

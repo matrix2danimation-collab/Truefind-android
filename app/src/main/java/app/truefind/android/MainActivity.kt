@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private lateinit var admin: AdminScreen
     private lateinit var status: AppStatus
     private lateinit var notify: NotifyPrompt
+    private lateinit var rules: RulesReminder
 
     // ── permissions asked by the web page (mic / camera for calls, location for the map) ──
     private var pendingWebPermission: PermissionRequest? = null
@@ -345,13 +346,16 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         admin.visibility = View.GONE
         root.addView(admin, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         notify = NotifyPrompt(this, root)
+        // the rules reminder every 3 months (its links open the website's policy pages in a browser tab)
+        rules = RulesReminder(this, root) { p -> openBrowserTab(Api.origin.trimEnd('/') + p) }
         status = AppStatus(this, root, object : AppStatus.Host {
             override fun webJs(code: String) { web?.evaluateJavascript(code, null) }
             override fun webLoad(url: String) { if (!native || leaving) loadWeb(url) }
             override fun retrySession() { if (::work.isInitialized) work.retry() }
         }, { p -> navigate(p) }, { signOut(true) })
         notify.navPx = { if (pages.nav.visibility == View.VISIBLE) pages.nav.barPx else 0 }
-        notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking }
+        notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking || rules.open }
+        rules.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking }
         CrashNote.install(this)
         // native Live Rooms (/live …)
         live = LiveRoomsScreen(this, object : LiveRoomsScreen.Nav {
@@ -1340,6 +1344,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             admin.setShown(p == "/admin" && inApp, search)
             status.update(path + search, Api.token.isNotEmpty(), covered)
             notify.update(pages.onHome && pages.home.visibility == View.VISIBLE, inApp)
+            rules.update(pages.onHome && pages.home.visibility == View.VISIBLE, inApp)
         }
         // signed in and the sign-in page already on a page of the app: its own drawing is covered until the app's pages take over
         coverWeb(!native && web != null && Api.token.isNotEmpty() && webRoute.isNotEmpty() && !LoginLayer.isLoginPath(pathOnly(webRoute)) &&
@@ -1361,7 +1366,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.girl = intent.getBooleanExtra("tf_girl", false)
         root.post { pages.startPreview("home", "") }
         root.postDelayed({
-            if (scene.startsWith("notify")) notify.startPreview(scene) else status.startPreview(scene)
+            if (scene.startsWith("notify")) notify.startPreview(scene) else if (scene == "rules") rules.startPreview() else status.startPreview(scene)
             root.postDelayed(ready, 1200)
         }, 3000)
     }
