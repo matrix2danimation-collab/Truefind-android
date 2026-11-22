@@ -313,6 +313,8 @@ class CallSession(
         if (permAsked) return
         permAsked = true
         host.askPerms(video) { ok ->
+            // allowed: the phone's "call in progress" service from now on, so leaving True Find while it rings is safe
+            if (ok) keep()
             if (disposed || ok || status != "ringing") return@askPerms
             error = "Allow ${if (video) "microphone and camera" else "microphone"} access for True Find, then call again."
             ending = true
@@ -335,6 +337,7 @@ class CallSession(
         if (camOff) m.setCamOff(true)
         if (speakerOn) m.setLoud(true)
         m.start()
+        keep()
     }
 
     private val mediaListener = object : CallMedia.Listener {
@@ -402,6 +405,7 @@ class CallSession(
             if (disposed || status != "active") return
             val started = utcMs(Tf.s(call, "started_at"))
             if (started > 0) elapsed = maxOf(0L, (System.currentTimeMillis() - started) / 1000)
+            if (keeping && keptSince == 0L && started > 0) keep() // the notification's clock, once the start time is known
             val left = secsLeft
             if (left == 0L && !zeroAsked) {
                 zeroAsked = true
@@ -575,6 +579,7 @@ class CallSession(
                 if (disposed) return@askPerms
                 if (!ok) camOff = true
                 media?.toVideo(camOff)
+                keep()
                 emit()
             }
             tick()
@@ -724,8 +729,38 @@ class CallSession(
     /** test pictures: the low-balance pill and the seconds left */
     val previewLow: Boolean get() = previewSecsLeft != null
 
+    // ═════════════════ "call in progress" while True Find is away (CallService) ═════════════════
+    /** the service is held for this call (from the ringing, once the microphone is allowed, until the end) */
+    private var keeping = false
+    /** when the call started (the notification's clock counts from it); 0 = not known yet */
+    private var keptSince = 0L
+
+    /**
+     * The call keeps its microphone (and on a video call the camera) when True Find leaves the screen — the Home
+     * button, another app, the screen locked — through CallService, a foreground service with one quiet "call in
+     * progress" notification. Called when my call rings and the microphone is allowed, when the sound starts and
+     * when the call becomes a video call. Real calls only (not the practice call, not the test pictures).
+     */
+    private fun keep() {
+        if (disposed || mode != Mode.REAL) return
+        val st = status
+        if (st != "ringing" && st != "active") return
+        keeping = true
+        keptSince = if (st == "active") maxOf(0L, utcMs(Tf.s(call, "started_at"))) else 0L
+        val title = when { st == "ringing" -> "Calling…"; video -> "Video call in progress"; else -> "Voice call in progress" }
+        CallService.hold(ctx, "call:$callId", title, "Tap to return to your call", "/call/" + android.net.Uri.encode(callId), video, keptSince)
+    }
+
+    /** the call is over or its screen closed: the service and its notification go */
+    private fun unkeep() {
+        if (!keeping) return
+        keeping = false
+        CallService.release(ctx, "call:$callId")
+    }
+
     // ═════════════════ leaving ═════════════════
     private fun stopMedia() {
+        unkeep()
         media?.stop()
         media = null
         if (mediaState != "failed") mediaState = "idle"

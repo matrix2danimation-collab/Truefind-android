@@ -18,6 +18,11 @@
     <!-- an incoming call rings full screen on the lock screen (like WhatsApp) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+    <!-- a call keeps its microphone (and on a video call the camera) when True Find leaves the screen (CallService) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+
     <!-- test builds: install the newer APK from inside the app (Update button) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -71,6 +76,11 @@
         <receiver
             android:name=".DeclineReceiver"
             android:exported="false" />
+        <!-- "Voice call in progress": a call keeps its microphone / camera while True Find is in the background (CallService.kt) -->
+        <service
+            android:name=".CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|camera" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_tf" />

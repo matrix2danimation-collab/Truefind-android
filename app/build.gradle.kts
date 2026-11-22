@@ -55,6 +55,12 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    // The Play Store build (bundleRelease -PtfStore=true) has no install permission: Google Play does not
+    // allow an app to update itself, and the test builds' Update button was the only thing that used it
+    // (src/store/AndroidManifest.xml removes it). Test builds (assembleDebug) are unchanged.
+    if (project.findProperty("tfStore") == "true") {
+        sourceSets.getByName("release").manifest.srcFile("src/store/AndroidManifest.xml")
+    }
     buildFeatures {
         buildConfig = true
     }

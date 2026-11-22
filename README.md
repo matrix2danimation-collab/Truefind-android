@@ -14,7 +14,7 @@ Every push to `main` builds a test APK with GitHub Actions:
 - **Releases → "Test build" → `TrueFind-test.apk`** (open on the phone and install), or
 - **Actions → latest run → Artifacts → `TrueFind-test-apk`**.
 
-Test builds update themselves (the Update box, Settings → "Check for update") and have Settings → "Page speed report" and the test screens. **The build for users must not have any of these**: build it with `-PtfStore=true` (one switch, `BuildConfig.SELF_UPDATE`, turns all of them off).
+Test builds update themselves (the Update box, Settings → "Check for update") and have Settings → "Page speed report" and the test screens. **The build for users must not have any of these**: build it with `-PtfStore=true` (one switch, `BuildConfig.SELF_UPDATE`, turns all of them off). Make it as a release build (`gradle bundleRelease -PtfStore=true`): the same switch then also takes the install permission (`REQUEST_INSTALL_PACKAGES`, needed only by the Update button) out of the app (`app/src/store/AndroidManifest.xml`), because Google Play does not allow an app to update itself.
 
 ## Files
 
@@ -25,6 +25,7 @@ Test builds update themselves (the Update box, Settings → "Check for update") 
 | `Session.kt` | the sign-in kept on the phone; `SessionWork`: online / offline, the number on Find, "who am I", expert accounts; `ThumbBackfill` |
 | `SdNavBar.kt` | Secret Dating's bottom bar (Online Map · Home · Chat) |
 | `Push.kt` | notifications while the app is closed (Firebase): ringing calls with Answer / Decline, messages, missed calls |
+| `CallService.kt` | "Voice call in progress": while a call rings / runs (and an Expert Talk call while it is live), a foreground service (microphone, + camera on video) keeps its sound and camera when True Find leaves the screen; one quiet notification, a tap goes back to the call |
 | `WebBridge.kt` | link with the sign-in web page (only while signing in / out): its address, the login token, the app id |
 | `ExploreScreen.kt` | native Explore: header, chips, Voice/Video/Random, busy sheet, dialogs, calls |
 | `FeedView.kt` | the moving bubbles feed and its still background |

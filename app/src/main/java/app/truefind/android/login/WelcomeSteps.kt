@@ -747,6 +747,12 @@ internal object InfoSheet {
                 panel.list.addView(row, LK.lp(-1, -2, t = if (i == 0) 0f else 10f, l = 10f, r = 10f))
             }
         }
+        // the full documents: the public pages on the website (web pages/Legal.jsx), in the phone's browser
+        val full = LK.t(ctx, "Read the full Terms of Use, Privacy Policy, Refund Policy and Child Safety Standards", 12.5f, LK.purpleDeep, true, 1.4f)
+        full.setOnClickListener {
+            try { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(app.truefind.android.Api.origin.trimEnd('/') + "/legal"))) } catch (e: Exception) { }
+        }
+        panel.list.addView(full, LK.lp(-1, -2, t = 16f, l = 10f, r = 10f))
         panel.list.setPadding(0, 0, 0, Ui.dpi(6f))
         close = layer.sheet(panel, onClose = onClose)
     }
