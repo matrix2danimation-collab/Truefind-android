@@ -129,6 +129,9 @@ dependencies {
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     implementation("androidx.activity:activity-ktx:1.10.1")
+    // an old Fragment library came in through other libraries; with it, permission answers (microphone,
+    // camera, notifications) can be lost on some phones. Android's checker asks for 1.3.0 or newer.
+    implementation("androidx.fragment:fragment:1.8.5")
     implementation("androidx.webkit:webkit:1.14.0")
     // Profile → Become a Host / Creator: the live selfie video (camera only)
     implementation("androidx.camera:camera-camera2:1.4.1")

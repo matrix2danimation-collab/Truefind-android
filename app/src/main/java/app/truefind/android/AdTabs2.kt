@@ -685,7 +685,7 @@ class AdPayouts(a: AdminScreen) : AdTab(a) {
                 go.busy = false
                 if (!r.ok) { say(AF.err(r), true); return@fn }
                 val d = r.data
-                a.saveFile("truefind-payouts-${AF.s(d, "fy").ifEmpty { fy }}.csv", "text/csv", ("﻿" + AF.s(d, "csv")).toByteArray(Charsets.UTF_8))
+                a.saveFile("truefind-payouts-${AF.s(d, "fy").ifEmpty { fy }}.csv", "text/csv", ("\uFEFF" + AF.s(d, "csv")).toByteArray(Charsets.UTF_8))
                 val t = AF.o(d, "totals")
                 last.text = "${AF.nf(AF.n(d, "count"))} payouts · sent ₹${AF.rup(AF.n(t, "net"))} · TDS ₹${AF.rup(AF.n(t, "tds"))}"
                 last.visibility = View.VISIBLE

@@ -127,7 +127,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         promise.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ShieldCheck, Ui.c("#16a34a"), 22f)) }, lp(dpi(22f), dpi(22f)))
         val pt = android.text.SpannableStringBuilder()
         val b0 = pt.length; pt.append("Don't worry about your location."); pt.setSpan(android.text.style.ForegroundColorSpan(K.wine), b0, pt.length, 0)
-        pt.setSpan(android.text.style.TypefaceSpan(Ui.bold), b0, pt.length, 0)
+        pt.setSpan(Compat.typefaceSpan(Ui.bold), b0, pt.length, 0)
         pt.append(" Your exact location is never shared — the map only shows the city you chose in your profile.")
         promise.addView(sdText(context, pt, 13.5f, K.sub, bold = false).lineHeight(1.25f), lp(0, WRAP, 1f))
         col.addView(promise, lp(MATCH, WRAP, t = 10f))

@@ -26,6 +26,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import app.truefind.android.Compat
 import app.truefind.android.TfLoader
 import app.truefind.android.Ui
 import org.json.JSONObject
@@ -76,8 +77,8 @@ internal class PhoneStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         letterSpacing = 0.6f / 17f
         inputType = InputType.TYPE_CLASS_PHONE
         imeOptions = EditorInfo.IME_ACTION_GO
-        setAutofillHints(View.AUTOFILL_HINT_PHONE)
-        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+        Compat.autofill(this, "phone")
+        Compat.autofillYes(this)
     }
     private val ok = FrameLayout(ctx).apply {
         background = CssBox(LK.green, 11f)
@@ -196,7 +197,7 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         inputType = InputType.TYPE_CLASS_NUMBER
         setTextColor(Color.TRANSPARENT); setHintTextColor(Color.TRANSPARENT)
         isCursorVisible = false
-        setAutofillHints("smsOTPCode")
+        Compat.autofill(this, "smsOTPCode")
         alpha = 0.01f
         contentDescription = "6-digit OTP"
     }
@@ -517,7 +518,7 @@ internal class ProfileStep(ctx: Context, private val page: WelcomePage) : Welcom
     private val nameIn = WInput(ctx, 16f, "Your name").apply {
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS or InputType.TYPE_TEXT_VARIATION_PERSON_NAME
         filters = arrayOf(InputFilter.LengthFilter(40))
-        setAutofillHints(View.AUTOFILL_HINT_NAME)
+        Compat.autofill(this, "name")
         imeOptions = EditorInfo.IME_ACTION_NEXT
     }
     private val dobIn = WInput(ctx, 16f, "DD/MM/YYYY").apply { inputType = InputType.TYPE_CLASS_NUMBER; imeOptions = EditorInfo.IME_ACTION_DONE }

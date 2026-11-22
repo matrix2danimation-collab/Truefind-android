@@ -36,6 +36,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import app.truefind.android.Compat
 import app.truefind.android.Photos
 import app.truefind.android.TfLoader
 import app.truefind.android.Ui
@@ -335,15 +336,15 @@ internal class AField(
     override fun setEnabled(e: Boolean) { super.setEnabled(e); edit.isEnabled = e; alpha = if (e) 1f else 0.5f }
     val value: String get() = edit.text?.toString().orEmpty()
     fun put(v: String) { if (value == v) return; setting = true; edit.setText(v); edit.setSelection(v.length); setting = false }
-    fun email(): AField { edit.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS; edit.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS); return this }
+    fun email(): AField { edit.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS; Compat.autofill(edit, "emailAddress"); return this }
     fun password(newOne: Boolean): AField {
         edit.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         edit.transformationMethod = PasswordTransformationMethod.getInstance()
         edit.typeface = Ui.regular
-        edit.setAutofillHints(if (newOne) View.AUTOFILL_HINT_PASSWORD else View.AUTOFILL_HINT_PASSWORD)
+        Compat.autofill(edit, "password")
         return this
     }
-    fun phone(): AField { edit.inputType = InputType.TYPE_CLASS_PHONE; edit.setAutofillHints(View.AUTOFILL_HINT_PHONE); return this }
+    fun phone(): AField { edit.inputType = InputType.TYPE_CLASS_PHONE; Compat.autofill(edit, "phone"); return this }
     fun number(): AField { edit.inputType = InputType.TYPE_CLASS_NUMBER; return this }
     fun onGo(f: () -> Unit): AField {
         edit.imeOptions = EditorInfo.IME_ACTION_GO
@@ -474,7 +475,7 @@ internal class OtpRow(ctx: Context, private val n: Int = 6) : FrameLayout(ctx) {
         edit.apply {
             background = null; setTextColor(Color.TRANSPARENT); isCursorVisible = false
             inputType = InputType.TYPE_CLASS_NUMBER
-            setAutofillHints("smsOTPCode")
+            Compat.autofill(this, "smsOTPCode")
             alpha = 0.01f; isLongClickable = false
             filters = arrayOf(android.text.InputFilter.LengthFilter(n))
             addTextChangedListener(object : TextWatcher {

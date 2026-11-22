@@ -1408,7 +1408,7 @@ class ChatRoom(
         })
         p.addView(detailsIn, lp(MATCH, WRAP))
         p.addView(hint, lp(MATCH, WRAP, l = 4f, r = 4f, t = 3f))
-        p.addView(sdText(context, "Screenshots ", 16f, K.wine).apply { append(android.text.SpannableString("(up to 3, optional)").apply { setSpan(android.text.style.ForegroundColorSpan(K.soft), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.regular), 0, length, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
+        p.addView(sdText(context, "Screenshots ", 16f, K.wine).apply { append(android.text.SpannableString("(up to 3, optional)").apply { setSpan(android.text.style.ForegroundColorSpan(K.soft), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.regular), 0, length, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
         p.addView(shotsRow, lp(MATCH, WRAP))
         p.addView(sendB.press().onTap {
             if (!ready() || busy) return@onTap
@@ -1458,8 +1458,8 @@ class ChatRoom(
         var close: () -> Unit = {}
         val c = vbox(context, 10f, Gravity.CENTER_HORIZONTAL).apply { setPadding(0, dpi(4f), 0, dpi(6f)) }
         c.addView(gifView(g, big = true, showPrice = false, onPink = false), lp(WRAP, WRAP))
-        c.addView(sdText(context, android.text.SpannableStringBuilder("Send ").append(android.text.SpannableString(g.label).apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.bold), 0, length, 0) }).append(" to ${firstName.ifEmpty { "them" }}"), 16.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER })
-        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(android.text.style.TypefaceSpan(Ui.bold), 0, length, 0) }), 15f, K.sub, bold = false).icon(Icon(Lucide.CoinsIcon, K.hot, 16f), 6f), lp(WRAP, WRAP))
+        c.addView(sdText(context, android.text.SpannableStringBuilder("Send ").append(android.text.SpannableString(g.label).apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }).append(" to ${firstName.ifEmpty { "them" }}"), 16.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER })
+        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }), 15f, K.sub, bold = false).icon(Icon(Lucide.CoinsIcon, K.hot, 16f), 6f), lp(WRAP, WRAP))
         p.addView(c, lp(MATCH, WRAP))
         val bal = balance
         if (bal != null && bal < g.price) {

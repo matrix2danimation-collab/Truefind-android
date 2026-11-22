@@ -13,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import app.truefind.android.Compat
 import app.truefind.android.Api
 import app.truefind.android.Ui
 import org.json.JSONObject
@@ -130,7 +131,7 @@ internal class LoginPage(ctx: Context, layer: LoginLayer) : DarkPage(ctx, layer)
         val ctx = context
         val field = AField(ctx, "10-digit mobile number", LK.I.Phone).phone()
         field.edit.letterSpacing = 0.05f
-        field.edit.setAutofillHints(View.AUTOFILL_HINT_PHONE)
+        Compat.autofill(field.edit, "phone")
         val ok = FrameLayout(ctx).apply { background = CssBox(LK.green, 10f); visibility = View.GONE }
         ok.addView(ImageView(ctx).apply { setImageDrawable(LK.lu(LK.I.ShieldCheck, Color.WHITE, 12f)) }, FrameLayout.LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.CENTER))
         field.addView(ok, LK.flp(Ui.dpi(20f), Ui.dpi(20f), Gravity.CENTER_VERTICAL or Gravity.END, r = 12f))
