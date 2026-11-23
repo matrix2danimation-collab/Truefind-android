@@ -300,8 +300,8 @@ tshot() {
     a=$(echo $a)
     [ -z "$a" ] && continue
     case "$(echo "$a" | wc -w)" in
-      2) adb shell input tap $a ;;
-      4) adb shell input swipe $a 250 ;;
+      2) adb shell input tap $a < /dev/null ;;      # (adb must not read the list of taps this loop is reading)
+      4) adb shell input swipe $a 250 < /dev/null ;;
     esac
     sleep 2
   done <<< "$acts;"
