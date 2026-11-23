@@ -1390,6 +1390,8 @@ class SecretHome(
         StoryViewer.open(this, l, i, false)
     }
     fun watchStory(s: JSONObject) { StoryViewer.open(this, listOf(s), 0, false) }
+    /** the stories were closed: the row again — the ones just watched go pale and move behind the ones not yet seen */
+    fun storiesClosed() { renderStories() }
     fun seeStory(s: JSONObject) {
         if (s.optBoolean("seen")) return
         val id = s.optString("id")
@@ -1455,7 +1457,9 @@ class SecretHome(
             "seeall" -> openMyActivity("liked", all = true)
             "activity" -> openMyActivity("liked")
             "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(SdNavBar.BAR))   // as from the bottom bar's Likes (its height)
-            "card" -> scroll.scrollTo(0, body.top + deckBox.top - dpi(10f))   // the whole card on the screen
+            // the card's foot (name, ✕ ♥) just above the bottom bar · its top
+            "card" -> { scroll.scrollTo(0, maxOf(0, body.top + deckBox.top + SdDeck.cardH(SdDeck.cardW(context), 0) + dpi(4f) - (scroll.height - dpi(SdNavBar.BAR) - dpi(20f)))); postDelayed({ deck.logButtons() }, 600) }
+            "cardtop" -> scroll.scrollTo(0, body.top + deckBox.top - dpi(10f))
             "nearby" -> pickDeck("nearby")
             "favorite" -> pickDeck("favorite")
             "like" -> deck.front?.let { likeTap(it, deckBox) }

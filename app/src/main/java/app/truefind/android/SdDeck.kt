@@ -20,18 +20,20 @@ import android.widget.LinearLayout
 import org.json.JSONObject
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Secret Dating Home's profile card (owner's pictures, 23 Nov): one big card at a time — the photo, Online and
+ * Secret Dating Home's profile card (owner's pictures, 23 Nov): one big card in front — the photo, Online and
  * Verified at its top, the name and city at its bottom, and two round buttons on it: ✕ (the next profile) and
- * ♥ (like). Swipe left / right or tap the arrows for the next / the one before; tap the photo to open the profile.
- * Flat ("2D"): a white edge, no gloss, no deep shadow.
- * Its size is the second picture's and a little longer (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो" …
- * "थोड़ा और लंबा करो"): almost the screen's width and 1.8 × as tall, on every phone, with everything on it in that
- * picture's proportions (the round buttons a fifth of the card's width, and so on). It is longer than a phone's first
- * screen: its foot (the name, ✕ ♥) comes up with a small scroll. (He first tried the shorter size that ends above the
- * bottom bar, [fit], and sent it back the same day.)
+ * ♥ (like). Swipe left / right for the next / the one before; tap the photo to open the profile.
+ * The cards before and after it peek out at both sides, a little smaller and shaded, so it shows that there are more
+ * (owner, 23 Nov evening: "साइड में और भी हैं … ताकि यूजर खुद ही उसको चेंज कर ले" — the arrows went; a tap on a
+ * peeking card brings it to the front). Flat ("2D"): a white edge, no gloss, no deep shadow.
+ * Its height (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो" … "थोड़ा और लंबा करो", twice): 1.95 × the
+ * second picture's card width, on every phone; its foot (the name, ✕ ♥) comes up with a small scroll. The round
+ * buttons are a little smaller than the picture's (that evening: "थोड़ा छोटा छोटा कर दो"). (He first tried the shorter
+ * size that ends above the bottom bar, [fit], and sent it back the same day.)
  */
 @SuppressLint("ViewConstructor")
 class SdDeck(
@@ -50,8 +52,6 @@ class SdDeck(
     }
     private val dots = LinearLayout(ctx).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER }
     private val counter = sdText(ctx, "", 13f, Rs.ICON).apply { gravity = Gravity.CENTER }
-    private val prevBtn = navBtn(Lucide.ChevronLeft) { go(idx - 1) }
-    private val nextBtn = navBtn(Lucide.ChevronRight) { go(idx + 1) }
     private val cards = HashMap<Int, Card>()
 
     private var idx = 0
@@ -78,7 +78,7 @@ class SdDeck(
         addView(box, LayoutParams(MATCH, 0))
         addView(dots, lp(MATCH, dpi(8f), t = 10f))
         addView(counter, lp(MATCH, WRAP, t = 8f))
-        box.addView(prevBtn); box.addView(nextBtn)
+        box.clipChildren = false
     }
 
     /** [restart]: another list was chosen (Discover · Nearby · Favorite) — it starts at its first card */
@@ -99,6 +99,13 @@ class SdDeck(
     fun next() { if (n > 1) go(idx + 1) }
     /** a like changed: the hearts are painted again */
     fun refresh() { for (c in cards.values) c.paintHeart() }
+    /** test shots: where the front card's ✕ and ♥ are on the screen (their middles, px) */
+    fun logButtons() {
+        val c = cards[idx] ?: return
+        val a = IntArray(2)
+        for ((nm, b) in listOf("skip" to c.skipBtn, "like" to c.likeBtn)) { b.getLocationOnScreen(a); android.util.Log.i("TFDBG", "deck btn $nm ${a[0] + b.width / 2} ${a[1] + b.height / 2}") }
+        c.getLocationOnScreen(a); android.util.Log.i("TFDBG", "deck card ${a[0]} ${a[1]} ${c.width} ${c.height}")
+    }
     /** test shots: the card in front */
     val front: JSONObject? get() = if (n == 0) null else people[mod(idx)]
     private val n get() = people.size
@@ -119,11 +126,12 @@ class SdDeck(
         if (Demo.on) android.util.Log.i("TFDBG", "deck size w=$w h=$h cw=$cw W=$W H=$H cards=${cards.size} n=$n")
     }
 
-    // ── the cards: the one in front, and its two neighbours waiting just outside the screen ──
+    // ── the cards: the one in front, the two peeking out at its sides, and the next two waiting outside the screen ──
+    private val step get() = W + Ui.dp(GAP)
     private fun layoutCards() {
         if (W == 0 || n == 0) { for (c in cards.values) box.removeView(c); cards.clear(); refreshNav(); return }
         val want = HashSet<Int>()
-        for (off in if (n >= 2) intArrayOf(-1, 0, 1) else intArrayOf(0)) {
+        for (off in if (n >= 2) intArrayOf(-2, -1, 0, 1, 2) else intArrayOf(0)) {
             val k = idx + off
             want.add(k)
             val card = cards.getOrPut(k) { Card(context).also { c -> box.addView(c, 0, FrameLayout.LayoutParams(W, H)) } }
@@ -135,24 +143,22 @@ class SdDeck(
     }
 
     private fun place() {
-        val c0 = if (dragging) idx - dx / cw else center
+        val c0 = if (dragging) idx - dx / step else center
         for ((k, card) in cards) {
             val pos = k - c0
-            card.x = (cw - W) / 2f + pos * cw
+            val a = min(1f, abs(pos))
+            card.x = (cw - W) / 2f + pos * step
             card.y = Ui.dp(2f)
-            card.visibility = if (abs(pos) >= 1f) INVISIBLE else VISIBLE
+            // the ones at the sides: a little smaller, shaded, under the one in front
+            card.scaleX = 1f - .08f * a; card.scaleY = 1f - .08f * a
+            card.shadeTo(a)
+            card.translationZ = (1f - a) * 4f
+            card.visibility = if (abs(pos) >= 1.9f) INVISIBLE else VISIBLE
         }
-        prevBtn.translationZ = 30f; nextBtn.translationZ = 30f
     }
 
     private fun refreshNav() {
         val many = n > 1
-        val left = (cw - W) / 2f
-        // (the picture's arrows sit a little above the card's middle: 43 % down)
-        val top = Ui.dp(2f) + H * 0.428f - Ui.dp(20f)
-        prevBtn.visibility = if (many) VISIBLE else GONE; nextBtn.visibility = if (many) VISIBLE else GONE
-        prevBtn.x = left + Ui.dp(8f); prevBtn.y = top
-        nextBtn.x = cw - left - Ui.dp(8f) - Ui.dp(40f); nextBtn.y = top
         dots.removeAllViews()
         dots.visibility = if (many && n <= 8) VISIBLE else GONE
         counter.visibility = if (many && n > 8) VISIBLE else GONE
@@ -168,7 +174,7 @@ class SdDeck(
     private fun go(k: Int) { moveTo(k) }
     private fun moveTo(k: Int) {
         if (n == 0) return
-        val from = if (dragging) idx - dx / cw else center
+        val from = if (dragging) idx - dx / step else center
         idx = k; dx = 0f; dragging = false
         layoutCards()
         anim?.cancel()
@@ -193,9 +199,6 @@ class SdDeck(
             MotionEvent.ACTION_DOWN -> {
                 downX = e.x; downY = e.y; axis = 0; v = 0f; lastX = e.x; lastT = System.nanoTime()
                 downBtn = null
-                if (hit(prevBtn, e)) { downOn = false; navDown = prevBtn; return true }
-                if (hit(nextBtn, e)) { downOn = false; navDown = nextBtn; return true }
-                navDown = null
                 val card = cards[idx]
                 downOn = card != null && card.visibility == VISIBLE && e.x >= card.x && e.x <= card.x + card.width && e.y >= card.y && e.y <= card.y + card.height
                 if (downOn) downBtn = card!!.buttonAt(e.x - card.x, e.y - card.y)?.also { it.animate().scaleX(.92f).scaleY(.92f).setDuration(110).start() }
@@ -220,10 +223,11 @@ class SdDeck(
                 val cancel = e.actionMasked == MotionEvent.ACTION_CANCEL
                 val btn = downBtn
                 release()
-                navDown?.let { b -> if (!cancel && hit(b, e)) b.performClick(); navDown = null; return true }
                 if (axis == 0) {
                     dx = 0f
-                    if (cancel || !downOn || n == 0) return true
+                    if (cancel || n == 0) return true
+                    // a tap on a card peeking out at a side: that one comes to the front
+                    if (!downOn) { if (n > 1) { if (e.x < (cw - W) / 2f) go(idx - 1) else if (e.x > (cw + W) / 2f) go(idx + 1) }; return true }
                     val card = cards[idx] ?: return true
                     val p = people[mod(idx)]
                     when {
@@ -237,7 +241,7 @@ class SdDeck(
                     val x = dx
                     val vDp = v / Ui.density // px per ms → dp per ms
                     val flick = abs(vDp) > 0.45f && abs(x) > Ui.dp(18f) && (System.nanoTime() - lastT) / 1e6f < 90f
-                    val far = cw * 0.22f
+                    val far = step * 0.22f
                     val delta = if (n > 1 && (x < -far || (flick && v < 0))) 1 else if (n > 1 && (x > far || (flick && v > 0))) -1 else 0
                     moveTo(idx + delta)
                 }
@@ -246,28 +250,19 @@ class SdDeck(
         return true
     }
     private fun release() { downBtn?.animate()?.scaleX(1f)?.scaleY(1f)?.setDuration(140)?.start(); downBtn = null }
-    private var navDown: View? = null
-    private fun hit(v: View, e: MotionEvent) = v.visibility == VISIBLE && e.x >= v.x && e.x <= v.x + v.width && e.y >= v.y && e.y <= v.y + v.height
 
     override fun onDetachedFromWindow() { anim?.cancel(); center = idx.toFloat(); super.onDetachedFromWindow() }
-
-    private fun navBtn(icon: String, onClick: () -> Unit): ImageView = ImageView(context).apply {
-        setImageDrawable(Icon(icon, Rs.INK, 22f, 2.4f))
-        scaleType = ImageView.ScaleType.CENTER
-        background = oval(Color.WHITE, 1f, Rs.LINE)
-        layoutParams = FrameLayout.LayoutParams(dpi(40f), dpi(40f))
-        setOnClickListener { onClick() }
-        contentDescription = if (icon == Lucide.ChevronLeft) "Previous profile" else "Next profile"
-    }
 
     companion object {
         /**
          * the second picture's card is 480 wide on a 512 screen (13 at each side on a phone) and 743 tall, 1.545 × its
-         * width; the owner then asked for it a little longer still (23 Nov evening). 1.8 ×: on the usual phones (360 – 411
-         * wide, 20:9) the first screen then ends in the photo, above the name — at 1.7 it ran through the middle of the
-         * name, which looked cut
+         * width; the owner then asked for it longer twice (23 Nov evening): 1.8 ×, then 1.95 × that width (the card is
+         * narrower now, the neighbours peeking out beside it, but keeps this height)
          */
-        const val RATIO = 1.8f
+        const val RATIO = 1.95f
+        /** how far the cards before and after peek out at each side, and the gap between the cards (dp) */
+        const val PEEK = 20f
+        const val GAP = 10f
         /**
          * false (the owner's word, 23 Nov): the long card ([RATIO]) on every phone; its foot (✕ ♥) comes up only with a
          * small scroll.
@@ -275,10 +270,12 @@ class SdDeck(
          * scroll — and never taller than [RATIO]. (In the app for an hour on 23 Nov; too short for him.)
          */
         var fit = false
-        fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = (deckW - Ui.dp(26f)).coerceIn(Ui.dp(220f), Ui.dp(460f)).roundToInt()
-        /** [room]: the height free for the card on the first screen, see [fit] (0 = not measured yet) */
+        fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = (deckW - Ui.dp(2 * (PEEK + GAP))).coerceIn(Ui.dp(200f), Ui.dp(420f)).roundToInt()
+        /** [w]: the card's width ([cardW]); [room]: the height free for the card on the first screen, see [fit] (0 = not measured yet) */
         fun cardH(w: Int, room: Int): Int {
-            val full = (w * RATIO).roundToInt()
+            // the picture's width (13 at each side of the screen), from which the height is counted
+            val base = (w + Ui.dp(2 * (PEEK + GAP)) - Ui.dp(26f)).coerceIn(Ui.dp(220f), Ui.dp(460f))
+            val full = (base * RATIO).roundToInt()
             // (little room — a short phone, or the "Stories are Premium Only" box above it: never squarer than the card was before, 1.05 × its width)
             return if (fit && room > 0) room.coerceIn((w * 1.05f).roundToInt(), full) else full
         }
@@ -303,7 +300,7 @@ class SdDeck(
         private val nameRow = hbox(ctx, 8f)
         // the picture's measures, as parts of the card's width (dp)
         private val wDp = W / Ui.density
-        private val btnDp = (wDp * .2f).coerceIn(58f, 80f)          // ✕ and ♥: a fifth of the card's width
+        private val btnDp = (wDp * .165f).coerceIn(48f, 64f)        // ✕ and ♥: a little smaller than the picture's (a fifth of the card's width)
         private val footDp = wDp * .075f                            // under the buttons
         private val name = Rs.title(ctx, "", (wDp * .082f).coerceIn(24f, 33f), Color.WHITE).oneLine().shadow(6f, 1f, Color.argb(110, 30, 0, 8))
         private val seal = ImageView(ctx).apply { setImageDrawable(Seal(23f, Color.WHITE, Rs.M)) }
@@ -317,12 +314,15 @@ class SdDeck(
         val likeIcon = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER }
         val likeBtn = FrameLayout(ctx).apply { addView(likeIcon, LayoutParams(-1, -1)) }
         private val buttons = hbox(ctx, 0f, Gravity.CENTER)
+        /** the shade over a card peeking out at a side */
+        private val sideShade = View(ctx).apply { background = rounded(Rs.c("#5A1428"), 26f); alpha = 0f }
         private var boundId = ""
         private var heartKey = -1
 
         init {
-            // the white edge around the photo
+            // the white edge around the photo (flat: no shadow, also while the cards are stacked by their height)
             background = rounded(Color.WHITE, 26f, 1f, Rs.LINE)
+            outlineProvider = null
             inner.background = rounded(Rs.c("#F6D6E6"), 23f)
             inner.outlineProvider = object : ViewOutlineProvider() { override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, Ui.dp(23f)) } }
             inner.clipToOutline = true
@@ -343,7 +343,10 @@ class SdDeck(
             buttons.addView(skipBtn, lp(dpi(btnDp), dpi(btnDp)))
             buttons.addView(likeBtn, lp(dpi(btnDp), dpi(btnDp), l = wDp * .12f))
             inner.addView(buttons, LayoutParams(-1, dpi(btnDp), Gravity.BOTTOM).apply { bottomMargin = dpi(footDp) })
+            addView(sideShade, LayoutParams(-1, -1))
         }
+        /** [a]: 0 in front … 1 at a side */
+        fun shadeTo(a: Float) { sideShade.alpha = a * .38f; buttons.alpha = 1f - a; info.alpha = 1f - a * .6f }
 
         fun bind(p: JSONObject) {
             person = p

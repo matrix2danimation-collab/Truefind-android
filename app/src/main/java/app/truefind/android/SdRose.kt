@@ -153,76 +153,133 @@ internal class RoseDeco {
 }
 
 /**
- * The logo: "TrueFind" in the serif italic, its line heart sitting over the end of "Find" (the owner's picture; 23 Nov:
- * "पूरा ट्रू फाइंड नाम आना चाहिए और फाइंड के ऊपर हार्ट"). It always shows whole: where its row has less room than the
- * word needs at [maxDp] — a narrow phone, a long credits pill beside it — the whole logo is drawn smaller, never cut
- * (it was a TextView before, and lost its last letters on phones narrower than the test phone).
+ * The logo: "TrueFind" in the serif italic, and the dot of its "i" is a little heart that beats and glows in changing
+ * colours (owner, 23 Nov evening: "आई के डॉट पे हार्ट आना चाहिए और वो हार्ट ब्लिंक होना चाहिए … सिर्फ उस हार्ट में") —
+ * only the heart moves, never the word. It always shows whole: where its row has less room than the word needs at
+ * [maxDp] (a narrow phone, a long credits pill beside it), the whole logo is drawn smaller, never cut.
  */
 @android.annotation.SuppressLint("ViewConstructor")
 class LogoView(ctx: Context, private val maxDp: Float) : View(ctx) {
     private val tp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Rs.LOGO; typeface = Rs.serifItalic }
-    private val hp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        color = Rs.LOGO; style = android.graphics.Paint.Style.STROKE; strokeCap = android.graphics.Paint.Cap.ROUND; strokeJoin = android.graphics.Paint.Join.ROUND
+    private val fillP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val glowP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val edgeP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE; color = Rs.LOGO; strokeJoin = android.graphics.Paint.Join.ROUND
     }
     private val heart: android.graphics.Path = androidx.core.graphics.PathParser.createPathFromPathData(Lucide.Heart)
-    // the little line that runs on into the heart from its dip, as a heart drawn by hand
-    private val curl: android.graphics.Path = androidx.core.graphics.PathParser.createPathFromPathData("M12 5c.9 1.3 1.2 2.6 1 3.9")
-    private val box = android.graphics.Rect()
     private var px = Ui.dp(maxDp)
+    private var g: Glyphs? = null
+    private var t = 0f
+    private val beat = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+        duration = 1700; repeatCount = android.animation.ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator()
+        addUpdateListener { t = it.animatedValue as Float; invalidate() }
+    }
+    private var seen = false
     /** the text size it is drawn at now (dp): [maxDp], or less where the row is too narrow for that */
     val sizeDp: Float get() = px / Ui.density
 
     init { contentDescription = "TrueFind" }
 
-    /** the word's ink width · the height of its tall letters · the heart's size · the whole logo's width and height, at text size [size] (px) */
-    private class Fit(val word: Float, val cap: Float, val heart: Float, val w: Float, val h: Float)
-    private fun fit(size: Float): Fit {
+    /**
+     * The word at text size [size], drawn as paths: "TrueF", the "i" without its dot, "nd" — and where the dot was (its
+     * middle, and the heart's size), all from the baseline at x 0.
+     */
+    private class Glyphs(val size: Float, val word: android.graphics.Path, val inkRight: Float, val cap: Float, val below: Float,
+                         val hx: Float, val hBottom: Float, val hs: Float)
+    private fun glyphs(size: Float): Glyphs {
+        g?.let { if (it.size == size) return it }
         tp.textSize = size
-        tp.getTextBounds(WORD, 0, WORD.length, box)
-        val cap = -box.top.toFloat()
+        val b = android.graphics.Rect()
+        tp.getTextBounds(WORD, 0, WORD.length, b)
+        val cap = -b.top.toFloat()
+        val xb = android.graphics.Rect(); tp.getTextBounds("x", 0, 1, xb)
+        val xTop = xb.top.toFloat()
+        val x1 = tp.measureText("TrueF"); val x2 = tp.measureText("TrueFi")
+        // the "i": its dot is the part above the x-height
+        val iPath = android.graphics.Path(); tp.getTextPath("i", 0, 1, x1, 0f, iPath)
+        val above = android.graphics.Path().apply { addRect(x1 - size, -size * 2, x1 + size, xTop - cap * .04f, android.graphics.Path.Direction.CW) }
+        val dot = android.graphics.Path(); dot.op(iPath, above, android.graphics.Path.Op.INTERSECT)
+        val stem = android.graphics.Path(); stem.op(iPath, above, android.graphics.Path.Op.DIFFERENCE)
+        val db = android.graphics.RectF(); dot.computeBounds(db, true)
+        val word = android.graphics.Path()
+        tp.getTextPath("TrueF", 0, 5, 0f, 0f, word)
+        word.addPath(stem)
+        val nd = android.graphics.Path(); tp.getTextPath("nd", 0, 2, x2, 0f, nd); word.addPath(nd)
         val hs = cap * HEART
-        val word = maxOf(box.right.toFloat(), tp.measureText(WORD))
-        // (as much room under the word as the heart takes over it: the word, not the heart, sits in the row's middle)
-        return Fit(word, cap, hs, word + hs * (OUT + .5f + .1f), cap + 2 * hs * (UP + .5f + .08f))
+        val hx = if (db.isEmpty) x1 + tp.measureText("i") * .62f else db.centerX() + hs * .06f
+        val hBottom = if (db.isEmpty) xTop - cap * .1f else db.bottom + hs * .02f
+        return Glyphs(size, word, maxOf(b.right.toFloat(), tp.measureText(WORD)), cap, maxOf(0f, b.bottom.toFloat()), hx, hBottom, hs).also { g = it }
     }
+    /** how far the heart (with its glow, at its biggest) reaches over the tall letters' top */
+    private fun over(k: Glyphs) = maxOf(0f, -(k.hBottom - k.hs * 1.18f) - k.cap)
+    private fun width(k: Glyphs) = maxOf(k.inkRight, k.hx + k.hs * .7f) + Ui.dp(1f)
+    private fun height(k: Glyphs) = k.cap + 2 * over(k) + k.below + Ui.dp(1f)
 
     override fun onMeasure(wSpec: Int, hSpec: Int) {
         val max = Ui.dp(maxDp)
         px = max
-        var f = fit(max)
+        var k = glyphs(max)
         val room = MeasureSpec.getSize(wSpec)
-        if (MeasureSpec.getMode(wSpec) != MeasureSpec.UNSPECIFIED && room > 0 && f.w > room) { px = max * room / f.w * .995f; f = fit(px) }
-        setMeasuredDimension(kotlin.math.ceil(f.w).toInt(), kotlin.math.ceil(f.h).toInt())
+        if (MeasureSpec.getMode(wSpec) != MeasureSpec.UNSPECIFIED && room > 0 && width(k) > room) { px = max * room / width(k) * .995f; k = glyphs(px) }
+        setMeasuredDimension(kotlin.math.ceil(width(k)).toInt(), kotlin.math.ceil(height(k)).toInt())
     }
 
     override fun onDraw(c: Canvas) {
-        val f = fit(px)
-        val top = f.heart * (UP + .5f + .08f)          // the top of the tall letters
-        c.drawText(WORD, 0f, top + f.cap, tp)
-        // the heart: a little to the right of the "d"'s top and a little over it, leaning to the right
+        val k = glyphs(px)
+        val base = over(k) + k.cap
+        c.save(); c.translate(0f, base)
+        tp.style = android.graphics.Paint.Style.FILL
+        c.drawPath(k.word, tp)
+        // the heart: beats twice (lub-dub) every 1.7 s, its colour running red → pink → wine, a soft glow on each beat
+        val still = !beat.isRunning
+        val p1 = bump(t, 0f, .16f); val p2 = bump(t, .22f, .40f)
+        val s = if (still) 1f else 1f + .17f * p1 + .10f * p2
+        val col = if (still) HUE[0] else hue(t)
         c.save()
-        c.translate(f.word + f.heart * OUT, top - f.heart * UP)
-        c.rotate(TILT)
-        c.scale(f.heart / 20f, f.heart / 20f)          // (the heart's line fills 20 of its 24 units)
+        c.translate(k.hx, k.hBottom - k.hs / 2f)
+        c.rotate(-8f)
+        c.scale(k.hs / 20f * s, k.hs / 20f * s)          // (the heart's line fills 20 of its 24 units)
         c.translate(-12f, -12.2f)
-        hp.strokeWidth = 2.4f                          // (in those units)
-        c.drawPath(heart, hp); c.drawPath(curl, hp)
+        if (!still) {
+            glowP.color = col; glowP.alpha = (95 * maxOf(p1, p2 * .8f)).toInt()
+            c.save(); c.scale(1.32f, 1.32f, 12f, 12.2f); c.drawPath(heart, glowP); c.restore()
+        }
+        fillP.color = col
+        c.drawPath(heart, fillP)
+        edgeP.strokeWidth = 1.6f
+        c.drawPath(heart, edgeP)
+        c.restore()
         c.restore()
     }
 
+    private fun sync() {
+        val on = seen && isAttachedToWindow && !GlobeMap.REDUCED
+        if (on && !beat.isStarted) beat.start() else if (!on && beat.isStarted) { beat.cancel(); t = 0f; invalidate() }
+    }
+    override fun onVisibilityAggregated(isVisible: Boolean) { super.onVisibilityAggregated(isVisible); seen = isVisible; sync() }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); sync() }
+    override fun onDetachedFromWindow() { beat.cancel(); super.onDetachedFromWindow() }
+
     companion object {
         const val WORD = "TrueFind"
-        // the picture's measures: the heart 0.82 × the tall letters' height, its middle 0.64 of its size right of the word's
-        // end and 0.15 over the letters' top, leaning 16°
-        private const val HEART = .82f
-        private const val OUT = .64f
-        private const val UP = .15f
-        private const val TILT = 16f
+        /** the heart's size: 0.42 × the tall letters' height */
+        private const val HEART = .42f
+        private val HUE = intArrayOf(Ui.c("#E11D48"), Ui.c("#FF4F9A"), Ui.c("#B3124A"), Ui.c("#E11D48"))
+        private fun hue(t: Float): Int {
+            val f = t * (HUE.size - 1); val i = f.toInt().coerceAtMost(HUE.size - 2)
+            return androidx.core.graphics.ColorUtils.blendARGB(HUE[i], HUE[i + 1], f - i)
+        }
+        /** 0 → 1 → 0 between [a] and [b] (smooth), 0 elsewhere */
+        private fun bump(t: Float, a: Float, b: Float): Float {
+            if (t <= a || t >= b) return 0f
+            val x = (t - a) / (b - a)
+            return kotlin.math.sin(x * Math.PI).toFloat()
+        }
         /** the width the whole logo needs at text size [sizeDp] (px) — to tell beforehand whether a row has room for it */
         fun widthAt(sizeDp: Float): Float {
             val p = android.graphics.Paint().apply { typeface = Rs.serifItalic; textSize = Ui.dp(sizeDp) }
             val b = android.graphics.Rect(); p.getTextBounds(WORD, 0, WORD.length, b)
-            return maxOf(b.right.toFloat(), p.measureText(WORD)) + -b.top * HEART * (OUT + .5f + .1f)
+            return maxOf(b.right.toFloat(), p.measureText(WORD)) + Ui.dp(1f)
         }
     }
 }
