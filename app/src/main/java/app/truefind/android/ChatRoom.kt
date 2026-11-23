@@ -610,7 +610,10 @@ class ChatRoom(
         val body = JSONObject(payload.toString()).put("match_id", forMatch)
         if (attempt > 0) body.put("retry", true)
         Api.invokeOnce("sendMessage", body) { r ->
-            if (!r.ok && attempt < 2 && passingFailure(r) && forMatch == matchId) {
+            // owner, 23 Nov: "Message didn't send — the chat was busy for a moment" came up although the next tries
+            // worked: a busy moment is now waited out longer by itself (up to 6 tries, ~30 s at most) before the
+            // red note shows — the same message every time (its one-time key), never a second copy
+            if (!r.ok && attempt < 5 && passingFailure(r) && forMatch == matchId) {
                 val err = r.data.optString("error")
                 val wait = when {
                     r.status == 429 && err == "rate_limited" -> 900L     // sent too fast: just after the 0.6 s gap
@@ -618,7 +621,8 @@ class ChatRoom(
                     // sooner would only be told "busy" again
                     r.status == 429 && (err == "busy" || r.data.optBoolean("server_busy")) -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1200L, 8000L)
                     attempt == 0 -> 1200L
-                    else -> 3000L
+                    attempt == 1 -> 3000L
+                    else -> 5000L
                 }
                 main.postDelayed({ if (forMatch == matchId) deliverTry(payload, price, attempt + 1, done) else done(r) }, wait)
                 return@invokeOnce

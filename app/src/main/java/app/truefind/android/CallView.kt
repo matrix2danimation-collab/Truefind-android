@@ -487,6 +487,8 @@ class CallView(
         private lateinit var videoBtn: CallKit.RoundBtn
         private var lastVideoAsk: Boolean? = null
         private lateinit var speakerBtn: CallKit.RoundBtn
+        private var flipBtn: CallKit.RoundBtn? = null
+        private var lastFlipOk: Boolean? = null
         private lateinit var showBtns: TextView
 
         // over everything
@@ -808,6 +810,14 @@ class CallView(
             }
             val end = CallKit.RoundBtn(ctx, "End", if (v) 52f else 62f, CallKit.RED, 3f, Color.WHITE, CallKit.svg(CallKit.PHONE, 30f), 135f, 700, compact = v) { askExitOrEnd() }
             btns.addView(end); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
+            flipBtn = null; lastFlipOk = null
+            if (v) {
+                // Flip: front ↔ back camera (owner, 23 Nov: only the front camera worked on a video call)
+                val fb = CallKit.RoundBtn(ctx, "Flip", 44f, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.SWITCH_CAM, 24f), compact = true) { flipCamera() }
+                fb.contentDescription = "Switch between front and back camera"
+                flipBtn = fb
+                btns.addView(fb); btns.addView(View(ctx), Tf.ll(0, 1, 1f))
+            }
             speakerBtn = CallKit.RoundBtn(ctx, "Speaker", sz, Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255), CallKit.svg(CallKit.SPEAKER, 24f), compact = v) { s.toggleSpeaker() }
             btns.addView(speakerBtn)
             pc.addView(btns, Tf.ll(Tf.M, Tf.W))
@@ -856,6 +866,14 @@ class CallView(
             panel.translationY = Ui.dp(500f)
             panel.post { panel.translationY = panel.height.toFloat().coerceAtLeast(Ui.dp(100f)); panel.animate().translationY(0f).setStartDelay(50).setDuration(550).setInterpolator(CallKit.EASE_OUT_BACK).start() }
             if (builtVideo && session.practice) startPracticeCam()
+        }
+
+        /** Flip: the other camera (real call: Agora; the practice call: its own camera) */
+        private fun flipCamera() {
+            val s = session
+            if (s.camOff) return
+            s.flipCam()
+            if (s.practice) practiceCam?.setBack(s.backCam)
         }
 
         private fun startPracticeCam() {
@@ -951,6 +969,12 @@ class CallView(
                 val left1 = s.secsLeft
                 showBtns.text = "${if (s.showLeft && left1 != null && !ended) CallKit.fmtLeft(left1) + " left" else CallKit.fmt(s.seconds)} · Show buttons"
                 showBtns.visibility = if (hidden) VISIBLE else GONE
+                // Flip works while my camera is on (the practice call: once its camera is there)
+                val flipOk = !s.camOff && !ended && (!s.practice || practiceCam != null || s.mode == CallSession.Mode.PREVIEW)
+                if (lastFlipOk != flipOk) {
+                    lastFlipOk = flipOk
+                    flipBtn?.let { fb -> fb.isEnabled = flipOk; fb.alpha = if (flipOk) 1f else .45f }
+                }
                 if (lastCamOff != s.camOff) {
                     lastCamOff = s.camOff
                     camBtn.set(if (s.camOff) "Camera on" else "Camera", if (s.camOff) Color.WHITE else Color.argb(31, 255, 255, 255), 1f, Color.argb(56, 255, 255, 255),

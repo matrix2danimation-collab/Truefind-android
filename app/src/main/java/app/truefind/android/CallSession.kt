@@ -301,6 +301,9 @@ class CallSession(
             val fresh = if (r.ok) r.data else null
             if (fresh != null && Tf.s(fresh, "status").let { it.isNotEmpty() && it != "ringing" }) { setCall(fresh); return@get }
             Api.invoke("endCall", JSONObject().put("call_id", callId).put("reason", "no_answer")) { er ->
+                // lost / the server busy: sent again by itself until the server has it (23 Nov: a ring left behind
+                // kept both people "busy")
+                if (!er.ok && CallRules.endRetry(er.status)) CallEnder.end(callId, "no_answer")
                 if (disposed) return@invoke
                 er.data.optJSONObject("call")?.let { c -> if (Tf.s(c, "status") != status) setCall(c) }
             }
@@ -319,10 +322,10 @@ class CallSession(
             error = "Allow ${if (video) "microphone and camera" else "microphone"} access for True Find, then call again."
             ending = true
             emit()
-            Api.invoke("endCall", JSONObject().put("call_id", callId)) { r ->
-                if (disposed) return@invoke
+            CallEnder.end(callId) { r ->
+                if (disposed) return@end
                 val c = r.data.optJSONObject("call")
-                if (r.ok && c != null) setCall(c) else ending = false
+                if (r.ok && c != null) setCall(c) else if (!CallRules.endRetry(r.status)) ending = false
             }
         }
     }
@@ -475,9 +478,16 @@ class CallSession(
         if (ending) return
         ending = true
         if (practice) { practiceEnd(); return }
-        Api.invoke("endCall", JSONObject().put("call_id", callId)) { r ->
-            if (disposed) return@invoke
+        // Sent for sure (owner, 23 Nov: a hang-up lost on the way left the call "ringing" / "on" on the server, and
+        // both people showed "busy"): when this answer is lost or the server is busy for a moment, CallEnder sends
+        // it again by itself — the screen then learns the end from the live update / its own checks.
+        CallEnder.end(callId) { r ->
+            if (disposed) return@end
             if (r.ok) r.data.optJSONObject("call")?.let { setCall(it) }
+            else if (CallRules.endRetry(r.status)) {
+                // on its way again: if the screen still hasn't heard of the end in 20 s, it says so
+                main.postDelayed({ if (!disposed && ending && !DONE.contains(status)) { error = r.error ?: "Could not end the call."; ending = false; emit() } }, 20000)
+            }
             else { error = r.error ?: "Could not end the call."; ending = false; emit() }
         }
     }
@@ -490,6 +500,17 @@ class CallSession(
 
     fun toggleMute() { muted = !muted; media?.setMuted(muted); if (muted) meSpeaking = false; emit() }
     fun toggleCam() { camOff = !camOff; media?.setCamOff(camOff); emit() }
+
+    /** my camera is the back one (Flip) */
+    var backCam = false; private set
+    /** Flip: front ↔ back camera on a video call with my camera on (owner, 23 Nov). The practice call's camera is
+     *  flipped by its screen (CallView). */
+    fun flipCam() {
+        if (!video || camOff) return
+        if (practice) { backCam = !backCam; emit(); return }
+        val m = media ?: return
+        if (m.switchCamera()) { backCam = m.usingBackCamera; emit() }
+    }
     fun toggleSpeaker() { speakerOn = !speakerOn; media?.setLoud(speakerOn); emit() }
 
     // ═════════════════ voice → video (callSwitch, owner 20 Nov) ═════════════════
@@ -770,10 +791,12 @@ class CallSession(
     fun dispose() {
         if (disposed) return
         val st = status
-        if (!practice && !ending && (st == "ringing" || st == "active")) {
+        // A call still ringing or running ends — also one whose record had not even come yet (a quick Cancel: before
+        // 23 Nov that one was left ringing on the server, and both people counted as busy). Sent for sure (CallEnder).
+        if (mode == Mode.REAL && !practice && !DONE.contains(st) && (st.isNotEmpty() || call == null)) {
             ending = true
             host.finished(callId)
-            Api.invoke("endCall", JSONObject().put("call_id", callId)) { }
+            CallEnder.end(callId)
         }
         disposed = true
         main.removeCallbacksAndMessages(null)

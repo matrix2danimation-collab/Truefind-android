@@ -10,6 +10,7 @@ import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
 import io.agora.rtc2.RtcEngine
 import io.agora.rtc2.RtcEngineConfig
+import io.agora.rtc2.video.CameraCapturerConfiguration
 import io.agora.rtc2.video.VideoCanvas
 import io.agora.rtc2.video.VideoEncoderConfiguration
 import org.json.JSONObject
@@ -58,6 +59,9 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
     private var muted = false
     private var camOff = false
     private var loud = false
+    /** the back camera instead of the front one (Flip, owner 23 Nov) */
+    private var backCam = false
+    val usingBackCamera: Boolean get() = backCam
 
     companion object {
         /**
@@ -97,6 +101,8 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
 
         private var engine: RtcEngine? = null
         private var current: CallMedia? = null
+        /** Agora's engine was last left on the back camera (Flip): the next call starts on the front one again */
+        private var engineOnBack = false
         /** Agora's level above which someone counts as talking (the web: a level above 0.06 of 1) */
         private const val LOUD = 15
 
@@ -231,11 +237,39 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
             VideoEncoderConfiguration.VD_640x480, VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15,
             VideoEncoderConfiguration.STANDARD_BITRATE, VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_ADAPTIVE))
         e.muteAllRemoteVideoStreams(false)
+        // which camera: front as always, or the back one chosen with Flip before the engine was up. Agora's one engine
+        // outlives a call: when the last call ended on the back camera, this call is set back to the front one.
+        if (backCam || engineOnBack) try {
+            val rc = e.setCameraCapturerConfiguration(CameraCapturerConfiguration(
+                if (backCam) CameraCapturerConfiguration.CAMERA_DIRECTION.CAMERA_REAR else CameraCapturerConfiguration.CAMERA_DIRECTION.CAMERA_FRONT))
+            if (rc >= 0) engineOnBack = backCam
+        } catch (t: Throwable) { }
         e.enableLocalVideo(!camOff)
         e.muteLocalVideoStream(camOff)
         val lv = localView ?: TextureView(ctx).also { localView = it }
-        e.setupLocalVideo(VideoCanvas(lv, VideoCanvas.RENDER_MODE_HIDDEN, 0).apply { mirrorMode = Constants.VIDEO_MIRROR_MODE_ENABLED })
+        // my own picture mirrored from the front camera only (the back camera shows the world the right way round)
+        e.setupLocalVideo(VideoCanvas(lv, VideoCanvas.RENDER_MODE_HIDDEN, 0).apply { mirrorMode = mirror() })
         e.startPreview()
+    }
+
+    private fun mirror() = if (backCam) Constants.VIDEO_MIRROR_MODE_DISABLED else Constants.VIDEO_MIRROR_MODE_ENABLED
+
+    /**
+     * Flip: front ↔ back camera while the video call goes on (owner, 23 Nov: "only the front camera worked"). The other
+     * person sees the new camera at once. Before the engine is up, the choice waits for it. False: it didn't switch.
+     */
+    fun switchCamera(): Boolean {
+        if (dead) return false
+        val e = engine
+        if (e == null || !video) { backCam = !backCam; return true }
+        return try {
+            if (e.switchCamera() < 0) false else {
+                backCam = !backCam
+                engineOnBack = backCam
+                e.setLocalRenderMode(VideoCanvas.RENDER_MODE_HIDDEN, mirror())
+                true
+            }
+        } catch (t: Throwable) { false }
     }
 
     /**

@@ -448,7 +448,9 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         if (calling.isNotEmpty() || r.otherId.isEmpty()) return
         calling = "${r.otherId}-$type"
         refreshCalls()
-        Api.invoke("startCall", JSONObject().put("to_user_id", r.otherId).put("type", type).put("app", "truefind")) { res ->
+        // one tap = one call: a lost / busy answer is asked again by itself, and a start that never got through is
+        // closed on the server (CallStart, 23 Nov)
+        CallStart.start(r.otherId, type) { res ->
             val d = res.data
             val id = d.optJSONObject("call")?.optString("id").orEmpty().ifEmpty { d.optString("call_id") }
             calling = ""
@@ -457,7 +459,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 person?.closeAll(); person = null
                 // the call screen knows at once who is being called and whether it is a video call
                 pages.go("/call/$id", JSONObject().put("type", type).put("peer", JSONObject().put("name", r.name).put("photo", r.photo.ifEmpty { r.full })))
-                return@invoke
+                return@start
             }
             val st = res.status
             val err = d.optString("error")
@@ -467,7 +469,9 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                     val rate = d.opt("rate")?.takeIf { it != JSONObject.NULL && PR.truthy(it) }
                     dialog("Add coins to call", if (rate != null) "${if (type == "video") "Video" else "Voice"} calls cost $rate coins per minute." else "You need coins in your wallet to make this call.", coins = true)
                 }
-                err == "busy" || st == 409 -> dialog("${r.name.ifEmpty { "They" }} ${if (r.name.isNotEmpty()) "is" else "are"} busy", "They are on another call right now. Please try again in a few minutes.")
+                // who is busy: the other person (really on a call) or me (my other call is still on) — 23 Nov: both
+                // used to show "<name> is busy"
+                st == 409 -> CallStart.busyDialog(res, r.name)?.let { (t, x) -> dialog(t, x) } ?: dialog("Couldn't connect", err.ifEmpty { "Could not start the call. Please try again." })
                 st == 403 || st == 404 -> dialog("Can't call right now", if (err == "banned") "Your account can't make calls." else err.ifEmpty { d.optString("message") }.ifEmpty { "This person is not available." })
                 else -> dialog("Couldn't connect", d.optString("message").ifEmpty { err }.ifEmpty { res.error ?: "Something went wrong. Please try again." })
             }

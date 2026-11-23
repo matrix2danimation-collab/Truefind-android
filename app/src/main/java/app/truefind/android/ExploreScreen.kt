@@ -591,7 +591,9 @@ class ExploreScreen(
         stage.onCancel = null
         stage.show("calling", type, rateOf(type), bigFace(p), p.firstName)
         feed.blocked = true
-        Api.invoke("startCall", JSONObject().put("to_user_id", p.callId).put("type", type).put("app", "truefind")) { r ->
+        // one tap = one call: a lost / busy answer is asked again by itself, and a start that never got through is
+        // closed on the server (CallStart, 23 Nov)
+        CallStart.start(p.callId, type) { r ->
             calling = false
             val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
             if (r.ok && id.isNotEmpty()) {
@@ -600,13 +602,16 @@ class ExploreScreen(
                 // the call screen knows who is being called at once (name, photo) and whether it is a video call
                 go("/call/$id", JSONObject().put("peer", peerJson(p)).put("type", type))
                 main.postDelayed({ hideStage() }, 400)
-                return@invoke
+                return@start
             }
             hideStage()
             val err = r.data.optString("error")
+            val busy = CallRules.busyKind(r.status, err, r.data.optString("code"))
             when {
                 r.status == 402 || err == "insufficient_coins" -> showCoins(type, r.data)
-                r.status == 409 || err == "busy" -> openDialog("${p.firstName.ifBlank { "She" }} is busy", "On another call right now. Please try again in a few minutes.")
+                // who is busy: her (really on a call) or me (my other call is still on) — 23 Nov: both showed "She is busy"
+                busy == CallRules.Busy.SELF -> CallStart.busyDialog(r, p.firstName)?.let { (t, x) -> openDialog(t, x) }
+                busy == CallRules.Busy.PEER -> openDialog("${p.firstName.ifBlank { "She" }} is busy", "On another call right now. Please try again in a few minutes.")
                 r.ok -> openDialog("Couldn't connect", "Could not start the call. Please try again.")
                 else -> openDialog("Couldn't connect", r.error ?: "Something went wrong. Please try again.")
             }

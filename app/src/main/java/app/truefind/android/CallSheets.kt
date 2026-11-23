@@ -838,21 +838,34 @@ class PracticeCam(private val ctx: Context, private val owner: LifecycleOwner?) 
     val view = PreviewView(ctx).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE; scaleType = PreviewView.ScaleType.FILL_CENTER }
     private var provider: ProcessCameraProvider? = null
     private var stopped = false
+    /** the back camera (Flip, owner 23 Nov) */
+    private var back = false
     fun start() {
         val o = owner ?: return
         try {
             val f = ProcessCameraProvider.getInstance(ctx)
             f.addListener({
                 if (stopped) return@addListener
-                try {
-                    val p = f.get(); provider = p
-                    val pv = Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
-                    val cam = if (p.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
-                    p.unbindAll()
-                    p.bindToLifecycle(o, cam, pv)
-                } catch (e: Throwable) { }
+                try { provider = f.get(); bind(o) } catch (e: Throwable) { }
             }, ContextCompat.getMainExecutor(ctx))
         } catch (e: Throwable) { }
+    }
+    private fun bind(o: LifecycleOwner) {
+        val p = provider ?: return
+        try {
+            val pv = Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
+            val want = if (back) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
+            val other = if (back) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+            val cam = if (p.hasCamera(want)) want else other
+            p.unbindAll()
+            p.bindToLifecycle(o, cam, pv)
+        } catch (e: Throwable) { }
+    }
+    /** Flip: the front or the back camera */
+    fun setBack(b: Boolean) {
+        if (back == b || stopped) return
+        back = b
+        owner?.let { bind(it) }
     }
     fun stop() { stopped = true; try { provider?.unbindAll() } catch (e: Throwable) { } }
 }

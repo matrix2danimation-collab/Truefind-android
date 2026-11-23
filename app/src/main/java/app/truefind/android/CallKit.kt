@@ -53,6 +53,8 @@ object CallKit {
     val CAMERA = stroke(2.2f, "<rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/><path d=\"M16 10l6-3v10l-6-3z\"/>")
     val CAMERA_OFF = stroke(2.2f, "<rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/><path d=\"M16 10l6-3v10l-6-3z\"/><path d=\"M3 3l18 18\"/>")
     val CHAT = stroke(2.2f, "<path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/>")
+    /** lucide "switch-camera": the video call's Flip button (front ↔ back camera, owner 23 Nov) */
+    val SWITCH_CAM = stroke(2.2f, "<path d=\"M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5\"/><path d=\"M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"m18 22-3-3 3-3\"/><path d=\"m6 2 3 3-3 3\"/>")
     val SHIELD = stroke(2.2f, "<path d=\"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z\"/><path d=\"M8.5 12l2.5 2.5 4.5-5\"/>")
     val LOCK = stroke(2.4f, "<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"/>")
     val PLUS = stroke(3.4f, "<path d=\"M12 5v14M5 12h14\"/>")

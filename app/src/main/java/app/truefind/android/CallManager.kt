@@ -272,6 +272,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
             val id = Tf.s(r.data, "id")
             if (!r.ok || id.isEmpty()) { if (r.status == 0 || r.status >= 500) token = ""; return@me }
             meId = id
+            // call ends still waiting on this phone go now (CallEnder)
+            CallEnder.flush()
             unsub = Realtime.subscribe("Call") { ev -> onEvent(ev) }
             pendingOpen?.let { (cid, a) -> pendingOpen = null; fromNotification(cid, a) }
             catchUp()
@@ -291,6 +293,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     fun onAppVisible(v: Boolean) {
         visible = v
         if (!v || !enabled || preview) return
+        CallEnder.flush()
         if (incoming != null && !busy) ringer.start()
         pendingOpen?.let { (id, a) -> pendingOpen = null; fromNotification(id, a) }
         catchUp()
@@ -505,7 +508,7 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
             if (!r.ok || meId != me) return@filter
             var live: JSONObject? = null
             for (c in Tf.list(r)) {
-                if (!liveActive(c)) { if (Tf.s(c, "status") == "active" && !isFinished(Tf.s(c, "id"))) Api.invoke("endCall", JSONObject().put("call_id", Tf.s(c, "id"))) { } }
+                if (!liveActive(c)) { if (Tf.s(c, "status") == "active" && !isFinished(Tf.s(c, "id"))) CallEnder.end(Tf.s(c, "id")) }
                 else if (live == null) live = c
             }
             pillCall = live

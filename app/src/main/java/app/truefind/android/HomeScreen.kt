@@ -694,23 +694,38 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
      * "Video Call" again and again); Cancel there (or Back) stops it, and a call that was already made then is ended.
      */
     private var callRun = 0
+    /** the tap being started now (Cancel ends whatever it made) */
+    private var starting: CallStart.Handle? = null
     fun callPerson(p: JSONObject, type: String) {
         if (calling.isNotEmpty()) return
         calling = type
         val run = ++callRun
         sheets.refreshPerson()
         sheets.showMatching(type, "direct", HomeRules.firstName(p)) { cancelCall() }
-        val body = JSONObject().put("to_user_id", HomeRules.idOf(p)).put("type", type).put("app", "truefind")
-        fun fail(r: Api.Result) {
-            if (run != callRun) return
+        // one tap = one call: a lost / busy answer is asked again by itself (the server answers with the call this tap
+        // already made), and a start that never got through is closed on the server (CallStart, 23 Nov)
+        starting = CallStart.start(HomeRules.idOf(p), type) { r ->
+            if (run != callRun) return@start
+            starting = null
+            val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
             calling = ""
+            if (r.ok && id.isNotEmpty()) {
+                sheets.hideMatching()
+                sheets.closeAll()
+                // the call screen knows at once who is being called (name, photo) and whether it is a video call
+                pages.go("/call/$id", peerHint(p).put("type", type))
+                return@start
+            }
             sheets.hideMatching()
             sheets.closePersonAndAll()
             val d = r.data
             val st = r.status
+            val busy = CallStart.busyDialog(r, HomeRules.firstName(p))
             when {
                 st == 402 || d.optString("error") == "insufficient_coins" -> showCoins(type, d)
-                st == 409 || d.optString("error") == "busy" -> sheets.dialog("${HomeRules.firstName(p).ifEmpty { "They" }} is busy", "They are on another call right now. Please try again in a few minutes.")
+                // who is busy: the other person (really on a call) or me (my other call is still on) — 23 Nov: both
+                // used to show "<name> is busy"
+                busy != null -> sheets.dialog(busy.first, busy.second)
                 else -> {
                     val why = d.optString("detail").take(160)
                     val code = if (r.ok) "no_call" else if (st > 0) "code $st${if (why.isNotEmpty()) ": $why" else ""}" else "Network Error"
@@ -719,36 +734,14 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
                 }
             }
         }
-        fun ok(r: Api.Result): Boolean {
-            val id = r.data.optJSONObject("call")?.optString("id").orEmpty()
-            if (r.ok && id.isNotEmpty()) {
-                // cancelled while it was being made: the call is ended at once (it must not ring on their phone)
-                if (run != callRun) { Api.invoke("endCall", JSONObject().put("call_id", id)) { }; return true }
-                calling = ""
-                sheets.hideMatching()
-                sheets.closeAll()
-                // the call screen knows at once who is being called (name, photo) and whether it is a video call
-                pages.go("/call/$id", peerHint(p).put("type", type))
-                return true
-            }
-            return false
-        }
-        Api.invoke("startCall", body) { r ->
-            if (ok(r)) return@invoke
-            if (run != callRun) return@invoke
-            if (!r.ok && r.data.optBoolean("rate_limited")) {
-                val wait = (min(12.0, HomeRules.num(r.data.opt("retry_after")).takeIf { it > 0 } ?: 8.0) * 1000).toLong()
-                main.postDelayed({ if (run == callRun) Api.invoke("startCall", body) { r2 -> if (!ok(r2)) fail(r2) } }, wait)
-                return@invoke
-            }
-            fail(r)
-        }
     }
 
     /** Cancel on the "Calling …" screen of a direct call (or Back): nothing rings */
     fun cancelCall() {
         if (calling.isEmpty()) return
         callRun += 1
+        // nothing rings: a call this tap already made is ended at once
+        starting?.cancel(); starting = null
         calling = ""
         sheets.hideMatching()
         sheets.refreshPerson()

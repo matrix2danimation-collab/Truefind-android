@@ -217,6 +217,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Lite.init(this)
         // failed server answers are kept on the phone for the page speed report (20 Nov)
         Api.keepFailuresIn(this)
+        // call ends that never reached the server (a lost answer, the app closed) are sent again (CallEnder, 23 Nov)
+        CallEnder.init(this)
         // notifications while the app is closed (Firebase, when this build has it): this phone's push token
         Push.onToken = { _ -> runOnUiThread { web?.evaluateJavascript("try{window.dispatchEvent(new Event('tf-native-token'))}catch(e){}", null); if (Api.token.isNotEmpty()) Push.register(this, Api.token.takeLast(24)) } }
         // a message, like or note arrived while the app is open: the red number on Find is asked again

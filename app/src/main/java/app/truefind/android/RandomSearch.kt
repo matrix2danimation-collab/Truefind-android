@@ -64,7 +64,9 @@ class RandomSearch(private val type: String, private val ui: Host) {
         val r = ringing
         if (r != null && !r.done) {
             r.done = true
-            Api.invoke("endCall", JSONObject().put("call_id", r.id).put("reason", "no_answer")) { Api.invoke("releaseMatch", JSONObject().put("call_id", r.id)) { } }
+            // Cancel: the ring stops for sure (CallEnder sends it again if this answer is lost — 23 Nov); picked up at
+            // that very moment, it ends without a charge (endCall's rule for a call answered a moment ago)
+            CallEnder.end(r.id) { Api.invoke("releaseMatch", JSONObject().put("call_id", r.id)) { } }
         } else Api.invoke("releaseMatch", JSONObject()) { }
     }
 
@@ -119,7 +121,7 @@ class RandomSearch(private val type: String, private val ui: Host) {
             val call = r.data.optJSONObject("call")
             val id = Tf.s(call, "id")
             if (stopped || my != step) {
-                if (id.isNotEmpty()) Api.invoke("endCall", JSONObject().put("call_id", id).put("reason", "no_answer")) { Api.invoke("releaseMatch", JSONObject().put("call_id", id)) { } }
+                if (id.isNotEmpty()) CallEnder.end(id) { Api.invoke("releaseMatch", JSONObject().put("call_id", id)) { } }
                 else release(c)
                 return@invoke
             }
@@ -174,6 +176,8 @@ class RandomSearch(private val type: String, private val ui: Host) {
             // she picked up at that very moment: the server keeps the call going — open it
             val c = r.data.optJSONObject("call")
             if (!stopped && Tf.s(c, "status") == "active") { stop(); ui.found(rg.id, rg.peer); return@invoke }
+            // lost / the server busy: the ring is stopped for sure, by itself (CallEnder, 23 Nov)
+            if (!r.ok && CallRules.endRetry(r.status)) CallEnder.end(rg.id, "no_answer")
             Api.invoke("releaseMatch", JSONObject().put("call_id", rg.id)) { }
         } else Api.invoke("releaseMatch", JSONObject().put("call_id", rg.id)) { }
         later(NEXT_MS) { search() }

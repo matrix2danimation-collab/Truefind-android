@@ -4,16 +4,15 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
 
 /**
- * The pull-down-to-refresh circle — same as the web's PullToRefresh:
- * a white round button that comes down with the finger, showing the five
- * blue dots (still, turning with the pull); while refreshing the dots run
- * round as the "long train" loader (TfSpinner, chosen Nov 16).
+ * The pull-down-to-refresh loader: the five blue dots come down with the finger (still, turning with the pull);
+ * while refreshing they run round as the "long train" loader (TfSpinner, chosen Nov 16).
+ * Owner, 23 Nov: only the dots — no white round button (and no shadow) behind them, for a cleaner, more
+ * professional look. [ring] is no longer drawn (kept so every page's call stays the same).
  */
 class PullSpinner(ctx: Context, dots: Int = BLUE, ring: Int = Ui.c("#EEE6FB")) : View(ctx) {
     companion object {
@@ -35,11 +34,10 @@ class PullSpinner(ctx: Context, dots: Int = BLUE, ring: Int = Ui.c("#EEE6FB")) :
     }
 
     init {
-        background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL; setColor(Ui.c("#FFFFFF")); setStroke(Ui.dpi(1f), ring)
-        }
-        elevation = Ui.dp(8f)
-        outlineSpotShadowColorCompat(Ui.c("#4C1D95"))
+        // no background: nothing behind the dots, so no outline and no shadow either (the page's elevation still
+        // keeps the dots above the page's content)
+        background = null
+        outlineProvider = null
         alpha = 0f
         translationY = -Ui.dp(64f)
         scaleX = 0.7f; scaleY = 0.7f
