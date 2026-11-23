@@ -957,6 +957,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val r = room(); r.visibility = View.VISIBLE; r.open(id); roomShown = true; roomStrips(); sdNav.visibility = View.GONE
             return
         }
+        // (and True Find's Settings, opened from Secret Dating's My Profile: the Profile page with its Settings drawer)
+        if (Demo.on && preview.startsWith("secret") && pathOnly(full) == "/profile" && full.contains("open=settings")) {
+            secret.visibility = View.GONE; sdNav.visibility = View.GONE
+            pages.startPreview("profile", "settings=1")
+            return
+        }
         if (!native) { webGo(full, state, replace); return }
         if (leaving) return
         if (openCallPage(full, state)) return
