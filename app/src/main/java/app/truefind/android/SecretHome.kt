@@ -819,7 +819,7 @@ class SecretHome(
                     val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 26f, 1f, Rs.LINE); setPadding(dpi(22f), dpi(46f), dpi(22f), dpi(46f)) }
                     val fav = deckTab == "favorite"
                     card.addView(ImageView(context).apply { setImageDrawable(Icon(if (fav) Lucide.Star else Lucide.Sparkles, K.rose, 30f, 1.6f)) }, lp(dpi(30f), dpi(30f)))
-                    card.addView(sdText(context, if (fav) "No favourites yet" else "No one online right now", 22f, K.wine, serif = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 12f))
+                    card.addView(sdText(context, if (fav) "No favorites yet" else "No one online right now", 22f, K.wine, serif = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 12f))
                     card.addView(sdText(context, if (fav) "Tap the heart on a profile you like. It shows up here." else "Members appear here the moment they come online.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(WRAP, WRAP, t = 6f))
                     deckBox.addView(card, LayoutParams(w, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
                 }
