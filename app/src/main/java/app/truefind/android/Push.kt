@@ -46,6 +46,17 @@ object Push {
     private const val CH_INFO = "tf_info"
     private const val PREFS = "tf_push"
     private const val RING_MS = 45000L
+    /**
+     * Android 16 and newer group an app's ungrouped notifications themselves from the second one on
+     * (their own "Aggregate" group) and mark every one of them SILENT: no sound, no pop-up, and for a
+     * call no full screen — seen in the push test on Android 16 (23 Nov). So:
+     *  - a call is a CallStyle notification, which Android never groups;
+     *  - messages, missed calls and the rest go into True Find's own group (with a summary), which
+     *    Android leaves alone, so each new one still pops up and sounds.
+     */
+    private const val GROUP = "tf_alerts"
+    private const val SUMMARY_TAG = "tf-summary"
+    private const val SUMMARY_ID = 9
 
     /** true while the app is on screen (MainActivity onResume … onPause) */
     @Volatile var visible = false
@@ -211,31 +222,48 @@ object Push {
                 val decline = PendingIntent.getBroadcast(ctx, req + 1, Intent(ctx, DeclineReceiver::class.java).apply {
                     action = "app.truefind.android.DECLINE.$callId"; putExtra(EXTRA_CALL, callId)
                 }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                val n = NotificationCompat.Builder(ctx, CH_CALL)
-                    .setSmallIcon(R.drawable.ic_stat_tf)
-                    .setContentTitle(title)
-                    .setContentText(body.ifEmpty { "Incoming ${if (video) "video" else "voice"} call" })
-                    .setLargeIcon(big)
-                    .setCategory(NotificationCompat.CATEGORY_CALL)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setOngoing(true).setAutoCancel(true)
-                    .setTimeoutAfter(RING_MS)
-                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), android.media.AudioManager.STREAM_RING)
-                    .setVibrate(longArrayOf(0, 500, 250, 500, 250, 500, 250, 500))
-                    .setContentIntent(open(ctx, req, "/", callId, ""))
-                    .setFullScreenIntent(open(ctx, req + 2, "/", callId, ""), true)
-                    .addAction(0, "Decline", decline)
-                    .addAction(0, "Answer", open(ctx, req + 3, "/", callId, "answer"))
-                    .build()
-                n.flags = n.flags or android.app.Notification.FLAG_INSISTENT
-                nm.notify(callTag(callId), 1, n)
-                android.util.Log.i("TFDBG", "push shown t=call id=$callId kind=${d["kind"].orEmpty()} photo=${big != null}")
+                val answer = open(ctx, req + 3, "/", callId, "answer")
+                fun ringing(callStyle: Boolean): android.app.Notification {
+                    val b = NotificationCompat.Builder(ctx, CH_CALL)
+                        .setSmallIcon(R.drawable.ic_stat_tf)
+                        .setContentTitle(title)
+                        .setContentText(body.ifEmpty { "Incoming ${if (video) "video" else "voice"} call" })
+                        .setLargeIcon(big)
+                        .setCategory(NotificationCompat.CATEGORY_CALL)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                        .setOngoing(true).setAutoCancel(true)
+                        .setTimeoutAfter(RING_MS)
+                        .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), android.media.AudioManager.STREAM_RING)
+                        .setVibrate(longArrayOf(0, 500, 250, 500, 250, 500, 250, 500))
+                        .setContentIntent(open(ctx, req, "/", callId, ""))
+                        .setFullScreenIntent(open(ctx, req + 2, "/", callId, ""), true)
+                    if (callStyle) {
+                        // the phone's own call look (Decline / Answer), and never grouped or silenced by Android 16+
+                        val caller = androidx.core.app.Person.Builder()
+                            .setName(d["name"].orEmpty().ifEmpty { title.substringBefore(" is calling").ifEmpty { "True Find" } })
+                            .setImportant(true)
+                            .apply { if (big != null) setIcon(androidx.core.graphics.drawable.IconCompat.createWithBitmap(big)) }
+                            .build()
+                        b.setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, decline, answer).setIsVideo(video)).addPerson(caller)
+                    } else {
+                        b.addAction(0, "Decline", decline).addAction(0, "Answer", answer)
+                    }
+                    return b.build().also { it.flags = it.flags or android.app.Notification.FLAG_INSISTENT }
+                }
+                // CallStyle first; a phone that refuses it (an odd system) still gets the plain ringing one
+                val style = try { nm.notify(callTag(callId), 1, ringing(true)); "call" } catch (e: SecurityException) { throw e } catch (e: Throwable) {
+                    android.util.Log.i("TFDBG", "push callstyle refused: ${e.message}")
+                    nm.notify(callTag(callId), 1, ringing(false)); "plain"
+                }
+                android.util.Log.i("TFDBG", "push shown t=call id=$callId kind=${d["kind"].orEmpty()} photo=${big != null} style=$style")
                 return
             }
             // "missed call": the ringing one goes first
             if (t == "missed" && callId.isNotEmpty()) nm.cancel(callTag(callId), 1)
             val ch = if (t == "msg" || t == "missed") CH_MSG else CH_INFO
+            val tag = d["tag"].orEmpty().ifEmpty { "tf-$t" }
+            val id = if (d["tag"].isNullOrEmpty()) req else 2
             val n = NotificationCompat.Builder(ctx, ch)
                 .setSmallIcon(R.drawable.ic_stat_tf)
                 .setContentTitle(title)
@@ -246,10 +274,41 @@ object Push {
                 .setPriority(if (ch == CH_MSG) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
                 .setCategory(if (t == "msg") NotificationCompat.CATEGORY_MESSAGE else if (t == "missed") NotificationCompat.CATEGORY_MISSED_CALL else NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setContentIntent(open(ctx, req, url))
+                .setGroup(GROUP)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                .setDeleteIntent(gone(ctx))
                 .build()
-            nm.notify(d["tag"].orEmpty().ifEmpty { "tf-$t" }, if (d["tag"].isNullOrEmpty()) req else 2, n)
+            summary(ctx, nm)
+            nm.notify(tag, id, n)
             android.util.Log.i("TFDBG", "push shown t=$t")
         } catch (e: SecurityException) { android.util.Log.i("TFDBG", "push refused t=$t ${e.message}") }
+    }
+
+    /** True Find's own group summary (posted before each of its notifications; it never sounds itself) */
+    private fun summary(ctx: Context, nm: NotificationManagerCompat) {
+        val n = NotificationCompat.Builder(ctx, CH_MSG)
+            .setSmallIcon(R.drawable.ic_stat_tf)
+            .setContentTitle("True Find")
+            .setGroup(GROUP).setGroupSummary(true)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .setContentIntent(open(ctx, SUMMARY_TAG.hashCode(), "/"))
+            .build()
+        nm.notify(SUMMARY_TAG, SUMMARY_ID, n)
+    }
+
+    private fun gone(ctx: Context): PendingIntent = PendingIntent.getBroadcast(ctx, 77, Intent(ctx, PushGoneReceiver::class.java).setAction("app.truefind.android.PUSH_GONE"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+    /** the last notification of True Find's group went (swiped away, tapped): its summary goes too */
+    fun tidy(ctx: Context) {
+        if (Build.VERSION.SDK_INT < 23) return
+        try {
+            val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+            val all = nm.activeNotifications
+            val children = all.count { it.notification.group == GROUP && (it.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY) == 0 }
+            if (children == 0 && all.any { it.tag == SUMMARY_TAG }) nm.cancel(SUMMARY_TAG, SUMMARY_ID)
+        } catch (e: Throwable) { }
     }
 
     /** the app came on screen: its own ringer takes over, the ringing notifications go */
@@ -297,6 +356,11 @@ class TfMessagingService : FirebaseMessagingService() {
         android.util.Log.i("TFDBG", "push got t=${d["t"].orEmpty()} prio=${message.priority}")
         Push.show(applicationContext, d)
     }
+}
+
+/** one of True Find's notifications was swiped away: the group's summary goes when it was the last one */
+class PushGoneReceiver : BroadcastReceiver() {
+    override fun onReceive(ctx: Context, intent: Intent) { Push.tidy(ctx.applicationContext) }
 }
 
 class DeclineReceiver : BroadcastReceiver() {

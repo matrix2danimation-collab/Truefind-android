@@ -1714,6 +1714,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         askFastScreen()
         Push.visible = true
         Push.clearCalls(this) // the app rings it itself now
+        Push.tidy(this)
         calls.onAppVisible(true)
         // a call's "call in progress" service the phone refused while True Find was away starts now (CallService)
         CallService.refresh(this)

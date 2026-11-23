@@ -95,6 +95,9 @@
         <receiver
             android:name=".DeclineReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".PushGoneReceiver"
+            android:exported="false" />
         <!-- "Voice call in progress": a call keeps its microphone / camera while True Find is in the background (CallService.kt) -->
         <service
             android:name=".CallService"

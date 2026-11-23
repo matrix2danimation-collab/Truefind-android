@@ -97,6 +97,8 @@ if wait_active call-T1 30; then
   if echo "$fl" | grep -q "INSISTENT" || { echo "$fl" | grep -qE "^0x" && [ $(( fl & 0x4 )) -ne 0 ]; }; then pass "1d ringtone repeats until answered (INSISTENT, flags=$fl)"; else fail "1d not INSISTENT (flags=$fl)"; fi
   adb shell dumpsys notification 2> /dev/null | grep -E "mSoundNotificationKey=.*call-T1" > /dev/null && pass "1f the ringtone is playing for this call" || info "1f ringtone owner: $(adb shell dumpsys notification 2> /dev/null | grep -o 'mSoundNotificationKey=[^ ]*' | head -1)"
   echo "$rec" | grep -qiE "actions=2|Decline" && pass "1e Answer / Decline buttons" || info "1e buttons not seen in the record"
+  echo "$fl" | grep -q "SILENT" && fail "1g the system marked the call SILENT" || pass "1g not silenced by the system"
+  tfdbg | grep -o "push shown t=call id=T1.*" | tail -1 | grep -q "style=call" && pass "1h the phone's own call look (CallStyle)" || info "1h $(tfdbg | grep -o 'push shown t=call id=T1.*' | tail -1)"
   sleep 1; shot 01-call-app-closed
 else
   fail "1  call did NOT ring with the app closed"; tfdbg | tail -20 >> "$R"
@@ -112,6 +114,14 @@ close_app
 adb logcat -c
 send t=msg "title=New message" "body=Someone sent you a message" tag=m-T3 "url=/secret-app"
 if wait_active m-T3 30; then pass "3  message shown with the app closed"; sleep 1; shot 03-message-app-closed; else fail "3  message NOT shown with the app closed"; fi
+# a second message while the first is still there (Android 16+ used to silence it: grouped by the system, SILENT)
+send t=msg "title=New message" "body=Someone else sent you a message" tag=m-T3b "url=/secret-app"
+if wait_active m-T3b 30; then
+  r3=$(record m-T3b); echo "$r3" > "$OUT/record-message-2.txt"
+  echo "$r3" | grep -oE "flags=[A-Za-z0-9_|]+" | head -1 | grep -q "SILENT" && fail "3b the second message was SILENCED by the system" || pass "3b the second message still pops up and sounds (not silenced)"
+  info "3b group: $(echo "$r3" | grep -oE "groupKey=[^ ]*" | head -1)"
+  sleep 1; shot 03b-two-messages
+else fail "3b the second message did not show"; fi
 
 # ── 4. a voice call on the LOCKED phone, screen off: the screen wakes and the call screen opens ──
 close_app
@@ -126,6 +136,7 @@ shot 04-call-locked-phone
 record call-T4 | grep -iE "NotificationRecord|group|fullscreen|importance" > "$OUT/record-call-locked.txt"
 adb logcat -d -b all 2> /dev/null | grep -iE "full.?screen|fullscreenintent|FSI|NotifInterrupt|VisualInterruption|HeadsUpCoordinator" | tail -60 > "$OUT/fsi-decision.txt"
 info "4  group of the locked-phone call: $(grep -oE "(overrideGroupKey|groupKey|group)=[^ ,)]*" "$OUT/record-call-locked.txt" | sort -u | tr '\n' ' ')"
+grep -q "SILENT" "$OUT/record-call-locked.txt" && fail "4c the call was SILENCED by the system (other True Find notifications in the shade)" || pass "4c the call was not silenced, with other True Find notifications in the shade"
 unlock
 
 # ── 4x. the same, with no other True Find notification in the shade ──
@@ -181,7 +192,7 @@ fi
 # ── 7. Answer from the ringing notification (app closed) ──
 close_app
 adb logcat -c
-call T7 video
+call T7 voice
 if wait_active call-T7 30 && tap_button "Answer"; then
   if wait_log "push open call=T7 act=answer" 30; then pass "7  Answer opened True Find on the call"; else fail "7  Answer did not open the call"; fi
 else
