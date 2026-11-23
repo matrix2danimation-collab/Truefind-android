@@ -803,8 +803,9 @@ class SecretHome(
 
     private fun syncCardRoom() {
         if (!SdDeck.fit || scroll.height <= 0 || deckBox.top <= 0) return
-        val room = scroll.height - (body.top + deckBox.top) - dpi(18f)
-        if (room <= 0 || kotlin.math.abs(room - deck.room) <= 1) return
+        // (at least 1 = "measured", also where the first screen has no room left for the card: a very short or sideways phone)
+        val room = maxOf(1, scroll.height - (body.top + deckBox.top) - dpi(18f))
+        if (deck.room > 0 && kotlin.math.abs(room - deck.room) <= 1) return
         // (not inside this layout pass: the card's new height asks for a layout of its own)
         post { deck.room = room; deckState = ""; render() }
     }
@@ -818,7 +819,11 @@ class SecretHome(
     private fun renderDeck() {
         paintChips()
         val people = deckList()
-        val state = if (people == null) "loading" else if (people.isNotEmpty()) "deck" else "empty-$deckTab"
+        // (SdDeck.fit) the card is as tall as the room down to the bottom bar: until the page's first layout has measured that,
+        // the plain placeholder stays, so the card never shows in one height and then jumps to another
+        val unsized = SdDeck.fit && deck.room <= 0
+        if (unsized) syncCardRoom()
+        val state = if (people == null || unsized) "loading" else if (people.isNotEmpty()) "deck" else "empty-$deckTab"
         if (state != deckState) {
             deckState = state
             deckBox.removeAllViews()
