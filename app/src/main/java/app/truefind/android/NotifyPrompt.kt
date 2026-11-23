@@ -291,7 +291,7 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
             else -> "Get calls and messages even when True Find is closed."
         }
         buttons.visibility = if (done || blocked || failed) View.GONE else View.VISIBLE
-        turnOn.text = when { state == "busy" -> "Turning on…"; bg && step == "battery" -> "Allow"; bg -> "Open settings"; else -> "Turn on" }
+        turnOn.text = when { state == "busy" -> "Turning on…"; bg && step == "battery" && kind != "restricted" -> "Allow"; bg -> "Open settings"; else -> "Turn on" }
         turnOn.alpha = if (state == "busy") 0.7f else 1f
     }
 
