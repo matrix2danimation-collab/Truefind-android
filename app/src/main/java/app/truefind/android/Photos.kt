@@ -168,6 +168,11 @@ object Photos {
     fun loadFull(raw: String, maxSide: Int, done: (Bitmap?) -> Unit) {
         url(raw) { u ->
             if (u.startsWith("demo:story:") && Demo.on) { val k = u.split(":"); done(Demo.portrait(k.getOrElse(2) { "demo" }, k.getOrElse(3) { "" } != "male", 900, 1600)); return@url }
+            // a demo person's story (testing only, SdDemo.stories): made here from their demo face
+            if (u.startsWith("demo:sdstory:")) {
+                pool.execute { val b = try { demoStory(u.removePrefix("demo:sdstory:")) } catch (e: Throwable) { null }; main.post { done(b) } }
+                return@url
+            }
             if (u.isBlank() || u.startsWith("demo:")) { done(null); return@url }
             pool.execute {
                 val b = try {
@@ -181,6 +186,29 @@ object Photos {
                 main.post { done(b) }
             }
         }
+    }
+
+    /**
+     * A demo story's picture: the demo face (a small file) round, with a white edge, in the upper middle of a tall page
+     * of the face's own background colour, a little darker towards the foot.
+     */
+    private fun demoStory(face: String): Bitmap? {
+        val bytes = bytesOf(face) ?: return null
+        val f = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        val w = 720; val h = 1280
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        val bg = f.getPixel(2, 2)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        p.shader = android.graphics.LinearGradient(0f, 0f, 0f, h.toFloat(), bg, androidx.core.graphics.ColorUtils.blendARGB(bg, android.graphics.Color.BLACK, .22f), android.graphics.Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+        p.shader = null
+        val d = 460; val cx = w / 2f; val cy = h * .44f
+        p.color = android.graphics.Color.WHITE
+        c.drawCircle(cx, cy, d / 2f + 10f, p)
+        val round = circle(Bitmap.createScaledBitmap(f, d, d, true))
+        c.drawBitmap(round, cx - d / 2f, cy - d / 2f, p)
+        return out
     }
 
     /** Round copy of a square bitmap (all faces in True Find are round). */

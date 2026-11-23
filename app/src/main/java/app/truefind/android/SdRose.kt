@@ -100,20 +100,8 @@ object Rs {
         addView(title(ctx, s, sizeDp))
     }
 
-    /** "TrueFind" with its little heart — the logo at the top of Home, Chats and the map */
-    fun logo(ctx: Context, sizeDp: Float = 25f): View {
-        val box = FrameLayout(ctx)
-        val word = TextView(ctx).apply {
-            text = "TrueFind"; setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp)); setTextColor(LOGO)
-            typeface = serifItalic; includeFontPadding = false; maxLines = 1
-            setPadding(0, Ui.dpi(sizeDp * .22f), Ui.dpi(sizeDp * .62f), 0)
-        }
-        box.addView(word, FrameLayout.LayoutParams(-2, -2))
-        box.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Heart, LOGO, sizeDp * .56f, 2.1f)); rotation = 14f },
-            FrameLayout.LayoutParams(Ui.dpi(sizeDp * .56f), Ui.dpi(sizeDp * .56f), Gravity.END or Gravity.TOP))
-        box.contentDescription = "TrueFind"
-        return box
-    }
+    /** "TrueFind" with its heart over the end of "Find" — the logo at the top of Home, Chats and the map (see [LogoView]) */
+    fun logo(ctx: Context, sizeDp: Float = 25f): LogoView = LogoView(ctx, sizeDp)
 
     /** a chip of a row of choices (Discover · Nearby · Favorite, All · Online · Unread): maroon when chosen, white otherwise */
     fun paintChip(t: TextView, on: Boolean, icon: String?, fillOn: Boolean = true) {
@@ -161,5 +149,80 @@ internal class RoseDeco {
         p.strokeWidth = Ui.dp(1.2f) / k
         c.save(); c.translate(w - Ui.dp(26f), Ui.dp(150f)); c.rotate(28f); c.scale(k, k); c.drawPath(twig, p); c.restore()
         c.save(); c.translate(Ui.dp(14f), h * .78f); c.rotate(-24f); c.scale(k, k); c.drawPath(twig, p); c.restore()
+    }
+}
+
+/**
+ * The logo: "TrueFind" in the serif italic, its line heart sitting over the end of "Find" (the owner's picture; 23 Nov:
+ * "पूरा ट्रू फाइंड नाम आना चाहिए और फाइंड के ऊपर हार्ट"). It always shows whole: where its row has less room than the
+ * word needs at [maxDp] — a narrow phone, a long credits pill beside it — the whole logo is drawn smaller, never cut
+ * (it was a TextView before, and lost its last letters on phones narrower than the test phone).
+ */
+@android.annotation.SuppressLint("ViewConstructor")
+class LogoView(ctx: Context, private val maxDp: Float) : View(ctx) {
+    private val tp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Rs.LOGO; typeface = Rs.serifItalic }
+    private val hp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = Rs.LOGO; style = android.graphics.Paint.Style.STROKE; strokeCap = android.graphics.Paint.Cap.ROUND; strokeJoin = android.graphics.Paint.Join.ROUND
+    }
+    private val heart: android.graphics.Path = androidx.core.graphics.PathParser.createPathFromPathData(Lucide.Heart)
+    // the little line that runs on into the heart from its dip, as a heart drawn by hand
+    private val curl: android.graphics.Path = androidx.core.graphics.PathParser.createPathFromPathData("M12 5c.9 1.3 1.2 2.6 1 3.9")
+    private val box = android.graphics.Rect()
+    private var px = Ui.dp(maxDp)
+    /** the text size it is drawn at now (dp): [maxDp], or less where the row is too narrow for that */
+    val sizeDp: Float get() = px / Ui.density
+
+    init { contentDescription = "TrueFind" }
+
+    /** the word's ink width · the height of its tall letters · the heart's size · the whole logo's width and height, at text size [size] (px) */
+    private class Fit(val word: Float, val cap: Float, val heart: Float, val w: Float, val h: Float)
+    private fun fit(size: Float): Fit {
+        tp.textSize = size
+        tp.getTextBounds(WORD, 0, WORD.length, box)
+        val cap = -box.top.toFloat()
+        val hs = cap * HEART
+        val word = maxOf(box.right.toFloat(), tp.measureText(WORD))
+        // (as much room under the word as the heart takes over it: the word, not the heart, sits in the row's middle)
+        return Fit(word, cap, hs, word + hs * (OUT + .5f + .1f), cap + 2 * hs * (UP + .5f + .08f))
+    }
+
+    override fun onMeasure(wSpec: Int, hSpec: Int) {
+        val max = Ui.dp(maxDp)
+        px = max
+        var f = fit(max)
+        val room = MeasureSpec.getSize(wSpec)
+        if (MeasureSpec.getMode(wSpec) != MeasureSpec.UNSPECIFIED && room > 0 && f.w > room) { px = max * room / f.w * .995f; f = fit(px) }
+        setMeasuredDimension(kotlin.math.ceil(f.w).toInt(), kotlin.math.ceil(f.h).toInt())
+    }
+
+    override fun onDraw(c: Canvas) {
+        val f = fit(px)
+        val top = f.heart * (UP + .5f + .08f)          // the top of the tall letters
+        c.drawText(WORD, 0f, top + f.cap, tp)
+        // the heart: a little to the right of the "d"'s top and a little over it, leaning to the right
+        c.save()
+        c.translate(f.word + f.heart * OUT, top - f.heart * UP)
+        c.rotate(TILT)
+        c.scale(f.heart / 20f, f.heart / 20f)          // (the heart's line fills 20 of its 24 units)
+        c.translate(-12f, -12.2f)
+        hp.strokeWidth = 2.4f                          // (in those units)
+        c.drawPath(heart, hp); c.drawPath(curl, hp)
+        c.restore()
+    }
+
+    companion object {
+        const val WORD = "TrueFind"
+        // the picture's measures: the heart 0.82 × the tall letters' height, its middle 0.64 of its size right of the word's
+        // end and 0.15 over the letters' top, leaning 16°
+        private const val HEART = .82f
+        private const val OUT = .64f
+        private const val UP = .15f
+        private const val TILT = 16f
+        /** the width the whole logo needs at text size [sizeDp] (px) — to tell beforehand whether a row has room for it */
+        fun widthAt(sizeDp: Float): Float {
+            val p = android.graphics.Paint().apply { typeface = Rs.serifItalic; textSize = Ui.dp(sizeDp) }
+            val b = android.graphics.Rect(); p.getTextBounds(WORD, 0, WORD.length, b)
+            return maxOf(b.right.toFloat(), p.measureText(WORD)) + -b.top * HEART * (OUT + .5f + .1f)
+        }
     }
 }

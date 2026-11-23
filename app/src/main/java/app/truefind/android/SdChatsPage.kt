@@ -31,7 +31,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
                val open: Boolean = false,
                /** pinned to the top of my list (pinChat, owner 21 Nov) */
                var pinned: Boolean = false,
-               /** a demo chat (testing only, SdDemo): opens the demo profile, never a real chat */
+               /** a demo chat (testing only, SdDemoChat): opens a demo chat room, kept on this phone — never a real chat */
                val demo: Boolean = false,
                /** the last message is mine ("You: …") — demo chats only */
                val mine: Boolean = false)
@@ -170,7 +170,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             ChatCache.putChats(arr)
             val real = SdChatList.sorted(list(arr).map { norm(it) }.filter { it.id.isNotEmpty() })
             // demo chats (testing only, like the web's SHOW_SD_DEMO): after the real ones
-            chats = if (SdDemo.SHOW) real + SdChatList.demoChats(h.gender) else real
+            chats = if (SdDemo.SHOW) real + SdDemoChat.rows(h.gender) else real
             failed = false
             render()
             told()
@@ -305,9 +305,9 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
 
     private fun row(c: Chat): View {
         val st = h.chatStoryFor(c.uid, c.pid, "")
-        val locked = h.premiumInfo.second && !h.isPremium
+        val locked = h.premiumInfo.second && !h.isPremium && !c.demo
         val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 20f, 1f, if (c.unread > 0) Rs.c("#F3A7C6") else Rs.LINE); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(10f)) }
-        // the photo (a story ring when they have one) → their profile
+        // the photo (a story ring when they have one) → the chat, as the rest of the row (owner, 23 Nov)
         val ph = FrameLayout(context)
         val ring = FrameLayout(context).apply {
             if (st != null) {
@@ -321,8 +321,8 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         inner.addView(photo, LayoutParams(-1, -1)); ring.addView(inner, LayoutParams(-1, -1))
         ph.addView(ring, LayoutParams(dpi(60f), dpi(60f)))
         if (c.online) ph.addView(LiveDot(context, 13f, 2.5f, Color.WHITE), LayoutParams(-2, -2, Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(1f); bottomMargin = dpi(3f) })
-        ph.contentDescription = "${c.name}'s profile"
-        ph.press().onTap { h.openFromChat(c) }
+        ph.contentDescription = "Chat with ${c.name}"
+        ph.press().onTap { h.openChatRow(c) }
         r.addView(ph, lp(dpi(60f), dpi(60f)))
         // name + last message → the chat
         val mid = hbox(context, 10f)

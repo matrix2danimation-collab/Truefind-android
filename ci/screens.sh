@@ -320,26 +320,57 @@ shot c04-exact-free home --es tf_preview secret --ez tf_cardfit false
 shot c05-fit-free home --es tf_preview secret --ez tf_cardfit true
 shot c06-exact-favorite open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open favorite
 fi
+# narrower phones than the test phone (411 wide): 360 and 393 wide — the header's whole "TrueFind", the chips, the card (owner, 23 Nov:
+# the name was cut on his phone)
+if [ "$SET" = narrow ]; then
+adb shell wm density 480 < /dev/null; sleep 4
+shot n01-360-home home --es tf_preview secret --ez tf_premium true
+shot n02-360-home-free home --es tf_preview secret
+shot n03-360-card open --es tf_preview secret --ez tf_premium true --es tf_open card
+shot n04-360-chats home --es tf_preview secret-chat --ez tf_premium true
+shot n05-360-room home --es tf_preview chatroom --ez tf_premium true
+shot n06-360-map home --es tf_preview secret-map --ez tf_premium true
+shot n07-360-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
+shot n08-360-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
+shot n09-360-join home --es tf_preview secret --ez tf_notjoined true
+adb shell wm density 440 < /dev/null; sleep 4
+shot n11-393-home home --es tf_preview secret --ez tf_premium true
+shot n12-393-home-free home --es tf_preview secret
+shot n13-393-chats home --es tf_preview secret-chat --ez tf_premium true
+shot n14-393-card open --es tf_preview secret --ez tf_premium true --es tf_open card
+adb shell wm density 540 < /dev/null; sleep 4
+shot n21-320-home home --es tf_preview secret --ez tf_premium true
+adb shell wm density reset < /dev/null; sleep 3
+fi
 if [ "$SET" = rosetap ]; then
-# (the Home card is the second picture's size since 23 Nov: its ✕ ♥ come up with a small scroll, so those taps start from "tf_open card",
-#  the page scrolled until the whole card shows)
-tshot t01-tap-heart "701 1532" --es tf_preview secret --ez tf_premium true --es tf_open card
-tshot t02-tap-skip "378 1532" --es tf_preview secret --ez tf_premium true --es tf_open card
+# (the Home card is a little longer than the second picture's since 23 Nov evening — 1.7 × its width: its ✕ ♥ come up with a small
+#  scroll, so those taps start from "tf_open card", the page scrolled until the card's top shows)
+tshot t01-tap-heart "701 1702" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t02-tap-skip "378 1702" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t03-swipe-left "850 1270 250 1270" --es tf_preview secret --ez tf_premium true
 tshot t04-swipe-right "850 1270 250 1270; 250 1270 850 1270" --es tf_preview secret --ez tf_premium true
-tshot t05-arrow-next "972 1505; 972 1505" --es tf_preview secret --ez tf_premium true
+tshot t05-arrow-next "972 1577; 972 1577" --es tf_preview secret --ez tf_premium true
 tshot t06-tap-card "540 1150" --es tf_preview secret --ez tf_premium true
 tshot t07-chip-nearby "540 746" --es tf_preview secret --ez tf_premium true
-tshot t08-like-then-favorite "701 1532; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t08-like-then-favorite "701 1702; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t09-chats-unread-tab "600 457" --es tf_preview secret-chat --ez tf_premium true
 tshot t10-chats-search-btn "982 212" --es tf_preview secret-chat --ez tf_premium true
 tshot t11-room-emoji "823 2236; 102 2085; 322 2085" --es tf_preview chatroom --ez tf_premium true
 tshot t12-room-gift "100 2236" --es tf_preview chatroom --ez tf_premium true
 tshot t13-scroll-page "540 1900 540 900" --es tf_preview secret --ez tf_premium true
 tshot t14-bar-over-card "701 2224" --es tf_preview secret --ez tf_premium true
-tshot t15-free-heart "701 1532" --es tf_preview secret --es tf_open card
-tshot t16-free-skip "378 1532" --es tf_preview secret --es tf_open card
+tshot t15-free-heart "701 1702" --es tf_preview secret --es tf_open card
+tshot t16-free-skip "378 1702" --es tf_preview secret --es tf_open card
 tshot t17-small-scroll "540 1700 540 1450" --es tf_preview secret --ez tf_premium true
+# 23 Nov evening: a chat row opens the chat wherever it is tapped (photo · name), a demo row a demo chat; "Your Story" adds a story; the bell
+tshot t18-chat-photo-opens-chat "148 650" --es tf_preview secret-chat --ez tf_premium true
+tshot t19-chat-name-opens-chat "580 880" --es tf_preview secret-chat --ez tf_premium true
+tshot t20-demo-chat-photo "148 1804" --es tf_preview secret-chat --ez tf_premium true
+tshot t21-demo-chat-name "480 2036" --es tf_preview secret-chat --ez tf_premium true
+tshot t22-demo-chat-free "148 1804" --es tf_preview secret-chat
+tshot t23-your-story-adds "116 488" --es tf_preview secret --ez tf_premium true
+tshot t24-bell "670 216" --es tf_preview secret --ez tf_premium true
+tshot t25-story-opens "286 488" --es tf_preview secret --ez tf_premium true
 fi
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true
@@ -365,6 +396,17 @@ shot r20-join home --es tf_preview secret --ez tf_notjoined true
 shot r21-room-truefind home --es tf_preview chatroom --ez tf_premium true --ez tf_tfchat true
 shot r22-chats-search open --es tf_preview secret-chat --ez tf_premium true --es tf_open search
 shot r23-chats-free home --es tf_preview secret-chat
+# 23 Nov evening: demo people's stories and chats (testing only)
+shot r24-demo-profile open --es tf_preview secret --ez tf_premium true --es tf_open demo-profile
+shot r25-demo-request-chat open --es tf_preview secret --ez tf_premium true --es tf_open demo-request
+shot r26-demo-request-new open --es tf_preview secret --ez tf_premium true --es tf_open demo-request-new
+shot r27-demo-request-free open --es tf_preview secret --es tf_open demo-request-new
+shot r28-demo-chat-said open --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-1 --es tf_open say
+shot r29-demo-chat-gift quick --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-1 --es tf_open saygif
+shot r30-demo-chat-profile open --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-2 --es tf_open profile
+shot r31-demo-story story --es tf_preview secret --ez tf_premium true --es tf_open demostory
+shot r32-stories-end open --es tf_preview secret --ez tf_premium true --es tf_open storyrow-end
+shot r33-demo-chat-list open --es tf_preview secret-chat --ez tf_premium true --es tf_open scroll
 fi
 if [ "$SET" = sd ]; then
 shot 01-explore home --es tf_preview explore
@@ -424,7 +466,7 @@ shot 37-map-strong-phone anim --es tf_preview secret-map --ez tf_premium true --
 shot 40-chats home --es tf_preview secret-chat --ez tf_premium true
 shot 41-chats-free home --es tf_preview secret-chat
 shot 42-chats-empty home --es tf_preview secret-chat --ez tf_premium true --ez tf_nochats true
-shot 43-chat-profile open --es tf_preview secret-chat --ez tf_premium true --es tf_open chatprofile
+shot 43-chat-row-opens-chat open --es tf_preview secret-chat --ez tf_premium true --es tf_open chatrow
 # one chat (/chat/:id)
 shot 50-room home --es tf_preview chatroom --ez tf_premium true
 shot 51-room-gifs open --es tf_preview chatroom --ez tf_premium true --es tf_open gif

@@ -27,10 +27,11 @@ import kotlin.math.roundToInt
  * Verified at its top, the name and city at its bottom, and two round buttons on it: ✕ (the next profile) and
  * ♥ (like). Swipe left / right or tap the arrows for the next / the one before; tap the photo to open the profile.
  * Flat ("2D"): a white edge, no gloss, no deep shadow.
- * Its size is the second picture's (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो"): almost the screen's
- * width and 1.545 × as tall, on every phone, with everything on it in that picture's proportions (the round buttons a
- * fifth of the card's width, and so on). It is longer than a phone's first screen: its foot (✕ ♥) comes up with a small
- * scroll. (He first tried the shorter size that ends above the bottom bar, [fit], and sent it back the same day.)
+ * Its size is the second picture's and a little longer (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो" …
+ * "थोड़ा और लंबा करो"): almost the screen's width and 1.7 × as tall, on every phone, with everything on it in that
+ * picture's proportions (the round buttons a fifth of the card's width, and so on). It is longer than a phone's first
+ * screen: its foot (the name, ✕ ♥) comes up with a small scroll. (He first tried the shorter size that ends above the
+ * bottom bar, [fit], and sent it back the same day.)
  */
 @SuppressLint("ViewConstructor")
 class SdDeck(
@@ -260,13 +261,16 @@ class SdDeck(
     }
 
     companion object {
-        /** the second picture's card: 480 wide on a 512 screen (13 at each side on a phone), 743 tall → 1.545 × its width */
-        const val RATIO = 1.545f
         /**
-         * false (the owner's word, 23 Nov): exactly the picture's size on every phone; on most its foot (✕ ♥) comes up
-         * only with a small scroll.
+         * the second picture's card is 480 wide on a 512 screen (13 at each side on a phone) and 743 tall, 1.545 × its
+         * width; the owner then asked for it a little longer still (23 Nov evening): 1.7 ×, a tenth more
+         */
+        const val RATIO = 1.7f
+        /**
+         * false (the owner's word, 23 Nov): the long card ([RATIO]) on every phone; its foot (✕ ♥) comes up only with a
+         * small scroll.
          * true: the card is as tall as the first screen allows — it ends just above the bottom bar, so ✕ ♥ show without a
-         * scroll — and never taller than the picture's. (In the app for an hour on 23 Nov; too short for him.)
+         * scroll — and never taller than [RATIO]. (In the app for an hour on 23 Nov; too short for him.)
          */
         var fit = false
         fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = (deckW - Ui.dp(26f)).coerceIn(Ui.dp(220f), Ui.dp(460f)).roundToInt()

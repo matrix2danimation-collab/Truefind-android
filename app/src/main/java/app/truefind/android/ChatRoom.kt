@@ -304,6 +304,8 @@ class ChatRoom(
         renderAll()
         if (!loading) scrollToEnd(false)
         load(g)
+        // a demo person's chat (testing only): said once each time the app is opened
+        if (SdDemoChat.owns(id) && !demoTold) { demoTold = true; main.postDelayed({ if (shownNow && matchId == id) say("Demo chat, for testing: messages stay on this phone.") }, 700) }
         unsubMsg = Realtime.subscribe("Message") { ev -> onMessageEvent(ev) }
         unsubMatch = Realtime.subscribe("Match") { ev -> onMatchEvent(ev) }
         conn.state(Realtime.connected, android.os.SystemClock.elapsedRealtime())
@@ -313,6 +315,7 @@ class ChatRoom(
         main.removeCallbacks(fallback); main.postDelayed(fallback, 4000)
     }
     private var shownNow = false
+    private var demoTold = false
     // if the live connection is down, look for new messages every few seconds instead
     private val fallback = object : Runnable { override fun run() { main.postDelayed(this, 4000); if (shownNow && appVisible && !loading && error.isEmpty() && !Realtime.connected && !Demo.on) refreshLatest() } }
     private fun refreshLatest() {
@@ -370,6 +373,8 @@ class ChatRoom(
             "gift" -> gifOf("bouquet")?.let { giftSheet(it) }
             "giftlow" -> { balance = 3; gifOf("crown")?.let { giftSheet(it) } }
             "held" -> { input.setText("Mera number 98765 43210 hai"); send() }
+            "say" -> { input.setText("Hello! Kaise ho?"); send() }
+            "saygif" -> gifOf("rose")?.let { sendGifNow(it) }
             "profile" -> profilePage()
             "typing" -> { otherTyping = true; renderHeader(); renderTail(); scrollToEnd(false) }
             "block" -> confirm("block")
@@ -475,10 +480,12 @@ class ChatRoom(
     private val otherUserId: String get() {
         val o = other
         SdRules.s(o, "user_id", "created_by_id").let { if (it.isNotEmpty()) return it }
-        messages.firstOrNull { it.optString("from_user_id").let { f -> f.isNotEmpty() && f != meId } }?.let { return it.optString("from_user_id") }
-        messages.firstOrNull { it.optString("to_user_id").let { f -> f.isNotEmpty() && f != meId } }?.let { return it.optString("to_user_id") }
+        messages.firstOrNull { it.optString("from_user_id").let { f -> f.isNotEmpty() && f != meId && f != SdDemoChat.SELF } }?.let { return it.optString("from_user_id") }
+        messages.firstOrNull { it.optString("to_user_id").let { f -> f.isNotEmpty() && f != meId && f != SdDemoChat.SELF } }?.let { return it.optString("to_user_id") }
         return ""
     }
+    /** a message of mine (in a demo chat, testing only, my lines carry SdDemoChat.SELF instead of my id) */
+    private fun isMine(m: JSONObject): Boolean = m.optString("from_user_id").let { it == meId || it == SdDemoChat.SELF }
 
     // live: new / changed / deleted messages, and "typing…"
     private fun onMessageEvent(ev: Realtime.Event) {
@@ -850,7 +857,7 @@ class ChatRoom(
         else GradientDrawable().apply { setColor(Color.WHITE); cornerRadii = radii; setStroke(dpi(1f), pk.line2) }
     }
     private fun bubble(m: JSONObject): View {
-        val mine = m.optString("from_user_id") == meId
+        val mine = isMine(m)
         val k = kindOf(m)
         val bare = k == "gif" && SdRules.s(m, "gif_url").isEmpty()
         val wrap = FrameLayout(context)
@@ -1249,7 +1256,7 @@ class ChatRoom(
         val (m, g, until) = found
         if (fxId != m.optString("id")) {
             fx?.let { (it.parent as? ViewGroup)?.removeView(it) }
-            val who = if (m.optString("from_user_id") == meId) "You" else firstName.ifEmpty { "They" }
+            val who = if (isMine(m)) "You" else firstName.ifEmpty { "They" }
             val v = GiftFxView(context, g, who)
             v.elevation = Ui.dp(60f) + 79f
             host.addView(v, LayoutParams(-1, -1))

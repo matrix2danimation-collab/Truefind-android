@@ -142,6 +142,12 @@ object SdProfileView {
             // (a chat opened once opens without a plan: owner, 20 Nov)
             val prem = h.isPremium || h.chatOpenWith(p)
             when {
+                // a demo profile (testing only): its chat opens at once from here — no plan and no credit (owner, 23 Nov)
+                SdDemo.isDemo(p) && !same -> {
+                    val chatting = SdDemoChat.isStarted(SdDemoChat.idFor(p))
+                    mainBox.addView(big(if (chatting) "Open Chat" else "Send Request", if (chatting) Icon(Lucide.MessageCircleMore, white, 27f, 2f) else Icon(Lucide.Send, white, 24f, 2.2f)) { h.askRequest(p) }, lp(MATCH, dpi(60f)))
+                    mainBox.addView(note("Demo profile: the chat opens at once, for testing. No credit is used."), lp(MATCH, WRAP, t = 8f))
+                }
                 p.optString("_chatId").isNotEmpty() -> {
                     mainBox.addView(big("Open Chat", if (prem) Icon(Lucide.MessageCircleMore, white, 27f, 2f) else Icon(Lucide.Lock, white, 22f, 2.3f)) { if (prem) h.openChat(p) else h.locked("chat") }, lp(MATCH, dpi(60f)))
                     mainBox.addView(note("Your private chat with ${SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "them" }}. Numbers and links stay hidden."), lp(MATCH, WRAP, t = 8f))

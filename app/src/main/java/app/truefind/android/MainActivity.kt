@@ -949,6 +949,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
      * on the sign-in pages the sign-in web page's router does.
      */
     private fun navigate(full: String, state: JSONObject? = null, replace: Boolean = false) {
+        // a test preview has no pages behind it; a chat still opens over it as in the app, so the taps that lead to a chat
+        // (a row of the chat list, Send Request on a demo profile) can be photographed
+        if (Demo.on && preview.isNotEmpty()) Regex("^/chat/([^/?]+)$").find(pathOnly(full))?.groupValues?.get(1)?.let { id ->
+            val r = room(); r.visibility = View.VISIBLE; r.open(id); roomShown = true; roomStrips(); sdNav.visibility = View.GONE
+            return
+        }
         if (!native) { webGo(full, state, replace); return }
         if (leaving) return
         if (openCallPage(full, state)) return

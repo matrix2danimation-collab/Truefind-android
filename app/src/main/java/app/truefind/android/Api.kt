@@ -128,6 +128,8 @@ object Api {
     }
 
     private fun call(name: String, payload: JSONObject, timeoutMs: Int): Result {
+        // a demo person's chat (testing only, SdDemoChat) is answered on the phone — nothing about it goes to the server
+        SdDemoChat.function(name, payload)?.let { return it }
         if (Demo.on) return Demo.function(name, payload)
         return request("POST", "/functions/$name", payload.toString().toByteArray(Charsets.UTF_8), "application/json", timeoutMs)
     }
@@ -230,6 +232,7 @@ object Api {
 
     /** entities.X.filter(query, sort, limit) — the records as a list. */
     fun filter(entity: String, query: JSONObject, sort: String? = null, limit: Int = 0, done: (Result) -> Unit) {
+        SdDemoChat.filter(entity, query)?.let { r -> deliver { done(r) }; return }
         if (Demo.on) { deliver { done(Demo.filter(entity, query)) }; return }
         val q = StringBuilder("?q=").append(java.net.URLEncoder.encode(query.toString(), "UTF-8"))
         if (sort != null) q.append("&sort=").append(java.net.URLEncoder.encode(sort, "UTF-8"))
@@ -239,6 +242,7 @@ object Api {
 
     /** entities.X.get(id) */
     fun get(entity: String, id: String, done: (Result) -> Unit) {
+        SdDemoChat.filter(entity, JSONObject().put("id", id))?.let { r -> deliver { done(Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error)) }; return }
         if (Demo.on) { deliver { done(Demo.filter(entity, JSONObject().put("id", id)).let { r -> Result(r.status, r.data.optJSONArray("items")?.optJSONObject(0) ?: JSONObject(), r.error) }) }; return }
         readWithRetry({ request("GET", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
     }
@@ -251,7 +255,7 @@ object Api {
 
     /** entities.X.updateMany(query, data) — PATCH …/update-many (HttpURLConnection can't send PATCH: OkHttp does) */
     fun updateMany(entity: String, query: JSONObject, data: JSONObject, done: (Result) -> Unit = {}) {
-        if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
+        if (Demo.on || SdDemoChat.ownsQuery(query)) { main.post { done(Result(200, JSONObject(), null)) }; return }
         act({ requestOk("PATCH", "/entities/$entity/update-many", JSONObject().put("query", query).put("data", data)) }, done)
     }
 
