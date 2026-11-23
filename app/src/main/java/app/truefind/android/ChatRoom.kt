@@ -223,6 +223,8 @@ class ChatRoom(
     private fun applyLook() {
         val rose = sdLook
         if (lookNow == rose) return
+        // bubbles already drawn in the other look are drawn again (the next renderList builds them afresh)
+        if (lookNow != null) { listCol.removeAllViews(); tailCol.removeAllViews(); ticks.clear(); shownKeys = emptyList() }
         lookNow = rose
         backdrop.rose = rose
         // the top: a flat maroon band with round lower corners (the picture's chat); the pink look has none
@@ -1293,7 +1295,7 @@ class ChatRoom(
             photo.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", pid).put("gender", SdRules.s(o, "gender")), Ui.dpi(186f)))
             white.addView(photo, LayoutParams(-1, -1)); ring.addView(white, LayoutParams(-1, -1))
             ph.addView(ring, LayoutParams(dpi(204f), dpi(204f)))
-            if (verified) ph.addView(ImageView(context).apply { setImageDrawable(Seal(46f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.WHITE); elevation = Ui.dp(10f) }, LayoutParams(dpi(54f), dpi(54f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(8f) })
+            if (verified) ph.addView(ImageView(context).apply { setImageDrawable(Seal(46f, if (sdLook) Rs.SEAL else KP.rose)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.WHITE); elevation = Ui.dp(10f) }, LayoutParams(dpi(54f), dpi(54f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(8f) })
             ph.contentDescription = if (otherPhotoRaw.isNotEmpty()) "See ${first.ifEmpty { "their" }} photo" else "No photo"
             ph.onTap { Photos.loadFull(otherPhotoRaw, 1600) { b -> if (b != null) viewPhoto(b) } }
             col.addView(ph, lp(dpi(204f), dpi(204f), t = 4f, gravity = Gravity.CENTER_HORIZONTAL))

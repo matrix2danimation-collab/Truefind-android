@@ -165,6 +165,8 @@ class SecretHome(
         addView(scroll, LayoutParams(-1, -1))
         col.setPadding(dpi(16f), dpi(8f), dpi(16f), dpi(34f))
         col.clipChildren = false
+        // the stories row and the card reach the screen's edges (their −16 margins): nothing of them is cut at the padding
+        col.clipToPadding = false
         scroll.addView(col, LayoutParams(-1, -2))
         // the page fades softly into the bottom bar instead of being cut off under it
         addView(object : View(ctx) {
@@ -750,7 +752,7 @@ class SecretHome(
         if (known == null && likedIds.isEmpty()) return null       // still asking
         val pool = (online ?: emptyList()) + (discover ?: emptyList())
         val out = ArrayList<JSONObject>(); val seen = HashSet<String>()
-        for (id in likedIds.reversed()) (likedPeople[id] ?: pool.firstOrNull { it.optString("id") == id })?.let { if (seen.add(id)) out.add(it) }
+        for (id in likedIds.toList().asReversed()) (likedPeople[id] ?: pool.firstOrNull { it.optString("id") == id })?.let { if (seen.add(id)) out.add(it) }
         for (p in known ?: emptyList()) { val id = p.optString("id"); if (id !in unlikedIds && seen.add(id)) out.add(p) }
         for (p in pool) { val id = p.optString("id"); if (p.optBoolean("liked_by_me") && id !in unlikedIds && seen.add(id)) out.add(p) }
         return out

@@ -307,6 +307,8 @@ shot r18-room-profile open --es tf_preview chatroom --ez tf_premium true --es tf
 shot r19-map home --es tf_preview secret-map --ez tf_premium true
 shot r20-join home --es tf_preview secret --ez tf_notjoined true
 shot r21-room-truefind home --es tf_preview chatroom --ez tf_premium true --ez tf_tfchat true
+shot r22-chats-search open --es tf_preview secret-chat --ez tf_premium true --es tf_open search
+shot r23-chats-free home --es tf_preview secret-chat
 fi
 if [ "$SET" = sd ]; then
 shot 01-explore home --es tf_preview explore
