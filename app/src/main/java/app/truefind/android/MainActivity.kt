@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Push.onToken = { _ -> runOnUiThread { web?.evaluateJavascript("try{window.dispatchEvent(new Event('tf-native-token'))}catch(e){}", null); if (Api.token.isNotEmpty()) Push.register(this, Api.token.takeLast(24)) } }
         // a message, like or note arrived while the app is open: the red number on Find is asked again
         Push.onMessage = { t -> runOnUiThread { if (::work.isInitialized && (t == "msg" || t == "like" || t == "info")) work.unreadSoon(300) } }
+        Push.onCall = { id -> runOnUiThread { if (::calls.isInitialized) calls.pushWhileOpen(id) } }
         Push.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         // no grey veil of the phone's own over the strips at the top and bottom: they take the page's colours (owner, 21 Nov)
@@ -282,6 +283,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             override fun logout(presence: Boolean) = signOut(presence)
         }
         pages.checkUpdate = { updater.checkNow() }
+        // test builds: the "Update available" box never covers a ringing / running call (seen in the push test, 23 Nov)
+        updater.holdOff = { overLock || (::calls.isInitialized && (calls.busyWithCall || calls.callWaiting)) }
         // test builds: how smoothly the app draws on this phone (Settings → Page speed report)
         pages.speedReport = { Perf.show(this) }
         pages.moveSpeed = { askMoveSpeed() }
@@ -508,6 +511,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
         // test runs only (ci/session-test.sh): a made-up sign-in stays, to try the change between the two modes
         SessionWork.skipCheck = BuildConfig.SELF_UPDATE && intent?.getBooleanExtra("tf_test_nocheck", false) == true
+        // test runs only (ci/push-test.sh): what the phone still needs so calls ring while closed (BgSetup)
+        if (BuildConfig.SELF_UPDATE && intent?.getBooleanExtra("tf_bgcheck", false) == true) android.util.Log.i("TFDBG", "bgcheck ${BgSetup.report(this)}")
         val pushPath = intent?.let { pushOpen(it, true) }
         val linkPath = intent?.data?.takeIf { isOurs(it) }?.let { u -> (u.encodedPath ?: "/").ifEmpty { "/" } + (u.encodedQuery?.let { "?$it" } ?: "") }
         startSession(pushPath ?: linkPath, savedInstanceState)
@@ -769,6 +774,30 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val f = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             if (on) window.addFlags(f) else window.clearFlags(f)
         }
+        if (on) main.postDelayed(wakeForCall, 800) else releaseCallWake()
+    }
+
+    /**
+     * Android 9 and 10 (seen in the push test, 23 Nov) can open the call screen over the lock screen
+     * and still leave the screen dark: if it is still dark a moment later, the screen is switched on
+     * for the ringing (at most 45 s, let go as soon as the call screen goes).
+     */
+    private var callWake: android.os.PowerManager.WakeLock? = null
+    private val wakeForCall = Runnable {
+        if (!overLock || Build.VERSION.SDK_INT >= 30) return@Runnable
+        try {
+            val pm = getSystemService(android.os.PowerManager::class.java) ?: return@Runnable
+            if (pm.isInteractive) return@Runnable
+            releaseCallWake()
+            @Suppress("DEPRECATION")
+            callWake = pm.newWakeLock(android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP, "truefind:incoming-call").apply { setReferenceCounted(false); acquire(45_000L) }
+            android.util.Log.i("TFDBG", "call: screen woken")
+        } catch (e: Throwable) { }
+    }
+    private fun releaseCallWake() {
+        main.removeCallbacks(wakeForCall)
+        try { callWake?.let { if (it.isHeld) it.release() } } catch (e: Throwable) { }
+        callWake = null
     }
     /** a tapped notification: a call rings / is answered here, anything else opens its page. [cold]: the app was
      *  closed, the page's address is returned (the app opens on it) instead. */
@@ -778,6 +807,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (call.isEmpty() && url == null) return null
         i.removeExtra(Push.EXTRA_CALL); i.removeExtra(Push.EXTRA_URL)
         if (call.isNotEmpty()) {
+            android.util.Log.i("TFDBG", "push open call=$call act=${i.getStringExtra(Push.EXTRA_ACT).orEmpty()} cold=$cold")
             showOverLock(true)
             calls.fromNotification(call, i.getStringExtra(Push.EXTRA_ACT).orEmpty())
             return null
@@ -1700,6 +1730,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         askFastScreen()
         Push.visible = true
         Push.clearCalls(this) // the app rings it itself now
+        Push.tidy(this)
         calls.onAppVisible(true)
         // a call's "call in progress" service the phone refused while True Find was away starts now (CallService)
         CallService.refresh(this)

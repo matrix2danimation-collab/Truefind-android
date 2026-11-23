@@ -303,6 +303,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     /** true while a call rings here or its screen is open (the app may show over the lock screen) */
     val busyWithCall: Boolean get() = incoming != null || view != null
+    /** opened from a call's notification, still waiting for the sign-in to show it */
+    val callWaiting: Boolean get() = pendingOpen != null
     /** the call screen is on screen (not put aside) */
     val callShown: Boolean get() = view != null && !minimized
 
@@ -331,6 +333,17 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
     fun routeChanged() {
         if (minimized && !asideByExit && !host.path().substringBefore('?').trimEnd('/').equals("/wallet")) restore()
         if (pillCall != null) verifyPill()
+    }
+
+    /**
+     * A call's push came while the app is on screen. The app normally hears of the call through its
+     * live connection; this is the second way in, for when that connection has dropped: it looks
+     * for a call ringing for me now (one already showing is never shown twice).
+     */
+    fun pushWhileOpen(id: String) {
+        if (id.isEmpty() || preview || meId.isEmpty()) return
+        if (Tf.s(incoming, "id") == id || view?.session?.callId == id || isFinished(id)) return
+        catchUp()
     }
 
     // ═════════════════ the incoming call ═════════════════

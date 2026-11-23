@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- the phone buzzes: an incoming call (with the ringtone), a member calling an expert -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Android 9 / 10: the screen is switched on for a call that opened over the lock screen (MainActivity.wakeForCall) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Secret Dating map / nearby -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -17,6 +19,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- an incoming call rings full screen on the lock screen (like WhatsApp) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- calls must ring even when the phone's battery saver would stop True Find in the background (BgSetup) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- a call keeps its microphone (and on a video call the camera) when True Find leaves the screen (CallService) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -35,6 +39,21 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
         </intent>
+        <!-- the phone makers' "Autostart" / sleeping-apps pages (Xiaomi, Oppo / Realme, Vivo / iQOO, Tecno / Infinix / itel, OnePlus, Huawei, Asus, Samsung): BgSetup -->
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.coloros.safecenter" />
+        <package android:name="com.oppo.safe" />
+        <package android:name="com.vivo.permissionmanager" />
+        <package android:name="com.iqoo.secure" />
+        <package android:name="com.oneplus.security" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.hihonor.systemmanager" />
+        <package android:name="com.asus.mobilemanager" />
+        <package android:name="com.transsion.phonemaster" />
+        <package android:name="com.samsung.android.lool" />
+        <package android:name="com.samsung.android.sm" />
+        <!-- Google Play services (Firebase needs it): only read for the test builds' check -->
+        <package android:name="com.google.android.gms" />
     </queries>
 
     <application
@@ -75,6 +94,9 @@
         </service>
         <receiver
             android:name=".DeclineReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".PushGoneReceiver"
             android:exported="false" />
         <!-- "Voice call in progress": a call keeps its microphone / camera while True Find is in the background (CallService.kt) -->
         <service

@@ -46,6 +46,17 @@ object Push {
     private const val CH_INFO = "tf_info"
     private const val PREFS = "tf_push"
     private const val RING_MS = 45000L
+    /**
+     * Android 16 and newer group an app's ungrouped notifications themselves from the second one on
+     * (their own "Aggregate" group) and mark every one of them SILENT: no sound, no pop-up, and for a
+     * call no full screen — seen in the push test on Android 16 (23 Nov). So:
+     *  - a call is a CallStyle notification, which Android never groups;
+     *  - messages, missed calls and the rest go into True Find's own group (with a summary), which
+     *    Android leaves alone, so each new one still pops up and sounds.
+     */
+    private const val GROUP = "tf_alerts"
+    private const val SUMMARY_TAG = "tf-summary"
+    private const val SUMMARY_ID = 9
 
     /** true while the app is on screen (MainActivity onResume … onPause) */
     @Volatile var visible = false
@@ -53,7 +64,12 @@ object Push {
     @Volatile var onToken: ((String) -> Unit)? = null
     /** a message arrived while the app is on screen (its kind: msg, like, info …): the app shows it itself */
     @Volatile var onMessage: ((String) -> Unit)? = null
+    /** a call rang while the app is on screen: the app checks for it at once (its live connection may have dropped) */
+    @Volatile var onCall: ((String) -> Unit)? = null
     private val pool = Executors.newSingleThreadExecutor()
+    private val io = Executors.newCachedThreadPool()
+    /** the caller's photo may hold up the ringing for at most this long (a slow network must never delay a call) */
+    private const val PHOTO_WAIT_MS = 1500L
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -73,7 +89,34 @@ object Push {
     fun saveToken(ctx: Context, t: String) {
         if (t == token(ctx)) return
         prefs(ctx).edit().putString("token", t).remove("sent").apply()
-        onToken?.invoke(t)
+        val app = onToken
+        if (app != null) app.invoke(t) else registerClosed(ctx, t)
+    }
+
+    /**
+     * Firebase gave this phone a new token while True Find was closed: the server learns it now
+     * (with the sign-in kept for Decline), not only the next time the app is opened — until then
+     * calls would go to the old token and never ring.
+     */
+    private fun registerClosed(ctx: Context, t: String) {
+        val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null } ?: return
+        val tok = auth.optString("t")
+        if (tok.isEmpty()) return
+        pool.execute {
+            var c: HttpURLConnection? = null
+            try {
+                c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/pushSubscribe").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"; connectTimeout = 8000; readTimeout = 8000; doOutput = true
+                    setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
+                    setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer $tok")
+                }
+                c.outputStream.use { it.write(JSONObject().put("action", "native_save").put("token", t).put("device", device()).toString().toByteArray()) }
+                if (c.responseCode in 200..299) {
+                    val mark = "${tok.takeLast(24)}|$t|${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())}"
+                    prefs(ctx).edit().putString("sent", mark).apply()
+                }
+            } catch (e: Throwable) { } finally { c?.disconnect() }
+        }
     }
 
     /** signed in: the server learns this phone's token (once a day is enough, as the web does) */
@@ -146,19 +189,32 @@ object Push {
 
     private fun callTag(id: String) = "call-$id"
 
+    /** the caller's photo, if it comes within PHOTO_WAIT_MS — else the call rings without it */
+    private fun quickPhoto(url: String): Bitmap? {
+        if (!url.startsWith("https://")) return null
+        val f = io.submit<Bitmap?> { photo(url) }
+        return try { f.get(PHOTO_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS) } catch (e: Throwable) { f.cancel(true); null }
+    }
+
     /** one message from the server (FCM data message, all values text) */
     fun show(ctx: Context, d: Map<String, String>) {
         channels(ctx)
         val t = d["t"].orEmpty()
         // the app is on screen: it rings / shows calls and messages itself (offers and tests still show)
-        if (visible && t != "test" && t != "offer") { onMessage?.invoke(t); return }
+        if (visible && t != "test" && t != "offer") {
+            android.util.Log.i("TFDBG", "push in app t=$t")
+            if (t == "call") onCall?.invoke(d["call_id"].orEmpty()) else onMessage?.invoke(t)
+            return
+        }
         val nm = NotificationManagerCompat.from(ctx)
-        if (!nm.areNotificationsEnabled()) return
+        if (!nm.areNotificationsEnabled()) { android.util.Log.i("TFDBG", "push blocked t=$t (notifications off)"); return }
         val title = d["title"].orEmpty().ifEmpty { "True Find" }
         val body = d["body"].orEmpty()
         val callId = d["call_id"].orEmpty()
         val url = d["url"].orEmpty().takeIf { it.startsWith("/") } ?: "/"
-        val big = photo(d["icon"].orEmpty())
+        // shown at once (Android's advice: a notification first, any network after) — only a call waits
+        // a moment for the caller's photo, and never more than PHOTO_WAIT_MS
+        val big = quickPhoto(d["icon"].orEmpty())
         val req = (d["tag"].orEmpty().ifEmpty { callId.ifEmpty { "$t${System.currentTimeMillis()}" } }).hashCode()
         try {
             if (t == "call" && callId.isNotEmpty()) {
@@ -166,30 +222,54 @@ object Push {
                 val decline = PendingIntent.getBroadcast(ctx, req + 1, Intent(ctx, DeclineReceiver::class.java).apply {
                     action = "app.truefind.android.DECLINE.$callId"; putExtra(EXTRA_CALL, callId)
                 }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                val n = NotificationCompat.Builder(ctx, CH_CALL)
-                    .setSmallIcon(R.drawable.ic_stat_tf)
-                    .setContentTitle(title)
-                    .setContentText(body.ifEmpty { "Incoming ${if (video) "video" else "voice"} call" })
-                    .setLargeIcon(big)
-                    .setCategory(NotificationCompat.CATEGORY_CALL)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setOngoing(true).setAutoCancel(true)
-                    .setTimeoutAfter(RING_MS)
-                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), android.media.AudioManager.STREAM_RING)
-                    .setVibrate(longArrayOf(0, 500, 250, 500, 250, 500, 250, 500))
-                    .setContentIntent(open(ctx, req, "/", callId, ""))
-                    .setFullScreenIntent(open(ctx, req + 2, "/", callId, ""), true)
-                    .addAction(0, "Decline", decline)
-                    .addAction(0, "Answer", open(ctx, req + 3, "/", callId, "answer"))
-                    .build()
-                n.flags = n.flags or android.app.Notification.FLAG_INSISTENT
-                nm.notify(callTag(callId), 1, n)
+                val answer = open(ctx, req + 3, "/", callId, "answer")
+                fun ringing(callStyle: Boolean): android.app.Notification {
+                    val b = NotificationCompat.Builder(ctx, CH_CALL)
+                        .setSmallIcon(R.drawable.ic_stat_tf)
+                        .setContentTitle(title)
+                        .setContentText(body.ifEmpty { "Incoming ${if (video) "video" else "voice"} call" })
+                        .setLargeIcon(big)
+                        .setCategory(NotificationCompat.CATEGORY_CALL)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                        .setOngoing(true).setAutoCancel(true)
+                        .setTimeoutAfter(RING_MS)
+                        .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), android.media.AudioManager.STREAM_RING)
+                        .setVibrate(longArrayOf(0, 500, 250, 500, 250, 500, 250, 500))
+                        .setContentIntent(open(ctx, req, "/", callId, ""))
+                        .setFullScreenIntent(open(ctx, req + 2, "/", callId, ""), true)
+                    if (callStyle) {
+                        // the phone's own call look (Decline / Answer), and never grouped or silenced by Android 16+
+                        // like WhatsApp: the caller's name big and bold, their photo — or, without one, the same
+                        // drawn face the app shows for them (AvatarArt, by their profile id and gender)
+                        val who = d["name"].orEmpty().ifEmpty { title.substringBefore(" is calling").ifEmpty { "True Find" } }
+                        val face = big ?: try {
+                            AvatarArt.forKey(d["pid"].orEmpty().ifEmpty { who }, d["gender"] != "male", 192)
+                        } catch (e: Throwable) { null }
+                        val caller = androidx.core.app.Person.Builder()
+                            .setName(who)
+                            .setImportant(true)
+                            .apply { if (face != null) setIcon(androidx.core.graphics.drawable.IconCompat.createWithBitmap(face)) }
+                            .build()
+                        b.setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, decline, answer).setIsVideo(video)).addPerson(caller)
+                    } else {
+                        b.addAction(0, "Decline", decline).addAction(0, "Answer", answer)
+                    }
+                    return b.build().also { it.flags = it.flags or android.app.Notification.FLAG_INSISTENT }
+                }
+                // CallStyle first; a phone that refuses it (an odd system) still gets the plain ringing one
+                val style = try { nm.notify(callTag(callId), 1, ringing(true)); "call" } catch (e: SecurityException) { throw e } catch (e: Throwable) {
+                    android.util.Log.i("TFDBG", "push callstyle refused: ${e.message}")
+                    nm.notify(callTag(callId), 1, ringing(false)); "plain"
+                }
+                android.util.Log.i("TFDBG", "push shown t=call id=$callId kind=${d["kind"].orEmpty()} photo=${big != null} style=$style")
                 return
             }
             // "missed call": the ringing one goes first
             if (t == "missed" && callId.isNotEmpty()) nm.cancel(callTag(callId), 1)
             val ch = if (t == "msg" || t == "missed") CH_MSG else CH_INFO
+            val tag = d["tag"].orEmpty().ifEmpty { "tf-$t" }
+            val id = if (d["tag"].isNullOrEmpty()) req else 2
             val n = NotificationCompat.Builder(ctx, ch)
                 .setSmallIcon(R.drawable.ic_stat_tf)
                 .setContentTitle(title)
@@ -200,9 +280,41 @@ object Push {
                 .setPriority(if (ch == CH_MSG) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
                 .setCategory(if (t == "msg") NotificationCompat.CATEGORY_MESSAGE else if (t == "missed") NotificationCompat.CATEGORY_MISSED_CALL else NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setContentIntent(open(ctx, req, url))
+                .setGroup(GROUP)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                .setDeleteIntent(gone(ctx))
                 .build()
-            nm.notify(d["tag"].orEmpty().ifEmpty { "tf-$t" }, if (d["tag"].isNullOrEmpty()) req else 2, n)
-        } catch (e: SecurityException) { /* notifications not allowed */ }
+            summary(ctx, nm)
+            nm.notify(tag, id, n)
+            android.util.Log.i("TFDBG", "push shown t=$t")
+        } catch (e: SecurityException) { android.util.Log.i("TFDBG", "push refused t=$t ${e.message}") }
+    }
+
+    /** True Find's own group summary (posted before each of its notifications; it never sounds itself) */
+    private fun summary(ctx: Context, nm: NotificationManagerCompat) {
+        val n = NotificationCompat.Builder(ctx, CH_MSG)
+            .setSmallIcon(R.drawable.ic_stat_tf)
+            .setContentTitle("True Find")
+            .setGroup(GROUP).setGroupSummary(true)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .setContentIntent(open(ctx, SUMMARY_TAG.hashCode(), "/"))
+            .build()
+        nm.notify(SUMMARY_TAG, SUMMARY_ID, n)
+    }
+
+    private fun gone(ctx: Context): PendingIntent = PendingIntent.getBroadcast(ctx, 77, Intent(ctx, PushGoneReceiver::class.java).setAction("app.truefind.android.PUSH_GONE"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+    /** the last notification of True Find's group went (swiped away, tapped): its summary goes too */
+    fun tidy(ctx: Context) {
+        if (Build.VERSION.SDK_INT < 23) return
+        try {
+            val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+            val all = nm.activeNotifications
+            val children = all.count { it.notification.group == GROUP && (it.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY) == 0 }
+            if (children == 0 && all.any { it.tag == SUMMARY_TAG }) nm.cancel(SUMMARY_TAG, SUMMARY_ID)
+        } catch (e: Throwable) { }
     }
 
     /** the app came on screen: its own ringer takes over, the ringing notifications go */
@@ -255,14 +367,21 @@ class TfMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val d = message.data ?: return
         if (d.isEmpty()) return
+        android.util.Log.i("TFDBG", "push got t=${d["t"].orEmpty()} prio=${message.priority}")
         Push.show(applicationContext, d)
     }
+}
+
+/** one of True Find's notifications was swiped away: the group's summary goes when it was the last one */
+class PushGoneReceiver : BroadcastReceiver() {
+    override fun onReceive(ctx: Context, intent: Intent) { Push.tidy(ctx.applicationContext) }
 }
 
 class DeclineReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getStringExtra(Push.EXTRA_CALL).orEmpty()
         if (id.isEmpty()) return
+        android.util.Log.i("TFDBG", "push decline id=$id")
         val pending = goAsync()
         Push.decline(ctx.applicationContext, id) { pending.finish() }
     }
