@@ -584,7 +584,7 @@ class ChatRoom(
             }
             return
         }
-        if (!flag) { typingByServer(id, false); return }          // nothing of ours to clear yet
+        if (!flag) return          // no row of ours in this chat yet: nothing to clear (the dots go by themselves after 5 s)
         if (typingLooking) return
         typingLooking = true
         // this phone's row of this chat (made the first time, then only changed)
