@@ -43,7 +43,7 @@ class ExploreScreen(
         const val POLL_MIN = 12000L
         const val POLL_MAX = 60000L
         val CHIPS = listOf(
-            "all" to "For You", "near" to "Nearby", "ver" to "Verified", "free" to "Free now",
+            "all" to "For You", "near" to "Nearby", "ver" to "Verified",
             "t:Hindi" to "Hindi", "t:English" to "English", "t:Punjabi" to "Punjabi", "t:Haryanvi" to "Haryanvi",
             "t:Love" to "Love", "t:Relationship" to "Relationship", "t:Breakup" to "Breakup", "t:Friendship" to "Friendship",
             "t:Romantic Talk" to "Romantic Talk", "t:Just Talking" to "Just Talking", "t:Loneliness" to "Loneliness", "t:Stress" to "Stress",
@@ -480,7 +480,6 @@ class ExploreScreen(
             when {
                 filter.startsWith("t:") -> p.tagsText.contains(filter.substring(2).lowercase())
                 filter == "ver" -> p.verified
-                filter == "free" -> !p.busy
                 filter == "near" -> (myCity.isNotEmpty() && p.city.lowercase() == myCity) || (myState.isNotEmpty() && p.state.lowercase() == myState)
                 else -> true
             }
@@ -563,16 +562,15 @@ class ExploreScreen(
         .put("name", p.firstName).put("photo", faceUrl(p)).put("age", p.age)
         .put("city", p.city).put("state", p.state).put("verified", p.verified)
 
-    // tap a bubble: green phone → voice call, purple camera → video call, busy → her sheet
+    // tap a bubble: green phone → voice call, purple camera → video call. Also when she is on another call (owner,
+    // 23 Nov evening: never "busy") — the call then goes to someone else by itself (callPerson)
     private fun tap(p: Person) {
         val now = everyone().firstOrNull { it.id == p.id }
         if (now == null || !now.online) { showToast("Just went offline"); return }
         if (now.demo) {
-            if (now.busy) { showToast("Demo profile · busy"); return }
             go("/demo-call", JSONObject().put("type", now.callType).put("peer", peerJson(now)))
             return
         }
-        if (now.busy) { openSheet(now); return }
         callPerson(now, now.callType)
     }
 
@@ -604,14 +602,16 @@ class ExploreScreen(
                 main.postDelayed({ hideStage() }, 400)
                 return@start
             }
-            hideStage()
             val err = r.data.optString("error")
             val busy = CallRules.busyKind(r.status, err, r.data.optString("code"))
+            // she is on another call: never "<name> is busy" (owner, 23 Nov evening) — the call goes to someone else by
+            // itself, the same way as Random Match (one at a time, 12 s each, until someone picks up or Cancel)
+            if (busy == CallRules.Busy.PEER) { startRandom(type, insteadOf = p.callId); return@start }
+            hideStage()
             when {
                 r.status == 402 || err == "insufficient_coins" -> showCoins(type, r.data)
-                // who is busy: her (really on a call) or me (my other call is still on) — 23 Nov: both showed "She is busy"
+                // I am on another call myself (my other call is still on)
                 busy == CallRules.Busy.SELF -> CallStart.busyDialog(r, p.firstName)?.let { (t, x) -> openDialog(t, x) }
-                busy == CallRules.Busy.PEER -> openDialog("${p.firstName.ifBlank { "She" }} is busy", "On another call right now. Please try again in a few minutes.")
                 r.ok -> openDialog("Couldn't connect", "Could not start the call. Please try again.")
                 else -> openDialog("Couldn't connect", r.error ?: "Something went wrong. Please try again.")
             }
@@ -623,8 +623,10 @@ class ExploreScreen(
     // Voice / Video / Random: searches without stopping until someone picks up — no "No one is free" pop-up, no second
     // tap (owner, 21 Nov). One creator at a time rings for 12 s, then the next (RandomSearch). Cancel / Back stops it.
     private var search: RandomSearch? = null
-    private fun startRandom(type: String) {
-        if (stage.visibility == View.VISIBLE || calling) return
+    private fun startRandom(type: String, insteadOf: String = "") {
+        // (instead of someone on another call: the "Calling <her>…" screen is still up and turns into the search)
+        if ((stage.visibility == View.VISIBLE && insteadOf.isEmpty()) || calling) return
+        search?.cancel(); search = null // (never two searches at once)
         val run = ++matchRun
         searching = true
         stage.onCancel = { cancelMatch() }
@@ -652,12 +654,13 @@ class ExploreScreen(
                 if (run != matchRun) return
                 search = null; searching = false
                 coinsAt = 0L
+                closeSheet() // (a call from her pop-up that went to someone else: the pop-up goes too)
                 go("/call/$callId", JSONObject().put("peer", peer).put("type", type))
                 main.postDelayed({ hideStage() }, 400)
             }
             override fun onCoins(data: JSONObject) { if (run != matchRun) return; search = null; searching = false; hideStage(); showCoins(type, data) }
             override fun onStop(title: String, text: String) { if (run != matchRun) return; search = null; searching = false; hideStage(); openDialog(title, text) }
-        })
+        }, insteadOf)
         search = s
         s.start()
     }
@@ -737,10 +740,9 @@ class ExploreScreen(
         sheet.addView(View(ctx).apply { background = Ui.round(Ui.c("#e5e7eb"), 4f) },
             LinearLayout.LayoutParams(Ui.dpi(38f), Ui.dpi(4f)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = Ui.dpi(12f) })
         val gone = profiles.none { it.id == p.id } && !p.demo
-        val busy = !gone && p.busy
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val av = FrameLayout(ctx).apply {
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(if (gone) Ui.c("#9A8FB8") else if (busy) Ui.c("#ef4444") else Ui.c("#C4B5FD")) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(if (gone) Ui.c("#9A8FB8") else Ui.c("#C4B5FD")) }
             setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f))
         }
         av.addView(ImageView(ctx).apply {
@@ -758,8 +760,8 @@ class ExploreScreen(
         })
         val place = listOf(p.city, p.state).filter { it.isNotBlank() }.joinToString(", ")
         if (place.isNotEmpty()) info.addView(Ui.text(ctx, place, 12f, Ui.c("#6b7280"), false).apply { setPadding(0, Ui.dpi(1f), 0, 0) })
-        info.addView(Ui.text(ctx, if (gone) "● Offline" else if (busy) "● Busy · on another call" else "● Online · Free — call now", 11.5f,
-            if (gone) Ui.c("#6b7280") else if (busy) Ui.c("#dc2626") else Ui.c("#16a34a")).apply { setPadding(0, Ui.dpi(3f), 0, 0) })
+        info.addView(Ui.text(ctx, if (gone) "● Offline" else "● Online — call now", 11.5f,
+            if (gone) Ui.c("#6b7280") else Ui.c("#16a34a")).apply { setPadding(0, Ui.dpi(3f), 0, 0) })
         row.addView(info, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val fol = Ui.text(ctx, "", 12f, Color.WHITE).apply { setPadding(Ui.dpi(12f), Ui.dpi(6f), Ui.dpi(12f), Ui.dpi(6f)) }
         paintFollow(fol, following[p.callId] == true)
@@ -772,14 +774,14 @@ class ExploreScreen(
         val (vb, vr) = actionButton(ctx, "Voice Call", PathIcon(PathIcon.PHONE, Ui.c("#16a34a"), 15f), INK, Ui.c("#674A96"), Ui.round(Color.WHITE, 14f, Ui.c("#e5e7eb"))) { callPerson(p, "voice") }
         val (db, dr) = actionButton(ctx, "Video Call", PathIcon(PathIcon.VIDEO, Color.WHITE, 16f), Color.WHITE, Ui.c("#E9D5FF"), Ui.vgrad(Ui.c("#7A0AD7"), Ui.c("#5806A3"), 14f)) { callPerson(p, "video") }
         vr.text = "${rates[0]} /min"; dr.text = "${rates[1]} /min"
-        val off = busy || gone
+        val off = gone
         listOf(vb, db).forEachIndexed { i, b ->
             b.setPadding(Ui.dpi(6f), Ui.dpi(10f), Ui.dpi(6f), Ui.dpi(10f))
             b.isEnabled = !off; b.alpha = if (off) 0.45f else 1f
             btns.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { if (i > 0) leftMargin = Ui.dpi(10f) })
         }
         sheet.addView(btns, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(14f) })
-        sheet.addView(Ui.text(ctx, if (busy) "Follow to know when she is free" else if (gone) "She shows up here again when she opens True Find" else "Billed per second · minimum 1 minute",
+        sheet.addView(Ui.text(ctx, if (gone) "She shows up here again when she opens True Find" else "Billed per second · minimum 1 minute",
             10.5f, Ui.c("#9ca3af"), false).apply { gravity = Gravity.CENTER },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = Ui.dpi(9f) })
         layer.addView(sheet, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))

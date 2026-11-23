@@ -232,7 +232,8 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
     fun onBack(): Boolean {
         dailySheet?.let { if (it.back()) return true }
         if (layer.back()) return true
-        if (home.visibility == View.VISIBLE && home.onBack()) return true
+        // (Home's "Finding someone…" screen also covers Call Back when a call there goes to someone else)
+        if ((home.visibility == View.VISIBLE || home.sheets.matching) && home.onBack()) return true
         if (profile.visibility == View.VISIBLE && profile.onBack()) return true
         if (verify.visibility == View.VISIBLE && verify.onBack()) return true
         if (builder.visibility == View.VISIBLE && builder.onBack()) return true

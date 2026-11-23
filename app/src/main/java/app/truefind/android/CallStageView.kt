@@ -122,7 +122,7 @@ class CallStageView(ctx: Context) : FrameLayout(ctx) {
         val who = name.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
         if (stage == "search") {
             line.text = if (video) "Finding a video partner…" else "Finding someone to talk…"
-            sub.text = "Only people who are online and free"
+            sub.text = "Only people who are online right now" // (no "free" / "busy" words — owner, 23 Nov evening)
             status.text = "Searching"
             cancelBox.visibility = View.VISIBLE; spacer.visibility = View.GONE
         } else {

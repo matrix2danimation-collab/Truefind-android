@@ -225,7 +225,7 @@ class TopCreatorsPage(ctx: Context, private val home: HomeScreen, private val sh
         ph.addView(inner, LayoutParams(-1, -1))
         val phWrap = FrameLayout(ctx).apply { clipChildren = false }
         phWrap.addView(ph, LayoutParams(Ui.dpi(48f), Ui.dpi(48f)))
-        if (HomeRules.isFree(r.p)) phWrap.addView(View(ctx).apply { background = Tf.circle(Ui.c("#1A9A50"), 2f, Color.WHITE) },
+        if (HomeRules.isOnline(r.p)) phWrap.addView(View(ctx).apply { background = Tf.circle(Ui.c("#1A9A50"), 2f, Color.WHITE) },
             LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.END or Gravity.BOTTOM))
         row.addView(phWrap, Tf.ll(Ui.dpi(48f), Ui.dpi(48f), r = 12f))
         // name, age · city

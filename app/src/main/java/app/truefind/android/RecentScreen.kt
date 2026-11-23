@@ -281,9 +281,10 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             return SimpleDateFormat("d MMM", IN).format(Date(at))
         }
 
-        /** Online · Free / Online · Busy / Offline · 3h ago */
+        /** Online / Offline · 3h ago — never Busy / Free (owner, 23 Nov evening) */
+        @Suppress("UNUSED_PARAMETER")
         fun statusOf(online: Boolean, busy: Boolean, lastSeen: String): Status =
-            if (online) (if (busy) Status("Online · Busy", RC.red, Ui.c("#EF4444")) else Status("Online · Free", RC.green, Ui.c("#22C55E")))
+            if (online) Status("Online", RC.green, Ui.c("#22C55E"))
             else { val a = agoText(lastSeen); Status(if (lastSeen.isNotEmpty() && a.isNotEmpty()) "Offline · $a" else "Offline", RC.gray, Ui.c("#C3BDD0")) }
 
         /** short words on screen; the icon shows voice or video */
@@ -463,14 +464,21 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             }
             val st = res.status
             val err = d.optString("error")
+            // they are on another call: never "<name> is busy" (owner, 23 Nov evening) — the call goes to someone else
+            // by itself, the same way as Random Match ("Finding someone for you…" over the whole screen, one at a time,
+            // until someone picks up or Cancel / Back)
+            if (CallRules.busyKind(st, err, d.optString("code")) == CallRules.Busy.PEER) {
+                person?.closeAll(); person = null
+                pages.home.startRandom(type, insteadOf = r.otherId)
+                return@start
+            }
             when {
                 res.ok -> dialog("Couldn't connect", "Could not start the call. Please try again.")
                 st == 402 || err == "insufficient_coins" || err == "insufficient_balance" -> {
                     val rate = d.opt("rate")?.takeIf { it != JSONObject.NULL && PR.truthy(it) }
                     dialog("Add coins to call", if (rate != null) "${if (type == "video") "Video" else "Voice"} calls cost $rate coins per minute." else "You need coins in your wallet to make this call.", coins = true)
                 }
-                // who is busy: the other person (really on a call) or me (my other call is still on) — 23 Nov: both
-                // used to show "<name> is busy"
+                // I am on another call myself (my other call is still on)
                 st == 409 -> CallStart.busyDialog(res, r.name)?.let { (t, x) -> dialog(t, x) } ?: dialog("Couldn't connect", err.ifEmpty { "Could not start the call. Please try again." })
                 st == 403 || st == 404 -> dialog("Can't call right now", if (err == "banned") "Your account can't make calls." else err.ifEmpty { d.optString("message") }.ifEmpty { "This person is not available." })
                 else -> dialog("Couldn't connect", d.optString("message").ifEmpty { err }.ifEmpty { res.error ?: "Something went wrong. Please try again." })

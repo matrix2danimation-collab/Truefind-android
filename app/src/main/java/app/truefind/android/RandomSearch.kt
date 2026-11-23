@@ -20,8 +20,12 @@ import org.json.JSONObject
  *
  * Only these stop it: Cancel / Back ([cancel]), not enough coins ([Host.onCoins]), and a problem with my own account
  * (banned, profile not complete, not joined) ([Host.onStop]).
+ *
+ * [insteadOf] (owner, 23 Nov evening — never "busy"): a call the member tapped found that person on another call. The
+ * same search then connects them to someone else by itself: someone of that person's gender (the server reads it),
+ * not that person on the first look. If she is free again later, she may be the one who rings.
  */
-class RandomSearch(private val type: String, private val ui: Host) {
+class RandomSearch(private val type: String, private val ui: Host, private val insteadOf: String = "") {
     interface Host {
         /** "search" (Finding someone…) or "calling" (Calling <name>…, her photo) */
         fun stage(stage: String, name: String, photo: String)
@@ -43,7 +47,7 @@ class RandomSearch(private val type: String, private val ui: Host) {
     private val main = Handler(Looper.getMainLooper())
     private var stopped = false
     private var step = 0
-    private val tried = LinkedHashSet<String>()
+    private val tried = LinkedHashSet<String>().apply { if (insteadOf.isNotEmpty()) add(insteadOf) }
     private var lastTried = ""
     private var ringing: Ringing? = null
 
@@ -87,7 +91,9 @@ class RandomSearch(private val type: String, private val ui: Host) {
         if (stopped) return
         val my = ++step
         ui.stage("search", "", "")
-        Api.invoke("claimRandomMatch", JSONObject().put("exclude_user_ids", JSONArray(tried.toList()))) { r ->
+        val ask = JSONObject().put("exclude_user_ids", JSONArray(tried.toList()))
+        if (insteadOf.isNotEmpty()) ask.put("instead_of", insteadOf)
+        Api.invoke("claimRandomMatch", ask) { r ->
             if (stopped || my != step) {
                 // (cancelled meanwhile: the one the server just took is let go)
                 r.data.optJSONObject("candidate")?.let { release(it) }

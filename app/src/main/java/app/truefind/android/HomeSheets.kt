@@ -132,10 +132,11 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
     fun refreshPerson() { val c = personView ?: return; val p = personP ?: return; c.removeAllViews(); fillPerson(c, p) }
 
     private fun fillPerson(c: LinearLayout, p: JSONObject) {
-        val busy = HomeRules.isBusy(p); val online = !busy && HomeRules.isOnline(p); val age = HomeRules.ageOf(p); val city = HomeRules.cityOf(p)
+        // never Busy (owner, 23 Nov evening): online is "Online", also on another call — a call then goes to someone else
+        val online = HomeRules.isOnline(p); val age = HomeRules.ageOf(p); val city = HomeRules.cityOf(p)
         val calling = home.callingType
         val top = Tf.row(ctx).apply { setPadding(0, 0, Ui.dpi(30f), 0) }
-        val ring = FrameLayout(ctx).apply { background = Tf.circle(if (online) Ui.c("#22c55e") else if (busy) Ui.c("#ef4444") else Ui.c("#e6dcf7")); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
+        val ring = FrameLayout(ctx).apply { background = Tf.circle(if (online) Ui.c("#22c55e") else Ui.c("#e6dcf7")); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
         val inner = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE); setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f)) }
         val full = HomeRules.photoOf(p)
         inner.addView(FacePic(ctx).apply { setPhoto(listOf(HomeRules.listPhoto(p, full), full)) }, FrameLayout.LayoutParams(-1, -1))
@@ -151,8 +152,8 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
         })
         info.addView(nameRow)
         val st = FlowRow(ctx, Ui.dpi(6f), Ui.dpi(2f))
-        st.addView(View(ctx).apply { background = Tf.circle(if (online) Ui.c("#22c55e") else if (busy) Ui.c("#ef4444") else Ui.c("#c4b5d9")) }, ViewGroupLp(Ui.dpi(8f), Ui.dpi(8f)))
-        st.addView(Tf.t(ctx, if (online) "Online · Free" else if (busy) "Busy on a call" else "Offline", 13.5f, if (online) Ui.c("#15803d") else if (busy) Ui.c("#dc2626") else Ui.c("#8b7bb0")))
+        st.addView(View(ctx).apply { background = Tf.circle(if (online) Ui.c("#22c55e") else Ui.c("#c4b5d9")) }, ViewGroupLp(Ui.dpi(8f), Ui.dpi(8f)))
+        st.addView(Tf.t(ctx, if (online) "Online" else "Offline", 13.5f, if (online) Ui.c("#15803d") else Ui.c("#8b7bb0")))
         if (city.isNotEmpty()) st.addView(Tf.t(ctx, "· ", 13.5f, C_SUB, false).apply {
             text = "· "; compoundDrawablePadding = Ui.dpi(3f)
         }.let { dot -> Tf.row(ctx).apply { addView(dot); addView(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.MapPin, C_SUB, 13f)) }, Tf.ll(Ui.dpi(13f), Ui.dpi(13f), r = 3f)); addView(Tf.t(ctx, city, 13.5f, C_SUB, false)) } })
@@ -161,10 +162,7 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
         if (wm > 0) info.addView(Tf.t(ctx, "📞 ${HomeRules.hoursText(wm)} talked this week", 13f, Ui.c("#5c12b8")), Tf.ll(t = 3f))
         top.addView(info, Tf.ll(0, Tf.W, 1f))
         c.addView(top)
-        if (busy) c.addView(Tf.t(ctx, "On another call right now. Try again in a few minutes.", 13f, Ui.c("#dc2626")).apply {
-            background = Tf.box(Ui.c("#fef2f2"), 12f); setPadding(Ui.dpi(12f), Ui.dpi(8f), Ui.dpi(12f), Ui.dpi(8f))
-        }, Tf.ll(Tf.M, Tf.W, t = 12f))
-        if (!busy && !online) c.addView(Tf.t(ctx, "Offline now. You can still try to call — they may not pick up.", 13f, Ui.c("#6b6380"), false).apply {
+        if (!online) c.addView(Tf.t(ctx, "Offline now. You can still try to call — they may not pick up.", 13f, Ui.c("#6b6380"), false).apply {
             background = Tf.box(Ui.c("#f6f3fb"), 12f); setPadding(Ui.dpi(12f), Ui.dpi(8f), Ui.dpi(12f), Ui.dpi(8f))
         }, Tf.ll(Tf.M, Tf.W, t = 12f))
         val btns = Tf.row(ctx)
@@ -173,8 +171,7 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
             val b = Tf.col(ctx, Gravity.CENTER).apply {
                 background = if (voice) Tf.box(Color.WHITE, 16f, 1.5f, Ui.c("#d9c6f7")) else btnBg(16f)
                 if (!voice) { elevation = Ui.dp(3f); outlineSpotShadowColorCompat(Ui.c("#5a06aa")) }
-                alpha = if (busy) 0.45f else 1f
-                isEnabled = !busy && calling.isEmpty()
+                isEnabled = calling.isEmpty()
                 setOnClickListener { home.callPerson(p, t) }
             }
             val fg = if (voice) Ui.c("#5b12b8") else Color.WHITE
@@ -184,7 +181,7 @@ class HomeSheets(private val home: HomeScreen, private val pages: NativePages) {
             r1.addView(Tf.t(ctx, label, 15.5f, fg))
             b.addView(r1)
             b.addView(Tf.t(ctx, "${home.rateOf(t)} coins/min", 12f, fg, false).apply { alpha = 0.85f }, Tf.ll(t = 2f))
-            if (!busy) Ui.pressable(b, 0.97f)
+            Ui.pressable(b, 0.97f)
             btns.addView(b, Tf.ll(0, Ui.dpi(58f), 1f).apply { if (!voice) leftMargin = Ui.dpi(10f) })
         }
         c.addView(btns, Tf.ll(Tf.M, Tf.W, t = 16f))

@@ -525,7 +525,7 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         verifyBar.set(HomeRules.verifyOf(me))
         dailyBox.set(daily?.let { Daily(it.ready, it.nextAt, it.amount, it.streak, claiming) })
         val others = others()
-        val onlineList = others.filter { HomeRules.isFree(it) }
+        val onlineList = others.filter { HomeRules.isOnline(it) } // (on a call too: shown as online — 23 Nov evening)
         rmOnline?.text = if (profiles == null) "Checking who is online…" else if (onlineList.isNotEmpty()) "${onlineList.size} online now" else "Tap a call to start"
         // join card instead of the page body (not a member of this app yet)
         if (needsApp.isNotEmpty()) {
@@ -716,15 +716,19 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
                 pages.go("/call/$id", peerHint(p).put("type", type))
                 return@start
             }
-            sheets.hideMatching()
-            sheets.closePersonAndAll()
             val d = r.data
             val st = r.status
+            // they are on another call: never "<name> is busy" (owner, 23 Nov evening) — the call goes to someone else
+            // by itself, the same way as Random Match (the "Calling …" screen turns into "Finding someone for you…")
+            if (CallRules.busyKind(st, d.optString("error"), d.optString("code")) == CallRules.Busy.PEER) {
+                startRandom(type, insteadOf = HomeRules.idOf(p)); return@start
+            }
+            sheets.hideMatching()
+            sheets.closePersonAndAll()
             val busy = CallStart.busyDialog(r, HomeRules.firstName(p))
             when {
                 st == 402 || d.optString("error") == "insufficient_coins" -> showCoins(type, d)
-                // who is busy: the other person (really on a call) or me (my other call is still on) — 23 Nov: both
-                // used to show "<name> is busy"
+                // I am on another call myself (my other call is still on)
                 busy != null -> sheets.dialog(busy.first, busy.second)
                 else -> {
                     val why = d.optString("detail").take(160)
@@ -752,8 +756,13 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
      * (owner, 21 Nov). One creator at a time rings for 12 s, then the next (RandomSearch). Cancel / Back stops it.
      */
     private var search: RandomSearch? = null
-    fun startRandom(type: String) {
-        if (sheets.matching) return
+    /**
+     * [insteadOf]: a call that found that person on another call (Home, or Call Back's buttons) goes to someone else by
+     * itself (owner, 23 Nov evening) — the "Calling …" screen (if up) turns into the search.
+     */
+    fun startRandom(type: String, insteadOf: String = "") {
+        if (sheets.matching && insteadOf.isEmpty()) return
+        search?.cancel(); search = null // (never two searches at once)
         val run = ++matchRun
         sheets.closeConfirm()
         sheets.showMatching(type, "search", "") { cancelRandom() }
@@ -769,11 +778,12 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
                 search = null
                 lastMatch = ""
                 sheets.hideMatching()
+                if (insteadOf.isNotEmpty()) sheets.closePersonAndAll() // (the pop-up of the one who was on another call)
                 pages.go("/call/$callId", JSONObject().put("peer", peer).put("type", type))
             }
             override fun onCoins(data: JSONObject) { if (run != matchRun) return; search = null; sheets.hideMatching(); showCoins(type, data) }
             override fun onStop(title: String, text: String) { if (run != matchRun) return; search = null; sheets.hideMatching(); sheets.dialog(title, text) }
-        })
+        }, insteadOf)
         search = s
         s.start()
     }

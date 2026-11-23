@@ -159,7 +159,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         val full = clear or (179 shl 24)
         shader = RadialGradient(0f, 0f, HALO_R, intArrayOf(full, full, clear), floatArrayOf(0f, 0.52f, 1f), Shader.TileMode.CLAMP)
     }
-    private val GREEN = Ui.c("#22c55e"); private val RED = Ui.c("#ef4444"); private val GREY = Ui.c("#9A8FB8")
+    private val GREEN = Ui.c("#22c55e"); private val GREY = Ui.c("#9A8FB8")
     private val VIOLET = Ui.c("#7C3AED"); private val DOT_OFF = Ui.c("#B9AED3")
     private val RING_LINE = Color.argb(77, 91, 33, 182)   // the hairline around the photo's white ring: rgba(91,33,182,.30)
     private val RING_GLOW = Color.argb(18, 91, 33, 182)   // …and the soft glow outside it: rgba(91,33,182,.07)
@@ -327,8 +327,9 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
     }
 
     private fun drawBubble(c: Canvas, v: Int, p: Person, cx: Float, top: Float, now: Long) {
+        // never "Busy" (owner, 23 Nov evening): someone online is shown as online even while on a call — a tap still
+        // calls, and if she is on another call the call goes to someone else by itself
         val gone = !inPool.contains(p.id)
-        val busy = !gone && p.busy
         // fade + shrink at the top, fade in at the bottom
         val k = fade(top)
         if (k <= 0f) return
@@ -368,8 +369,8 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         // a soft glow and a hairline around the ring
         pFill.color = RING_GLOW; c.drawCircle(0f, 0f, r + Ui.dp(6f), pFill)
         pFill.color = RING_LINE; c.drawCircle(0f, 0f, r + Ui.dp(1f), pFill)
-        // the ring: white when free, red when busy, grey when gone
-        pFill.color = if (gone) GREY else if (busy) RED else Color.WHITE
+        // the ring: white when online, grey when gone
+        pFill.color = if (gone) GREY else Color.WHITE
         c.drawCircle(0f, 0f, r, pFill)
         // (no pulsing circle around the photo any more: owner, 20 Nov — the bubbles only move)
         val fr = r - Ui.dp(4f)
@@ -381,7 +382,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         val video = p.callType == "video"
         val br = Ui.dp(15f); val by = r + Ui.dp(13f) - br
         pFill.color = Color.WHITE; c.drawCircle(0f, by, br, pFill)
-        pFill.color = if (gone) GREY else if (busy) RED else if (video) VIOLET else GREEN
+        pFill.color = if (gone) GREY else if (video) VIOLET else GREEN
         c.drawCircle(0f, by, br - Ui.dp(2.5f), pFill)
         c.save()
         val icon = if (video) Ui.dp(14f) else Ui.dp(13f)
@@ -429,7 +430,7 @@ class FeedView(ctx: Context, private val onTap: (Person) -> Unit) : View(ctx) {
         c.drawText(shown, x, base, pText); x += nw
         if (age.isNotEmpty()) { c.drawText(age, x, base, pAge); x += aw }
         x += gap
-        pFill.color = if (gone) DOT_OFF else if (busy) RED else GREEN
+        pFill.color = if (gone) DOT_OFF else GREEN
         if (!gone) pFill.alpha = (255 * blink(now)).roundToInt()
         c.drawCircle(x + dot / 2f, pillTop + pillH / 2f, dot / 2f, pFill)
         pFill.alpha = 255

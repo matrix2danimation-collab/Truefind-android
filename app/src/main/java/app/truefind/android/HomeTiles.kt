@@ -206,9 +206,12 @@ object HomeTiles {
         return f
     }
 
-    /** Online card (113 × 188, the Weekly Top card size and doodle top): 3D face with the status ring, name, city, Online · Free / On a call, Video Call */
+    /**
+     * Online card (113 × 188, the Weekly Top card size and doodle top): 3D face with the green ring, name, city, Online,
+     * Video Call. Never "On a call" (owner, 23 Nov evening): someone on another call is shown as Online too, and a call
+     * to them goes to someone else by itself.
+     */
     fun onlineCard(ctx: Context, m: Zm, p: JSONObject, face: String, open: () -> Unit): View {
-        val busy = !HomeRules.isFree(p)
         val age = HomeRules.ageOf(p)
         val name = "${HomeRules.firstName(p).ifEmpty { "Member" }}${if (age != null) ", $age" else ""}"
         val city = HomeRules.cityOf(p).ifEmpty { "India" }
@@ -216,7 +219,7 @@ object HomeTiles {
             background = Tf.boxPx(Color.WHITE, m.px(18f))
             foreground = Tf.boxPx(Color.TRANSPARENT, m.px(18f), m.px(1.5f), Ui.c("#EEE9F5"))
             clipToOutline = true
-            contentDescription = "Open $name, $city, ${if (busy) "on a call" else "online"}"
+            contentDescription = "Open $name, $city, online"
             setOnClickListener { open() }
         }
         // the Weekly Top card's doodle top (owner, 19 Nov evening: the Online box like Weekly Top Creators)
@@ -224,26 +227,25 @@ object HomeTiles {
         card.addView(doodleTop(ctx, m, bw), FrameLayout.LayoutParams(-1, m.pi(116f) - bw).apply { leftMargin = bw; topMargin = bw; rightMargin = bw })
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         val av = FrameLayout(ctx)
-        val ring = FrameLayout(ctx).apply { background = Tf.circle(Ui.c("#EDE7FB")).apply { setStroke(m.pi(3f), if (busy) Ui.c("#FCA5A5") else Ui.c("#86EFAC")) }; setPadding(m.pi(3f), m.pi(3f), m.pi(3f), m.pi(3f)) }
+        val ring = FrameLayout(ctx).apply { background = Tf.circle(Ui.c("#EDE7FB")).apply { setStroke(m.pi(3f), Ui.c("#86EFAC")) }; setPadding(m.pi(3f), m.pi(3f), m.pi(3f), m.pi(3f)) }
         ring.addView(CoverPic(ctx, face, round = true), FrameLayout.LayoutParams(-1, -1))
         av.addView(ring, FrameLayout.LayoutParams(-1, -1))
-        av.addView(View(ctx).apply { background = Tf.circle(if (busy) Ui.c("#EF4444") else Ui.c("#22C55E")).apply { setStroke(m.pi(2.5f), Color.WHITE) } },
+        av.addView(View(ctx).apply { background = Tf.circle(Ui.c("#22C55E")).apply { setStroke(m.pi(2.5f), Color.WHITE) } },
             FrameLayout.LayoutParams(m.pi(14f), m.pi(14f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = m.pi(2f); bottomMargin = m.pi(2f) })
         col.addView(av, LinearLayout.LayoutParams(m.pi(68f), m.pi(68f)).apply { topMargin = m.pi(14f) })
         col.addView(Tf.tpx(ctx, name, m.px(14f), Ui.c("#1F1235")).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = m.pi(101f) },
             LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(8f) })
         col.addView(Tf.tpx(ctx, city, m.px(12f), Ui.c("#6B6478"), false).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = m.pi(101f) },
             LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(2f) })
-        col.addView(Tf.tpx(ctx, if (busy) "On a call" else "Online · Free", m.px(11f), if (busy) Ui.c("#DC2626") else Ui.c("#15803D")),
+        col.addView(Tf.tpx(ctx, "Online", m.px(11f), Ui.c("#15803D")),
             LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(3f) })
         card.addView(col, FrameLayout.LayoutParams(-1, -1))
-        val btn = Tf.tpx(ctx, "Video Call", m.px(13f), if (busy) Ui.c("#6B6478") else Color.WHITE).apply {
+        val btn = Tf.tpx(ctx, "Video Call", m.px(13f), Color.WHITE).apply {
             gravity = Gravity.CENTER
-            background = Tf.boxPx(if (busy) Ui.c("#E9E3F5") else Ui.c("#6C2BD9"), m.px(12f))
+            background = Tf.boxPx(Ui.c("#6C2BD9"), m.px(12f))
             compoundDrawablePadding = m.pi(5f)
-            setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.VIDEO_CUR), 14f * m.z, 14f * m.z, if (busy) Ui.c("#6B6478") else Color.WHITE), null, null, null)
+            setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.VIDEO_CUR), 14f * m.z, 14f * m.z, Color.WHITE), null, null, null)
             setPadding(m.pi(8f), 0, m.pi(8f), 0)
-            isEnabled = !busy
             contentDescription = "Video call $name"
             setOnClickListener { open() }
         }
@@ -264,17 +266,18 @@ object HomeTiles {
     }
 
     fun creatorCard(ctx: Context, m: Zm, p: JSONObject, face: String, selected: Boolean, call: () -> Unit): View {
-        val mins = HomeRules.weekMins(p); val age = HomeRules.ageOf(p); val free = HomeRules.isFree(p); val busy = HomeRules.isBusy(p)
+        // (owner, 23 Nov evening: never "On a call" / a red dot — someone on another call is shown as online)
+        val mins = HomeRules.weekMins(p); val age = HomeRules.ageOf(p); val free = HomeRules.isOnline(p)
         val title = "${HomeRules.firstName(p).ifEmpty { "Creator" }}${if (age != null) ", $age" else ""}"
-        val hours = if (mins >= 60) "${HomeRules.jsRound(mins / 60)} h this week" else if (mins > 0) "${HomeRules.jsRound(mins)} min this week" else if (busy) "On a call" else ""
-        val dot = if (busy) Ui.c("#EF4444") else Ui.c("#22C55E")
+        val hours = if (mins >= 60) "${HomeRules.jsRound(mins / 60)} h this week" else if (mins > 0) "${HomeRules.jsRound(mins)} min this week" else ""
+        val dot = Ui.c("#22C55E")
         val card = FrameLayout(ctx).apply {
             background = Tf.boxPx(Color.WHITE, m.px(18f))
             // the border is drawn over the card's insides: the doodle top used to cover it at the two top
             // corners (owner, 20 Nov: "white at the corners" on the chosen card)
             foreground = Tf.boxPx(Color.TRANSPARENT, m.px(18f), m.px(1.5f), if (selected) Ui.c("#6C2BD9") else Ui.c("#EEE9F5"))
             clipToOutline = true
-            contentDescription = "Open $title, ${HomeRules.cityOf(p).ifEmpty { "India" }}, ${if (free) "online" else if (busy) "on a call" else "offline"}${if (hours.isNotEmpty()) ", $hours" else ""}"
+            contentDescription = "Open $title, ${HomeRules.cityOf(p).ifEmpty { "India" }}, ${if (free) "online" else "offline"}${if (hours.isNotEmpty()) ", $hours" else ""}"
             setOnClickListener { call() }
         }
         // the doodles sit inside the card's border (like the web's absolute span in the padding box), their top corners

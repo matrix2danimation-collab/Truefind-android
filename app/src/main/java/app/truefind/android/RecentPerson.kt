@@ -38,7 +38,7 @@ import kotlin.math.min
 
 /**
  * Another member, opened from Recent in two steps (components/PersonProfile.jsx):
- * 1st tap on a person → the small card from the bottom (photo, name, Online · Free / Busy / Offline, place,
+ * 1st tap on a person → the small card from the bottom (photo, name, Online / Offline, place,
  * Followers · Following, Follow, Voice / Video Call); tap its round photo → the full profile (bio, photos,
  * interests, joined, verification) sliding in from the right. Both show the same profile
  * (follow { action: "profile" }) and stay in step; Follow / Following (Unfollow asks first) uses
@@ -102,9 +102,12 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
     }
     private fun interests(): List<String> = if (!ready) emptyList() else Tf.strs(p.optJSONArray("interests")).filter { it.isNotEmpty() }
 
-    /** Online · Free / Online · Busy / Offline · 3h ago (the card and the profile use a lighter green dot) */
+    /**
+     * Online / Offline · 3h ago (the card and the profile use a lighter green dot). Never "Busy" or "Free" (owner, 23 Nov
+     * evening): someone on another call is shown as Online, and a call to them goes to someone else by itself.
+     */
     private class St(val label: String, val dot: Int)
-    private fun st(): St = if (b("online")) (if (b("busy")) St("Online · Busy", Ui.c("#EF4444")) else St("Online · Free", Ui.c("#4ADE80")))
+    private fun st(): St = if (b("online")) St("Online", Ui.c("#4ADE80"))
         else { val a = RecentScreen.agoText(s("last_active")); St(if (s("last_active").isNotEmpty() && a.isNotEmpty()) "Offline · $a" else "Offline", Ui.c("#C3BDD0")) }
 
     private fun callBusy(type: String) = screen.calling == "$id-$type"
@@ -327,7 +330,7 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
         val l1 = RecentLine(ctx, Ui.dpi(24f)).add(nameT, shrinks = true)
         if (b("verified")) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, HEAD, 18f)) }, 6f, Ui.dpi(18f), Ui.dpi(18f))
         info.addView(l1, LinearLayout.LayoutParams(-1, Ui.dpi(24f)))
-        val stColor = if (b("online")) (if (b("busy")) RC.red else RC.green) else SUB
+        val stColor = if (b("online")) RC.green else SUB
         val l2 = RecentLine(ctx, Ui.dpi(21f))
             .add(View(ctx).apply { background = Tf.circle(stt.dot) }, 0f, Ui.dpi(8f), Ui.dpi(8f))
             .add(Tf.t(ctx, stt.label, 14f, stColor).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }, 6f, shrinks = true)
@@ -382,16 +385,6 @@ class RecentPerson(private val screen: RecentScreen, val row: RecentScreen.Row) 
             val eh = RC.half(e, 19.5f)
             e.lineH(19.5f)
             c.addView(e, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) + eh; bottomMargin = eh })
-        }
-        // on another call now
-        if (b("online") && b("busy")) {
-            val n = Tf.t(ctx, "They're on another call right now — you can still try.", 14f, Ui.c("#B91C1C"), false).apply {
-                background = Tf.box(Ui.c("#FEF2F2"), 12f, 1f, Ui.c("#FECACA"))
-            }
-            val nh = RC.half(n, 19.6f)
-            n.lineH(19.6f)
-            n.setPadding(Ui.dpi(13f), Ui.dpi(11f) + nh, Ui.dpi(13f), Ui.dpi(11f) + nh)
-            c.addView(n, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(12f) })
         }
         // Voice Call · Video Call
         if (!isMe) {

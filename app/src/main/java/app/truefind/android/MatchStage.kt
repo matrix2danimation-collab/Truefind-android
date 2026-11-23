@@ -106,7 +106,8 @@ class MatchStage(ctx: Context) : FrameLayout(ctx) {
         kind.text = "${if (video) "Video" else "Voice"} call${if (rate > 0) " · $rate coins/min" else ""}"
         val who = Tf.firstName(name)
         line.text = title ?: if (stage == "search") (if (video) "Finding a video partner…" else "Finding someone to talk…") else if (who.isNotEmpty()) "Calling $who…" else "Calling…"
-        sub.text = if (stage == "search") "Only people who are online and free" else "Please wait a moment"
+        // (no "free" / "busy" words anywhere — owner, 23 Nov evening)
+        sub.text = if (stage == "search") "Only people who are online right now" else "Please wait a moment"
         status.text = if (stage == "search") "Searching" else "Connecting"
         onCancel = cancel
         cancelBox.visibility = if (cancel != null) VISIBLE else GONE
