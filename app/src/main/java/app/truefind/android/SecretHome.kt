@@ -1326,7 +1326,7 @@ class SecretHome(
         if (!canRequest) { sheetDone(); locked("request"); return }
         if (inviteState[id] == "sending") return
         inviteState[id] = "sending"; refresh()
-        Api.invoke("sendInvitation", JSONObject().put("to_profile_id", id)) { r ->
+        sendInvitationPatiently(JSONObject().put("to_profile_id", id), 0) { r ->
             sheetDone()
             val d = r.data
             if (r.ok) {
@@ -1337,7 +1337,7 @@ class SecretHome(
                     inviteState.remove(id)
                     chatWith[id] = match
                     SdRules.s(p, "user_id", "created_by_id").let { if (it.isNotEmpty()) chatWith[it] = match }
-                    layer.closeAll(); render(); go("/chat/$match", JSONObject().put("openChat", 1)); return@invoke
+                    layer.closeAll(); render(); go("/chat/$match", JSONObject().put("openChat", 1)); return@sendInvitationPatiently
                 }
                 inviteState[id] = "sent"
                 say("Request sent to ${SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "them" }} ✓")
@@ -1348,6 +1348,7 @@ class SecretHome(
                     err == "verify_first" -> verifySheet()
                     err == "opposite_gender_only" -> say(d.optString("message").ifEmpty { "Requests can only be sent to the opposite gender." }, "err")
                     err == "no_credits" -> { credits = 0; say(d.optString("message").ifEmpty { "No credits left. Credits come with a Secret Dating plan." }, "credits") }
+                    err == "busy" || r.status == 0 || r.status >= 500 -> say(if (r.status == 0) "No connection. Check your internet and try again." else "The server is busy for a moment. Please try again.", "err")
                     r.status == 402 || err == "premium_required" -> say(if (freeGirl) "Requests need credits — they come with a plan." else "Sending requests is for Premium members.", "premium")
                     r.status == 403 -> say(d.optString("message").ifEmpty { err.ifEmpty { "You can't send a request to this person." } }, "err")
                     else -> say(err.ifEmpty { r.error ?: "Could not send the request." }, "err")
@@ -1356,6 +1357,20 @@ class SecretHome(
             render(); refresh()
             // My Activity shows the request's new status
             actPage?.takeIf { it.isOpen }?.load()
+        }
+    }
+
+    /**
+     * sendInvitation, asked again (up to twice, 1.5 s and 4 s later) when the answer was a passing failure — no answer,
+     * the server busy for a moment, or failing for a moment. Safe: when the first try did go through, the next one finds
+     * the chat it made (no second credit) and opens it.
+     */
+    private fun sendInvitationPatiently(body: JSONObject, attempt: Int, done: (Api.Result) -> Unit) {
+        Api.invoke("sendInvitation", body) { r ->
+            val passing = !r.ok && (r.status == 0 || r.status == 408 || r.status in 500..599 ||
+                (r.status == 429 && (r.data.optString("error") == "busy" || r.data.optBoolean("server_busy"))))
+            if (passing && attempt < 2 && shown) main.postDelayed({ sendInvitationPatiently(body, attempt + 1, done) }, if (attempt == 0) 1500L else 4000L)
+            else done(r)
         }
     }
 
