@@ -293,6 +293,9 @@ class ChatRoom(
             chatApp = if (c.optString("app") == "truefind") "truefind" else "secret"
             otherPhotoRaw = SdRules.s(other, "photo")
         }
+        // a chat not seen in a list yet (opened from a notification): the look it had last time, so a True Find chat
+        // does not flash Secret Dating's maroon first
+        if (ChatCache.chat(id) == null && prefs.getString("chat_app_$id", "") == "truefind") chatApp = "truefind"
         ChatCache.messages(id)?.let { list -> messages.addAll(list); loading = false }
         ChatCache.me().takeIf { it.isNotEmpty() }?.let { meId = it }
         shownNow = true
@@ -425,6 +428,7 @@ class ChatRoom(
                 ChatCache.putChat(chat)
                 other = chat.optJSONObject("other") ?: JSONObject()
                 chatApp = if (chat.optString("app") == "truefind") "truefind" else "secret"
+                if (chatApp == "truefind" && prefs.getString("chat_app_$matchId", "") != "truefind") prefs.edit().putString("chat_app_$matchId", "truefind").apply()
                 applyLook()
                 otherPhotoRaw = SdRules.s(other, "photo")
                 Api.invoke("getWallet", JSONObject().put("app", chatApp)) { w -> if (g == gen && w.ok) { balance = w.data.optJSONObject("wallet")?.optInt("coins") ?: 0; renderTray() } }
