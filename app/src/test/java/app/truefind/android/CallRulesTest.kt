@@ -48,6 +48,13 @@ class CallRulesTest {
         assertEquals(1500L, CallRules.endWaitMs(0)); assertEquals(30000L, CallRules.endWaitMs(5)); assertEquals(30000L, CallRules.endWaitMs(99))
         assertEquals(15 * 60_000L, CallRules.END_GIVE_UP_MS)
     }
+    @Test fun aDeclineIsSentUntilTheServerHasIt() {
+        // respondCall "decline" answers like endCall: 200 declined · 404 / 409 the call is over already (done) ·
+        // a busy server (429), no answer, a server error or not signed in yet → sent again (23 Nov: a 429 was
+        // counted as "done" by the notification's Decline, so the ring went on and she showed Busy)
+        for (st in listOf(200, 404, 409)) assertTrue("done $st", CallRules.endDone(st))
+        for (st in listOf(0, 401, 408, 429, 500, 502)) assertTrue("again $st", CallRules.endRetry(st) && !CallRules.endDone(st))
+    }
     @Test fun keysAreWhatTheServerAccepts() {
         val a = CallRules.newKey(); val b = CallRules.newKey()
         assertTrue(a != b)

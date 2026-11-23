@@ -117,9 +117,14 @@ class RandomSearch(private val type: String, private val ui: Host) {
         val photo = Tf.s(c, "photo")
         ui.stage("calling", name, photo)
         val my = step
-        Api.invoke("startCall", JSONObject().put("to_user_id", uid).put("type", type).put("app", "truefind")) { r ->
+        // one key for this ring (as on Call Back): when no answer comes back (no network for a moment, a busy server),
+        // the call it may have made is closed for sure — before 23 Nov such a call rang her phone for up to a minute
+        // with nobody on the other side, and showed her "Online · Busy" meanwhile
+        val key = CallRules.newKey()
+        Api.invoke("startCall", JSONObject().put("to_user_id", uid).put("type", type).put("app", "truefind").put("client_key", key)) { r ->
             val call = r.data.optJSONObject("call")
             val id = Tf.s(call, "id")
+            if (id.isEmpty() && CallRules.mayHaveMade(r.status)) CallEnder.abandon(key)
             if (stopped || my != step) {
                 if (id.isNotEmpty()) CallEnder.end(id) { Api.invoke("releaseMatch", JSONObject().put("call_id", id)) { } }
                 else release(c)

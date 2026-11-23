@@ -220,9 +220,12 @@ object Push {
         val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null }
         if (auth == null) { done(); return }
         pool.execute {
-            // tried twice: a Decline lost on a weak network would leave the caller ringing until the call times out
+            // tried 3 times: a Decline lost on a weak network or met by a busy server (429 — before 23 Nov counted as
+            // "done") left the caller ringing and the one who declined "busy" for up to a minute; still not through →
+            // the app's own queue sends it as soon as it can (CallEnder)
+            var through = false
             try {
-                for (attempt in 0 until 2) {
+                for (attempt in 0 until 3) {
                     var c: HttpURLConnection? = null
                     val code = try {
                         c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/respondCall").openConnection() as HttpURLConnection).apply {
@@ -233,10 +236,15 @@ object Push {
                         c.outputStream.use { it.write(JSONObject().put("call_id", callId).put("action", "decline").toString().toByteArray()) }
                         c.responseCode
                     } catch (e: Throwable) { -1 } finally { c?.disconnect() }
-                    if (code in 200..499) break // done, or the call is already over
-                    if (attempt == 0) try { Thread.sleep(1500) } catch (e: InterruptedException) { break }
+                    if (CallRules.endDone(code)) { through = true; break } // done, or the call is already over
+                    if (attempt < 2) try { Thread.sleep(if (attempt == 0) 1500L else 3000L) } catch (e: InterruptedException) { break }
                 }
-            } finally { done() }
+            } finally {
+                if (!through) android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    try { CallEnder.init(ctx); CallEnder.decline(callId) } catch (e: Throwable) { }
+                }
+                done()
+            }
         }
     }
 }

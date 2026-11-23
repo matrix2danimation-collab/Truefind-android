@@ -9,7 +9,7 @@ import org.json.JSONObject
 
 /**
  * Ends calls on the server FOR SURE (owner, 23 Nov: people showed "busy — on another call" while nobody was on a
- * call). A hang-up, a closed call screen or a start the phone gave up on sends endCall; when that answer is lost
+ * call). A hang-up, a closed call screen, a Decline or a start the phone gave up on sends endCall (respondCall); when that answer is lost
  * (no network for a moment, the server busy) it used to be dropped, the call stayed "ringing" / "active" on the
  * server, and both people counted as busy. Here every such end is kept on the phone (also when the app is closed)
  * and sent again by itself — 1.5 s, 3 s, 6 s, 10 s, 20 s, then every 30 s — until the server has it, for up to
@@ -48,6 +48,17 @@ object CallEnder {
         add(Item("end", callId, reason, System.currentTimeMillis()), first)
     }
 
+    /**
+     * "Decline" on a ringing call (the in-app ringing screen, or the notification when its own tries failed): sent
+     * until the server has it. Before 23 Nov a decline that met a busy server (or was lost twice) was dropped: the
+     * caller's phone kept ringing and the person who declined showed "Online · Busy" — callers got "is busy" — for
+     * up to a minute, although nobody was on a call. [first]: the first answer (the ringing screen closes then).
+     */
+    fun decline(callId: String, first: ((Api.Result) -> Unit)? = null) {
+        if (callId.isEmpty() || callId == "demo") { first?.let { f -> main.post { f(Api.Result(200, JSONObject(), null)) } }; return }
+        add(Item("decline", callId, "", System.currentTimeMillis()), first)
+    }
+
     /** A start the phone gave up on (its answer never came): the call that tap may have made is closed. */
     fun abandon(clientKey: String) {
         if (clientKey.isEmpty()) return
@@ -82,9 +93,14 @@ object CallEnder {
         val k = "${it.kind}:${it.id}"
         if (!Api.ready) { first?.let { f -> main.post { f(Api.Result(0, JSONObject(), "Please check your internet and try again.")) } }; return }
         it.sending = true
-        val body = if (it.kind == "abandon") JSONObject().put("action", "abandon").put("client_key", it.id)
-            else JSONObject().put("call_id", it.id).also { b -> if (it.reason.isNotEmpty()) b.put("reason", it.reason) }
-        Api.invokeOnce("endCall", body, 20000) { r ->
+        val body = when (it.kind) {
+            "abandon" -> JSONObject().put("action", "abandon").put("client_key", it.id)
+            "decline" -> JSONObject().put("call_id", it.id).put("action", "decline")
+            else -> JSONObject().put("call_id", it.id).also { b -> if (it.reason.isNotEmpty()) b.put("reason", it.reason) }
+        }
+        // (respondCall answers a decline the same way endCall answers an end: 200 done, 404/409 over already,
+        // 401/408/429/5xx/no answer → again — CallRules.endDone / endRetry)
+        Api.invokeOnce(if (it.kind == "decline") "respondCall" else "endCall", body, 20000) { r ->
             it.sending = false
             val more = waiters.remove(k)
             first?.invoke(r)
