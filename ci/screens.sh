@@ -310,8 +310,8 @@ tshot() {
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
   { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
 }
-# the Home card's two sizes (owner's second picture, 23 Nov): exactly the picture's (the page scrolls) · as tall as the first
-# screen allows (the one he chose, in the app)
+# the Home card's two sizes (owner's second picture, 23 Nov): exactly the picture's (the page scrolls; the one in the app) · as
+# tall as the first screen allows
 if [ "$SET" = card ]; then
 shot c01-exact-first home --es tf_preview secret --ez tf_premium true --ez tf_cardfit false
 shot c02-exact-scrolled open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open card
@@ -321,22 +321,25 @@ shot c05-fit-free home --es tf_preview secret --ez tf_cardfit true
 shot c06-exact-favorite open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open favorite
 fi
 if [ "$SET" = rosetap ]; then
-# (the Home card ends just above the bottom bar since 23 Nov: ✕ ♥ on the first screen, at 1910 down on the test phone)
-tshot t01-tap-heart "702 1910" --es tf_preview secret --ez tf_premium true
-tshot t02-tap-skip "378 1910" --es tf_preview secret --ez tf_premium true
+# (the Home card is the second picture's size since 23 Nov: its ✕ ♥ come up with a small scroll, so those taps start from "tf_open card",
+#  the page scrolled until the whole card shows)
+tshot t01-tap-heart "701 1532" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t02-tap-skip "378 1532" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t03-swipe-left "850 1270 250 1270" --es tf_preview secret --ez tf_premium true
 tshot t04-swipe-right "850 1270 250 1270; 250 1270 850 1270" --es tf_preview secret --ez tf_premium true
-tshot t05-arrow-next "972 1371; 972 1371" --es tf_preview secret --ez tf_premium true
+tshot t05-arrow-next "972 1505; 972 1505" --es tf_preview secret --ez tf_premium true
 tshot t06-tap-card "540 1150" --es tf_preview secret --ez tf_premium true
 tshot t07-chip-nearby "540 746" --es tf_preview secret --ez tf_premium true
-tshot t08-like-then-favorite "702 1910; 880 746" --es tf_preview secret --ez tf_premium true
+tshot t08-like-then-favorite "701 1532; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t09-chats-unread-tab "600 457" --es tf_preview secret-chat --ez tf_premium true
 tshot t10-chats-search-btn "982 212" --es tf_preview secret-chat --ez tf_premium true
 tshot t11-room-emoji "823 2236; 102 2085; 322 2085" --es tf_preview chatroom --ez tf_premium true
 tshot t12-room-gift "100 2236" --es tf_preview chatroom --ez tf_premium true
 tshot t13-scroll-page "540 1900 540 900" --es tf_preview secret --ez tf_premium true
-tshot t14-free-heart "702 1915" --es tf_preview secret
-tshot t15-free-skip "378 1915" --es tf_preview secret
+tshot t14-bar-over-card "701 2224" --es tf_preview secret --ez tf_premium true
+tshot t15-free-heart "701 1532" --es tf_preview secret --es tf_open card
+tshot t16-free-skip "378 1532" --es tf_preview secret --es tf_open card
+tshot t17-small-scroll "540 1700 540 1450" --es tf_preview secret --ez tf_premium true
 fi
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true
