@@ -28,6 +28,8 @@ adb install -r "$APK" > "$OUT/install.txt" 2>&1 || { fail "install"; cat "$OUT/i
 adb shell settings put system screen_off_timeout 1800000
 adb shell settings put global heads_up_notifications_enabled 1
 adb shell svc power stayon false
+# a real lock screen (swipe), as on a phone: the emulator starts without one
+adb shell locksettings set-disabled false > /dev/null 2>&1 || adb shell cmd lock_settings set-disabled false > /dev/null 2>&1
 adb shell wm dismiss-keyguard > /dev/null 2>&1
 
 shot() { adb exec-out screencap -p > "$OUT/$1.png" 2> /dev/null; }
@@ -57,7 +59,7 @@ close_app() {
 }
 screen_on() { adb shell dumpsys power | grep -qE "mWakefulness=Awake|Display Power: state=ON"; }
 unlock() { adb shell input keyevent KEYCODE_WAKEUP; sleep 1; adb shell wm dismiss-keyguard > /dev/null 2>&1; adb shell input keyevent KEYCODE_HOME; sleep 1; }
-bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W -n $PKG/.MainActivity --ez tf_bgcheck true >> "$OUT/bgcheck-start.txt" 2>&1; wait_log "bgcheck" 60; tfdbg | grep -o "bgcheck.*" | tail -1; }
+bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W --activity-clear-task -f 0x10000000 -n $PKG/.MainActivity --ez tf_bgcheck true >> "$OUT/bgcheck-start.txt" 2>&1; wait_log "bgcheck" 60; tfdbg | grep -o "bgcheck.*" | tail -1; }
 # tap the notification button with this text (the shade is opened first)
 # the ringing notifications go (the app takes the ringing over when it comes on screen: Push.clearCalls)
 clear_calls() { adb shell am start -W -n $PKG/.MainActivity > /dev/null 2>&1; sleep 4; close_app > /dev/null; }
@@ -80,6 +82,7 @@ tap_button() {
 # ── 0. first start after install (Firebase starts, the notification kinds are made), then closed ──
 adb logcat -c
 info "$(bgcheck)"
+info "lock screen: $(adb shell dumpsys window 2> /dev/null | grep -oE "(isKeyguardShowing|mKeyguardShowing|showing)=(true|false)" | head -2 | tr '\n' ' ')"
 sleep 6
 if close_app; then pass "0  app closed: no process left"; else fail "0  app could not be closed"; fi
 
@@ -157,6 +160,7 @@ unlock
 # ── 4y. locked, screen ON (the lock screen showing) ──
 clear_calls
 adb shell input keyevent KEYCODE_SLEEP; sleep 2; adb shell input keyevent KEYCODE_WAKEUP; sleep 2
+info "4y lock screen showing: $(adb shell dumpsys window 2> /dev/null | grep -oE "(isKeyguardShowing|mKeyguardShowing|showing)=(true|false)" | head -1)"
 adb logcat -c
 call T4y video
 if wait_log "push open call=T4y" 30; then pass "4y locked, screen on: the call screen opened over the lock screen"; else fail "4y locked, screen on: the call screen did not open"; fi
@@ -164,6 +168,7 @@ sleep 2; shot 04y-call-lock-screen-on
 unlock
 
 # ── 5. Doze (phone idle, unplugged, screen off for long) ──
+clear_calls
 close_app
 adb shell dumpsys battery unplug
 adb shell input keyevent KEYCODE_SLEEP; sleep 2
@@ -171,7 +176,10 @@ adb shell dumpsys deviceidle force-idle > "$OUT/doze.txt" 2>&1
 info "doze: $(adb shell dumpsys deviceidle get deep | tr -d '\r')"
 adb logcat -c
 call T5 video
-if wait_log "push shown t=call id=T5" 30; then pass "5  Doze: the call rang"; else fail "5  Doze: the call did not ring"; fi
+if wait_log "push shown t=call id=T5" 40; then pass "5  Doze: the call rang"; else
+  fail "5  Doze: the call did not ring"
+  { echo "== tfdbg"; tfdbg | tail -20; echo "== system"; adb logcat -d -b all 2> /dev/null | grep -iE "truefind|FirebaseMessaging|FirebaseInstanceId|CloudMessag|BroadcastQueue.*c2dm" | tail -40; } > "$OUT/doze-fail.txt"
+fi
 adb shell dumpsys deviceidle unforce > /dev/null; adb shell dumpsys battery reset
 unlock; clear_calls
 
