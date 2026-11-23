@@ -272,7 +272,8 @@ class SdDeck(
          * width; the owner then asked for it longer twice (23 Nov evening: 1.8 ×, then 1.95 ×), and that night a little
          * shorter again: 1.8 × that width (the card is narrower, the neighbours peeking out beside it, but keeps this height)
          */
-        const val RATIO = 1.8f
+        // (24 Nov night, owner: "थोड़ी सी और छोटी कर दो" — 1.62 ×, a tenth shorter than 1.8)
+        const val RATIO = 1.62f
         /** how far the cards before and after peek out at each side, and the gap between the cards (dp) */
         const val PEEK = 22f
         const val GAP = 10f
