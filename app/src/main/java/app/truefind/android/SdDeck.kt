@@ -30,7 +30,8 @@ import kotlin.math.roundToInt
  * The cards before and after it peek out at both sides, a little smaller and shaded, so it shows that there are more
  * (owner, 23 Nov evening: "साइड में और भी हैं … ताकि यूजर खुद ही उसको चेंज कर ले" — the arrows went; a tap on a
  * peeking card brings it to the front). Flat ("2D"): a white edge, no gloss, no deep shadow.
- * Its height (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो" … "थोड़ा और लंबा करो", twice): 1.95 × the
+ * Its height (owner, 23 Nov: "इतना ही बड़ा कर दो" … "नीचे तक लंबी खींच दो" … "थोड़ा और लंबा करो", twice; that night
+ * "थोड़ा सा छोटा कर दो"): 1.8 × the
  * second picture's card width, on every phone; its foot (the name, ✕ ♥) comes up with a small scroll. The round
  * buttons are a little smaller than the picture's (that evening: "थोड़ा छोटा छोटा कर दो"). (He first tried the shorter
  * size that ends above the bottom bar, [fit], and sent it back the same day.)
@@ -50,8 +51,6 @@ class SdDeck(
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(e: MotionEvent): Boolean = touch(e)
     }
-    private val dots = LinearLayout(ctx).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER }
-    private val counter = sdText(ctx, "", 13f, Rs.ICON).apply { gravity = Gravity.CENTER }
     private val cards = HashMap<Int, Card>()
 
     private var idx = 0
@@ -76,8 +75,7 @@ class SdDeck(
         orientation = VERTICAL
         clipChildren = false
         addView(box, LayoutParams(MATCH, 0))
-        addView(dots, lp(MATCH, dpi(8f), t = 10f))
-        addView(counter, lp(MATCH, WRAP, t = 8f))
+        // (no "4 / 40" and no dots under the card any more: owner, 23 Nov night)
         box.clipChildren = false
     }
 
@@ -159,17 +157,7 @@ class SdDeck(
         }
     }
 
-    private fun refreshNav() {
-        val many = n > 1
-        dots.removeAllViews()
-        dots.visibility = if (many && n <= 8) VISIBLE else GONE
-        counter.visibility = if (many && n > 8) VISIBLE else GONE
-        val cur = mod(idx)
-        if (many && n <= 8) for (i in 0 until n) {
-            dots.addView(View(context).apply { background = oval(if (i == cur) Rs.M else Rs.c("#E9CBCB")) }, lp(dpi(8f), dpi(8f), l = if (i == 0) 0f else 7f))
-        }
-        counter.text = "${cur + 1} / $n"
-    }
+    private fun refreshNav() { }
 
     // ── moving ──
     private val ease = PathInterpolator(0.22f, 0.8f, 0.24f, 1f)
@@ -257,12 +245,34 @@ class SdDeck(
     override fun onDetachedFromWindow() { anim?.cancel(); center = idx.toFloat(); super.onDetachedFromWindow() }
 
     companion object {
+        private val demoCovers = object : android.util.LruCache<String, android.graphics.Bitmap>(24 * 1024 * 1024) {
+            override fun sizeOf(key: String, value: android.graphics.Bitmap) = value.byteCount
+        }
+        /** a small (demo) face: round with a white ring, high in a card of [w] × [h] washed in the face's own colours */
+        fun faceCard(face: android.graphics.Bitmap, w: Int, h: Int): android.graphics.Bitmap {
+            val out = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = Canvas(out)
+            val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            // the wash: the face shrunk to a few pixels and spread over the card (soft, no edges), a little lighter
+            val tiny = android.graphics.Bitmap.createScaledBitmap(face, 6, 10, true)
+            c.drawBitmap(tiny, null, android.graphics.Rect(0, 0, w, h), p)
+            c.drawColor(Color.argb(60, 255, 255, 255))
+            val d = (w * .74f).toInt(); val cx = w / 2f; val cy = h * .36f
+            p.color = Color.WHITE; c.drawCircle(cx, cy, d / 2f + Ui.dp(5f), p)
+            val sq = minOf(face.width, face.height)
+            val src = android.graphics.Rect((face.width - sq) / 2, (face.height - sq) / 2, (face.width + sq) / 2, (face.height + sq) / 2)
+            c.save()
+            c.clipPath(android.graphics.Path().apply { addCircle(cx, cy, d / 2f, android.graphics.Path.Direction.CW) })
+            c.drawBitmap(face, src, android.graphics.RectF(cx - d / 2f, cy - d / 2f, cx + d / 2f, cy + d / 2f), p)
+            c.restore()
+            return out
+        }
         /**
          * the second picture's card is 480 wide on a 512 screen (13 at each side on a phone) and 743 tall, 1.545 × its
-         * width; the owner then asked for it longer twice (23 Nov evening): 1.8 ×, then 1.95 × that width (the card is
-         * narrower now, the neighbours peeking out beside it, but keeps this height)
+         * width; the owner then asked for it longer twice (23 Nov evening: 1.8 ×, then 1.95 ×), and that night a little
+         * shorter again: 1.8 × that width (the card is narrower, the neighbours peeking out beside it, but keeps this height)
          */
-        const val RATIO = 1.95f
+        const val RATIO = 1.8f
         /** how far the cards before and after peek out at each side, and the gap between the cards (dp) */
         const val PEEK = 22f
         const val GAP = 10f
@@ -309,6 +319,11 @@ class SdDeck(
         private val seal = ImageView(ctx).apply { setImageDrawable(Seal(23f, Color.WHITE, Rs.M)) }
         private val city = sdText(ctx, "", (wDp * .044f).coerceIn(15f, 17.5f), Color.WHITE, bold = false).oneLine().shadow(6f, 1f, Color.argb(120, 30, 0, 8))
         private val verified = sdText(ctx, "Verified", 13.5f, Rs.ICON).icon(Seal(18f, Rs.M, Color.WHITE), 5f)
+        /** ★ on a profile in Favorite (one I liked): owner, 23 Nov night — so it shows at a glance that these are the favourites */
+        private val favStar = ImageView(ctx).apply {
+            setImageDrawable(Icon(Lucide.Star, Color.WHITE, 19f, 1.6f, Ui.c("#F5B301"))); scaleType = ImageView.ScaleType.CENTER
+            background = oval(Rs.M, 2f, Color.WHITE); contentDescription = "Favorite"; visibility = GONE
+        }
         private val online = sdText(ctx, "Online", 13.5f, Rs.INK).icon(oval(K.green).apply { setSize(dpi(9f), dpi(9f)) }, 6f)
         val skipBtn = ImageView(ctx).apply {
             setImageDrawable(Icon(Lucide.X, Rs.M, btnDp * .75f, 1.3f)); scaleType = ImageView.ScaleType.CENTER   // the ✕ itself: 3/8 of the button, as in the picture
@@ -343,6 +358,7 @@ class SdDeck(
             inner.addView(online, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.START).apply { setMargins(dpi(13f), dpi(13f), 0, 0) })
             verified.background = rounded(Color.WHITE, 15f); verified.setPadding(dpi(7f), 0, dpi(12f), 0); verified.gravity = Gravity.CENTER_VERTICAL
             inner.addView(verified, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.END).apply { setMargins(0, dpi(13f), dpi(13f), 0) })
+            inner.addView(favStar, LayoutParams(dpi(36f), dpi(36f), Gravity.TOP or Gravity.END).apply { setMargins(0, dpi(52f), dpi(13f), 0) })
             buttons.addView(skipBtn, lp(dpi(btnDp), dpi(btnDp)))
             buttons.addView(likeBtn, lp(dpi(btnDp), dpi(btnDp), l = wDp * .12f))
             inner.addView(buttons, LayoutParams(-1, dpi(btnDp), Gravity.BOTTOM).apply { bottomMargin = dpi(footDp) })
@@ -376,6 +392,13 @@ class SdDeck(
             val bw = W - dpi(7f); val bh = H - dpi(7f)
             val demo = Demo.cover(p, bw, bh)
             if (demo != null) photo.setImageBitmap(demo)
+            else if (SdDemo.isDemo(p) && W > 0) {
+                // a demo face is a small picture (128 px): stretched over the whole card it was a blur of big pixels (owner's
+                // screenshots, 23 Nov night) — it stands round in the card's upper half on a soft wash of its own colours
+                demoCovers[pid]?.let { photo.setImageBitmap(it) } ?: Photos.loadFull(raws[0], 512) { b ->
+                    if (b != null) { val c = faceCard(b, bw, bh); demoCovers.put(pid, c); if (boundId == pid) photo.setImageBitmap(c) }
+                }
+            }
             else if (W > 0) {
                 Photos.cachedCover(raws, bw, bh)?.let { photo.setImageBitmap(it) }
                     ?: Photos.loadCover(raws, bw, bh) { b -> if (boundId == pid && b != null) photo.setImageBitmap(b) }
@@ -393,6 +416,7 @@ class SdDeck(
             likeBtn.background = if (on) oval(Color.WHITE, 2f, Rs.M) else oval(Rs.M, 2f, Color.WHITE)
             likeIcon.setImageDrawable(if (on) Icon(Lucide.Heart, Rs.M, btnDp * .56f, 2f, Rs.M) else Icon(Lucide.Heart, Color.WHITE, btnDp * .56f, 2f, Color.WHITE))
             likeBtn.contentDescription = if (on) "Liked. Tap to take back" else "Like"
+            favStar.visibility = if (on) VISIBLE else GONE
         }
 
         /** which round button is under this point of the card (null: the photo) */

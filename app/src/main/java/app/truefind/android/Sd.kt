@@ -90,6 +90,9 @@ object K : SdPal {
 class PinkBackdrop(ctx: Context) : View(ctx) {
     var rose = true
         set(v) { if (field != v) { field = v; shade(); invalidate() } }
+    /** the chat pages (the list and the chat itself): more doodles all over (owner, 23 Nov night: "थोड़े और डूडल्स") */
+    var dense = false
+        set(v) { if (field != v) { field = v; invalidate() } }
     private val p = Paint()
     private val deco by lazy { RoseDeco() }
     private fun shade() {
@@ -100,7 +103,7 @@ class PinkBackdrop(ctx: Context) : View(ctx) {
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) { shade() }
     override fun onDraw(c: Canvas) {
         c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p)
-        if (rose) deco.draw(c, width.toFloat(), height.toFloat())
+        if (rose) { if (dense) deco.drawDense(c, width.toFloat(), height.toFloat()); deco.draw(c, width.toFloat(), height.toFloat()) }
     }
 }
 

@@ -848,7 +848,7 @@ class GlobeMap(
         }
         clusters = next; cver = ver; zstep = stp; firstFrame = false
     }
-    private fun pinLabel(c: Cl, ppd: Double) = if (ppd < 14) "" else if (c.n == 1 && ppd >= 40) c.first else c.city
+    private fun pinLabel(c: Cl, ppd: Double) = if (ppd < PIN_LABEL_PPD) "" else if (c.n == 1 && ppd >= 40) c.first else c.city
     // the names' keys, made once (a name keeps its key while it fades in and out)
     private val cityKeys: Array<String> by lazy { Array(SdMapData.cities.size) { val c = SdMapData.cities[it]; "c-${c.n}-${c.lng}" } }
     private val stateKeys: Array<String> by lazy { Array(SdMapData.states.size) { "s-${SdMapData.states[it].n}" } }
@@ -897,7 +897,7 @@ class GlobeMap(
             // ── people: regroup when the zoom has moved a step (or the list / the size changed) ──
             val stp = round(ln(max(1.0, ppd)) / ln(1.12)).toInt()
             val sppd = 1.12.pow(stp)
-            if (cver != ver || zstep != stp) regroup(now, sppd, sppd >= 14, stp)
+            if (cver != ver || zstep != stp) regroup(now, sppd, sppd >= PIN_LABEL_PPD, stp)
             val ps = pinScaleOf(ppd)
             val pins = ArrayList<Pin>()
             for (cl in clusters) {
@@ -1325,7 +1325,10 @@ fun cssEaseOut(t: Double): Double {
     return 3 * (1 - s) * s * s + s * s * s      // y(s) with y1 = 0, y2 = 1
 }
 /** how big a pin is at this zoom (ppd = screen dp per degree of the Earth) */
-fun pinScaleOf(ppd: Double) = (0.56 + 0.16 * log2(max(1.0, ppd) / 8)).coerceIn(0.56, 1.0)
+// (owner, 23 Nov night: the places shown better — the pins a little bigger when the map shows all of India, 0.7 instead of 0.56)
+fun pinScaleOf(ppd: Double) = (0.7 + 0.14 * log2(max(1.0, ppd) / 8)).coerceIn(0.7, 1.0)
+/** from this zoom (pixels a degree) every pin carries its town's name — already when the map shows all of India */
+const val PIN_LABEL_PPD = 6.0
 /** the smallest town (people, in thousands) that gets a name at this zoom */
 fun minPopFor(ppd: Double) = when {
     ppd < 5 -> Double.POSITIVE_INFINITY; ppd < 9 -> 5000.0; ppd < 14 -> 2500.0; ppd < 22 -> 900.0; ppd < 32 -> 300.0

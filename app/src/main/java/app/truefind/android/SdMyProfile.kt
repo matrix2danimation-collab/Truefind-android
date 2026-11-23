@@ -109,8 +109,14 @@ object SdMyProfile {
             top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ArrowLeft, ink, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back" }
                 .press().onTap { if (editing) { editing = false; err = ""; draw() } else close() }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.START or Gravity.CENTER_VERTICAL))
             top.addView(sdText(ctx, if (editing) "Edit Profile" else "My Profile", 24f, Rs.M_INK, serif = true), FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-            if (!editing) top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Pencil, ink, 22f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Edit profile" }
-                .press().onTap { startEditing() }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL))
+            if (!editing) {
+                // Settings: True Find's own Settings (the same screens as on True Find's Profile — owner, 23 Nov night);
+                // its back arrow comes back here
+                top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Settings, ink, 23f, 2.1f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Settings" }
+                    .press().onTap { h.openSettings() }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL).apply { rightMargin = dpi(44f) })
+                top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Pencil, ink, 22f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Edit profile" }
+                    .press().onTap { startEditing() }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.END or Gravity.CENTER_VERTICAL))
+            }
             col.addView(top, lp(MATCH, WRAP))
 
             // round photo + change photo

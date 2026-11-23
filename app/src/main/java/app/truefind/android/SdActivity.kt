@@ -309,7 +309,8 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
         val st = r?.optString("status").orEmpty()
         val mid = r?.optString("match_id").orEmpty().takeIf { it.isNotEmpty() && r?.isNull("match_id") == false }
         return when {
-            st == "accepted" && mid != null -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid) } }
+            // a request opens the chat at once (owner, 23 Nov night): with its chat it is "Open Chat", never "pending"
+            st != "declined" && mid != null -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid) } }
             st == "pending" -> pillView("Request sent", K.tint, Rs.c("#A91C56"), Icon(Lucide.Hourglass, Rs.c("#A91C56"), 13f))
             st == "declined" -> pillView("Not accepted", Rs.c("#F4EFF2"), Rs.c("#7A6A73"), null)
             else -> pillView("Send Request", K.pill, Color.WHITE, Icon(Lucide.Send, Color.WHITE, 14f, 2.4f)).also { it.press().onTap { person(x)?.let { p -> h.askRequest(p) } } }
@@ -349,19 +350,20 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             row.addView(face(p), lp(dpi(48f), dpi(48f)))
             val m = vbox(ctx)
             m.addView(sdText(ctx, nameOf(p), 16f, K.ink).oneLine())
-            m.addView(when (st) {
-                "accepted" -> sdText(ctx, "Accepted · you can chat now", 13.5f, Rs.c("#1E9E3A"))
-                "declined" -> sdText(ctx, "Not accepted", 13.5f, K.sub, bold = false)
+            val open = st != "declined" && mid != null
+            m.addView(when {
+                open -> sdText(ctx, "Chat open · you can chat now", 13.5f, Rs.c("#1E9E3A"))
+                st == "declined" -> sdText(ctx, "Not accepted", 13.5f, K.sub, bold = false)
                 else -> sdText(ctx, "Waiting for a reply", 13.5f, K.sub, bold = false)
             }.oneLine())
             m.addView(sdText(ctx, "Sent ${ago(x.optString("at"))}", 12.5f, K.soft, bold = false).oneLine())
             row.addView(m, lp(0, WRAP, 1f))
             row.addView(when {
-                st == "accepted" && mid != null -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid) } }
+                open -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid!!) } }
                 st == "declined" -> pillView("Not accepted", Rs.c("#F4EFF2"), Rs.c("#7A6A73"), null)
                 else -> pillView("Pending", K.tint, Rs.c("#A91C56"), Icon(Lucide.Hourglass, Rs.c("#A91C56"), 13f))
             }, lp(WRAP, dpi(34f)))
-            row.contentDescription = "${nameOf(p)}, ${if (st == "accepted") "accepted" else if (st == "declined") "not accepted" else "pending"}"
+            row.contentDescription = "${nameOf(p)}, ${if (open) "chat open" else if (st == "declined") "not accepted" else "pending"}"
             row.press(0.98f).onTap { h.openProfile(p) }
             card.addView(row, lp(MATCH, WRAP))
             if (i < l.size - 1) card.addView(View(ctx).apply { setBackgroundColor(K.line2) }, lp(MATCH, dpi(1f)))

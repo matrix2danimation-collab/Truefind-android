@@ -138,6 +138,32 @@ internal class RoseDeco {
             }
         }
     }
+    // the chat pages' extra doodles, in the same fine line: hearts, stars, sparkles, speech bubbles, little flowers,
+    // envelopes and dots, scattered in a loose grid (each cell 92 dp, its doodle moved and turned a little)
+    private val star: Path = PathParser.createPathFromPathData(Lucide.Star)
+    private val bubble: Path = PathParser.createPathFromPathData("M21 11.5a8.4 8.4 0 0 1 -9 8.4 9 9 0 0 1 -3.8 -.8L3 21l1.9 -5.1A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z M12 15.2c-2.6 -1.8 -3.9 -3.1 -3.9 -4.5a1.9 1.9 0 0 1 3.9 -.4 1.9 1.9 0 0 1 3.9 .4c0 1.4 -1.3 2.7 -3.9 4.5z")
+    private val sparkle: Path = PathParser.createPathFromPathData("M12 3c.6 4.2 2.8 6.4 7 7 -4.2 .6 -6.4 2.8 -7 7 -.6 -4.2 -2.8 -6.4 -7 -7 4.2 -.6 6.4 -2.8 7 -7z")
+    private val flower: Path = PathParser.createPathFromPathData("M12 9.6a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 1 0 0 -4.8z M12 9.6c-1.8 -2.6 -1.2 -5.6 0 -6.6 1.2 1 1.8 4 0 6.6z M14.3 11.3c1.4 -2.9 4.3 -3.7 5.8 -3.1 -.3 1.6 -2.6 3.6 -5.8 3.1z M13.4 14.1c3.1 .7 4.4 3.4 4.1 5 -1.6 .2 -4 -1.5 -4.1 -5z M10.6 14.1c-.1 3.5 -2.5 5.2 -4.1 5 -.3 -1.6 1 -4.3 4.1 -5z M9.7 11.3c-3.2 .5 -5.5 -1.5 -5.8 -3.1 1.5 -.6 4.4 .2 5.8 3.1z")
+    private val envelope: Path = PathParser.createPathFromPathData("M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1H4a1 1 0 0 1 -1 -1V7a1 1 0 0 1 1 -1z M3.5 7l8.5 6 8.5 -6")
+    private val ring: Path = Path().apply { addCircle(12f, 12f, 3.2f, Path.Direction.CW) }
+    fun drawDense(c: Canvas, w: Float, h: Float) {
+        val shapes = arrayOf(heart, star, bubble, sparkle, flower, heart, envelope, ring, sparkle)
+        val cell = Ui.dp(92f)
+        val cols = (w / cell).toInt() + 2; val rows = (h / cell).toInt() + 2
+        p.alpha = 190
+        for (r in 0 until rows) for (k in 0 until cols) {
+            val n = r * 7 + k * 3 + r * k
+            val sh = shapes[((n % shapes.size) + shapes.size) % shapes.size]
+            // a little off the grid, every other row half a cell along
+            val x = (k + (if (r % 2 == 1) .5f else 0f)) * cell + ((n * 37) % 29 - 14) * Ui.density
+            val y = r * cell + ((n * 53) % 31 - 15) * Ui.density + cell * .35f
+            val size = (12f + (n * 11) % 9) * (if (sh === ring) .7f else 1f)
+            val s = Ui.dp(size) / 24f
+            p.strokeWidth = Ui.dp(1.1f) / s
+            c.save(); c.translate(x, y); c.rotate(((n * 47) % 50 - 25).toFloat()); c.scale(s, s); c.translate(-12f, -12f); c.drawPath(sh, p); c.restore()
+        }
+        p.alpha = 255
+    }
     fun draw(c: Canvas, w: Float, h: Float) {
         p.alpha = 255
         for (hh in hearts) {

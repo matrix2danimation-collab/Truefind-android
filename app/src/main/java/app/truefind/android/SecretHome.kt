@@ -126,6 +126,7 @@ class SecretHome(
     private val pills = ArrayList<TextView>()                 // the same pill on the map and chat pages
     /** which Secret Dating page: "home" (/secret-app) · "map" (/dating) · "chat" (/secret-app?tab=chat) */
     var page = "home"; private set
+    private val backdrop = PinkBackdrop(ctx)
     private var mapPage: SdMapPage? = null
     private var chatPage: SdChatsPage? = null
     private val noticeBox = sdText(ctx, "", 15f, Rs.c("#166534"), bold = false)
@@ -160,7 +161,7 @@ class SecretHome(
         // nothing of these pages may be drawn below their bottom edge: the Secret Dating bar is there
         outlineProvider = android.view.ViewOutlineProvider.BOUNDS
         clipToOutline = true
-        addView(PinkBackdrop(ctx), LayoutParams(-1, -1))
+        addView(backdrop, LayoutParams(-1, -1))
         scroll.isVerticalScrollBarEnabled = false
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         scroll.isFillViewport = true
@@ -171,14 +172,7 @@ class SecretHome(
         // the stories row and the card reach the screen's edges (their −16 margins): nothing of them is cut at the padding
         col.clipToPadding = false
         scroll.addView(col, LayoutParams(-1, -2))
-        // the page fades softly into the bottom bar instead of being cut off under it
-        addView(object : View(ctx) {
-            val p = android.graphics.Paint()
-            override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
-                p.shader = android.graphics.LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(Color.argb(0, Color.red(Rs.BG_END), Color.green(Rs.BG_END), Color.blue(Rs.BG_END)), Rs.BG_END), null, android.graphics.Shader.TileMode.CLAMP)
-            }
-            override fun onDraw(c: android.graphics.Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
-        }, LayoutParams(-1, dpi(22f), Gravity.BOTTOM))
+        // (no soft white fade over the page's foot above the bottom bar any more: the owner wants it clean, 23 Nov night)
 
         buildHeader()
         noticeBox.background = rounded(Rs.c("#F0FDF4"), 14f, 1f, Rs.argb(89, 22, 163, 74))
@@ -306,6 +300,7 @@ class SecretHome(
     }
     private fun switchNow(view: String) {
         page = view
+        backdrop.dense = view == "chat"
         scroll.visibility = if (view == "home") VISIBLE else GONE
         if (view == "map" && mapPage == null) mapPage = SdMapPage(this).also { addView(it, indexOfChild(scroll) + 1, LayoutParams(-1, -1)) }
         if (view == "chat" && chatPage == null) chatPage = SdChatsPage(this).also { addView(it, indexOfChild(scroll) + 1, LayoutParams(-1, -1)) }
@@ -318,7 +313,7 @@ class SecretHome(
         }
         render()
     }
-    private fun restartPoll() { main.removeCallbacks(poll); main.postDelayed(poll, 45_000) }
+    private fun restartPoll() { main.removeCallbacks(poll); main.postDelayed(poll, 90_000) }
     fun onAppVisible(v: Boolean) {
         if (!shown) return
         if (v) { loadAll(); restartPoll(); if (page != "map") liveOn(); chatPage?.setActive(page == "chat") }
@@ -331,9 +326,10 @@ class SecretHome(
     }
     private val poll = object : Runnable {
         override fun run() {
-            // the web: every 45 s while the page is on screen — not the people on the Chats page
+            // every 90 s while the page is on screen (45 s before 23 Nov night: four lists every 45 s from every phone used up
+            // the platform's shared allowance, and then chat messages were "busy") — not the people on the Chats page
             if (shown) { if (page != "chat") loadPeople(); loadStories(); loadActivity() }
-            main.postDelayed(this, 45_000)
+            main.postDelayed(this, 90_000)
         }
     }
     // a new message arrives: Notifications updates at once (no need to wait for the next check)
@@ -1193,6 +1189,8 @@ class SecretHome(
 
     // ═════════════════ actions (same rules as the web) ═════════════════
     fun wallet() = go("/wallet?app=secret", null)
+    /** True Find's Settings (Profile's drawer, the very same screens); Back comes back to Secret Dating */
+    fun openSettings() = go("/profile?open=settings", null)
 
     /** Get Premium: the profile must be complete first (otherwise Premium couldn't be used) */
     fun unlock() {

@@ -80,8 +80,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         // the map: rounded, white frame; full screen on the button
         mapBox.clipToOutline = true
         mapBox.outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { if (fullOn) o.setRect(0, 0, v.width, v.height) else o.setRoundRect(0, 0, v.width, v.height, Ui.dp(26f)) } }
-        mapBox.elevation = Ui.dp(8f)
-        mapBox.outlineSpotShadowColorCompat(Rs.argb(153, 196, 16, 98))
+        // flat (no soft pink shadow under it: owner, 23 Nov night — clean between the map and the bar)
         mapBox.setBackgroundColor(Rs.c("#06020f"))
         mapInner.addView(globe, LayoutParams(-1, -1))
         mapInner.addView(spin, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
@@ -98,14 +97,14 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
         mapInner.addView(filters, LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(dpi(12f), dpi(12f), 0, 0) })
         mapBox.addView(mapInner, LayoutParams(-1, -1))
         val vw = resources.displayMetrics.widthPixels / Ui.density
-        col.addView(mapBox, lp(MATCH, dpi(min(vw * 1.18f, 560f)), t = 14f))
+        // a little taller, so India shows bigger (owner, 23 Nov night: "थोड़ा और बेहतरीन दिखाओ")
+        col.addView(mapBox, lp(MATCH, dpi(min(vw * 1.32f, 620f)), t = 14f))
         mapInner.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> placeEmpty() }
 
         // everyone on the map: verified boys and girls, online first
         peopleBtn.orientation = LinearLayout.HORIZONTAL; peopleBtn.gravity = Gravity.CENTER_VERTICAL
         // green (owner, 20 Nov): the "N People · M Online" bar
         peopleBtn.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Rs.c("#22C55E"), Rs.c("#15924A"))).apply { cornerRadius = Ui.dp(29f); setStroke(dpi(2f), Color.WHITE) }
-        peopleBtn.elevation = Ui.dp(6f)
         peopleBtn.setPadding(dpi(22f), 0, dpi(18f), 0)
         peopleBtn.addView(peopleDot, lp(dpi(19f), dpi(19f), r = 12f))
         peopleText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp((vw * .044f).coerceIn(15f, 19f)))
@@ -271,7 +270,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
     private fun personCard(p: JSONObject): View {
         val live = SdRules.liveOf(p)
-        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line); setPadding(dpi(3f), dpi(8f), dpi(3f), dpi(3f)); elevation = Ui.dp(3f) }
+        val card = vbox(context).apply { background = rounded(Color.WHITE, 18f, 1f, K.line); setPadding(dpi(3f), dpi(8f), dpi(3f), dpi(3f)) }
         // a round photo with a soft pink ring (owner, 20 Nov: the photos are circles)
         val w = cardW() - dpi(6f)
         val d = (w - dpi(14f)).coerceAtLeast(dpi(40f))

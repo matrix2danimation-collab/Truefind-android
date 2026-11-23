@@ -377,6 +377,11 @@ tshot t27-story-tap-back "286 488; 900 1300; 120 1300" --es tf_preview secret --
 tshot t28-story-swipe-next "286 488; 950 1300 150 1300" --es tf_preview secret --ez tf_premium true
 tshot t29-story-swipe-down "286 488; 540 800 540 1900" --es tf_preview secret --ez tf_premium true
 tshot t30-side-card-back "68 1500" --es tf_preview secret --ez tf_premium true
+# 23 Nov night: Settings from My Profile (True Find's own), the map page scrolled (no fade over its foot), the chat list scrolled
+tshot t31-my-settings "886 205" --es tf_preview secret --ez tf_premium true --es tf_open my
+tshot t32-map-scrolled "540 1900 540 700" --es tf_preview secret-map --ez tf_premium true
+tshot t33-chats-scrolled "540 1900 540 900" --es tf_preview secret-chat --ez tf_premium true
+tshot t34-home-scrolled "540 1900 540 1300" --es tf_preview secret --ez tf_premium true
 fi
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true

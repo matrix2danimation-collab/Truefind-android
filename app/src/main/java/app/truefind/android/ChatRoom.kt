@@ -227,6 +227,7 @@ class ChatRoom(
         if (lookNow != null) { listCol.removeAllViews(); tailCol.removeAllViews(); ticks.clear(); shownKeys = emptyList() }
         lookNow = rose
         backdrop.rose = rose
+        backdrop.dense = rose
         // the top: a flat maroon band with round lower corners (the picture's chat); the pink look has none
         headBand.background = if (rose) GradientDrawable().apply { setColor(Rs.M); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(24f), Ui.dp(24f), Ui.dp(24f), Ui.dp(24f)) } else null
         headBand.setPadding(0, 0, 0, dpi(if (rose) 6f else 0f))
@@ -317,7 +318,8 @@ class ChatRoom(
     private var shownNow = false
     private var demoTold = false
     // if the live connection is down, look for new messages every few seconds instead
-    private val fallback = object : Runnable { override fun run() { main.postDelayed(this, 4000); if (shownNow && appVisible && !loading && error.isEmpty() && !Realtime.connected && !Demo.on) refreshLatest() } }
+    // (every 8 s, not 4: each look is a read from the platform's shared allowance, and too many of them made sending "busy")
+    private val fallback = object : Runnable { override fun run() { main.postDelayed(this, 8000); if (shownNow && appVisible && !loading && error.isEmpty() && !Realtime.connected && !Demo.on) refreshLatest() } }
     private fun refreshLatest() {
         val g = gen
         Api.filter("Message", JSONObject().put("match_id", matchId), "-created_date", 30) { m ->
@@ -617,9 +619,9 @@ class ChatRoom(
                 val err = r.data.optString("error")
                 val wait = when {
                     r.status == 429 && err == "rate_limited" -> 900L     // sent too fast: just after the 0.6 s gap
-                    // the chat busy (the platform's read limit): as long as the server said, up to 8 s — asking
+                    // the chat busy (the platform's read limit): as long as the server said, up to 10 s — asking
                     // sooner would only be told "busy" again
-                    r.status == 429 && (err == "busy" || r.data.optBoolean("server_busy")) -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1200L, 8000L)
+                    r.status == 429 && (err == "busy" || r.data.optBoolean("server_busy")) -> (r.data.optDouble("retry_after", 3.0) * 1000).toLong().coerceIn(1500L, 10_000L)
                     attempt == 0 -> 1200L
                     attempt == 1 -> 3000L
                     else -> 5000L

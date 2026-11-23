@@ -29,7 +29,8 @@ import kotlin.math.min
  * screen; the stories then run on by themselves, person after person — tap the right side for the next story, the left
  * side for the one before, hold to pause. Each person has their own bars at the top (one for each of their stories);
  * from one person to the next the page turns like a cube, and swiping left / right turns it by hand. Swipe down to
- * close. 6 s a story. Your own story: who saw it, and Delete.
+ * close (or the phone's Back) — there is no ✕ (owner, 23 Nov night: "उसकी जरूरत नहीं है"). 6 s a story. Your own story:
+ * who saw it, and Delete.
  */
 object StoryViewer {
     private const val DUR = 6000L
@@ -80,7 +81,6 @@ object StoryViewer {
         fun page(k: Int): Page = pages.getOrPut(k) {
             Page(ctx, gs[k], mine).also { p ->
                 p.cameraDistance = 9000f * Ui.density
-                p.closeBtn.onTap { close() }
                 root.addView(p, FrameLayout.LayoutParams(-1, -1))
                 p.show(at[k])
             }
@@ -242,9 +242,6 @@ object StoryViewer {
         private val name = sdText(ctx, "", 16f, Color.WHITE).oneLine().icon(Seal(15f), 5f, end = true).shadow(4f, 1f, Rs.argb(120, 0, 0, 0))
         private val sub = sdText(ctx, "", 13f, Rs.argb(210, 255, 255, 255), bold = false).oneLine().shadow(4f, 1f, Rs.argb(120, 0, 0, 0))
         private val caption = sdText(ctx, "", 19f, Color.WHITE).apply { gravity = Gravity.CENTER; lineHeight(1.2f); shadow(6f, 1f, Rs.argb(153, 0, 0, 0)) }
-        val closeBtn = ImageView(ctx).apply {
-            setImageDrawable(Icon(Lucide.X, Color.WHITE, 26f, 2.2f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Close story"
-        }
         val viewsBtn = sdText(ctx, "", 15f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(Rs.argb(46, 255, 255, 255), 22f); setPadding(dpi(18f), 0, dpi(18f), 0) }
         val delBtn = sdText(ctx, "Delete", 15f, Rs.c("#ffd0d6"), bold = false).icon(Icon(Lucide.Trash2, Rs.c("#ffd0d6"), 16f), 7f).apply {
             gravity = Gravity.CENTER; background = rounded(Rs.argb(51, 0, 0, 0), 22f, 1f, Rs.argb(153, 255, 180, 190)); setPadding(dpi(16f), 0, dpi(16f), 0)
@@ -276,7 +273,7 @@ object StoryViewer {
                 bars.addView(track, lp(0, dpi(2.5f), 1f, l = if (k == 0) 0f else 4f))
             }
             addView(bars, LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(10f), dpi(10f), dpi(10f), 0) })
-            // who: their photo, name, city · how long ago, and ✕
+            // who: their photo, name, city · how long ago
             val who = hbox(ctx, 9f)
             val ring = FrameLayout(ctx).apply { background = oval(Color.WHITE); setPadding(dpi(1.5f), dpi(1.5f), dpi(1.5f), dpi(1.5f)) }
             ring.addView(face, LayoutParams(-1, -1))
@@ -284,8 +281,7 @@ object StoryViewer {
             val nameBox = vbox(ctx)
             nameBox.addView(name, lp(WRAP, WRAP)); nameBox.addView(sub, lp(WRAP, WRAP))
             who.addView(nameBox, lp(0, WRAP, 1f))
-            who.addView(closeBtn, lp(dpi(44f), dpi(44f)))
-            addView(who, LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(12f), dpi(20f), dpi(4f), 0) })
+            addView(who, LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(12f), dpi(22f), dpi(12f), 0) })
             // the caption (and your own story's tools) at the foot
             val bottom = vbox(ctx, 12f, Gravity.CENTER_HORIZONTAL).apply {
                 setPadding(dpi(18f), dpi(48f), dpi(18f), dpi(26f))
