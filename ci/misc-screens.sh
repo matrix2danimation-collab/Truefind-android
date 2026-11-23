@@ -77,6 +77,10 @@ if [ "$SET" = misc ]; then
   shot m09-notify 4 notify
   shot m10-notify-on 3 notify-on
   shot m11-notify-blocked 3 notify-blocked
+  shot m12-notify-bg-battery 3 notify-bg-battery
+  shot m13-notify-bg-autostart 3 notify-bg-autostart
+  shot m14-notify-bg-fullscreen 3 notify-bg-fullscreen
+  shot m15-notify-bg-done 3 notify-bg-done
   shot m12-rules-reminder 4 rules
 fi
 

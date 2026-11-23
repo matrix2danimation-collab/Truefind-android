@@ -27,6 +27,11 @@ import androidx.core.content.ContextCompat
  * and messages can reach the phone even when True Find is closed. It asks Android's own question
  * (Android 13 and newer); it only shows while that question hasn't been answered yet, and never
  * over another pop-up. It never blocks the page.
+ *
+ * Then (and for members who allowed notifications before) it walks through what the phone still
+ * needs so a call rings while True Find is closed (BgSetup): background / battery, the phone
+ * maker's Autostart, full-screen calls on Android 14+ — one step at a time, each opening the
+ * phone's own settings. "Not now" asks again after 3 days.
  */
 class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLayout) {
     companion object {
@@ -36,7 +41,9 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     private val main = Handler(Looper.getMainLooper())
     private val prefs = act.getSharedPreferences("tf_status", Context.MODE_PRIVATE)
     private var show = false
-    private var state = ""      // "" · busy · on · blocked · failed
+    private var state = ""      // "" · busy · on · blocked · failed · bg (a background step) · bgdone
+    private var step = ""       // the background step on the card: battery · autostart · fullscreen
+    private val tried = mutableSetOf<String>()
     private var onHome = false
     private var checking = false
     private var tries = 0
@@ -47,6 +54,8 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     var preview = false
 
     private val ask = act.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> answered(granted) }
+    /** back from the phone's settings for one background step */
+    private val settings = act.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { nextBgStep() }
 
     // ── the card ──
     private val card = LinearLayout(act).apply {
@@ -110,6 +119,10 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     }
     private fun askedRecently(): Boolean = System.currentTimeMillis() - prefs.getLong("push_ask_at", 0L) < AGAIN_MS
     private fun markAsked() { prefs.edit().putLong("push_ask_at", System.currentTimeMillis()).apply() }
+    private fun bgAskedRecently(): Boolean = System.currentTimeMillis() - prefs.getLong("bg_ask_at", 0L) < AGAIN_MS
+    /** notifications are on, but the phone may still stop True Find in the background */
+    private fun bgWanted(): Boolean = permission() == "granted" && !bgAskedRecently() && BgSetup.needed(act)
+    private fun firstBgStep(): String = listOf("battery", "autostart", "fullscreen").firstOrNull { it !in tried && BgSetup.stepNeeded(act, it) } ?: ""
 
     // ═════════════════ when it shows ═════════════════
     /** MainActivity: the page now (Home or not), signed in */
@@ -118,22 +131,25 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
         val was = onHome
         onHome = home && signedIn
         // leaving Home hides it (it comes back next time if it was not answered)
-        if (!onHome && state == "") { if (show) hide() }
+        if (!onHome && (state == "" || state == "bg")) { if (show) hide() }
         if (onHome && !was) scheduleCheck()
         place()
     }
 
     private fun scheduleCheck() {
-        if (show || checking || permission() != "default" || askedRecently()) return
+        val askPush = permission() == "default" && !askedRecently()
+        if (show || checking || !(askPush || bgWanted())) return
         checking = true; tries = 0
         main.postDelayed(check, 2500)
     }
     private val check = object : Runnable {
         override fun run() {
             checking = false
-            if (!onHome || permission() != "default" || askedRecently()) return
+            val askPush = permission() == "default" && !askedRecently()
+            if (!onHome || !(askPush || bgWanted())) return
             if (busyElsewhere() && tries++ < 20) { checking = true; main.postDelayed(this, 3000); return }
-            state = ""; show = true; draw(); appear()
+            if (askPush) state = "" else { tried.clear(); step = firstBgStep(); if (step.isEmpty()) return; state = "bg" }
+            show = true; draw(); appear()
         }
     }
 
@@ -161,11 +177,12 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
 
     // ═════════════════ the buttons ═════════════════
     private fun notNow() {
-        markAsked()
+        if (state == "bg") prefs.edit().putLong("bg_ask_at", System.currentTimeMillis()).apply() else markAsked()
         hide()
     }
 
     private fun turnOnNow() {
+        if (state == "bg") { openBgStep(); return }
         if (state == "busy") return
         if (preview) { state = "on"; draw(); return }
         state = "busy"; draw()
@@ -186,11 +203,38 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
 
     private fun result(r: String) {
         when (r) {
-            "granted" -> { state = "on"; draw(); testPush(); main.postDelayed({ hide() }, 2600) }
+            "granted" -> {
+                state = "on"; draw(); testPush()
+                // straight on to what the phone needs so calls ring while True Find is closed
+                main.postDelayed({
+                    tried.clear(); step = firstBgStep()
+                    if (step.isEmpty()) hide() else { state = "bg"; draw(); startRing() }
+                }, 2200)
+            }
             "denied" -> { state = "blocked"; draw(); main.postDelayed({ hide() }, 6000) }
             "default" -> { state = ""; hide() }
             else -> { state = "failed"; draw(); main.postDelayed({ hide() }, 5000) }
         }
+    }
+
+    // ═════════════════ background steps (BgSetup) ═════════════════
+    private fun openBgStep() {
+        if (preview) { nextBgStep(); return }
+        val s = step
+        tried.add(s)
+        val i = BgSetup.intentFor(act, s)
+        if (i == null) { nextBgStep(); return }
+        if (s == "autostart") BgSetup.markAutostartDone(act)
+        try { settings.launch(i) } catch (e: Throwable) { nextBgStep() }
+    }
+
+    /** the next step still missing, or "all set" */
+    private fun nextBgStep() {
+        if (preview) tried.add(step)
+        step = if (preview) listOf("battery", "autostart", "fullscreen").firstOrNull { it !in tried } ?: "" else firstBgStep()
+        if (step.isNotEmpty()) { state = "bg"; draw(); return }
+        state = "bgdone"; draw()
+        main.postDelayed({ if (state == "bgdone") hide() }, 2600)
     }
 
     /** the web's sendTestPush(): only when this app can receive pushes (its push token), else nothing reaches this phone */
@@ -199,20 +243,34 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     }
 
     private fun draw() {
-        val done = state == "on"; val blocked = state == "blocked"; val failed = state == "failed"
+        val done = state == "on" || state == "bgdone"; val blocked = state == "blocked"; val failed = state == "failed"
+        val bg = state == "bg"
         iconBox.background = Tf.box(if (done) Ui.c("#DCFCE7") else Ui.c("#F1EAFE"), 14f)
         bell.visibility = if (done) View.GONE else View.VISIBLE
         tick.visibility = if (done) View.VISIBLE else View.GONE
         if (done) stopRing()
-        title.text = when { done -> "Notifications are on"; blocked -> "Notifications are blocked"; failed -> "Couldn't turn them on"; else -> "Never miss a call" }
+        title.text = when {
+            state == "bgdone" -> "All set"
+            bg && step == "battery" -> "Let calls ring when closed"
+            bg && step == "autostart" -> "Turn on Autostart"
+            bg && step == "fullscreen" -> "Show calls on the lock screen"
+            done -> "Notifications are on"
+            blocked -> "Notifications are blocked"
+            failed -> "Couldn't turn them on"
+            else -> "Never miss a call"
+        }
         sub.text = when {
+            state == "bgdone" -> "Calls and messages will reach you even when True Find is closed."
+            bg && step == "battery" -> "Allow True Find to run in the background, so calls and messages always come through."
+            bg && step == "autostart" -> "Your phone stops apps in the background. Find True Find in the list and switch it on."
+            bg && step == "fullscreen" -> "Turn on full screen notifications for True Find, so a call fills the screen like a phone call."
             done -> "Calls and messages will reach you even when True Find is closed."
             blocked -> "Allow them for True Find in your phone's settings → Notifications."
             failed -> "This browser can't show True Find notifications right now. Please try again later."
             else -> "Get calls and messages even when True Find is closed."
         }
         buttons.visibility = if (done || blocked || failed) View.GONE else View.VISIBLE
-        turnOn.text = if (state == "busy") "Turning on…" else "Turn on"
+        turnOn.text = when { state == "busy" -> "Turning on…"; bg && step == "battery" -> "Allow"; bg -> "Open settings"; else -> "Turn on" }
         turnOn.alpha = if (state == "busy") 0.7f else 1f
     }
 
@@ -241,13 +299,15 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     private fun stopRing() { ring?.cancel(); ring = null; bell.rotation = 0f }
 
     /** the bell rings only while the card can be seen */
-    fun onAppVisible(v: Boolean) { if (!v) stopRing() else if (show && state == "") startRing() }
+    fun onAppVisible(v: Boolean) { if (!v) stopRing() else if (show && (state == "" || state == "bg")) startRing() }
 
     // ═════════════════ test pictures ═════════════════
     fun startPreview(what: String) {
         preview = true
         onHome = true
-        state = when (what) { "notify-on" -> "on"; "notify-blocked" -> "blocked"; else -> "" }
+        tried.clear()
+        step = when (what) { "notify-bg-battery" -> "battery"; "notify-bg-autostart" -> "autostart"; "notify-bg-fullscreen" -> "fullscreen"; else -> "" }
+        state = when (what) { "notify-on" -> "on"; "notify-blocked" -> "blocked"; "notify-bg-done" -> "bgdone"; else -> if (step.isNotEmpty()) "bg" else "" }
         show = true
         draw()
         appear()

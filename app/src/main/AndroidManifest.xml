@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- an incoming call rings full screen on the lock screen (like WhatsApp) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- calls must ring even when the phone's battery saver would stop True Find in the background (BgSetup) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- a call keeps its microphone (and on a video call the camera) when True Find leaves the screen (CallService) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -35,6 +37,16 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
         </intent>
+        <!-- the phone makers' "Autostart" pages (Xiaomi, Oppo / Realme, Vivo / iQOO, OnePlus, Huawei, Asus): BgSetup -->
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.coloros.safecenter" />
+        <package android:name="com.oppo.safe" />
+        <package android:name="com.vivo.permissionmanager" />
+        <package android:name="com.iqoo.secure" />
+        <package android:name="com.oneplus.security" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.hihonor.systemmanager" />
+        <package android:name="com.asus.mobilemanager" />
     </queries>
 
     <application
