@@ -192,7 +192,7 @@ class SecretHome(
         buildChips()
         deckBox.clipChildren = false
         body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 12f))
-        // (SdDeck.fit only) the card ends just above the bottom bar on the first screen: measured whenever the page is laid out
+        // (SdDeck.fit) the card ends just above the bottom bar on the first screen: its room is measured whenever the page is laid out
         val roomWatch = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> syncCardRoom() }
         deckBox.addOnLayoutChangeListener(roomWatch); scroll.addOnLayoutChangeListener(roomWatch)
         buildPrivate()
@@ -1431,9 +1431,11 @@ class SecretHome(
     private val hideToast = Runnable { toast.animate().alpha(0f).setDuration(200).withEndAction { toast.visibility = GONE }.start() }
     fun say(text: String, kind: String = "ok") {
         if (toast.parent == null) host.addView(toast, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), 0) })
-        // 12 above the bottom of this page (the Secret Dating bar sits right under it)
-        val bottomGap = host.height - host.paddingBottom - (bottom - dpi(12f))
-        (toast.layoutParams as FrameLayout.LayoutParams).bottomMargin = maxOf(dpi(12f), bottomGap)
+        // 12 above the bottom of this page (the Secret Dating bar sits right under it); on Home only 4: the card now ends
+        // just above the bar (23 Nov), and the message must stay under its ✕ ♥, not on them
+        val gap = dpi(if (page == "home" && !layer.open) 4f else 12f)
+        val bottomGap = host.height - host.paddingBottom - (bottom - gap)
+        (toast.layoutParams as FrameLayout.LayoutParams).bottomMargin = maxOf(gap, bottomGap)
         toastText.text = text
         toastText.setTextColor(if (kind == "err") Rs.c("#B4183C") else K.ink2)
         toastBtn.visibility = if (kind == "credits" || kind == "premium") VISIBLE else GONE

@@ -27,8 +27,10 @@ import kotlin.math.roundToInt
  * Verified at its top, the name and city at its bottom, and two round buttons on it: ✕ (the next profile) and
  * ♥ (like). Swipe left / right or tap the arrows for the next / the one before; tap the photo to open the profile.
  * Flat ("2D"): a white edge, no gloss, no deep shadow.
- * Its size is the second picture's (23 Nov, "इतना ही बड़ा कर दो"): almost the screen's width and 1.545 × as tall, with
- * everything on it in that picture's proportions (the round buttons a fifth of the card's width, and so on).
+ * Its size (owner, 23 Nov: the second picture's big card; of the two sizes shown he chose "B — पहली screen में पूरा"):
+ * almost the screen's width, and as tall as the first screen allows — it ends just above the bottom bar, so ✕ ♥ show
+ * at once — never taller than the picture's card (1.545 × its width). Everything on it is in that picture's proportions
+ * (the round buttons a fifth of the card's width, and so on).
  */
 @SuppressLint("ViewConstructor")
 class SdDeck(
@@ -60,7 +62,7 @@ class SdDeck(
     private var cw = ctx.resources.displayMetrics.widthPixels
     private var W = cardW(ctx, cw)
     private var H = cardH(W, 0)
-    /** [fit] only: the height from the card's top down to the bottom bar on the first screen (SecretHome measures it) */
+    /** [fit]: the height from the card's top down to the bottom bar on the first screen (SecretHome measures it) */
     var room = 0
         set(v) {
             if (field == v) return
@@ -261,15 +263,17 @@ class SdDeck(
         /** the second picture's card: 480 wide on a 512 screen (13 at each side on a phone), 743 tall → 1.545 × its width */
         const val RATIO = 1.545f
         /**
-         * false: the card is exactly the picture's size; on most phones its foot (✕ ♥) comes up with a small scroll.
-         * true: the card is as tall as the first screen allows (never taller than the picture's), so ✕ ♥ always show.
+         * true (the owner's choice, 23 Nov): the card is as tall as the first screen allows — it ends just above the bottom
+         * bar, so ✕ ♥ show without a scroll — and never taller than the picture's.
+         * false: exactly the picture's size on every phone; on most its foot (✕ ♥) comes up only with a small scroll.
          */
-        var fit = false
+        var fit = true
         fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = (deckW - Ui.dp(26f)).coerceIn(Ui.dp(220f), Ui.dp(460f)).roundToInt()
-        /** [room]: see [fit] (0 = not measured yet) */
+        /** [room]: the height free for the card on the first screen, see [fit] (0 = not measured yet) */
         fun cardH(w: Int, room: Int): Int {
             val full = (w * RATIO).roundToInt()
-            return if (fit && room > 0) room.coerceIn(w, full) else full
+            // (little room — a short phone, or the "Stories are Premium Only" box above it: never squarer than the card was before, 1.05 × its width)
+            return if (fit && room > 0) room.coerceIn((w * 1.05f).roundToInt(), full) else full
         }
     }
 
