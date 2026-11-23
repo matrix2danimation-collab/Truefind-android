@@ -259,7 +259,8 @@ class SecretHome(
             val sameCity = myCity.isNotEmpty() && city.trim().lowercase() == myCity
             JSONObject(x.toString()).put("city", city).put("_km", if (sameCity) 0.0 else km)
         }.filter { it.optDouble("_km", 0.0) <= 500.0 }
-        return withKm.sortedWith(compareBy<JSONObject> { if (it.optBoolean("seen")) 1 else 0 }.thenBy { it.optDouble("_km", 1e9) })
+        // not yet seen first; real members' stories before the demo ones (testing only); then the nearest first
+        return withKm.sortedWith(compareBy<JSONObject> { if (it.optBoolean("seen")) 1 else 0 }.thenBy { if (SdDemo.isDemoStory(it)) 1 else 0 }.thenBy { it.optDouble("_km", 1e9) })
     }
     private fun storyOf(id: String): JSONObject? = storyList.firstOrNull { it.optString("profile_id") == id }
 
@@ -541,9 +542,10 @@ class SecretHome(
      * The words on the header's credits pill: "5 Credits" — only the number where the row would otherwise leave the logo
      * less than 18 (a very narrow phone, or a long number): the name must stay whole and readable.
      */
-    private fun headerCredits(): String {
+    private fun headerCredits(member: Boolean): String {
         val full = "${SdRules.fmtCredits(creditsNow)} Credits"
-        if (headMember != true) return full
+        // (not a member yet: the logo stands in the row's middle and makes room for the pill — see layoutHeader)
+        if (!member) return full
         val u = headU
         val vw = resources.displayMetrics.widthPixels / Ui.density
         creditsPill.text = full
@@ -551,13 +553,26 @@ class SecretHome(
         val fixed = 32f + 52f * u + 8f * u + maxOf(40f, 44f * u) + 2f + creditsPill.measuredWidth / Ui.density
         return if (vw - fixed >= LogoView.widthAt(18f) / Ui.density) full else SdRules.fmtCredits(creditsNow)
     }
-    /** a member: photo · TrueFind (in the middle of what is left) · bell + credits; not a member yet: TrueFind in the middle of the row */
+    /**
+     * a member: photo · TrueFind (right after the photo, in the room that is left) · bell + credits;
+     * not a member yet: TrueFind in the middle of the row — the photo's side made as wide as the credits pill's side, and
+     * the logo fits itself into what is left between them (on a narrow phone a little smaller, never cut, and the pill
+     * keeps its whole "0 Credits")
+     */
+    private var headSide = -1
     private fun layoutHeader(member: Boolean) {
-        if (headMember == member) return
-        headMember = member
-        headLeft.layoutParams = lp(if (member) WRAP else 0, WRAP, if (member) 0f else 1f)
-        headTitle.layoutParams = lp(if (member) 0 else WRAP, WRAP, if (member) 1f else 0f)
-        headRight.layoutParams = lp(if (member) WRAP else 0, WRAP, if (member) 0f else 1f)
+        var side = 0
+        if (!member) { creditsPill.measure(0, 0); side = maxOf(dpi(52f * headU), creditsPill.measuredWidth) }
+        if (headMember == member && (member || side == headSide)) return
+        headMember = member; headSide = side
+        headLeft.layoutParams = lp(if (member) WRAP else side, WRAP)
+        headTitle.layoutParams = lp(0, WRAP, 1f)
+        headRight.layoutParams = lp(if (member) WRAP else side, WRAP)
+        (logo.layoutParams as? LayoutParams)?.let {
+            it.gravity = if (member) Gravity.START or Gravity.CENTER_VERTICAL else Gravity.CENTER
+            it.leftMargin = if (member) dpi(8f * headU) else 0
+            logo.layoutParams = it
+        }
         bellBtn.visibility = if (member) VISIBLE else GONE
     }
     /** the bell: a red number at its corner while new likes / messages / views are unseen */
@@ -754,7 +769,7 @@ class SecretHome(
             else -> myBadge.addView(View(context).apply { background = oval(K.green, 2.5f, Color.WHITE) }, LayoutParams(dpi(14f), dpi(14f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(3f) })
         }
         val creditsFull = "${SdRules.fmtCredits(creditsNow)} Credits"
-        creditsPill.text = headerCredits()
+        creditsPill.text = headerCredits(!needSecret)
         creditsPill.contentDescription = "${creditsNow?.let { "$it credits" } ?: "Credits"}. Open Secret Dating wallet"
         renderNotice()
         // complete-profile prompt
@@ -1448,6 +1463,7 @@ class SecretHome(
             "activity-match" -> openMyActivity("match")
             "activity-req" -> openMyActivity("req")
             "demo-profile" -> online?.firstOrNull { SdDemo.isDemo(it) && SdRules.liveOf(it) }?.let { openProfile(it) }
+            "demo-profile-new" -> online?.filter { SdDemo.isDemo(it) }?.getOrNull(8)?.let { openProfile(it) }
             "demo-request" -> online?.firstOrNull { SdDemo.isDemo(it) }?.let { askRequest(it) }
             // (a demo person outside the chat list's five: Send Request starts a new, empty chat)
             "demo-request-new" -> online?.filter { SdDemo.isDemo(it) }?.getOrNull(8)?.let { askRequest(it) }
