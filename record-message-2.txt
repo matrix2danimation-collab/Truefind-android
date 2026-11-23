@@ -1,0 +1,61 @@
+    NotificationRecord(0x02919dbf: pkg=app.truefind.android user=UserHandle{0} id=2 tag=m-T3b importance=4 key=0|app.truefind.android|2|m-T3b|10077 channel=tf_messages: Notification(channel=tf_messages pri=1 contentView=null vibrate=null sound=null defaults=0x0 flags=0x10 color=0x00000000 category=msg groupKey=tf_alerts vis=PRIVATE))
+      uid=10077 userId=0
+      icon=Icon(typ=RESOURCE pkg=app.truefind.android id=0x7f070079) / app.truefind.android:drawable/ic_stat_tf
+      pri=1
+      key=0|app.truefind.android|2|m-T3b|10077
+      seen=true
+      groupKey=0|app.truefind.android|g:tf_alerts
+      fullscreenIntent=null
+      contentIntent=PendingIntent{6ca8c8c: PendingIntentRecord{54d2a60 app.truefind.android startActivity (whitelist: 210ea09:+30s0ms)}}
+      deleteIntent=PendingIntent{b58afd5: PendingIntentRecord{183889c app.truefind.android broadcastIntent (whitelist: 210ea09:+30s0ms)}}
+      tickerText=null
+      contentView=null
+      bigContentView=null
+      headsUpContentView=null
+      color=0x00000000      timeout=unknown
+      extras={
+          android.title=String (New message)
+          android.subText=null
+          android.template=String (android.app.Notification$BigTextStyle)
+          android.showChronometer=Boolean (false)
+          android.text=String (Someone else sent you a message)
+          android.progress=Integer (0)
+          androidx.core.app.extra.COMPAT_TEMPLATE=String (androidx.core.app.NotificationCompat$BigTextStyle)
+          android.progressMax=Integer (0)
+          android.appInfo=ApplicationInfo (ApplicationInfo{ed7ce4b app.truefind.android})
+          android.showWhen=Boolean (true)
+          android.largeIcon=null
+          android.bigText=String (Someone else sent you a message)
+          android.infoText=null
+          android.progressIndeterminate=Boolean (false)
+          android.remoteInputHistory=null
+      }
+      stats=SingleNotificationStats{posttimeElapsedMs=134279, posttimeToFirstClickMs=-1, posttimeToDismissMs=-1, airtimeCount=0, airtimeMs=0, currentAirtimeStartElapsedMs=-1, airtimeExpandedMs=0, posttimeToFirstVisibleExpansionMs=-1, currentAirtimeExpandedStartElapsedMs=-1, requestedImportance=4, naturalImportance=4, isNoisy=true}
+      mContactAffinity=0.0
+      mRecentlyIntrusive=true
+      mPackagePriority=0
+      mPackageVisibility=-1000
+      mUserImportance=HIGH
+      mImportance=HIGH
+      mImportanceExplanation=You set the importance of these notifications.
+      mIntercept=false
+      mGlobalSortKey=intrsv=0:grnk=0x0003:gsmry=1:nsk:rnk=0x0000
+      mRankingTimeMs=1795463291309
+      mCreationTimeMs=1795463291317
+      mVisibleSinceMs=0
+      mUpdateTimeMs=1795463291317
+      mSuppressedVisualEffects= 0
+      mSound= content://settings/system/notification_sound
+      mVibration= [J@5824e2b
+      mAttributes= AudioAttributes: usage=5 content=4 flags=0x0 tags= bundle=null
+      mLight= null
+      mShowBadge=true
+      effectiveNotificationChannel=NotificationChannel{mId='tf_messages', mName=Messages and missed calls, mDescription=, mImportance=4, mBypassDnd=false, mLockscreenVisibility=-1000, mSound=content://settings/system/notification_sound, mLights=false, mLightColor=0, mVibration=[0, 120, 80, 120], mUserLockedFields=0, mVibrationEnabled=true, mShowBadge=true, mDeleted=false, mGroup='null', mAudioAttributes=AudioAttributes: usage=5 content=4 flags=0x0 tags= bundle=null, mBlockableSystem=false}
+    NotificationRecord(0x0142fb18: pkg=app.truefind.android user=UserHandle{0} id=2 tag=m-T3 importance=4 key=0|app.truefind.android|2|m-T3|10077 channel=tf_messages: Notification(channel=tf_messages pri=1 contentView=null vibrate=null sound=null defaults=0x0 flags=0x10 color=0x00000000 category=msg groupKey=tf_alerts vis=PRIVATE))
+      uid=10077 userId=0
+      icon=Icon(typ=RESOURCE pkg=app.truefind.android id=0x7f070079) / app.truefind.android:drawable/ic_stat_tf
+      pri=1
+      key=0|app.truefind.android|2|m-T3|10077
+      seen=true
+      groupKey=0|app.truefind.android|g:tf_alerts
+      fullscreenIntent=null
