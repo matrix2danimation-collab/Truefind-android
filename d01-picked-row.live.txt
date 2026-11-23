@@ -1,0 +1,392 @@
+--------- beginning of system
+11-23 20:16:59.927   523  2350 W ActivityTaskManager: callingPackage for (uid=2000, pid=6716) has no WPC
+11-23 20:16:59.928   523  2350 D CompatibilityChangeReporter: Compat change id reported: 265464455; UID 10192; state: DISABLED
+11-23 20:16:59.928   523  2350 D CompatibilityChangeReporter: Compat change id reported: 265452344; UID 10192; state: DISABLED
+11-23 20:16:59.928   523  2350 D CompatibilityChangeReporter: Compat change id reported: 266124927; UID 10192; state: DISABLED
+11-23 20:16:59.928   523  2350 D CompatibilityChangeReporter: Compat change id reported: 265451093; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 265456536; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 255940284; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 236283604; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 263959004; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 264304459; UID 10192; state: DISABLED
+11-23 20:16:59.929   523  2350 D CompatibilityChangeReporter: Compat change id reported: 264301586; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 254631730; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 273509367; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 263259275; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10192; state: DISABLED
+11-23 20:16:59.930   523  2350 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10192; state: ENABLED
+11-23 20:16:59.935   523  2350 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+11-23 20:16:59.940   523  2350 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10192; state: ENABLED
+11-23 20:16:59.948   842   873 V WindowManagerShell: Transition requested: android.os.BinderProxy@deb0d5e TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=13 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=167871 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@fdb853f} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{cb1e0c app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-23 20:16:59.952   523  2350 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=app.truefind.android/.MainActivity (has extras)} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+--------- beginning of main
+11-23 20:16:59.978   842   888 D SplashScreenView: Build android.window.SplashScreenView{8101fd1 V.E...... ......ID 0,0-0,0}
+11-23 20:16:59.978   842   888 D SplashScreenView: Icon: view: android.widget.ImageView{5356a36 V.ED..... ......I. 0,0-0,0 #10204f0 android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@9dedd37 size: 420
+11-23 20:16:59.978   842   888 D SplashScreenView: Branding: view: android.view.View{ad522a4 G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-23 20:16:59.983   523   545 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10192; state: DISABLED
+11-23 20:16:59.985   523   545 W ProcessStats: Tracking association SourceState{880d2e8 com.google.android.gms/10131 BTop #12031} whose proc state 2 is better than process ProcessState{2cc8cc0 com.google.android.gms.persistent/10131 pkg=com.google.android.gms} proc state 4 (9189 skipped)
+11-23 20:16:59.985   523   553 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10192; state: ENABLED
+11-23 20:16:59.989   523   606 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10192; state: ENABLED
+11-23 20:16:59.997   337   337 D Zygote  : Forked child process 6719
+11-23 20:16:59.998   523   553 I ActivityManager: Start proc 6719:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-23 20:17:00.002   401   401 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+11-23 20:17:00.007   523  2445 D CoreBackPreview: Window{bdf2b18 u0 Splash Screen app.truefind.android}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a2b3fd7, mPriority=0, mIsAnimationCallback=false}
+11-23 20:17:00.016  6719  6719 I ruefind.android: Late-enabling -Xcheck:jni
+11-23 20:17:00.041  6719  6719 I ruefind.android: Using CollectorTypeCC GC.
+11-23 20:17:00.041  6719  6719 W ruefind.android: Unexpected CPU variant for x86: x86_64.
+11-23 20:17:00.041  6719  6719 W ruefind.android: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-23 20:17:00.138   414   425 I adbd    : jdwp connection from 6719
+11-23 20:17:00.145  1674  1674 I GsaVoiceInteractionSrv: Handling ACTION_STOP_HOTWORD
+11-23 20:17:00.150   523   542 V WindowManager: Sent Transition #18 createdAt=11-23 20:16:59.930 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=13 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=167871 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{7244530 Task{88b82c #13 type=standard A=10192:app.truefind.android}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{aa645a9 app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-23 20:17:00.151   523   542 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+11-23 20:17:00.151   523   542 V WindowManager:     info={id=18 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{7244530 Task{88b82c #13 type=standard A=10192:app.truefind.android}}} m=OPEN f=NONE leash=Surface(name=Task=13)/@0x6752ee2 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{8b31662 Task{47a419d #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x3be92dc sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-23 20:17:00.156  1619  1695 I AiAiEcho: Predicting[0]: 
+11-23 20:17:00.157  1619  1695 I AiAiEcho: EchoTargets: 
+11-23 20:17:00.157  1619  1695 I AiAiEcho: Filtered by AiAi flag check: 
+11-23 20:17:00.157  1619  1695 I AiAiEcho: Ranked targets strategy: SORT, count: 0, ranking metadata: 
+11-23 20:17:00.158  1619  1695 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+11-23 20:17:00.165  1674  2186 E HwDetectorWithState: a: 3
+11-23 20:17:00.169   842   842 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+11-23 20:17:00.170   842   873 V WindowManagerShell: onTransitionReady android.os.BinderProxy@deb0d5e: {id=18 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@95d0bc5} m=OPEN f=NONE leash=Surface(name=Task=13)/@0xb238a0e sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@592391a} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x7063c2f sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-23 20:17:00.170   842   873 V WindowManagerShell: Playing animation for (#18)android.os.BinderProxy@deb0d5e@0
+11-23 20:17:00.170   842   873 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@ccc485b
+11-23 20:17:00.170   842   873 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@268b8f8
+11-23 20:17:00.170   842   873 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@6c281d1
+11-23 20:17:00.171   842   873 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@d052436
+11-23 20:17:00.171   842   873 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+11-23 20:17:00.171   842   873 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@3fd0f37
+11-23 20:17:00.171   842   873 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@8ec6ca4
+11-23 20:17:00.171   842   873 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@9c6a0d
+11-23 20:17:00.171   842   873 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=18 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@95d0bc5} m=OPEN f=NONE leash=Surface(name=Task=13)/@0xb238a0e sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@592391a} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x7063c2f sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-23 20:17:00.171   842   873 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@89ade6b, appThread = android.app.IApplicationThread$Stub$Proxy@b777dc8, debugName = LauncherToDream }}
+11-23 20:17:00.171   842   873 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@ae3ae61, appThread = android.app.IApplicationThread$Stub$Proxy@218fd86, debugName = QuickstepLaunchHome }}
+11-23 20:17:00.171   842   873 V WindowManagerShell:  Delegate animation for #18 to null
+11-23 20:17:00.171   842   873 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@1f0840e
+11-23 20:17:00.171   842   873 V WindowManagerShell: start default transition animation, info = {id=18 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@95d0bc5} m=OPEN f=NONE leash=Surface(name=Task=13)/@0xb238a0e sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@592391a} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x7063c2f sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-23 20:17:00.171   842   873 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@9a32628 animAttr=0x13 type=OPEN isEntrance=false
+11-23 20:17:00.182   842   873 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@28419c3 animAttr=0x12 type=OPEN isEntrance=true
+11-23 20:17:00.183   842   873 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@1f0840e
+11-23 20:17:00.199   842   873 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#18)android.os.BinderProxy@deb0d5e@0
+11-23 20:17:00.201   842   873 V WindowManagerShell: Track 0 became idle
+11-23 20:17:00.201   842   873 V WindowManagerShell: All active transition animations finished
+11-23 20:17:00.229   523   542 V WindowManager: Finish Transition #18: created at 11-23 20:16:59.930 collect-started=0.035ms request-sent=16.989ms started=32.173ms ready=212.589ms sent=218.025ms finished=269.565ms
+11-23 20:17:00.314   842   909 D EGL_emulation: app_time_stats: avg=817.32ms min=9.02ms max=1625.63ms count=2
+11-23 20:17:00.316  5141  5233 D EGL_emulation: app_time_stats: avg=652.80ms min=110.93ms max=1615.41ms count=3
+11-23 20:17:00.362   842   873 W Looper  : Slow dispatch took 38ms wmshell.main h=android.os.Handler c=com.android.wm.shell.common.ShellExecutor$$ExternalSyntheticLambda1@f88e9cd m=0
+11-23 20:17:00.399   523  2444 W ActivityManager: Slow operation: 79ms so far, now at attachApplicationLocked: immediately after bindApplication
+11-23 20:17:00.399   523  2444 W ActivityManager: Slow operation: 79ms so far, now at attachApplicationLocked: after updateLruProcessLocked
+11-23 20:17:00.413  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+11-23 20:17:00.413  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+11-23 20:17:00.419   523  2408 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10192; state: ENABLED
+11-23 20:17:00.436   842   909 D EGL_emulation: app_time_stats: avg=1667.62ms min=1667.62ms max=1667.62ms count=1
+11-23 20:17:00.436   842   842 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-23 20:17:00.438  6719  6719 W ziparchive: Unable to open '/data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/base.dm': No such file or directory
+11-23 20:17:00.438  6719  6719 W ziparchive: Unable to open '/data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/base.dm': No such file or directory
+11-23 20:17:00.641  6719  6719 D nativeloader: Configuring clns-6 for other apk /data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/lib/x86_64:/data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/app.truefind.android
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment: Currently set values for:
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment: ANGLE GameManagerService for app.truefind.android: false
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment: app.truefind.android is not listed in per-application setting
+11-23 20:17:00.649  6719  6719 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-23 20:17:00.663  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10192; state: ENABLED
+11-23 20:17:00.668   523   576 I AppsFilter: interaction: PackageSetting{ae86e63 app.truefind.android/10192} -> PackageSetting{a2b5a60 com.google.android.contacts/10153} BLOCKED
+11-23 20:17:00.672  1031  1031 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_CHANGED
+11-23 20:17:00.672  1031  1031 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_CHANGED
+11-23 20:17:00.678   523   625 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+11-23 20:17:00.679  1055  1055 D CarrierSvcBindHelper: onPackageModified: com.google.android.contacts
+11-23 20:17:00.680  1055  1055 D CarrierSvcBindHelper: No carrier app for: 0
+11-23 20:17:00.681   844  3577 I PermissionControllerServiceImpl: Updating user sensitive for uid 10153
+11-23 20:17:00.685   842   842 D ControlsListingControllerImpl: ServiceConfig reloaded, count: 0
+11-23 20:17:00.686  6719  6719 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+11-23 20:17:00.694   842   904 D StylusManager: Stylus InputDevice changed: 14 virtio_input_multi_touch_11
+11-23 20:17:00.696   842   904 D StylusManager: Stylus InputDevice changed: 13 virtio_input_multi_touch_10
+11-23 20:17:00.699  6719  6719 I FirebaseInitProvider: FirebaseApp initialization successful
+11-23 20:17:00.700   842   904 D StylusManager: Stylus InputDevice changed: 12 virtio_input_multi_touch_9
+11-23 20:17:00.705  1055  1309 D ImsResolver: maybeAddedImsService, packageName: com.google.android.contacts
+11-23 20:17:00.708   842   904 D StylusManager: Stylus InputDevice changed: 10 virtio_input_multi_touch_7
+11-23 20:17:00.710   842   904 D StylusManager: Stylus InputDevice changed: 9 virtio_input_multi_touch_6
+11-23 20:17:00.712   842   904 D StylusManager: Stylus InputDevice changed: 8 virtio_input_multi_touch_5
+11-23 20:17:00.714   842   904 D StylusManager: Stylus InputDevice changed: 5 virtio_input_multi_touch_2
+11-23 20:17:00.714   523   916 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 6719
+11-23 20:17:00.717   842   904 D StylusManager: Stylus InputDevice changed: 11 virtio_input_multi_touch_8
+11-23 20:17:00.719   523   551 E system_server: No package ID 7f found for resource ID 0x7f080107.
+11-23 20:17:00.720   523   551 E system_server: No package ID 7f found for resource ID 0x7f150560.
+11-23 20:17:00.722   842   904 D StylusManager: Stylus InputDevice changed: 7 virtio_input_multi_touch_4
+11-23 20:17:00.726  1619  1619 I AiAiEcho: AppFetcherImpl onPackageChanged com.google.android.contacts.
+11-23 20:17:00.730   842   904 D StylusManager: Stylus InputDevice changed: 6 virtio_input_multi_touch_3
+11-23 20:17:00.731  1619  3251 I AiAiEcho: AppIndexer Package:[com.google.android.contacts] UserProfile:[0] Enabled:[true].
+11-23 20:17:00.731  1619  3251 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.google.android.contacts], userId:[0], reason:[package is updated.].
+11-23 20:17:00.739   842   904 D StylusManager: Stylus InputDevice changed: 4 virtio_input_multi_touch_1
+11-23 20:17:00.757  6719  6745 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-23 20:17:00.759  6719  6745 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-23 20:17:00.764  6719  6745 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-23 20:17:00.802   336  6752 I resolv  : GetAddrInfoHandler::run: {101 101 101 983141 10192 0}
+11-23 20:17:00.804   336  6754 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-23 20:17:00.805   336  6754 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cab1db57cf0
+11-23 20:17:00.806   336  6754 I resolv  : doQuery: rcode=0, ancount=8, return value=182
+11-23 20:17:00.807   336  6753 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-23 20:17:00.807   336  6753 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7ca9cdb5d150
+11-23 20:17:00.807   336  6753 I resolv  : doQuery: rcode=0, ancount=8, return value=278
+11-23 20:17:00.810  6719  6751 D TrafficStats: tagSocket(83) with statsTag=0x8001, statsUid=-1
+11-23 20:17:00.847  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+11-23 20:17:00.864  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+11-23 20:17:00.975  6719  6758 W PathParser: Points are too far apart 4.010396595255705
+11-23 20:17:00.977  6719  6758 W PathParser: Points are too far apart 4.010396595255705
+11-23 20:17:00.980  6719  6758 W PathParser: Points are too far apart 4.010396595255705
+11-23 20:17:00.981  6719  6758 W PathParser: Points are too far apart 4.010396595255705
+11-23 20:17:01.095  6719  6719 W PathParser: Points are too far apart 4.000000000000002
+11-23 20:17:01.120  6719  6719 W PathParser: Points are too far apart 4.000003365909959
+11-23 20:17:01.171  4377  4500 I Bugle   : BroadcastReceiverAsyncWorkTracker: Acknowledging broadcast of bdxy@db07a8c
+11-23 20:17:01.187  5783  6614 I Fitness : OnPackageChangedOperation got intent: Intent { act=android.intent.action.PACKAGE_CHANGED dat=package: flg=0x45000010 pkg=com.google.android.gms cmp=com.google.android.gms/.chimera.PersistentIntentOperationService (has extras) } [CONTEXT service_id=17 ]
+11-23 20:17:01.195  5783  6483 W ChimeraUtils: Module com.google.android.gms.nearby_en missing resource null(0)
+11-23 20:17:01.203  5783  6297 I Fitness : FitCleanupIntentOperation received Intent android.intent.action.PACKAGE_CHANGED [CONTEXT service_id=17 ]
+11-23 20:17:01.207  5783  6483 W ChimeraUtils: Module com.google.android.gms.nearby_en missing resource null(0)
+11-23 20:17:01.214  5858  6399 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+11-23 20:17:01.224  5858  6399 I Icing   : Indexing done com.google.android.gms-apps
+11-23 20:17:01.226  5858  6399 I Icing   : Indexing com.google.android.gms-internal.3p:MobileApplication from com.google.android.gms
+11-23 20:17:01.229  5858  6399 I Icing   : Indexing done com.google.android.gms-internal.3p:MobileApplication
+11-23 20:17:01.340  6719  6719 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+11-23 20:17:01.340  6719  6719 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-23 20:17:01.346  6719  6719 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+11-23 20:17:01.350  6719  6719 W OpenGLRenderer: Unknown dataspace 0
+11-23 20:17:01.358  6719  6719 I Choreographer: Skipped 38 frames!  The application may be doing too much work on its main thread.
+11-23 20:17:01.423   523  2445 D CoreBackPreview: Window{1805118 u0 app.truefind.android/app.truefind.android.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b031dd7, mPriority=0, mIsAnimationCallback=false}
+11-23 20:17:01.438  6719  6742 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-23 20:17:01.468   136   136 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-23 20:17:01.469  6719  6742 I Gralloc4: mapper 4.x is not supported
+11-23 20:17:01.642   523   542 W ziparchive: Unable to open '/data/app/~~eNk-3JXevvp9Ky_QtjpV7w==/app.truefind.android-rNE5Wb2kzz7EGx2cWG9FUQ==/base.dm': No such file or directory
+11-23 20:17:01.643   523   542 I ActivityTaskManager: Displayed app.truefind.android/.MainActivity for user 0: +1s714ms
+11-23 20:17:01.644   523  2445 D ConnectivityService: requestNetwork for uid/pid:10192/6719 activeRequest: null callbackRequest: 155 [NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-23 20:17:01.647   523   760 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-23 20:17:01.649   523   760 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-23 20:17:01.649   523   760 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-23 20:17:01.656  6719  6733 I OpenGLRenderer: Davey! duration=932ms; Flags=1, FrameTimelineVsyncId=11081, IntendedVsync=168639871498, Vsync=169273204806, InputEventId=0, HandleInputStart=169282645731, AnimationStart=169282651902, PerformTraversalsStart=169282796962, DrawStart=169412357514, FrameDeadline=168656538164, FrameInterval=169282242247, FrameStartTime=16666666, SyncQueued=169414826552, SyncStart=169415611698, IssueDrawCommandsStart=169416009771, SwapBuffers=169430828879, FrameCompleted=169573367474, DequeueBufferDuration=4178, QueueBufferDuration=536301, GpuCompleted=169573367474, SwapBuffersCompleted=169559077628, DisplayPresentTime=16496969387776, CommandSubmissionCompleted=169430828879, 
+11-23 20:17:01.657   523   760 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=156, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-23 20:17:01.658   523   767 D ConnectivityService: NetReassign [156 : null → 101] [c 1] [a 1] [i 12]
+11-23 20:17:01.659  6719  6766 I TFDBG   : slow frame #1 total=933ms anim=0 layout=129 draw=2 sync=0 issue=14 swap=128 gpu=142
+11-23 20:17:01.674  6719  6719 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-23 20:17:01.682   523  2350 D CompatibilityChangeReporter: Compat change id reported: 261072174; UID 10192; state: ENABLED
+11-23 20:17:01.683  6719  6736 W ruefind.android: Long monitor contention with owner TAG (6746) at com.google.android.gms.tasks.Task com.google.firebase.messaging.RequestDeduplicator.getOrStartGetTokenRequest(java.lang.String, com.google.firebase.messaging.RequestDeduplicator$GetTokenRequest)(RequestDeduplicator.java:77) waiters=0 in com.google.android.gms.tasks.Task com.google.firebase.messaging.RequestDeduplicator.getOrStartGetTokenRequest(java.lang.String, com.google.firebase.messaging.RequestDeduplicator$GetTokenRequest) for 863ms
+11-23 20:17:01.708   842   884 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda17@c25e80d
+11-23 20:17:01.710   523  2350 W InputManager-JNI: Input channel object 'bdf2b18 Splash Screen app.truefind.android (client)' was disposed without first being removed with the input manager!
+11-23 20:17:01.713   523  2445 D CoreBackPreview: Window{bdf2b18 u0 Splash Screen app.truefind.android EXITING}: Setting back callback null
+11-23 20:17:01.722  5141  5280 D OneSearchSuggestProvider: Shut down the binder channel
+11-23 20:17:01.726  5141  5261 I IPCThreadState: oneway function results for code 2 on binder at 0x71ac01acdeb0 will be dropped but finished with status UNKNOWN_TRANSACTION
+11-23 20:17:01.726  5141  5198 I ImeTracker: com.google.android.apps.nexuslauncher:40cef70b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-23 20:17:01.726   523  2445 I ImeTracker: com.google.android.apps.nexuslauncher:40cef70b: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-23 20:17:01.863   842   909 D EGL_emulation: app_time_stats: avg=511.26ms min=33.55ms max=1432.38ms count=3
+11-23 20:17:01.900   523  2350 D OomAdjuster: Not killing cached processes
+11-23 20:17:01.913   523  2350 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10192; state: ENABLED
+11-23 20:17:01.913   523  2350 I ImeTracker: app.truefind.android:d387794e: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-23 20:17:01.913   523  2350 I ImeTracker: app.truefind.android:d387794e: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-23 20:17:01.916  1555  1555 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3227 
+11-23 20:17:01.917  1555  1555 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 0, unlocked = true
+11-23 20:17:01.917  1555  1555 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=app.truefind.android fieldId=0 fieldName=null extras=null}, false)
+11-23 20:17:01.917  1555  1555 I GoogleInputMethodService: GoogleInputMethodService.shouldHideHeaderOnInitialState():4008 ShouldHideHeaderOnInitialState = false
+11-23 20:17:01.918  1555  1555 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 2, unlocked = true
+11-23 20:17:01.976   336  6780 I resolv  : GetAddrInfoHandler::run: {101 786533 101 983141 10131 0}
+11-23 20:17:01.980   336  6781 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-23 20:17:01.980   336  6781 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cab1db57610
+11-23 20:17:01.980   336  6781 I resolv  : doQuery: rcode=0, ancount=5, return value=177
+11-23 20:17:02.000   336  6782 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-23 20:17:02.000   336  6782 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cab1db5a4d0
+11-23 20:17:02.001   336  6782 I resolv  : doQuery: rcode=0, ancount=7, return value=161
+11-23 20:17:02.006  5783  6072 D TrafficStats: tagSocket(266) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.180  5783  6072 D TrafficStats: tagSocket(267) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.198  5783  6072 D TrafficStats: tagSocket(266) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.199  5783  6072 D TrafficStats: tagSocket(267) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.307  5783  6072 D TrafficStats: tagSocket(268) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.367  5783  6072 D TrafficStats: tagSocket(266) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.369  5783  6072 D TrafficStats: tagSocket(267) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.372  5783  6072 D TrafficStats: tagSocket(266) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.376  5783  6072 D TrafficStats: tagSocket(266) with statsTag=0x407, statsUid=-1
+11-23 20:17:02.954   523  3277 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-23 20:17:03.306  1031  1334 D BtGatt.ScanManager: uid 10131 isForeground true scanMode -1
+11-23 20:17:03.306  1031  1334 D BtGatt.ScanManager: uid 10131 isForeground true scanMode -1
+11-23 20:17:03.394  6719  6719 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 933ms)
+11-23 20:17:03.932  6719  6733 I OpenGLRenderer: Davey! duration=1866ms; Flags=0, FrameTimelineVsyncId=11147, IntendedVsync=169356538136, Vsync=169639871458, InputEventId=0, HandleInputStart=169649743712, AnimationStart=169649748731, PerformTraversalsStart=169650148658, DrawStart=169670569424, FrameDeadline=169606538126, FrameInterval=169646700021, FrameStartTime=16666666, SyncQueued=169813612188, SyncStart=169813746018, IssueDrawCommandsStart=169816592340, SwapBuffers=171157753278, FrameCompleted=171223496257, DequeueBufferDuration=3316, QueueBufferDuration=180246, GpuCompleted=171223496257, SwapBuffersCompleted=171217378470, DisplayPresentTime=20401094660746, CommandSubmissionCompleted=171157753278, 
+11-23 20:17:03.934  6719  6766 I TFDBG   : slow frame #2 total=1866ms anim=0 layout=20 draw=143 sync=2 issue=1341 swap=59 gpu=65
+11-23 20:17:04.022  1757  2492 W A       : Batch timed out; batchId=1 taskId=-1000007
+11-23 20:17:04.029   523  2408 W JobScheduler: Job didn't exist in JobStore: b0f3060 #u0a132/-1000007 com.google.android.googlequicksearchbox/com.google.android.apps.gsa.tasks.BackgroundTasksJobService
+11-23 20:17:04.060  6719  6733 I OpenGLRenderer: Davey! duration=1300ms; Flags=0, FrameTimelineVsyncId=11308, IntendedVsync=169923204780, Vsync=170389871428, InputEventId=0, HandleInputStart=170392551223, AnimationStart=170392556062, PerformTraversalsStart=170392610904, DrawStart=170459827536, FrameDeadline=171256538060, FrameInterval=170392371397, FrameStartTime=16666666, SyncQueued=170467976156, SyncStart=171217637073, IssueDrawCommandsStart=171218375579, SwapBuffers=171856402658, FrameCompleted=171973400977, DequeueBufferDuration=3626, QueueBufferDuration=381281, GpuCompleted=171973400977, SwapBuffersCompleted=171957936402, DisplayPresentTime=26061861558144, CommandSubmissionCompleted=171856402658, 
+11-23 20:17:04.064  6719  6766 I TFDBG   : slow frame #3 total=2050ms anim=0 layout=67 draw=8 sync=0 issue=638 swap=101 gpu=116
+11-23 20:17:04.081  1757  2260 D t       : Starting download: https://www.gstatic.com/assistant/appintegration/models/1/662c5aa4617258c027708e2bb9323ead.binarypb
+11-23 20:17:04.081  1757  2260 V t       : Is http uri, downloading (uri: https://www.gstatic.com/assistant/appintegration/models/1/662c5aa4617258c027708e2bb9323ead.binarypb)
+11-23 20:17:04.085  1757  2937 D t       : Starting download: https://www.gstatic.com/assistant/appintegration/models/1/05a8f7c516a3ad6c26cc4161a3dd6ac6.binarypb
+11-23 20:17:04.085  1757  2937 V t       : Is http uri, downloading (uri: https://www.gstatic.com/assistant/appintegration/models/1/05a8f7c516a3ad6c26cc4161a3dd6ac6.binarypb)
+11-23 20:17:04.085  1757  2503 I A       : NGA Sync: MDD Task: MDD.CHARGING.PERIODIC.TASK done.
+11-23 20:17:04.086  1757  2503 I A       : NGA Sync: isNgaSyncEnabled: false; enableFileGroupPopulator: false; requiresMddAssets: false
+11-23 20:17:04.089  1757  3044 W SearchServiceCore: Abort, client detached.
+11-23 20:17:04.089  1757  3044 W SearchServiceCore: Abort, client detached.
+11-23 20:17:04.090  1757  2352 I A       : Refresh account policy.
+11-23 20:17:04.114  1757  2260 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916707
+11-23 20:17:04.116  1757  2937 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916708
+11-23 20:17:04.118  1757  6088 D t       : Starting download: https://dl.google.com/assistant/nga/1/4bce3720332aff95260f75ee29bbe97bd379e868.mddz
+11-23 20:17:04.118  1757  6088 V t       : Is http uri, downloading (uri: https://dl.google.com/assistant/nga/1/4bce3720332aff95260f75ee29bbe97bd379e868.mddz)
+11-23 20:17:04.123  1757  2937 D t       : Starting download: https://dl.google.com/assistant/nga/1/17d453d07f334b7d810f8e6e05dbd6001dc45eea.mddz
+11-23 20:17:04.123  1757  2937 V t       : Is http uri, downloading (uri: https://dl.google.com/assistant/nga/1/17d453d07f334b7d810f8e6e05dbd6001dc45eea.mddz)
+11-23 20:17:04.700  1757  2937 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916711_a64a3f98d26fa7e7180cd6d29bf44fced216fc32
+11-23 20:17:04.712  1757  2260 D t       : Starting download: https://dl.google.com/assistant/nga/1/c11ffd9ddd4f0c6433a5cb07a437812b735fa547.mddz
+11-23 20:17:04.712  1757  2260 V t       : Is http uri, downloading (uri: https://dl.google.com/assistant/nga/1/c11ffd9ddd4f0c6433a5cb07a437812b735fa547.mddz)
+11-23 20:17:04.712   523   613 D ActivityManager: freezing 2358 com.google.android.tts
+11-23 20:17:04.743   523   613 D ActivityManager: freezing 1739 com.google.android.apps.youtube.music
+11-23 20:17:04.761  1757  2260 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916712_5e9da2701f510020f2592c1e5b468922569445d7
+11-23 20:17:04.789  1757  2937 D t       : Starting download: https://dl.google.com/assistant/nga/1/1658155c551c182a9c9cbdff0bc6cd4293920bc3.mddz
+11-23 20:17:04.789  1757  2937 V t       : Is http uri, downloading (uri: https://dl.google.com/assistant/nga/1/1658155c551c182a9c9cbdff0bc6cd4293920bc3.mddz)
+11-23 20:17:04.794   523   613 D ActivityManager: freezing 5569 com.google.android.settings.intelligence
+11-23 20:17:04.842  1757  2937 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916713_b56351a773b9354cf1ebcacf86f309b6489173ac
+11-23 20:17:04.906  1757  6088 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916710_1d48ae4b292cd15bc945ae5ddedb9565d268f7e2
+11-23 20:17:04.909  1757  2260 D t       : Starting download: https://www.gstatic.com/federated_assistant/policy_config_federated_hotword-v610555528.binarypb
+11-23 20:17:04.909  1757  2260 V t       : Is http uri, downloading (uri: https://www.gstatic.com/federated_assistant/policy_config_federated_hotword-v610555528.binarypb)
+11-23 20:17:04.925  1757  2260 E MDD     : DownloadProgressMonitor: Can't find file group for uri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916709
+11-23 20:17:04.943  1757  2932 E SingleDataFileGroupPop: Failed to add file group 
+11-23 20:17:04.943  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.943  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.943  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.943  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.943  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.944  1757  2932 E d       : RuntimeException while executing runnable cb{com.google.apps.tiktok.tracing.ej@de1ca99} with executor MoreExecutors.directExecutor()
+11-23 20:17:04.944  1757  2932 E d       : java.lang.NullPointerException: Attempt to read from field 'java.lang.String com.google.android.libraries.mdi.download.ae.b' on a null object reference in method 'void com.google.android.libraries.mdi.download.h.bq.gH(java.lang.Object)'
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.mdi.download.h.bq.gH(PG:2)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.apps.tiktok.tracing.ej.gH(PG:2)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.cb.run(PG:7)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.bf.execute(PG:1)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.d.i(PG:1)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.d.iq(PG:5)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.ci.t(PG:1)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.mdi.download.h.bu.b(PG:26)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.mdi.download.gs.p(PG:3)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.mdi.download.gf.apply(Unknown Source:4)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.apps.tiktok.tracing.eo.apply(PG:2)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.h.e(PG:2)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.j.run(PG:9)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.common.util.concurrent.do.run(PG:4)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.i.ae.run(PG:1)
+11-23 20:17:04.944  1757  2932 E d       : 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-23 20:17:04.944  1757  2932 E d       : 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.i.i.run(PG:2)
+11-23 20:17:04.944  1757  2932 E d       : 	at com.google.android.libraries.i.p.run(PG:4)
+11-23 20:17:04.944  1757  2932 E d       : 	at java.lang.Thread.run(Thread.java:1012)
+11-23 20:17:04.944  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.944  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.944  1757  2932 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:04.945  1757  2932 I A       : Download file group for language pack: en-US
+11-23 20:17:04.945  1757  2932 W A       : Locale en-US is not compatible, please check manifest exists
+11-23 20:17:04.945  1757  6091 I A       : Starting new batch; batchId=2 corpus=1014
+11-23 20:17:04.945  1757  2868 I A       : Joining existing batch; batchId=2 corpus=1015
+11-23 20:17:04.946  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.947  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.948  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.948  1757  2932 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:04.948  1757  2937 I A       : Joining existing batch; batchId=2 corpus=1008
+11-23 20:17:04.948  1757  2932 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.948  1757  2932 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:04.948  1757  2932 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:04.949  1757  2932 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:04.949  1757  2932 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.949  1757  2932 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:04.949  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.950  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.950  1757  2932 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:04.950  1757  2932 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.950  1757  2932 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:04.950  1757  2932 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:04.951  1757  2932 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:04.951  1757  2932 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.951  1757  2932 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:04.952  1757  2932 I A       : Using proto config with mendel
+11-23 20:17:04.952  1757  2932 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:04.952  1757  2932 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.952  1757  2932 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:04.953  1757  2932 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:04.953  1757  2932 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:04.953  1757  2932 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:04.953  1757  2932 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:04.956  1757  2932 D PhFileGroupPop: Added file groups assistant_appintegration_appactions_config
+11-23 20:17:04.957  1757  2932 D PhFileGroupPop: Added file groups fedass_policy_config_group
+11-23 20:17:04.958  1757  2932 D PhFileGroupPop: Added file groups tapas_cortex
+11-23 20:17:04.961  1757  2337 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:04.962  1757  2341 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:04.962  1757  2260 I A       : Joining existing batch; batchId=2 corpus=1004
+11-23 20:17:04.963  1757  2351 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:04.985  1757  2351 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:04.987  1757  2341 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:04.988  1757  2337 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:05.118  1757  2260 E SingleDataFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E d       : RuntimeException while executing runnable cb{com.google.apps.tiktok.tracing.ej@c9fb7c2} with executor MoreExecutors.directExecutor()
+11-23 20:17:05.118  1757  2260 E d       : java.lang.NullPointerException: Attempt to read from field 'java.lang.String com.google.android.libraries.mdi.download.ae.b' on a null object reference in method 'void com.google.android.libraries.mdi.download.h.bq.gH(java.lang.Object)'
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.mdi.download.h.bq.gH(PG:2)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.apps.tiktok.tracing.ej.gH(PG:2)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.cb.run(PG:7)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.bf.execute(PG:1)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.d.i(PG:1)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.d.iq(PG:5)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.ci.t(PG:1)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.mdi.download.h.bu.b(PG:26)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.mdi.download.gs.p(PG:3)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.mdi.download.gf.apply(Unknown Source:4)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.apps.tiktok.tracing.eo.apply(PG:2)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.h.e(PG:2)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.j.run(PG:9)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.common.util.concurrent.do.run(PG:4)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.i.ae.run(PG:1)
+11-23 20:17:05.118  1757  2260 E d       : 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-23 20:17:05.118  1757  2260 E d       : 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.i.i.run(PG:2)
+11-23 20:17:05.118  1757  2260 E d       : 	at com.google.android.libraries.i.p.run(PG:4)
+11-23 20:17:05.118  1757  2260 E d       : 	at java.lang.Thread.run(Thread.java:1012)
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.118  1757  2260 E PhFileGroupPop: Failed to add file group 
+11-23 20:17:05.119  1757  2260 I A       : Download file group for language pack: en-US
+11-23 20:17:05.119  1757  2260 W A       : Locale en-US is not compatible, please check manifest exists
+11-23 20:17:05.119  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.123  1757  6088 I A       : Joining existing batch; batchId=2 corpus=1004
+11-23 20:17:05.124  1757  2932 I A       : Joining existing batch; batchId=2 corpus=1008
+11-23 20:17:05.124  1757  2937 I A       : Joining existing batch; batchId=2 corpus=1014
+11-23 20:17:05.124  1757  2868 I A       : Joining existing batch; batchId=2 corpus=1015
+11-23 20:17:05.125  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.125  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.125  1757  2260 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:05.125  1757  2260 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.125  1757  2260 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:05.125  1757  2260 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:05.125  1757  2260 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:05.125  1757  2260 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.125  1757  2260 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:05.125  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.125  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.125  1757  2260 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:05.126  1757  2260 I A       : Using proto config with mendel
+11-23 20:17:05.126  1757  2260 I A       : Merging legacy hotword config map with new proto.
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: cmn-Hant-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: id-ID modelPrefix: x_google Location:cfffcc1a4c1c084c003c8eb27f73d770 isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: ko-KR modelPrefix: x_google Location:0b132163a2eb2c1194b202067475724b isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I A       : Skipping. Expected model: 2 Found: 1
+11-23 20:17:05.126  1757  2260 I A       : Adding from config to map. Locale: zh-TW modelPrefix: x_google Location:4e7cae00daee30ec565c34e3aa67a51f isSpeakerIdSupported: true
+11-23 20:17:05.126  1757  2260 I HotwordModelPopulator: #updateHotwordFileGroup group name: hotword_model_en-US_okhey, raw locale: en-US, locale: en-US
+11-23 20:17:05.126  1757  2260 D PhFileGroupPop: Added file groups assistant_appintegration_appactions_config
+11-23 20:17:05.127  1757  2260 D PhFileGroupPop: Added file groups fedass_policy_config_group
+11-23 20:17:05.127  1757  2260 D PhFileGroupPop: Added file groups tapas_cortex
+11-23 20:17:05.129  1757  2351 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:05.130  1757  2341 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:05.131  1757  2341 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:05.131  1757  2341 I MicroModelsUtil: #getHotwordModelFromMobstore [mobstoreUri: android://com.google.android.googlequicksearchbox/files/datadownload/shared/public/datadownloadfile_1795464916706]
+11-23 20:17:05.131  1757  2341 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:05.143  1757  2351 I HotwordModelPopulator: Updated file group for locale 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data. Download already finished.
+11-23 20:17:05.176  6719  6719 I TFDBG   : preview open picked
+11-23 20:17:05.204   523   613 D ActivityManager: freezing 4247 com.google.android.googlequicksearchbox
