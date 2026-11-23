@@ -310,6 +310,15 @@ tshot() {
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
   { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
 }
+# the Home card's size (owner's second picture, 23 Nov): exactly the picture's (the page scrolls) · as tall as the first screen allows
+if [ "$SET" = card ]; then
+shot c01-exact-first home --es tf_preview secret --ez tf_premium true --ez tf_cardfit false
+shot c02-exact-scrolled open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open card
+shot c03-fit-first home --es tf_preview secret --ez tf_premium true --ez tf_cardfit true
+shot c04-exact-free home --es tf_preview secret --ez tf_cardfit false
+shot c05-fit-free home --es tf_preview secret --ez tf_cardfit true
+shot c06-exact-favorite open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open favorite
+fi
 if [ "$SET" = rosetap ]; then
 tshot t01-tap-heart "657 1794" --es tf_preview secret --ez tf_premium true
 tshot t02-tap-skip "419 1794" --es tf_preview secret --ez tf_premium true

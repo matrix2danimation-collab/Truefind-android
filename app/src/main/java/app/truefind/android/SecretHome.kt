@@ -192,6 +192,9 @@ class SecretHome(
         buildChips()
         deckBox.clipChildren = false
         body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 12f))
+        // (SdDeck.fit only) the card ends just above the bottom bar on the first screen: measured whenever the page is laid out
+        val roomWatch = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> syncCardRoom() }
+        deckBox.addOnLayoutChangeListener(roomWatch); scroll.addOnLayoutChangeListener(roomWatch)
         buildPrivate()
         buildToast()
         render()
@@ -798,6 +801,14 @@ class SecretHome(
     /** after a like the next profile comes (not while looking through Favorite) */
     private fun afterLike(on: Boolean) { if (on && deckTab != "favorite") main.postDelayed({ if (shown && page == "home" && !layer.open) deck.next() }, 560) }
 
+    private fun syncCardRoom() {
+        if (!SdDeck.fit || scroll.height <= 0 || deckBox.top <= 0) return
+        val room = scroll.height - (body.top + deckBox.top) - dpi(18f)
+        if (room <= 0 || kotlin.math.abs(room - deck.room) <= 1) return
+        // (not inside this layout pass: the card's new height asks for a layout of its own)
+        post { deck.room = room; deckState = ""; render() }
+    }
+
     /** the cards of the chosen chip: everyone online · the nearest first · the people I liked (null: still loading) */
     private fun deckList(): List<JSONObject>? = when (deckTab) {
         "favorite" -> favList()
@@ -811,7 +822,7 @@ class SecretHome(
         if (state != deckState) {
             deckState = state
             deckBox.removeAllViews()
-            val w = SdDeck.cardW(context); val hh = SdDeck.cardH(context, w)
+            val w = SdDeck.cardW(context); val hh = SdDeck.cardH(w, deck.room)
             when {
                 state == "loading" -> deckBox.addView(View(context).apply { background = rounded(Rs.c("#FCE4F0"), 26f) }, LayoutParams(w, hh, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
                 state == "deck" -> deckBox.addView(deck, LayoutParams(-1, -2))
@@ -1382,6 +1393,7 @@ class SecretHome(
             "seeall" -> openMyActivity("liked", all = true)
             "activity" -> openMyActivity("liked")
             "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(SdNavBar.BAR))   // as from the bottom bar's Likes (its height)
+            "card" -> scroll.scrollTo(0, body.top + deckBox.top - dpi(10f))   // the whole card on the screen
             "nearby" -> pickDeck("nearby")
             "favorite" -> pickDeck("favorite")
             "like" -> deck.front?.let { likeTap(it, deckBox) }

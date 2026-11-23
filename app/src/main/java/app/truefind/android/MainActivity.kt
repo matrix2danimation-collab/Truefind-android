@@ -1526,6 +1526,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
         Demo.notJoined = intent.getBooleanExtra("tf_notjoined", false)
         Demo.tfChat = intent.getBooleanExtra("tf_tfchat", false)
+        if (intent.hasExtra("tf_cardfit")) SdDeck.fit = intent.getBooleanExtra("tf_cardfit", false)   // test shots: the card's two sizes
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()

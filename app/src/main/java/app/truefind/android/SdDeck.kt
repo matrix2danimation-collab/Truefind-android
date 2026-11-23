@@ -23,10 +23,12 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Secret Dating Home's profile card (owner's picture, 23 Nov): one tall card at a time — the photo, Online and
+ * Secret Dating Home's profile card (owner's pictures, 23 Nov): one big card at a time — the photo, Online and
  * Verified at its top, the name and city at its bottom, and two round buttons on it: ✕ (the next profile) and
  * ♥ (like). Swipe left / right or tap the arrows for the next / the one before; tap the photo to open the profile.
  * Flat ("2D"): a white edge, no gloss, no deep shadow.
+ * Its size is the second picture's (23 Nov, "इतना ही बड़ा कर दो"): almost the screen's width and 1.545 × as tall, with
+ * everything on it in that picture's proportions (the round buttons a fifth of the card's width, and so on).
  */
 @SuppressLint("ViewConstructor")
 class SdDeck(
@@ -57,7 +59,15 @@ class SdDeck(
     // the deck spans the whole screen width (margin -16 around the page's 16 padding); one card fills it but for its side gaps
     private var cw = ctx.resources.displayMetrics.widthPixels
     private var W = cardW(ctx, cw)
-    private var H = cardH(ctx, W)
+    private var H = cardH(W, 0)
+    /** [fit] only: the height from the card's top down to the bottom bar on the first screen (SecretHome measures it) */
+    var room = 0
+        set(v) {
+            if (field == v) return
+            field = v
+            val h = cardH(W, v)
+            if (h != H) { H = h; for (c in cards.values) box.removeView(c); cards.clear(); layoutCards(); requestLayout() }
+        }
 
     init {
         orientation = VERTICAL
@@ -100,7 +110,7 @@ class SdDeck(
         super.onSizeChanged(w, h, ow, oh)
         if (w > 0 && w != cw) {
             cw = w
-            W = cardW(context, cw); H = cardH(context, W)
+            W = cardW(context, cw); H = cardH(W, room)
             post { for (c in cards.values) box.removeView(c); cards.clear(); layoutCards(); requestLayout() }
         }
         if (Demo.on) android.util.Log.i("TFDBG", "deck size w=$w h=$h cw=$cw W=$W H=$H cards=${cards.size} n=$n")
@@ -135,10 +145,11 @@ class SdDeck(
     private fun refreshNav() {
         val many = n > 1
         val left = (cw - W) / 2f
-        val top = Ui.dp(2f) + H / 2f - Ui.dp(20f)
+        // (the picture's arrows sit a little above the card's middle: 43 % down)
+        val top = Ui.dp(2f) + H * 0.428f - Ui.dp(20f)
         prevBtn.visibility = if (many) VISIBLE else GONE; nextBtn.visibility = if (many) VISIBLE else GONE
-        prevBtn.x = left + Ui.dp(10f); prevBtn.y = top
-        nextBtn.x = cw - left - Ui.dp(10f) - Ui.dp(40f); nextBtn.y = top
+        prevBtn.x = left + Ui.dp(8f); prevBtn.y = top
+        nextBtn.x = cw - left - Ui.dp(8f) - Ui.dp(40f); nextBtn.y = top
         dots.removeAllViews()
         dots.visibility = if (many && n <= 8) VISIBLE else GONE
         counter.visibility = if (many && n > 8) VISIBLE else GONE
@@ -247,12 +258,18 @@ class SdDeck(
     }
 
     companion object {
-        /** the card: the screen's width but for 16 at each side … */
-        fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = max(Ui.dp(220f), deckW - Ui.dp(32f)).roundToInt()
-        /** … and tall (owner: "लंबा कर दो"): about 1.3 × its width, a little less on a short phone so its buttons stay on the first screen */
-        fun cardH(ctx: Context, w: Int): Int {
-            val room = ctx.resources.displayMetrics.heightPixels - Ui.dp(430f)
-            return (w * 1.32f).coerceAtMost(room).coerceAtLeast(w * 1.05f).roundToInt()
+        /** the second picture's card: 480 wide on a 512 screen (13 at each side on a phone), 743 tall → 1.545 × its width */
+        const val RATIO = 1.545f
+        /**
+         * false: the card is exactly the picture's size; on most phones its foot (✕ ♥) comes up with a small scroll.
+         * true: the card is as tall as the first screen allows (never taller than the picture's), so ✕ ♥ always show.
+         */
+        var fit = false
+        fun cardW(ctx: Context, deckW: Int = ctx.resources.displayMetrics.widthPixels): Int = (deckW - Ui.dp(26f)).coerceIn(Ui.dp(220f), Ui.dp(460f)).roundToInt()
+        /** [room]: see [fit] (0 = not measured yet) */
+        fun cardH(w: Int, room: Int): Int {
+            val full = (w * RATIO).roundToInt()
+            return if (fit && room > 0) room.coerceIn((w * 1.15f).roundToInt(), full) else full
         }
     }
 
@@ -273,13 +290,17 @@ class SdDeck(
         }
         private val info = vbox(ctx, 5f)
         private val nameRow = hbox(ctx, 8f)
-        private val name = Rs.title(ctx, "", nameSize(), Color.WHITE).oneLine().shadow(6f, 1f, Color.argb(110, 30, 0, 8))
-        private val seal = ImageView(ctx).apply { setImageDrawable(Seal(21f, Color.WHITE, Rs.M)) }
-        private val city = sdText(ctx, "", 16f, Color.WHITE, bold = false).oneLine().shadow(6f, 1f, Color.argb(120, 30, 0, 8))
+        // the picture's measures, as parts of the card's width (dp)
+        private val wDp = W / Ui.density
+        private val btnDp = (wDp * .2f).coerceIn(58f, 80f)          // ✕ and ♥: a fifth of the card's width
+        private val footDp = wDp * .075f                            // under the buttons
+        private val name = Rs.title(ctx, "", (wDp * .082f).coerceIn(24f, 33f), Color.WHITE).oneLine().shadow(6f, 1f, Color.argb(110, 30, 0, 8))
+        private val seal = ImageView(ctx).apply { setImageDrawable(Seal(23f, Color.WHITE, Rs.M)) }
+        private val city = sdText(ctx, "", (wDp * .044f).coerceIn(15f, 17.5f), Color.WHITE, bold = false).oneLine().shadow(6f, 1f, Color.argb(120, 30, 0, 8))
         private val verified = sdText(ctx, "Verified", 13.5f, Rs.ICON).icon(Seal(18f, Rs.M, Color.WHITE), 5f)
         private val online = sdText(ctx, "Online", 13.5f, Rs.INK).icon(oval(K.green).apply { setSize(dpi(9f), dpi(9f)) }, 6f)
         val skipBtn = ImageView(ctx).apply {
-            setImageDrawable(Icon(Lucide.X, Rs.M, 26f, 2.8f)); scaleType = ImageView.ScaleType.CENTER
+            setImageDrawable(Icon(Lucide.X, Rs.M, btnDp * .44f, 2.3f)); scaleType = ImageView.ScaleType.CENTER
             background = oval(Color.WHITE); contentDescription = "Next profile"
         }
         val likeIcon = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER }
@@ -298,23 +319,19 @@ class SdDeck(
             inner.addView(photo, LayoutParams(-1, -1))
             inner.addView(shade, LayoutParams(-1, -1))
             nameRow.addView(name, lp(0, WRAP, 1f).apply { weight = 0f; width = WRAP })
-            nameRow.addView(seal, lp(dpi(21f), dpi(21f)))
+            nameRow.addView(seal, lp(dpi(23f), dpi(23f)))
             info.addView(nameRow, lp(WRAP, WRAP))
             city.icon(Icon(Lucide.MapPin, Color.WHITE, 16f, 2.2f), 5f)
             info.addView(city, lp(WRAP, WRAP))
-            inner.addView(info, LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(18f), 0, dpi(18f), dpi(86f)) })
+            // the name starts a little in from the card's side, right over the two buttons (as in the picture)
+            inner.addView(info, LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(wDp * .135f), 0, dpi(14f), dpi(footDp + btnDp + wDp * .05f)) })
             online.background = rounded(Color.WHITE, 15f); online.setPadding(dpi(10f), 0, dpi(12f), 0); online.gravity = Gravity.CENTER_VERTICAL
-            inner.addView(online, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.START).apply { setMargins(dpi(12f), dpi(12f), 0, 0) })
+            inner.addView(online, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.START).apply { setMargins(dpi(13f), dpi(13f), 0, 0) })
             verified.background = rounded(Color.WHITE, 15f); verified.setPadding(dpi(7f), 0, dpi(12f), 0); verified.gravity = Gravity.CENTER_VERTICAL
-            inner.addView(verified, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.END).apply { setMargins(0, dpi(12f), dpi(12f), 0) })
-            buttons.addView(skipBtn, lp(dpi(56f), dpi(56f)))
-            buttons.addView(likeBtn, lp(dpi(56f), dpi(56f), l = 34f))
-            inner.addView(buttons, LayoutParams(-1, dpi(56f), Gravity.BOTTOM).apply { bottomMargin = dpi(16f) })
-        }
-
-        private fun nameSize(): Float {
-            val vw = resources.displayMetrics.widthPixels / Ui.density
-            return (vw * 0.07f).coerceIn(23f, 28f)
+            inner.addView(verified, LayoutParams(-2, dpi(30f), Gravity.TOP or Gravity.END).apply { setMargins(0, dpi(13f), dpi(13f), 0) })
+            buttons.addView(skipBtn, lp(dpi(btnDp), dpi(btnDp)))
+            buttons.addView(likeBtn, lp(dpi(btnDp), dpi(btnDp), l = wDp * .12f))
+            inner.addView(buttons, LayoutParams(-1, dpi(btnDp), Gravity.BOTTOM).apply { bottomMargin = dpi(footDp) })
         }
 
         fun bind(p: JSONObject) {
@@ -357,7 +374,7 @@ class SdDeck(
             if (key == heartKey) return
             heartKey = key
             likeBtn.background = if (on) oval(Color.WHITE, 2f, Rs.M) else oval(Rs.M, 2f, Color.WHITE)
-            likeIcon.setImageDrawable(if (on) Icon(Lucide.Heart, Rs.M, 26f, 2f, Rs.M) else Icon(Lucide.Heart, Color.WHITE, 26f, 2f, Color.WHITE))
+            likeIcon.setImageDrawable(if (on) Icon(Lucide.Heart, Rs.M, btnDp * .46f, 2f, Rs.M) else Icon(Lucide.Heart, Color.WHITE, btnDp * .46f, 2f, Color.WHITE))
             likeBtn.contentDescription = if (on) "Liked. Tap to take back" else "Like"
         }
 
