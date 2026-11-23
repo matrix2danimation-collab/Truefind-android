@@ -284,6 +284,47 @@ nshot v01-verify-girl 9 $P verify --ez tf_girl true
 nshot v02-verify-boy 9 $P verify
 nshot v03-verify-pending 10 $P verify --ez tf_girl true --es tf_open pending
 fi
+# like "shot … home", then taps and swipes on the screen ("x y" = a tap, "x1 y1 x2 y2" = a swipe; ';' between them), then the photo:
+# checks that the buttons really answer a finger (the 1080 × 2400 test phone's own points)
+tshot() {
+  local name="$1" acts="$2" a; shift 2
+  adb shell am force-stop $PKG
+  adb shell pm clear $PKG > /dev/null
+  sleep 1
+  adb logcat -c
+  echo "== $name" >> "$OUT/start.txt"
+  adb shell am start -W -n $PKG/.MainActivity "$@" >> "$OUT/start.txt" 2>&1
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  sleep 4; settle 60
+  while IFS= read -r -d ';' a; do
+    a=$(echo $a)
+    [ -z "$a" ] && continue
+    case "$(echo "$a" | wc -w)" in
+      2) adb shell input tap $a ;;
+      4) adb shell input swipe $a 250 ;;
+    esac
+    sleep 2
+  done <<< "$acts;"
+  adb exec-out screencap -p > "$OUT/$name.png"
+  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
+  { echo "== $name"; adb logcat -d -s TFDBG:I | grep TFDBG; } >> "$OUT/debug.txt"
+}
+if [ "$SET" = rosetap ]; then
+tshot t01-tap-heart "657 1794" --es tf_preview secret --ez tf_premium true
+tshot t02-tap-skip "419 1794" --es tf_preview secret --ez tf_premium true
+tshot t03-swipe-left "850 1270 250 1270" --es tf_preview secret --ez tf_premium true
+tshot t04-swipe-right "850 1270 250 1270; 250 1270 850 1270" --es tf_preview secret --ez tf_premium true
+tshot t05-arrow-next "956 1375; 956 1375" --es tf_preview secret --ez tf_premium true
+tshot t06-tap-card "540 1150" --es tf_preview secret --ez tf_premium true
+tshot t07-chip-nearby "540 746" --es tf_preview secret --ez tf_premium true
+tshot t08-like-then-favorite "657 1794; 880 746" --es tf_preview secret --ez tf_premium true
+tshot t09-chats-unread-tab "600 457" --es tf_preview secret-chat --ez tf_premium true
+tshot t10-chats-search-btn "982 212" --es tf_preview secret-chat --ez tf_premium true
+tshot t11-room-emoji "823 2236; 102 2085; 322 2085" --es tf_preview chatroom --ez tf_premium true
+tshot t12-room-gift "100 2236" --es tf_preview chatroom --ez tf_premium true
+tshot t13-scroll-page "540 1900 540 900" --es tf_preview secret --ez tf_premium true
+fi
 # Secret Dating's maroon-and-blush look (owner's picture, 23 Nov): its main screens in one quick set
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true

@@ -1693,8 +1693,8 @@ class ChatRoom(
         val ic = when (kind) { "premium", "verify" -> Icon(Lucide.Lock, pk.rose, 18f); "err" -> Icon(Lucide.AlertTriangle, CK.red, 18f); else -> Icon(Lucide.ShieldCheck, pc("#17803A"), 18f) }
         t.addView(ImageView(context).apply { setImageDrawable(ic) }, lp(dpi(18f), dpi(18f)))
         t.addView(sdText(context, msg, 15f, pk.ink, bold = false).lineHeight(1.1f), lp(0, WRAP, 1f))
-        if (kind == "premium") t.addView(sdText(context, "Unlock", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/wallet?app=secret", null) })
-        if (kind == "verify") t.addView(sdText(context, "Verify Now", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/profile?open=creator", null) })
+        if (kind == "premium") t.addView(sdText(context, "Unlock", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(if (sdLook) Rs.M else CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/wallet?app=secret", null) })
+        if (kind == "verify") t.addView(sdText(context, "Verify Now", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(if (sdLook) Rs.M else CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/profile?open=creator", null) })
         val wrap = FrameLayout(context).apply { elevation = Ui.dp(60f) + 96f }
         wrap.addView(t, LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL))
         host.addView(wrap, LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), dpi(92f)) })

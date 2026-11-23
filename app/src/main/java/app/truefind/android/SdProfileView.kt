@@ -78,7 +78,7 @@ object SdProfileView {
             var liking = false
             val heart = Icon(Lucide.Heart, if (fav) white else Rs.c("#C8186C"), 26f, 2f, if (fav) white else null)
             val heartView = ImageView(ctx).apply { setImageDrawable(heart); scaleType = ImageView.ScaleType.CENTER }
-            val btn = FrameLayout(ctx).apply { background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); elevation = Ui.dp(4f); contentDescription = if (fav) "Liked. Tap to take back" else "Like" }
+            val btn = FrameLayout(ctx).apply { background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); contentDescription = if (fav) "Liked. Tap to take back" else "Like" }
             btn.addView(heartView, FrameLayout.LayoutParams(-1, -1))
             fun paint() { btn.background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); heart.tint(if (fav) white else Rs.c("#C8186C"), if (fav) white else null) }
             btn.press().onTap {

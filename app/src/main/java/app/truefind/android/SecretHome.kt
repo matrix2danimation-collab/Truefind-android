@@ -359,6 +359,8 @@ class SecretHome(
         var left = 4
         val one: () -> Unit = { left -= 1; if (left == 0) done?.invoke() }
         loadPeople(one); loadStories(one); loadActivity(one); loadMyChats(one)
+        // (Favorite is being looked at: its list is asked again too)
+        if (deckTab == "favorite") loadFavs()
     }
 
     // ── pull down to refresh (owner, 19 Nov evening): the home page and the chats, in Secret Dating's own pink ──
