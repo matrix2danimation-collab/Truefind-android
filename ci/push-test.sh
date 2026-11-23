@@ -57,17 +57,24 @@ close_app() {
 }
 screen_on() { adb shell dumpsys power | grep -qE "mWakefulness=Awake|Display Power: state=ON"; }
 unlock() { adb shell input keyevent KEYCODE_WAKEUP; sleep 1; adb shell wm dismiss-keyguard > /dev/null 2>&1; adb shell input keyevent KEYCODE_HOME; sleep 1; }
-bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W -n $PKG/.MainActivity --ez tf_bgcheck true > /dev/null 2>&1; wait_log "bgcheck" 30; tfdbg | grep -o "bgcheck.*" | tail -1; }
+bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W -n $PKG/.MainActivity --ez tf_bgcheck true >> "$OUT/bgcheck-start.txt" 2>&1; wait_log "bgcheck" 60; tfdbg | grep -o "bgcheck.*" | tail -1; }
 # tap the notification button with this text (the shade is opened first)
 # the ringing notifications go (the app takes the ringing over when it comes on screen: Push.clearCalls)
 clear_calls() { adb shell am start -W -n $PKG/.MainActivity > /dev/null 2>&1; sleep 4; close_app > /dev/null; }
+dump_ui() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb shell cat /sdcard/ui.xml > "$OUT/ui.xml" 2> /dev/null; }
 tap_button() {
-  adb shell cmd statusbar expand-notifications > /dev/null 2>&1 || adb shell service call statusbar 1 > /dev/null 2>&1; sleep 2
-  adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1
-  local b; b=$(adb shell cat /sdcard/ui.xml | tr '>' '\n' | grep -iE "text=\"$1\"|content-desc=\"$1\"" | grep -o 'bounds="[^"]*"' | head -1)
-  [ -z "$b" ] && return 1
-  local n; n=$(echo "$b" | grep -oE '[0-9]+'); set -- $n
-  adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+  local at
+  dump_ui; at=$(python3 ci/ui-find.py "$OUT/ui.xml" "$1" "Riya is calling you")   # the pop-up at the top first
+  if [ -z "$at" ] || echo "$at" | grep -q EXPAND; then
+    adb shell cmd statusbar expand-notifications > /dev/null 2>&1 || adb shell service call statusbar 1 > /dev/null 2>&1; sleep 2
+    dump_ui; at=$(python3 ci/ui-find.py "$OUT/ui.xml" "$1" "Riya is calling you")
+  fi
+  if echo "$at" | grep -q EXPAND; then   # shown folded (Android 16): unfold it, look again
+    set -- "$1" $at; adb shell input tap $3 $4; sleep 2
+    dump_ui; at=$(python3 ci/ui-find.py "$OUT/ui.xml" "$1")
+  fi
+  [ -z "$at" ] && return 1
+  adb shell input tap $at
 }
 
 # ── 0. first start after install (Firebase starts, the notification kinds are made), then closed ──
@@ -86,8 +93,9 @@ if wait_active call-T1 30; then
   echo "$rec" | grep -q "tf_calls" && pass "1a on the 'Incoming calls' kind (tf_calls)" || fail "1a not on tf_calls"
   echo "$rec" | grep -qi "category=call" && pass "1b category: call" || fail "1b category is not call"
   echo "$rec" | grep -qiE "fullscreenIntent=PendingIntent|fullScreenIntent=PendingIntent" && pass "1c full-screen screen attached" || fail "1c no full-screen screen"
-  fl=$(echo "$rec" | grep -oE "flags=0x[0-9a-fA-F]+" | head -1 | cut -d= -f2)
-  [ -n "$fl" ] && [ $(( fl & 0x4 )) -ne 0 ] && pass "1d ringtone repeats until answered (INSISTENT, flags=$fl)" || fail "1d not INSISTENT (flags=$fl)"
+  fl=$(echo "$rec" | grep -oE "flags=[A-Za-z0-9_|]+" | head -1 | cut -d= -f2)
+  if echo "$fl" | grep -q "INSISTENT" || { echo "$fl" | grep -qE "^0x" && [ $(( fl & 0x4 )) -ne 0 ]; }; then pass "1d ringtone repeats until answered (INSISTENT, flags=$fl)"; else fail "1d not INSISTENT (flags=$fl)"; fi
+  adb shell dumpsys notification 2> /dev/null | grep -E "mSoundNotificationKey=.*call-T1" > /dev/null && pass "1f the ringtone is playing for this call" || info "1f ringtone owner: $(adb shell dumpsys notification 2> /dev/null | grep -o 'mSoundNotificationKey=[^ ]*' | head -1)"
   echo "$rec" | grep -qiE "actions=2|Decline" && pass "1e Answer / Decline buttons" || info "1e buttons not seen in the record"
   sleep 1; shot 01-call-app-closed
 else
@@ -115,6 +123,33 @@ sleep 3
 screen_on && pass "4a the screen woke up" || fail "4a the screen stayed off"
 [ -n "$(active call-T4)$(tfdbg | grep 'push shown t=call id=T4')" ] && pass "4b the call rang" || fail "4b the call did not ring"
 shot 04-call-locked-phone
+record call-T4 | grep -iE "NotificationRecord|group|fullscreen|importance" > "$OUT/record-call-locked.txt"
+adb logcat -d -b all 2> /dev/null | grep -iE "full.?screen|fullscreenintent|FSI|NotifInterrupt|VisualInterruption|HeadsUpCoordinator" | tail -60 > "$OUT/fsi-decision.txt"
+info "4  group of the locked-phone call: $(grep -oE "(overrideGroupKey|groupKey|group)=[^ ,)]*" "$OUT/record-call-locked.txt" | sort -u | tr '\n' ' ')"
+unlock
+
+# ── 4x. the same, with no other True Find notification in the shade ──
+clear_calls
+adb shell cmd statusbar expand-notifications > /dev/null 2>&1; sleep 2
+dump_ui; at=$(python3 ci/ui-find.py "$OUT/ui.xml" "Clear all"); [ -n "$at" ] && adb shell input tap $at; sleep 2
+adb shell cmd statusbar collapse > /dev/null 2>&1
+close_app
+adb shell input keyevent KEYCODE_SLEEP; sleep 3
+adb logcat -c
+call T4x voice
+if wait_log "push open call=T4x" 30; then pass "4x locked + screen off, no other notifications: the call screen opened"; else fail "4x locked + screen off, no other notifications: the call screen did not open"; fi
+sleep 3; screen_on && pass "4x the screen woke up" || fail "4x the screen stayed off"
+shot 04x-call-locked-clean-shade
+adb logcat -d -b all 2> /dev/null | grep -iE "full.?screen|fullscreenintent|FSI|NotifInterrupt|VisualInterruption|HeadsUpCoordinator" | tail -60 > "$OUT/fsi-decision-clean.txt"
+unlock
+
+# ── 4y. locked, screen ON (the lock screen showing) ──
+clear_calls
+adb shell input keyevent KEYCODE_SLEEP; sleep 2; adb shell input keyevent KEYCODE_WAKEUP; sleep 2
+adb logcat -c
+call T4y video
+if wait_log "push open call=T4y" 30; then pass "4y locked, screen on: the call screen opened over the lock screen"; else fail "4y locked, screen on: the call screen did not open"; fi
+sleep 2; shot 04y-call-lock-screen-on
 unlock
 
 # ── 5. Doze (phone idle, unplugged, screen off for long) ──

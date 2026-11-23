@@ -300,6 +300,8 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
 
     /** true while a call rings here or its screen is open (the app may show over the lock screen) */
     val busyWithCall: Boolean get() = incoming != null || view != null
+    /** opened from a call's notification, still waiting for the sign-in to show it */
+    val callWaiting: Boolean get() = pendingOpen != null
     /** the call screen is on screen (not put aside) */
     val callShown: Boolean get() = view != null && !minimized
 

@@ -278,6 +278,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             override fun logout(presence: Boolean) = signOut(presence)
         }
         pages.checkUpdate = { updater.checkNow() }
+        // test builds: the "Update available" box never covers a ringing / running call (seen in the push test, 23 Nov)
+        updater.holdOff = { overLock || (::calls.isInitialized && (calls.busyWithCall || calls.callWaiting)) }
         // test builds: how smoothly the app draws on this phone (Settings → Page speed report)
         pages.speedReport = { Perf.show(this) }
         pages.moveSpeed = { askMoveSpeed() }
@@ -767,6 +769,30 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val f = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             if (on) window.addFlags(f) else window.clearFlags(f)
         }
+        if (on) main.postDelayed(wakeForCall, 800) else releaseCallWake()
+    }
+
+    /**
+     * Android 9 and 10 (seen in the push test, 23 Nov) can open the call screen over the lock screen
+     * and still leave the screen dark: if it is still dark a moment later, the screen is switched on
+     * for the ringing (at most 45 s, let go as soon as the call screen goes).
+     */
+    private var callWake: android.os.PowerManager.WakeLock? = null
+    private val wakeForCall = Runnable {
+        if (!overLock || Build.VERSION.SDK_INT >= 30) return@Runnable
+        try {
+            val pm = getSystemService(android.os.PowerManager::class.java) ?: return@Runnable
+            if (pm.isInteractive) return@Runnable
+            releaseCallWake()
+            @Suppress("DEPRECATION")
+            callWake = pm.newWakeLock(android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP, "truefind:incoming-call").apply { setReferenceCounted(false); acquire(45_000L) }
+            android.util.Log.i("TFDBG", "call: screen woken")
+        } catch (e: Throwable) { }
+    }
+    private fun releaseCallWake() {
+        main.removeCallbacks(wakeForCall)
+        try { callWake?.let { if (it.isHeld) it.release() } } catch (e: Throwable) { }
+        callWake = null
     }
     /** a tapped notification: a call rings / is answered here, anything else opens its page. [cold]: the app was
      *  closed, the page's address is returned (the app opens on it) instead. */

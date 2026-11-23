@@ -30,6 +30,8 @@ class Updater(private val activity: Activity) {
     private val main = Handler(Looper.getMainLooper())
     private var lastCheck = 0L
     private var showing = false
+    /** a call is ringing / on, or the app was opened for one: no "Update available" box over it (asked again later) */
+    var holdOff: () -> Boolean = { false }
     private var pendingApk: File? = null
 
     private val dir get() = File(activity.cacheDir, "updates")
@@ -45,7 +47,7 @@ class Updater(private val activity: Activity) {
 
     /** Called when the app comes to the screen; asks GitHub at most every 10 minutes. */
     fun check() {
-        if (!BuildConfig.SELF_UPDATE || showing) return
+        if (!BuildConfig.SELF_UPDATE || showing || holdOff()) return
         // came back from "Allow from this source": carry on with the install
         pendingApk?.let { if (canInstall()) { pendingApk = null; install(it); return } }
         val now = System.currentTimeMillis()
@@ -97,6 +99,7 @@ class Updater(private val activity: Activity) {
 
     private fun askLogin() {
         if (activity.isFinishing || showing) return
+        if (holdOff()) { lastCheck = 0L; return }
         askedLogin = true
         showing = true
         AlertDialog.Builder(activity)
@@ -149,6 +152,7 @@ class Updater(private val activity: Activity) {
 
     private fun offer(url: String) {
         if (activity.isFinishing || showing) return
+        if (holdOff()) { lastCheck = 0L; return } // a call came meanwhile: offered the next time instead
         showing = true
         AlertDialog.Builder(activity)
             .setTitle("Update available")

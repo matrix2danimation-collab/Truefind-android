@@ -8,6 +8,10 @@ on:
   push:
     branches: ["fcm-fix"]
   workflow_dispatch:
+    inputs:
+      apis:
+        description: "Android API levels to test (JSON list)"
+        default: "[26, 28, 29, 30, 31, 33, 34, 35, 36]"
 
 permissions:
   contents: write
@@ -48,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         # Android 8.0, 9, 10, 11, 12, 13, 14, 15, 16
-        api: [26, 28, 29, 30, 31, 33, 34, 35, 36]
+        api: ${{ fromJSON(github.event.inputs.apis || '[26, 28, 29, 30, 31, 33, 34, 35, 36]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
