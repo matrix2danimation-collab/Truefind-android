@@ -240,6 +240,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         appBg.bottomStrip = { root.paddingBottom }
         root.background = appBg
         setContentView(root)
+        // the Secret Dating page ends exactly where its bar starts — checked again whenever the screen's edges change
+        // (the phone's insets can arrive after the page was sized: a white band showed between the page and the bar)
+        root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> root.post { sizeSecretPage() } }
         // keep everything clear of the status bar, the phone's own buttons and the keyboard
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
@@ -1301,6 +1304,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         sdBottomOn = on
     }
 
+    /** Secret Dating's pages end where its own bar starts (the room inside the phone's edges, less the bar) */
+    private fun sizeSecretPage() {
+        if (!::secret.isInitialized || !::sdNav.isInitialized) return
+        val innerH = root.height - root.paddingTop - root.paddingBottom
+        sizeTo(secret, if (innerH > 0) innerH - sdNav.barPx else ViewGroup.LayoutParams.MATCH_PARENT)
+    }
     private fun sizeTo(v: View, h: Int) {
         val lp = v.layoutParams as FrameLayout.LayoutParams
         if (lp.height != h) { lp.height = h; v.layoutParams = lp }
@@ -1351,9 +1360,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (showRoom) room().open(chatId) else chatRoom?.close()
         chatRoom?.let { r -> if (showRoom != (r.visibility == View.VISIBLE)) r.visibility = if (showRoom) View.VISIBLE else View.GONE }
         // Explore ends where the bottom bar starts; the Secret Dating pages end where their own bar starts
-        val innerH = root.height - root.paddingTop - root.paddingBottom
         sizeTo(explore, if (pages.navShown && navTop > 0) navTop else ViewGroup.LayoutParams.MATCH_PARENT)
-        sizeTo(secret, if (innerH > 0) innerH - sdNav.barPx else ViewGroup.LayoutParams.MATCH_PARENT)
+        sizeSecretPage()
         // (its own "open" state counts too: a page move may hold its view visible or hidden for a moment, and the
         // two must never be left disagreeing — that left Explore on screen with its bubbles stopped. While Explore
         // is open, every screen update also makes sure its bubbles are moving: setShown(true) again only checks that.)
@@ -1571,7 +1579,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             sdBottom(true)
             navStrip(Rs.BG_END)
             pageStrip(SD_TOP)
-            root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
+            root.post { sizeSecretPage() }
         }
         if (open.isNotEmpty()) root.postDelayed({ secret.previewOpen(open) }, 3500)
     }
