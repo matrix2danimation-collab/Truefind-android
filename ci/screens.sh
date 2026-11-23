@@ -349,7 +349,7 @@ tshot t01-tap-heart "672 1720" --es tf_preview secret --ez tf_premium true --es 
 tshot t02-tap-skip "409 1720" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t03-swipe-left "850 1270 250 1270" --es tf_preview secret --ez tf_premium true
 tshot t04-swipe-right "850 1270 250 1270; 250 1270 850 1270" --es tf_preview secret --ez tf_premium true
-tshot t05-side-card-next "1066 1500" --es tf_preview secret --ez tf_premium true
+tshot t05-side-card-next "1012 1500" --es tf_preview secret --ez tf_premium true
 tshot t06-tap-card "540 1150" --es tf_preview secret --ez tf_premium true
 tshot t07-chip-nearby "540 746" --es tf_preview secret --ez tf_premium true
 tshot t08-like-then-favorite "672 1720; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
@@ -376,7 +376,7 @@ tshot t26-story-tap-next "286 488; 900 1300" --es tf_preview secret --ez tf_prem
 tshot t27-story-tap-back "286 488; 900 1300; 120 1300" --es tf_preview secret --ez tf_premium true
 tshot t28-story-swipe-next "286 488; 950 1300 150 1300" --es tf_preview secret --ez tf_premium true
 tshot t29-story-swipe-down "286 488; 540 800 540 1900" --es tf_preview secret --ez tf_premium true
-tshot t30-side-card-back "14 1500" --es tf_preview secret --ez tf_premium true
+tshot t30-side-card-back "68 1500" --es tf_preview secret --ez tf_premium true
 fi
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true
