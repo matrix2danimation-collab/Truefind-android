@@ -343,6 +343,11 @@ adb shell wm density 540 < /dev/null; sleep 4
 shot n21-320-home home --es tf_preview secret --ez tf_premium true
 adb shell wm density reset < /dev/null; sleep 3
 fi
+# My Profile's Settings → True Find's Settings (23 Nov night)
+if [ "$SET" = mysettings ]; then
+tshot s01-my-profile "w1" --es tf_preview secret --ez tf_premium true --es tf_open my
+tshot s02-my-settings "886 246; w4" --es tf_preview secret --ez tf_premium true --es tf_open my
+fi
 if [ "$SET" = rosetap ]; then
 # (the Home card is a little longer than the second picture's since 23 Nov evening — 1.8 × its width: its ✕ ♥ come up with a small
 #  scroll, so those taps start from "tf_open card", the page scrolled until the card's top shows)
@@ -379,7 +384,7 @@ tshot t28-story-swipe-next "286 488; 950 1300 150 1300" --es tf_preview secret -
 tshot t29-story-swipe-down "286 488; 540 800 540 1900" --es tf_preview secret --ez tf_premium true
 tshot t30-side-card-back "68 1500" --es tf_preview secret --ez tf_premium true
 # 23 Nov night: Settings from My Profile (True Find's own), the map page scrolled (no fade over its foot), the chat list scrolled
-tshot t31-my-settings "886 205; w4" --es tf_preview secret --ez tf_premium true --es tf_open my
+tshot t31-my-settings "886 246; w4" --es tf_preview secret --ez tf_premium true --es tf_open my
 tshot t32-map-scrolled "540 1900 540 700" --es tf_preview secret-map --ez tf_premium true
 tshot t33-chats-scrolled "540 1900 540 900" --es tf_preview secret-chat --ez tf_premium true
 tshot t34-home-scrolled "540 1900 540 1300" --es tf_preview secret --ez tf_premium true

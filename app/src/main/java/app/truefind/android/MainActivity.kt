@@ -959,7 +959,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         }
         // (and True Find's Settings, opened from Secret Dating's My Profile: the Profile page with its Settings drawer)
         if (Demo.on && preview.startsWith("secret") && pathOnly(full) == "/profile" && full.contains("open=settings")) {
-            secret.visibility = View.GONE; sdNav.visibility = View.GONE
+            secret.layer.closeAll(); secret.visibility = View.GONE; sdNav.visibility = View.GONE
             pages.startPreview("profile", "settings=1")
             return
         }
