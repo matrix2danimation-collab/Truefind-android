@@ -1,0 +1,116 @@
+== c01-exact-first
+11-23 09:11:44.529  3184  3620 I TFDBG   : slow frame #1 total=6565ms anim=4 layout=368 draw=17 sync=0 issue=1367 swap=145 gpu=145
+11-23 09:11:45.194  3184  3184 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=6 act=false
+11-23 09:11:45.513  3184  3184 I TFDBG   : deck size w=1078 h=1622 cw=1078 W=1010 H=1560 cards=3 n=6
+11-23 09:11:46.244  3184  3184 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 6565ms)
+11-23 09:11:46.439  3184  3620 I TFDBG   : slow frame #2 total=3667ms anim=0 layout=31 draw=14 sync=1 issue=642 swap=210 gpu=193
+11-23 09:11:46.520  3184  3184 I TFDBG   : deck size w=1078 h=1618 cw=1078 W=1010 H=1560 cards=3 n=6
+11-23 09:11:46.926  3184  3184 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:11:46.491Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:11:47.048  3184  3620 I TFDBG   : slow frame #3 total=1526ms anim=0 layout=23 draw=17 sync=1 issue=284 swap=201 gpu=201
+11-23 09:11:47.156  3184  3184 I TFDBG   : deck size w=1078 h=1633 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:11:47.327  3184  3620 I TFDBG   : slow frame #4 total=756ms anim=0 layout=90 draw=15 sync=1 issue=7 swap=113 gpu=108
+11-23 09:11:48.250  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:11:50.252  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:11:52.268  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:11:54.271  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:11:56.271  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:11:58.272  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:12:00.272  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:12:02.274  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:12:04.275  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+11-23 09:12:06.277  3184  3184 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 6565ms)
+== c02-exact-scrolled
+11-23 09:12:13.463  4777  4819 I TFDBG   : slow frame #1 total=2766ms anim=0 layout=255 draw=11 sync=0 issue=1529 swap=204 gpu=210
+11-23 09:12:13.482  4777  4777 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=6 act=false
+11-23 09:12:13.575  4777  4777 I TFDBG   : deck size w=1078 h=1622 cw=1078 W=1010 H=1560 cards=3 n=6
+11-23 09:12:14.157  4777  4777 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 2766ms)
+11-23 09:12:14.165  4777  4777 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:12:14.133Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:12:14.491  4777  4819 I TFDBG   : slow frame #2 total=2933ms anim=0 layout=11 draw=4 sync=3 issue=717 swap=157 gpu=165
+11-23 09:12:14.565  4777  4777 I TFDBG   : deck size w=1078 h=1633 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:12:15.123  4777  4819 I TFDBG   : slow frame #3 total=1521ms anim=0 layout=16 draw=11 sync=2 issue=393 swap=123 gpu=130
+11-23 09:12:15.933  4777  4777 I TFDBG   : preview open card
+11-23 09:12:16.158  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:18.159  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:20.161  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:22.163  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:24.164  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:26.167  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+11-23 09:12:28.169  4777  4777 I TFDBG   : frames so far 4 (slow >100ms: 3, worst 2933ms)
+== c03-fit-first
+11-23 09:12:35.354  5366  5366 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-23 09:12:35.376  5366  5427 I TFDBG   : slow frame #1 total=2550ms anim=0 layout=183 draw=11 sync=2 issue=1278 swap=198 gpu=206
+11-23 09:12:35.744  5366  5427 I TFDBG   : slow frame #2 total=2000ms anim=0 layout=19 draw=2 sync=32 issue=161 swap=121 gpu=134
+11-23 09:12:36.261  5366  5366 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:12:36.076Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:12:36.726  5366  5427 I TFDBG   : slow frame #3 total=1291ms anim=0 layout=12 draw=13 sync=10 issue=375 swap=217 gpu=217
+11-23 09:12:36.872  5366  5366 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2550ms)
+11-23 09:12:36.944  5366  5366 I TFDBG   : deck size w=1078 h=1332 cw=1078 W=1010 H=1259 cards=3 n=54
+11-23 09:12:36.974  5366  5366 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:12:36.076Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:12:37.398  5366  5427 I TFDBG   : slow frame #4 total=1061ms anim=0 layout=12 draw=8 sync=1 issue=210 swap=160 gpu=160
+11-23 09:12:37.507  5366  5427 I TFDBG   : slow frame #5 total=516ms anim=0 layout=31 draw=13 sync=3 issue=63 swap=88 gpu=105
+11-23 09:12:38.874  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:40.875  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:42.877  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:44.879  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:46.881  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:48.883  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:50.884  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:52.886  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+11-23 09:12:54.887  5366  5366 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2550ms)
+== c04-exact-free
+11-23 09:13:00.928  6157  6219 I TFDBG   : slow frame #1 total=2900ms anim=0 layout=249 draw=24 sync=4 issue=1414 swap=130 gpu=135
+11-23 09:13:00.967  6157  6157 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-23 09:13:01.383  6157  6219 I TFDBG   : slow frame #2 total=2216ms anim=0 layout=15 draw=9 sync=63 issue=158 swap=123 gpu=132
+11-23 09:13:01.681  6157  6157 I TFDBG   : secret render premium=false access=(false, ) map=false profile=true missing=[] deck=54 act=true
+11-23 09:13:02.128  6157  6219 I TFDBG   : slow frame #3 total=1068ms anim=0 layout=37 draw=20 sync=2 issue=351 swap=158 gpu=158
+11-23 09:13:02.143  6157  6157 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2900ms)
+11-23 09:13:02.174  6157  6157 I TFDBG   : deck size w=1078 h=1637 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:13:02.351  6157  6157 I TFDBG   : deck size w=1078 h=1633 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:13:02.654  6157  6219 I TFDBG   : slow frame #4 total=1045ms anim=0 layout=27 draw=10 sync=2 issue=300 swap=123 gpu=123
+11-23 09:13:02.777  6157  6219 I TFDBG   : slow frame #5 total=550ms anim=0 layout=24 draw=2 sync=8 issue=33 swap=96 gpu=96
+11-23 09:13:04.144  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:06.146  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:08.147  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:10.149  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:12.150  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:14.153  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+11-23 09:13:16.154  6157  6157 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2900ms)
+== c05-fit-free
+11-23 09:13:20.909  6407  6407 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-23 09:13:20.920  6407  6437 I TFDBG   : slow frame #1 total=1919ms anim=0 layout=169 draw=16 sync=2 issue=1007 swap=153 gpu=162
+11-23 09:13:21.275  6407  6407 I TFDBG   : secret render premium=false access=(false, ) map=false profile=true missing=[] deck=54 act=true
+11-23 09:13:21.279  6407  6437 I TFDBG   : slow frame #2 total=1656ms anim=0 layout=10 draw=2 sync=0 issue=189 swap=123 gpu=123
+11-23 09:13:21.425  6407  6407 I TFDBG   : deck size w=1078 h=1377 cw=1078 W=1010 H=1304 cards=3 n=54
+11-23 09:13:21.447  6407  6407 I TFDBG   : secret render premium=false access=(false, ) map=false profile=true missing=[] deck=54 act=true
+11-23 09:13:21.743  6407  6407 I TFDBG   : deck size w=1078 h=1120 cw=1078 W=1010 H=1047 cards=3 n=54
+11-23 09:13:22.150  6407  6407 I TFDBG   : frames so far 2 (slow >100ms: 2, worst 1919ms)
+11-23 09:13:22.174  6407  6407 I TFDBG   : secret render premium=false access=(false, ) map=false profile=true missing=[] deck=54 act=true
+11-23 09:13:22.185  6407  6437 I TFDBG   : slow frame #3 total=1184ms anim=0 layout=16 draw=8 sync=2 issue=568 swap=118 gpu=129
+11-23 09:13:22.280  6407  6437 I TFDBG   : slow frame #4 total=836ms anim=0 layout=43 draw=24 sync=18 issue=31 swap=88 gpu=95
+11-23 09:13:22.414  6407  6437 I TFDBG   : slow frame #5 total=205ms anim=0 layout=10 draw=5 sync=0 issue=2 swap=70 gpu=76
+11-23 09:13:24.151  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+11-23 09:13:26.153  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+11-23 09:13:28.153  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+11-23 09:13:30.155  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+11-23 09:13:32.156  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+11-23 09:13:34.158  6407  6407 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1919ms)
+== c06-exact-favorite
+11-23 09:13:40.505  6557  6621 I TFDBG   : slow frame #1 total=2866ms anim=0 layout=189 draw=20 sync=1 issue=1234 swap=153 gpu=162
+11-23 09:13:40.610  6557  6557 I TFDBG   : secret render premium=true access=null map=true profile=false missing=[] deck=54 act=true
+11-23 09:13:40.713  6557  6557 I TFDBG   : deck size w=1078 h=1637 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:13:40.838  6557  6557 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:13:40.820Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:13:41.103  6557  6557 I TFDBG   : deck size w=1078 h=1633 cw=1078 W=1010 H=1560 cards=3 n=54
+11-23 09:13:41.816  6557  6557 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 2866ms)
+11-23 09:13:41.853  6557  6621 I TFDBG   : slow frame #2 total=2868ms anim=0 layout=13 draw=6 sync=1 issue=924 swap=156 gpu=170
+11-23 09:13:41.944  6557  6621 I TFDBG   : slow frame #3 total=1216ms anim=0 layout=39 draw=14 sync=5 issue=41 swap=69 gpu=83
+11-23 09:13:43.329  6557  6557 I TFDBG   : preview open favorite
+11-23 09:13:43.338  6557  6557 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:13:40.820Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:13:43.465  6557  6557 I TFDBG   : secret render premium=true access=(true, 2026-11-26T09:13:40.820Z) map=true profile=true missing=[] deck=54 act=true
+11-23 09:13:43.499  6557  6621 I TFDBG   : slow frame #4 total=101ms anim=0 layout=5 draw=4 sync=0 issue=3 swap=48 gpu=48
+11-23 09:13:43.644  6557  6557 I TFDBG   : deck size w=1078 h=1618 cw=1078 W=1010 H=1560 cards=3 n=4
+11-23 09:13:43.782  6557  6621 I TFDBG   : slow frame #5 total=300ms anim=0 layout=9 draw=5 sync=1 issue=11 swap=86 gpu=101
+11-23 09:13:43.817  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
+11-23 09:13:45.817  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
+11-23 09:13:47.819  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
+11-23 09:13:49.821  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
+11-23 09:13:51.823  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
+11-23 09:13:53.826  6557  6557 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 2868ms)
