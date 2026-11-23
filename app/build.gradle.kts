@@ -20,6 +20,9 @@ android {
         // The build for users (Play Store) is made with -PtfStore=true: then there is no Update box, no
         // "Check for update", no "Page speed report" and no test screens — all of them hang on this one switch.
         buildConfigField("boolean", "SELF_UPDATE", if (project.findProperty("tfStore") == "true") "false" else "true")
+        // Demo profiles (SdDemo.SHOW: Secret Dating map, Home, chats · Person.SHOW_DEMO: Explore): shown in the
+        // GitHub test builds, switched off by themselves in the Play Store build (-PtfStore=true).
+        buildConfigField("boolean", "SHOW_DEMO", if (project.findProperty("tfStore") == "true") "false" else "true")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live Dance video (Agora) ships for phones (ARM) only; the emulator tests add x86_64
@@ -53,6 +56,10 @@ android {
     // "Play Store bundle" writes the key file and sets these; without them the release build stays unsigned.
     val uploadStore = System.getenv("TF_UPLOAD_STORE_FILE")
     if (!uploadStore.isNullOrEmpty() && file(uploadStore).exists()) {
+        // the test key is public (it is in this repo), so it must never sign the Play Store build
+        if (file(uploadStore).readBytes().contentEquals(file("test-signing.keystore").readBytes())) {
+            throw GradleException("TF_UPLOAD_STORE_FILE is the test key (test-signing.keystore): the Play Store build must be signed with the private upload key")
+        }
         signingConfigs.create("upload") {
             storeFile = file(uploadStore)
             storePassword = System.getenv("TF_UPLOAD_STORE_PASSWORD")
@@ -73,9 +80,18 @@ android {
     buildTypes {
         release {
             signingConfigs.findByName("upload")?.let { signingConfig = it }
-            isMinifyEnabled = false
+            // R8 in the Play Store build: code and resources (pictures, layouts, texts) that nothing uses are left
+            // out. What is only reached by name (Agora, the sign-in page bridges, Firebase) is kept by
+            // proguard-rules.pro and src/release/res/raw/truefind_keep.xml. Test builds (assembleDebug) are not shrunk.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+    }
+    // the Play Store build is never signed with the test key: it is unsigned, or signed with the upload key only
+    if (project.findProperty("tfStore") == "true" &&
+        buildTypes.getByName("release").signingConfig?.storeFile?.canonicalFile == file("test-signing.keystore").canonicalFile) {
+        throw GradleException("The Play Store build must not be signed with the test key (test-signing.keystore)")
     }
     // The Play Store build (bundleRelease -PtfStore=true) has no install permission: Google Play does not
     // allow an app to update itself, and the test builds' Update button was the only thing that used it
@@ -147,4 +163,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // native games: the web's SVG pictures drawn by the phone, and the games' voice room
     implementation("com.caverock:androidsvg-aar:1.4")
+    // Google Play Billing Library (newest stable): for now only so the Play Store bundle carries the BILLING
+    // permission (com.android.vending.BILLING comes from the library's own manifest). No purchase screen or
+    // purchase code uses it yet.
+    implementation("com.android.billingclient:billing:9.1.0")
 }

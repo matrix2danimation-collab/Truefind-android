@@ -8,10 +8,11 @@ import org.json.JSONObject
  * app is being tested. They exist only inside the app: no accounts, nothing saved anywhere. Each one has a 3D avatar
  * face (the Random Match faces in assets/home/faces — never a real person's photo), says "Demo profile" in its About,
  * and can't be liked, requested, blocked or reported — no credit or coin is ever spent on one.
- * SHOW = false switches them all off again (do that before the real launch, with the web's SHOW_SD_DEMO).
+ * SHOW comes from the build (BuildConfig.SHOW_DEMO): on in the GitHub test builds, off by itself in the Play Store
+ * build (bundleRelease -PtfStore=true). The web has its own switch (SHOW_SD_DEMO).
  */
 object SdDemo {
-    const val SHOW = true
+    const val SHOW = BuildConfig.SHOW_DEMO
 
     // the same names, places and details as the web, in the same order (so both show the same 100 people)
     private val GIRLS = listOf("Simran", "Priya", "Anjali", "Neha", "Kavya", "Riya", "Pooja", "Sneha", "Aarohi", "Diya", "Ishita", "Meher", "Naina", "Tanvi", "Jasleen", "Sana", "Mahi", "Ritika", "Payal", "Komal", "Bhavna", "Aditi", "Muskan", "Prachi", "Rhea", "Gunjan", "Harleen", "Nidhi", "Sakshi", "Tamanna", "Khushi", "Preeti", "Shruti", "Nisha", "Kirti", "Manvi", "Ira", "Ananya", "Avni", "Charu", "Deepika", "Esha", "Garima", "Heena", "Isha", "Jyoti", "Kajal", "Lavanya", "Megha", "Nandini", "Ojasvi", "Pallavi", "Radhika", "Saloni", "Tanya", "Urvashi", "Vanshika", "Yashika", "Zoya", "Mansi")

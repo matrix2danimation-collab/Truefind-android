@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play Store build only (release, resources shrunk): Firebase reads the texts that come from
+     google-services.json (google_app_id, gcm_defaultSenderId, google_api_key, project_id …) by name,
+     so the resource shrinker must keep them. This file itself is not put into the app. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/google_*,@string/gcm_*,@string/project_id*,@string/firebase_*" />

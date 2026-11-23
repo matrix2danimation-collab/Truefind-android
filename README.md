@@ -16,6 +16,8 @@ Every push to `main` builds a test APK with GitHub Actions:
 
 Test builds update themselves (the Update box, Settings → "Check for update") and have Settings → "Page speed report" and the test screens. **The build for users must not have any of these**: build it with `-PtfStore=true` (one switch, `BuildConfig.SELF_UPDATE`, turns all of them off). Make it as a release build (`gradle bundleRelease -PtfStore=true`): the same switch then also takes the install permission (`REQUEST_INSTALL_PACKAGES`, needed only by the Update button) out of the app (`app/src/store/AndroidManifest.xml`), because Google Play does not allow an app to update itself.
 
+The same switch also turns the demo profiles off (`BuildConfig.SHOW_DEMO` → `SdDemo.SHOW`, `Person.SHOW_DEMO`); test builds keep showing them. The release build is shrunk by R8 (`isMinifyEnabled`, `isShrinkResources`; what is reached only by name is kept by `app/proguard-rules.pro` and `app/src/release/res/raw/truefind_keep.xml`; names are not shortened, so error notes stay readable). The Google Play Billing Library is in the app only so the bundle carries the `com.android.vending.BILLING` permission; nothing uses it yet. On work branches CI builds this whole Play bundle (unsigned) and checks it: R8, permissions, demo profiles off, 16 KB memory pages, never the test key.
+
 ## Files
 
 | File | What it is |

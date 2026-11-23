@@ -83,8 +83,9 @@ class Person(
             )
         }
 
-        // ── demo profiles (same as the web Explore: SHOW_DEMO = true) ──
-        const val SHOW_DEMO = true
+        // ── demo profiles (same as the web Explore): on in the GitHub test builds, off by themselves in the
+        //    Play Store build (bundleRelease -PtfStore=true) — BuildConfig.SHOW_DEMO ──
+        const val SHOW_DEMO = BuildConfig.SHOW_DEMO
         private val DEMO_GIRLS = listOf("Anvi", "Simran", "Kavya", "Riya", "Meher", "Ishita", "Pooja", "Naina", "Tanvi", "Aarohi", "Jasleen", "Diya", "Sana", "Mahi", "Ritika", "Neha", "Payal", "Komal", "Sneha", "Bhavna", "Aditi", "Muskan", "Prachi", "Rhea", "Gunjan", "Harleen", "Nidhi", "Sakshi", "Tamanna", "Khushi", "Preeti", "Shruti", "Nisha", "Kirti", "Manvi", "Ira")
         private val DEMO_BOYS = listOf("Aarav", "Rohan", "Kabir", "Arjun", "Vivaan", "Karan", "Rahul", "Aman", "Yash", "Dev", "Harsh", "Nikhil", "Sahil", "Varun", "Mohit", "Ankit", "Rohit", "Tushar", "Gaurav", "Deepak", "Manav", "Ishaan", "Pranav", "Kunal", "Lakshya", "Raghav", "Sameer", "Tarun", "Vikas", "Ajay", "Jatin", "Naveen", "Parth", "Ritesh", "Shivam", "Uday")
         private val DEMO_CITIES = listOf("Rohtak" to "Haryana", "Delhi" to "Delhi", "Jaipur" to "Rajasthan", "Pune" to "Maharashtra", "Ludhiana" to "Punjab", "Lucknow" to "Uttar Pradesh", "Indore" to "Madhya Pradesh", "Chandigarh" to "Chandigarh", "Hisar" to "Haryana", "Noida" to "Uttar Pradesh", "Amritsar" to "Punjab", "Bhopal" to "Madhya Pradesh")
