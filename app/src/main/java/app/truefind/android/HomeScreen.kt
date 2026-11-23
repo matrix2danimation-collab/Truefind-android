@@ -90,8 +90,8 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
         addView(pull, LayoutParams(-1, -1))
         val content = FrameLayout(ctx).apply { clipChildren = false }
         scroll.addView(content, LayoutParams(-1, -2))
-        // quiet backdrop behind the header: dot grid from the top-right corner
-        content.addView(SvgView(ctx, Svg.of(HomeArt.BACKDROP), meet = false), LayoutParams(m.pi(390f), m.pi(250f)))
+        // purple doodle backdrop behind the header and greeting (same as the web Home, 23 Nov)
+        content.addView(SvgView(ctx, Svg.of(HomeArt.HEADER_BG), meet = false), LayoutParams(m.pi(390f), m.pi(196f)))
         column.orientation = LinearLayout.VERTICAL
         column.clipChildren = false; column.clipToPadding = false
         column.setPadding(m.pi(16f), 0, m.pi(16f), m.pi(12f) + Ui.dpi(16f))
@@ -126,9 +126,9 @@ class HomeScreen(ctx: Context, private val pages: NativePages) : KeepPage(ctx) {
 
         // ── greeting ──
         val greet = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }
-        hiText = Tf.tpx(ctx, "Hi there", m.px(20f), Ui.c("#1F1235")).apply { letterSpacing = -0.2f / 20f }
+        hiText = Tf.tpx(ctx, "Hi there", m.px(20f), Color.WHITE).apply { letterSpacing = -0.2f / 20f }
         greet.addView(hiText)
-        greet.addView(Tf.tpx(ctx, "Who would you like to talk to today?", m.px(13f), Ui.c("#6B6478"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(3f) })
+        greet.addView(Tf.tpx(ctx, "Who would you like to talk to today?", m.px(13f), Color.argb(224, 255, 255, 255), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(3f) })
         column.addView(greet, gapLp(m.pi(44f)))
 
         // ── Verification + Daily Free Coins ──

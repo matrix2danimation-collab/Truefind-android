@@ -1286,7 +1286,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         @Suppress("DEPRECATION")
         window.navigationBarColor = col
     }
-    private val HOME_TOP = Color.rgb(250, 248, 253) // True Find Home's light lilac page (#FAF8FD)
+    private val HOME_TOP = Color.rgb(138, 76, 236) // True Find Home's purple header top (#8A4CEC, 23 Nov; was the light lilac #FAF8FD)
     private var stripNow: Int? = -1
     /** the status bar's strip in [col] (null: white as before); white clock and icons on a chat's maroon, dark elsewhere.
      *  Explore keeps its own purple strip (exploreStatusBar). */
@@ -1297,7 +1297,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         appBg.top = col
         @Suppress("DEPRECATION")
         window.statusBarColor = col ?: Color.WHITE
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = col != Rs.M
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = col != Rs.M && col != HOME_TOP   // white clock and icons on a chat's maroon and on Home's purple
     }
     private fun sdBottom(on: Boolean) {
         root.clipToPadding = !on
