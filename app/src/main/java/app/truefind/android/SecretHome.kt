@@ -1130,10 +1130,8 @@ class SecretHome(
             contentDescription = if (canUse) "Add to your story" else "Add to your story, Premium only"
         })
         list.forEachIndexed { i, s ->
-            val km = s.optDouble("_km", Double.NaN)
-            val where = if (!km.isNaN()) (if (km < 5) "Your city" else "${Math.round(km)} km") else SdRules.s(s, "city")
             storyRow.addView(storyRing(if (s.optBoolean("seen")) "seen" else "new", listOf(SdRules.s(s, "photo_thumb"), SdRules.s(s, "photo")),
-                SdRules.firstName(SdRules.s(s, "name")), if (where.isNotEmpty()) pinSub(where) else null, !canUse, s) { if (canUse) openStories(i) else locked("watch") })
+                SdRules.firstName(SdRules.s(s, "name")), null, !canUse, s) { if (canUse) openStories(i) else locked("watch") })
         }
         if (list.isEmpty()) {
             val empty = when (storiesState) { "missing" -> "Stories are switching on soon."; "loading" -> ""; else -> "No stories within 500 km yet." }
@@ -1152,7 +1150,8 @@ class SecretHome(
     private fun pinSub(t: String) = sdText(context, t, 12f, K.sub, bold = false).icon(Icon(Lucide.MapPin, K.sub, 12f, 2.2f), 2f).oneLine()
 
     private fun storyRing(kind: String, photos: List<String>, label: String, sub: TextView?, crown: Boolean, story: JSONObject?, onClick: () -> Unit): View {
-        val size = 54f
+        // a little bigger (owner, 24 Nov: 54 → 62), and no place line under the name any more
+        val size = 62f
         val col = vbox(context, 4f, Gravity.CENTER_HORIZONTAL)
         val ringBox = FrameLayout(context).apply { clipChildren = false }
         if (kind == "add") {
@@ -1172,7 +1171,7 @@ class SecretHome(
             }
             val wb = FrameLayout(context).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             val ph = RoundPhoto(context, size)
-            ph.set(photos, story?.let { Demo.round(JSONObject().put("id", it.optString("profile_id")).put("gender", it.optString("gender")), dpi(54f)) })
+            ph.set(photos, story?.let { Demo.round(JSONObject().put("id", it.optString("profile_id")).put("gender", it.optString("gender")), dpi(size)) })
             wb.addView(ph, FrameLayout.LayoutParams(-1, -1)); ring.addView(wb, FrameLayout.LayoutParams(-1, -1))
             ringBox.addView(ring, FrameLayout.LayoutParams(dpi(size), dpi(size)))
         }

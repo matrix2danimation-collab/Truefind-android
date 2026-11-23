@@ -374,14 +374,14 @@ tshot t19-chat-name-opens-chat "580 880" --es tf_preview secret-chat --ez tf_pre
 tshot t20-demo-chat-photo "148 1804" --es tf_preview secret-chat --ez tf_premium true
 tshot t21-demo-chat-name "480 2036" --es tf_preview secret-chat --ez tf_premium true
 tshot t22-demo-chat-free "148 1998" --es tf_preview secret-chat
-tshot t23-your-story-adds "116 488" --es tf_preview secret --ez tf_premium true
+tshot t23-your-story-adds "137 499" --es tf_preview secret --ez tf_premium true
 tshot t24-bell "670 216" --es tf_preview secret --ez tf_premium true
-tshot t25-story-opens "286 488" --es tf_preview secret --ez tf_premium true
+tshot t25-story-opens "325 499" --es tf_preview secret --ez tf_premium true
 # stories as on Instagram (23 Nov evening): tap on → the next person, swipe left → the next person, swipe down → closed, the logo's heart
-tshot t26-story-tap-next "286 488; 900 1300" --es tf_preview secret --ez tf_premium true
-tshot t27-story-tap-back "286 488; 900 1300; 120 1300" --es tf_preview secret --ez tf_premium true
-tshot t28-story-swipe-next "286 488; 950 1300 150 1300" --es tf_preview secret --ez tf_premium true
-tshot t29-story-swipe-down "286 488; 540 800 540 1900" --es tf_preview secret --ez tf_premium true
+tshot t26-story-tap-next "325 499; 900 1300" --es tf_preview secret --ez tf_premium true
+tshot t27-story-tap-back "325 499; 900 1300; 120 1300" --es tf_preview secret --ez tf_premium true
+tshot t28-story-swipe-next "325 499; 950 1300 150 1300" --es tf_preview secret --ez tf_premium true
+tshot t29-story-swipe-down "325 499; 540 800 540 1900" --es tf_preview secret --ez tf_premium true
 tshot t30-side-card-back "68 1500" --es tf_preview secret --ez tf_premium true
 # 23 Nov night: Settings from My Profile (True Find's own), the map page scrolled (no fade over its foot), the chat list scrolled
 tshot t31-my-settings "886 246; w4" --es tf_preview secret --ez tf_premium true --es tf_open my
