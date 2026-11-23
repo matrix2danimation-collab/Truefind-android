@@ -30,16 +30,16 @@ class CallRulesTest {
         assertFalse(CallRules.mayHaveMade(402)); assertFalse(CallRules.mayHaveMade(409)); assertFalse(CallRules.mayHaveMade(403))
     }
     @Test fun waitsStayShort() {
-        assertEquals(1200L, CallRules.startWaitMs(0, null))
-        assertEquals(2500L, CallRules.startWaitMs(1, null))
-        assertEquals(4000L, CallRules.startWaitMs(2, null))
-        assertEquals(4000L, CallRules.startWaitMs(7, null))
-        assertEquals(3000L, CallRules.startWaitMs(0, 3.0))   // what the server said
-        assertEquals(5000L, CallRules.startWaitMs(0, 30.0))  // never longer than 5 s
-        assertEquals(1000L, CallRules.startWaitMs(0, 0.2))   // never shorter than 1 s
-        assertEquals(1200L, CallRules.startWaitMs(0, Double.NaN))
-        // the whole tap, every answer lost: 4 tries (20 s + 3 × 15 s at most) + 1.2 + 2.5 + 4 s of waiting
-        assertEquals(4, CallRules.START_TRIES)
+        assertEquals(1500L, CallRules.startWaitMs(0, null))
+        assertEquals(3000L, CallRules.startWaitMs(1, null))
+        assertEquals(5000L, CallRules.startWaitMs(2, null))
+        assertEquals(8000L, CallRules.startWaitMs(7, null))
+        assertEquals(3000L, CallRules.startWaitMs(0, 3.0))    // what the server said
+        assertEquals(10000L, CallRules.startWaitMs(0, 30.0))  // never longer than 10 s
+        assertEquals(1000L, CallRules.startWaitMs(0, 0.2))    // never shorter than 1 s
+        assertEquals(1500L, CallRules.startWaitMs(0, Double.NaN))
+        // a busy server: the same tap keeps asking for up to 45 s, never longer
+        assertTrue(CallRules.startAgain(30_000, 8_000)); assertTrue(!CallRules.startAgain(40_000, 8_000))
         assertEquals(20000, CallRules.startTimeoutMs(0)); assertEquals(15000, CallRules.startTimeoutMs(3))
     }
     @Test fun endsAreSentUntilTheServerHasThem() {

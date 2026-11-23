@@ -27,8 +27,13 @@ object CallRules {
         return Busy.PEER
     }
 
-    /** tries of one tap (the first + asked again) */
-    const val START_TRIES = 4
+    /**
+     * How long one tap keeps asking while the server is busy (24 Nov: 4 tries in ~8 s were too few — the platform's
+     * "too many requests" lasts longer, so taps ended in "Couldn't connect — the server is busy" while the other
+     * phone already rang). Now the SAME tap is asked again for up to 45 s ("Calling…" stays on the screen), so a
+     * call that was made goes through instead of being closed.
+     */
+    const val START_PATIENCE_MS = 45_000L
 
     /** no answer, the server busy or failing for a moment: the same tap may be asked again (same key) */
     fun retryStart(status: Int): Boolean = status == 0 || status == 408 || status == 429 || status in 500..599
@@ -37,13 +42,16 @@ object CallRules {
     fun mayHaveMade(status: Int): Boolean = retryStart(status)
 
     /**
-     * Wait before asking again (ms): what the server said (kept between 1 and 5 s), otherwise 1.2 s, 2.5 s, 4 s.
-     * The whole tap stays well under half a minute even when every answer is lost.
+     * Wait before asking again (ms): what the server said (kept between 1 and 10 s), otherwise 1.5 s, 3 s, 5 s, then
+     * 8 s each time.
      */
     fun startWaitMs(attempt: Int, retryAfterSec: Double?): Long {
-        val said = retryAfterSec?.takeIf { !it.isNaN() && it > 0 }?.let { (it * 1000).toLong().coerceIn(1000L, 5000L) }
-        return said ?: longArrayOf(1200L, 2500L, 4000L)[attempt.coerceIn(0, 2)]
+        val said = retryAfterSec?.takeIf { !it.isNaN() && it > 0 }?.let { (it * 1000).toLong().coerceIn(1000L, 10000L) }
+        return said ?: longArrayOf(1500L, 3000L, 5000L, 8000L)[attempt.coerceIn(0, 3)]
     }
+
+    /** may the tap ask once more: started [elapsedMs] ago, would wait [waitMs] first */
+    fun startAgain(elapsedMs: Long, waitMs: Long): Boolean = elapsedMs + waitMs < START_PATIENCE_MS
 
     /** how long one try may take (ms): the first a little longer (the server rings their phone before it answers) */
     fun startTimeoutMs(attempt: Int): Int = if (attempt == 0) 20000 else 15000

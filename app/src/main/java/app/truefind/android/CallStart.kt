@@ -9,7 +9,7 @@ import org.json.JSONObject
  * clearly why not (owner, 23 Nov: "the loading circle turned, then no call — and then everyone showed busy").
  *
  *  - the tap gets a one-time key; when the answer is lost or the server is busy for a moment, the SAME tap is asked
- *    again (up to 4 tries, ~1–5 s apart): the server then answers with the call this tap already made, never a
+ *    again (for up to 45 s, 1.5–10 s apart): the server then answers with the call this tap already made, never a
  *    second call (CallRules)
  *  - when it still can't start, whatever this tap may have made on the server is closed (CallEnder.abandon), so it
  *    can't ring on, nor keep both people "busy" for the next minute
@@ -17,6 +17,7 @@ import org.json.JSONObject
  */
 object CallStart {
     class Handle internal constructor(val key: String) {
+        internal val at = System.currentTimeMillis()
         internal var cancelled = false
         internal var callId = ""
         internal var finished = false
@@ -49,10 +50,13 @@ object CallStart {
                 if (h.callId.isNotEmpty()) CallEnder.end(h.callId) else if (CallRules.mayHaveMade(r.status)) CallEnder.abandon(h.key)
                 return@invokeOnce
             }
-            if (!r.ok && CallRules.retryStart(r.status) && n + 1 < CallRules.START_TRIES && Api.ready && !Demo.on) {
+            if (!r.ok && CallRules.retryStart(r.status) && Api.ready && !Demo.on) {
                 val said = if (r.data.has("retry_after")) r.data.optDouble("retry_after") else null
-                main.postDelayed({ attempt(h, to, type, n + 1, done) }, CallRules.startWaitMs(n, said))
-                return@invokeOnce
+                val wait = CallRules.startWaitMs(n, said)
+                if (CallRules.startAgain(System.currentTimeMillis() - h.at, wait)) {
+                    main.postDelayed({ attempt(h, to, type, n + 1, done) }, wait)
+                    return@invokeOnce
+                }
             }
             h.finished = true
             // gave up on an answer that never came: whatever this tap may have made is closed
