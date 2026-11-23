@@ -269,7 +269,7 @@ class SdDeck(
         /** [room]: see [fit] (0 = not measured yet) */
         fun cardH(w: Int, room: Int): Int {
             val full = (w * RATIO).roundToInt()
-            return if (fit && room > 0) room.coerceIn((w * 1.15f).roundToInt(), full) else full
+            return if (fit && room > 0) room.coerceIn(w, full) else full
         }
     }
 
@@ -300,7 +300,7 @@ class SdDeck(
         private val verified = sdText(ctx, "Verified", 13.5f, Rs.ICON).icon(Seal(18f, Rs.M, Color.WHITE), 5f)
         private val online = sdText(ctx, "Online", 13.5f, Rs.INK).icon(oval(K.green).apply { setSize(dpi(9f), dpi(9f)) }, 6f)
         val skipBtn = ImageView(ctx).apply {
-            setImageDrawable(Icon(Lucide.X, Rs.M, btnDp * .44f, 2.3f)); scaleType = ImageView.ScaleType.CENTER
+            setImageDrawable(Icon(Lucide.X, Rs.M, btnDp * .75f, 1.3f)); scaleType = ImageView.ScaleType.CENTER   // the ✕ itself: 3/8 of the button, as in the picture
             background = oval(Color.WHITE); contentDescription = "Next profile"
         }
         val likeIcon = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER }
@@ -374,7 +374,7 @@ class SdDeck(
             if (key == heartKey) return
             heartKey = key
             likeBtn.background = if (on) oval(Color.WHITE, 2f, Rs.M) else oval(Rs.M, 2f, Color.WHITE)
-            likeIcon.setImageDrawable(if (on) Icon(Lucide.Heart, Rs.M, btnDp * .46f, 2f, Rs.M) else Icon(Lucide.Heart, Color.WHITE, btnDp * .46f, 2f, Color.WHITE))
+            likeIcon.setImageDrawable(if (on) Icon(Lucide.Heart, Rs.M, btnDp * .56f, 2f, Rs.M) else Icon(Lucide.Heart, Color.WHITE, btnDp * .56f, 2f, Color.WHITE))
             likeBtn.contentDescription = if (on) "Liked. Tap to take back" else "Like"
         }
 
