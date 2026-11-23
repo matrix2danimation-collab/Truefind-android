@@ -1,0 +1,44 @@
+INFO Android API 31 (12)
+INFO bgcheck sdk=31 brand=Google play=true battery=false restricted=false fullscreen=true channel=true autostart=- next=battery
+INFO lock screen: showing=false isKeyguardShowing=false 
+PASS 0  app closed: no process left
+PASS 1  call rang with the app closed (the app started from nothing: pid 5425)
+PASS 1a on the 'Incoming calls' kind (tf_calls)
+PASS 1b category: call
+PASS 1c full-screen screen attached
+PASS 1d ringtone repeats until answered (INSISTENT, flags=0x96)
+INFO 1f ringtone owner: mSoundNotificationKey=null
+PASS 1e Answer / Decline buttons
+PASS 1g not silenced by the system
+PASS 1h the phone's own call look (CallStyle)
+PASS 2  caller hung up: ringing stopped
+PASS 2a 'Missed call' shown
+PASS 1p the caller's photo shows on the ringing call
+PASS 3  message shown with the app closed
+PASS 3b the second message still pops up and sounds (not silenced)
+INFO 3b group: groupKey=tf_alerts
+PASS 4  locked + screen off: the call screen opened by itself
+PASS 4a the screen woke up
+PASS 4b the call rang
+INFO 4  group of the locked-phone call: 
+PASS 4c the call was not silenced, with other True Find notifications in the shade
+PASS 4x locked + screen off, no other notifications: the call screen opened
+PASS 4x the screen woke up
+INFO 4y lock screen showing: showing=true
+PASS 4y locked, screen on: the call screen opened over the lock screen
+INFO doze: IDLE
+PASS 5  Doze: the call rang
+PASS 6  standby bucket 'rare': the call rang
+PASS 6  standby bucket 'restricted': the call rang
+PASS 7  Answer opened True Find on the call
+PASS 8  Decline worked without opening the app
+PASS 8a the ringing stopped
+PASS 9  slow photo: rang 1562 ms after the message came
+PASS 10 app on screen: the call went to the app itself
+PASS 10a no second ringing notification over the open app
+INFO 11 fresh: bgcheck sdk=31 brand=Google play=true battery=false restricted=false fullscreen=true channel=true autostart=- next=battery
+PASS 11a battery saver on → the card asks for it first
+PASS 11b battery allowed → seen
+PASS 11c Battery → Restricted → seen and asked first
+INFO 11 Google Play services on this phone: play=true
+PASS no crash of True Find in the whole run
