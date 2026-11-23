@@ -59,7 +59,7 @@ close_app() {
 }
 screen_on() { adb shell dumpsys power | grep -qE "mWakefulness=Awake|Display Power: state=ON"; }
 unlock() { adb shell input keyevent KEYCODE_WAKEUP; sleep 1; adb shell wm dismiss-keyguard > /dev/null 2>&1; adb shell input keyevent KEYCODE_HOME; sleep 1; }
-bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W --activity-clear-task -f 0x10000000 -n $PKG/.MainActivity --ez tf_bgcheck true >> "$OUT/bgcheck-start.txt" 2>&1; wait_log "bgcheck" 60; tfdbg | grep -o "bgcheck.*" | tail -1; }
+bgcheck() { close_app > /dev/null; adb logcat -c; adb shell am start -W -f 0x10008000 -n $PKG/.MainActivity --ez tf_bgcheck true >> "$OUT/bgcheck-start.txt" 2>&1; wait_log "bgcheck" 60; tfdbg | grep -o "bgcheck.*" | tail -1; }
 # tap the notification button with this text (the shade is opened first)
 # the ringing notifications go (the app takes the ringing over when it comes on screen: Push.clearCalls)
 clear_calls() { adb shell am start -W -n $PKG/.MainActivity > /dev/null 2>&1; sleep 4; close_app > /dev/null; }
