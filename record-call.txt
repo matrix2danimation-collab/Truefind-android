@@ -1,0 +1,61 @@
+    NotificationRecord(0x0fc89f17: pkg=app.truefind.android user=UserHandle{0} id=1 tag=call-T1 importance=4 key=0|app.truefind.android|1|call-T1|10086appImportanceLocked=false: Notification(channel=tf_calls pri=2 contentView=null vibrate=null sound=null defaults=0x0 flags=0x96 color=0x00000000 category=call actions=2 vis=PUBLIC))
+      uid=10086 userId=0
+      icon=Icon(typ=RESOURCE pkg=app.truefind.android id=0x7f070079) / app.truefind.android:drawable/ic_stat_tf
+      flags=0x96
+      pri=2
+      key=0|app.truefind.android|1|call-T1|10086
+      seen=false
+      groupKey=0|app.truefind.android|1|call-T1|10086
+      fullscreenIntent=PendingIntent{baeef04: PendingIntentRecord{3c2a40d app.truefind.android startActivity (whitelist: 9921bd2:+30s0ms)}}
+      contentIntent=PendingIntent{7672ced: PendingIntentRecord{a74b110 app.truefind.android startActivity (whitelist: 9921bd2:+30s0ms)}}
+      deleteIntent=null
+      tickerText=null
+      contentView=null
+      bigContentView=null
+      headsUpContentView=null
+      color=0x00000000      timeout=1970-01-01 00:00:45
+      actions={
+          [0] "Decline" -> PendingIntent{2ec8722: PendingIntentRecord{f9b31d3 app.truefind.android broadcastIntent (whitelist: 9921bd2:+30s0ms)}}
+          [1] "Video" -> PendingIntent{62e15b3: PendingIntentRecord{6e9ffc2 app.truefind.android startActivity (whitelist: 9921bd2:+30s0ms)}}
+        }
+      extras={
+          android.title=String (Riya)
+          android.reduced.images=Boolean (true)
+          android.subText=null
+          android.showChronometer=Boolean (false)
+          android.verificationText=null
+          android.people.list=ArrayList ([android.app.Person@7adf770, android.app.Person@716aae9])
+          android.text=String (Incoming call)
+          android.progress=Integer (0)
+          androidx.core.app.extra.COMPAT_TEMPLATE=String (androidx.core.app.NotificationCompat$CallStyle)
+          android.progressMax=Integer (0)
+          android.appInfo=ApplicationInfo (ApplicationInfo{5eff36e app.truefind.android})
+          android.callIsVideo=Boolean (true)
+          android.hangUpIntent=null
+          android.showWhen=Boolean (true)
+          android.callType=Integer (1)
+          android.largeIcon=Icon (Icon(typ=BITMAP size=95x95))
+          android.declineIntent=PendingIntent (PendingIntent{86a5a0f: PendingIntentRecord{f9b31d3 app.truefind.android broadcastIntent (whitelist: 9921bd2:+30s0ms)}})
+          android.infoText=null
+          android.callPerson=Person (android.app.Person@3531a9c)
+          android.progressIndeterminate=Boolean (false)
+          android.answerIntent=PendingIntent (PendingIntent{d260ca5: PendingIntentRecord{6e9ffc2 app.truefind.android startActivity (whitelist: 9921bd2:+30s0ms)}})
+          android.remoteInputHistory=null
+      }
+      stats=SingleNotificationStats{posttimeElapsedMs=113272, posttimeToFirstClickMs=-1, posttimeToDismissMs=-1, airtimeCount=0, airtimeMs=0, currentAirtimeStartElapsedMs=-1, airtimeExpandedMs=0, posttimeToFirstVisibleExpansionMs=-1, currentAirtimeExpandedStartElapsedMs=-1, requestedImportance=4, naturalImportance=4, isNoisy=true}
+      mContactAffinity=0.0
+      mRecentlyIntrusive=true
+      mPackagePriority=0
+      mPackageVisibility=-1000
+      mUserImportance=HIGH
+      mImportance=HIGH
+      mImportanceExplanation=You set the importance of these notifications.
+      mIsAppImportanceLocked=false
+      mIntercept=false
+      mHidden==false
+      mGlobalSortKey=intrsv=0:grnk=0x0001:gsmry=1:nsk:rnk=0x0001
+      mRankingTimeMs=1795463274929
+      mCreationTimeMs=1795463275131
+      mVisibleSinceMs=0
+      mUpdateTimeMs=1795463275131
+      mInterruptionTimeMs=1795463275244
