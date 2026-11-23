@@ -330,6 +330,17 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
         if (pillCall != null) verifyPill()
     }
 
+    /**
+     * A call's push came while the app is on screen. The app normally hears of the call through its
+     * live connection; this is the second way in, for when that connection has dropped: it looks
+     * for a call ringing for me now (one already showing is never shown twice).
+     */
+    fun pushWhileOpen(id: String) {
+        if (id.isEmpty() || preview || meId.isEmpty()) return
+        if (Tf.s(incoming, "id") == id || view?.session?.callId == id || isFinished(id)) return
+        catchUp()
+    }
+
     // ═════════════════ the incoming call ═════════════════
     private fun ageOf(c: JSONObject?): Long { val t = utcMs(Tf.s(c, "created_date")); return if (t > 0) System.currentTimeMillis() - t else 0L }
 

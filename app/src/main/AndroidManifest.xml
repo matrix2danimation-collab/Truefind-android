@@ -37,7 +37,7 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" />
         </intent>
-        <!-- the phone makers' "Autostart" pages (Xiaomi, Oppo / Realme, Vivo / iQOO, OnePlus, Huawei, Asus): BgSetup -->
+        <!-- the phone makers' "Autostart" / sleeping-apps pages (Xiaomi, Oppo / Realme, Vivo / iQOO, Tecno / Infinix / itel, OnePlus, Huawei, Asus, Samsung): BgSetup -->
         <package android:name="com.miui.securitycenter" />
         <package android:name="com.coloros.safecenter" />
         <package android:name="com.oppo.safe" />
@@ -47,6 +47,11 @@
         <package android:name="com.huawei.systemmanager" />
         <package android:name="com.hihonor.systemmanager" />
         <package android:name="com.asus.mobilemanager" />
+        <package android:name="com.transsion.phonemaster" />
+        <package android:name="com.samsung.android.lool" />
+        <package android:name="com.samsung.android.sm" />
+        <!-- Google Play services (Firebase needs it): only read for the test builds' check -->
+        <package android:name="com.google.android.gms" />
     </queries>
 
     <application

@@ -30,7 +30,8 @@ import androidx.core.content.ContextCompat
  *
  * Then (and for members who allowed notifications before) it walks through what the phone still
  * needs so a call rings while True Find is closed (BgSetup): background / battery, the phone
- * maker's Autostart, full-screen calls on Android 14+ — one step at a time, each opening the
+ * maker's Autostart (or Samsung's sleeping apps), Xiaomi's lock-screen / pop-up permissions, the
+ * "Incoming calls" notification kind, full-screen calls on Android 14+ — one step at a time, each opening the
  * phone's own settings. "Not now" asks again after 3 days.
  */
 class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLayout) {
@@ -42,7 +43,8 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     private val prefs = act.getSharedPreferences("tf_status", Context.MODE_PRIVATE)
     private var show = false
     private var state = ""      // "" · busy · on · blocked · failed · bg (a background step) · bgdone
-    private var step = ""       // the background step on the card: battery · autostart · fullscreen
+    private var step = ""       // the background step on the card: BgSetup.STEPS
+    private var kind = ""       // its variant: battery → restricted · autostart → list / samsung / appinfo
     private val tried = mutableSetOf<String>()
     private var onHome = false
     private var checking = false
@@ -122,7 +124,14 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
     private fun bgAskedRecently(): Boolean = System.currentTimeMillis() - prefs.getLong("bg_ask_at", 0L) < AGAIN_MS
     /** notifications are on, but the phone may still stop True Find in the background */
     private fun bgWanted(): Boolean = permission() == "granted" && !bgAskedRecently() && BgSetup.needed(act)
-    private fun firstBgStep(): String = listOf("battery", "autostart", "fullscreen").firstOrNull { it !in tried && BgSetup.stepNeeded(act, it) } ?: ""
+    private fun firstBgStep(): String = BgSetup.nextStep(act, tried).also { kindOf(it) }
+    private fun kindOf(s: String) {
+        kind = when (s) {
+            "battery" -> if (BgSetup.restricted(act)) "restricted" else ""
+            "autostart" -> BgSetup.autostartKind(act)
+            else -> ""
+        }
+    }
 
     // ═════════════════ when it shows ═════════════════
     /** MainActivity: the page now (Home or not), signed in */
@@ -222,16 +231,19 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
         if (preview) { nextBgStep(); return }
         val s = step
         tried.add(s)
-        val i = BgSetup.intentFor(act, s)
-        if (i == null) { nextBgStep(); return }
-        if (s == "autostart") BgSetup.markAutostartDone(act)
-        try { settings.launch(i) } catch (e: Throwable) { nextBgStep() }
+        // the switches of these pages can't be read back: once opened, the step counts as done
+        if (s == "autostart" || s == "miui" || s == "channel") BgSetup.markDone(act, s)
+        // the best page first; a phone that lacks one gets the next (in the end the app's own page)
+        for (i in BgSetup.intentsFor(act, s)) {
+            try { settings.launch(i); return } catch (e: Throwable) { }
+        }
+        nextBgStep()
     }
 
     /** the next step still missing, or "all set" */
     private fun nextBgStep() {
         if (preview) tried.add(step)
-        step = if (preview) listOf("battery", "autostart", "fullscreen").firstOrNull { it !in tried } ?: "" else firstBgStep()
+        step = if (preview) BgSetup.STEPS.firstOrNull { it !in tried }.orEmpty().also { kind = "" } else firstBgStep()
         if (step.isNotEmpty()) { state = "bg"; draw(); return }
         state = "bgdone"; draw()
         main.postDelayed({ if (state == "bgdone") hide() }, 2600)
@@ -251,9 +263,13 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
         if (done) stopRing()
         title.text = when {
             state == "bgdone" -> "All set"
+            bg && step == "battery" && kind == "restricted" -> "True Find is restricted"
             bg && step == "battery" -> "Let calls ring when closed"
+            bg && step == "autostart" && kind == "samsung" -> "Keep True Find awake"
             bg && step == "autostart" -> "Turn on Autostart"
-            bg && step == "fullscreen" -> "Show calls on the lock screen"
+            bg && step == "miui" -> "Show calls on the lock screen"
+            bg && step == "channel" -> "Let calls pop up"
+            bg && step == "fullscreen" -> "Full screen calls"
             done -> "Notifications are on"
             blocked -> "Notifications are blocked"
             failed -> "Couldn't turn them on"
@@ -261,8 +277,13 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
         }
         sub.text = when {
             state == "bgdone" -> "Calls and messages will reach you even when True Find is closed."
+            bg && step == "battery" && kind == "restricted" -> "Open Battery and choose Unrestricted. Until then calls and messages can't reach you."
             bg && step == "battery" -> "Allow True Find to run in the background, so calls and messages always come through."
+            bg && step == "autostart" && kind == "samsung" -> "Background usage limits → Never sleeping apps: add True Find, so calls ring while it's closed."
+            bg && step == "autostart" && kind == "appinfo" -> "Turn on Auto launch and Allow background activity for True Find."
             bg && step == "autostart" -> "Your phone stops apps in the background. Find True Find in the list and switch it on."
+            bg && step == "miui" -> "Turn on Show on Lock screen and Display pop-up windows while running in the background."
+            bg && step == "channel" -> "For Incoming calls, turn on pop-up (floating) notifications, Lock screen and Sound."
             bg && step == "fullscreen" -> "Turn on full screen notifications for True Find, so a call fills the screen like a phone call."
             done -> "Calls and messages will reach you even when True Find is closed."
             blocked -> "Allow them for True Find in your phone's settings → Notifications."
@@ -306,7 +327,10 @@ class NotifyPrompt(private val act: ComponentActivity, private val root: FrameLa
         preview = true
         onHome = true
         tried.clear()
-        step = when (what) { "notify-bg-battery" -> "battery"; "notify-bg-autostart" -> "autostart"; "notify-bg-fullscreen" -> "fullscreen"; else -> "" }
+        // notify-bg-<step>[-<kind>]: e.g. notify-bg-battery-restricted, notify-bg-autostart-samsung
+        val parts = what.removePrefix("notify-bg-").split("-")
+        step = if (what.startsWith("notify-bg-") && parts[0] in BgSetup.STEPS) parts[0] else ""
+        kind = if (step.isNotEmpty()) parts.getOrNull(1).orEmpty() else ""
         state = when (what) { "notify-on" -> "on"; "notify-blocked" -> "blocked"; "notify-bg-done" -> "bgdone"; else -> if (step.isNotEmpty()) "bg" else "" }
         show = true
         draw()

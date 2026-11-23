@@ -53,7 +53,12 @@ object Push {
     @Volatile var onToken: ((String) -> Unit)? = null
     /** a message arrived while the app is on screen (its kind: msg, like, info …): the app shows it itself */
     @Volatile var onMessage: ((String) -> Unit)? = null
+    /** a call rang while the app is on screen: the app checks for it at once (its live connection may have dropped) */
+    @Volatile var onCall: ((String) -> Unit)? = null
     private val pool = Executors.newSingleThreadExecutor()
+    private val io = Executors.newCachedThreadPool()
+    /** the caller's photo may hold up the ringing for at most this long (a slow network must never delay a call) */
+    private const val PHOTO_WAIT_MS = 1000L
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -73,7 +78,34 @@ object Push {
     fun saveToken(ctx: Context, t: String) {
         if (t == token(ctx)) return
         prefs(ctx).edit().putString("token", t).remove("sent").apply()
-        onToken?.invoke(t)
+        val app = onToken
+        if (app != null) app.invoke(t) else registerClosed(ctx, t)
+    }
+
+    /**
+     * Firebase gave this phone a new token while True Find was closed: the server learns it now
+     * (with the sign-in kept for Decline), not only the next time the app is opened — until then
+     * calls would go to the old token and never ring.
+     */
+    private fun registerClosed(ctx: Context, t: String) {
+        val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null } ?: return
+        val tok = auth.optString("t")
+        if (tok.isEmpty()) return
+        pool.execute {
+            var c: HttpURLConnection? = null
+            try {
+                c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/pushSubscribe").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"; connectTimeout = 8000; readTimeout = 8000; doOutput = true
+                    setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
+                    setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer $tok")
+                }
+                c.outputStream.use { it.write(JSONObject().put("action", "native_save").put("token", t).put("device", device()).toString().toByteArray()) }
+                if (c.responseCode in 200..299) {
+                    val mark = "${tok.takeLast(24)}|$t|${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())}"
+                    prefs(ctx).edit().putString("sent", mark).apply()
+                }
+            } catch (e: Throwable) { } finally { c?.disconnect() }
+        }
     }
 
     /** signed in: the server learns this phone's token (once a day is enough, as the web does) */
@@ -146,19 +178,32 @@ object Push {
 
     private fun callTag(id: String) = "call-$id"
 
+    /** the caller's photo, if it comes within PHOTO_WAIT_MS — else the call rings without it */
+    private fun quickPhoto(url: String): Bitmap? {
+        if (!url.startsWith("https://")) return null
+        val f = io.submit<Bitmap?> { photo(url) }
+        return try { f.get(PHOTO_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS) } catch (e: Throwable) { f.cancel(true); null }
+    }
+
     /** one message from the server (FCM data message, all values text) */
     fun show(ctx: Context, d: Map<String, String>) {
         channels(ctx)
         val t = d["t"].orEmpty()
         // the app is on screen: it rings / shows calls and messages itself (offers and tests still show)
-        if (visible && t != "test" && t != "offer") { onMessage?.invoke(t); return }
+        if (visible && t != "test" && t != "offer") {
+            android.util.Log.i("TFDBG", "push in app t=$t")
+            if (t == "call") onCall?.invoke(d["call_id"].orEmpty()) else onMessage?.invoke(t)
+            return
+        }
         val nm = NotificationManagerCompat.from(ctx)
-        if (!nm.areNotificationsEnabled()) return
+        if (!nm.areNotificationsEnabled()) { android.util.Log.i("TFDBG", "push blocked t=$t (notifications off)"); return }
         val title = d["title"].orEmpty().ifEmpty { "True Find" }
         val body = d["body"].orEmpty()
         val callId = d["call_id"].orEmpty()
         val url = d["url"].orEmpty().takeIf { it.startsWith("/") } ?: "/"
-        val big = photo(d["icon"].orEmpty())
+        // shown at once (Android's advice: a notification first, any network after) — only a call waits
+        // a moment for the caller's photo, and never more than PHOTO_WAIT_MS
+        val big = quickPhoto(d["icon"].orEmpty())
         val req = (d["tag"].orEmpty().ifEmpty { callId.ifEmpty { "$t${System.currentTimeMillis()}" } }).hashCode()
         try {
             if (t == "call" && callId.isNotEmpty()) {
@@ -185,6 +230,7 @@ object Push {
                     .build()
                 n.flags = n.flags or android.app.Notification.FLAG_INSISTENT
                 nm.notify(callTag(callId), 1, n)
+                android.util.Log.i("TFDBG", "push shown t=call id=$callId kind=${d["kind"].orEmpty()} photo=${big != null}")
                 return
             }
             // "missed call": the ringing one goes first
@@ -202,7 +248,8 @@ object Push {
                 .setContentIntent(open(ctx, req, url))
                 .build()
             nm.notify(d["tag"].orEmpty().ifEmpty { "tf-$t" }, if (d["tag"].isNullOrEmpty()) req else 2, n)
-        } catch (e: SecurityException) { /* notifications not allowed */ }
+            android.util.Log.i("TFDBG", "push shown t=$t")
+        } catch (e: SecurityException) { android.util.Log.i("TFDBG", "push refused t=$t ${e.message}") }
     }
 
     /** the app came on screen: its own ringer takes over, the ringing notifications go */
@@ -247,6 +294,7 @@ class TfMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val d = message.data ?: return
         if (d.isEmpty()) return
+        android.util.Log.i("TFDBG", "push got t=${d["t"].orEmpty()} prio=${message.priority}")
         Push.show(applicationContext, d)
     }
 }
@@ -255,6 +303,7 @@ class DeclineReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getStringExtra(Push.EXTRA_CALL).orEmpty()
         if (id.isEmpty()) return
+        android.util.Log.i("TFDBG", "push decline id=$id")
         val pending = goAsync()
         Push.decline(ctx.applicationContext, id) { pending.finish() }
     }
