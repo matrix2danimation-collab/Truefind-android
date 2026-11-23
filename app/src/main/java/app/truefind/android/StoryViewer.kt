@@ -38,20 +38,20 @@ object StoryViewer {
         root.addView(object : View(ctx) {
             val p = Paint()
             override fun onSizeChanged(w: Int, hh: Int, ow: Int, oh: Int) {
-                p.shader = RadialGradient(w / 2f, hh * .4f, maxOf(w, hh) * .7f, Ui.c("#3a0820"), Ui.c("#12000a"), Shader.TileMode.CLAMP)
+                p.shader = RadialGradient(w / 2f, hh * .4f, maxOf(w, hh) * .7f, Rs.c("#3a0820"), Rs.c("#12000a"), Shader.TileMode.CLAMP)
             }
             override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
         }, FrameLayout.LayoutParams(-1, -1))
         val photo = ImageView(ctx).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         root.addView(photo, FrameLayout.LayoutParams(-1, -1))
-        val spin = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.c("#FF9BCB")) }
+        val spin = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Rs.c("#FF9BCB")) }
         root.addView(spin, FrameLayout.LayoutParams(dpi(28f), dpi(28f), Gravity.CENTER))
         root.addView(shade(ctx, true), FrameLayout.LayoutParams(-1, dpi(150f), Gravity.TOP))
         // progress bars
         val bars = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         val fills = ArrayList<View>()
         for (k in list.indices) {
-            val track = FrameLayout(ctx).apply { background = rounded(Color.argb(89, 255, 255, 255), 2f) }
+            val track = FrameLayout(ctx).apply { background = rounded(Rs.argb(89, 255, 255, 255), 2f) }
             val fill = View(ctx).apply { background = rounded(Color.WHITE, 2f); pivotX = 0f; scaleX = 0f }
             track.addView(fill, FrameLayout.LayoutParams(-1, -1)); fills.add(fill)
             bars.addView(track, lp(0, dpi(3f), 1f, l = if (k == 0) 0f else 4f))
@@ -66,24 +66,24 @@ object StoryViewer {
         who.addView(faceRing, lp(dpi(40f), dpi(40f)))
         val nameBox = vbox(ctx)
         val name = sdText(ctx, "", 17f, Color.WHITE).oneLine().icon(Seal(16f), 6f, end = true)
-        val sub = sdText(ctx, "", 13f, Color.argb(199, 255, 255, 255), bold = false)
+        val sub = sdText(ctx, "", 13f, Rs.argb(199, 255, 255, 255), bold = false)
         nameBox.addView(name, lp(WRAP, WRAP)); nameBox.addView(sub)
         who.addView(nameBox, lp(0, WRAP, 1f))
-        who.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 24f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(64, 0, 0, 0)); contentDescription = "Close story" }
+        who.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 24f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Rs.argb(64, 0, 0, 0)); contentDescription = "Close story" }
             .onTap { close() }, lp(dpi(44f), dpi(44f)))
         root.addView(who, FrameLayout.LayoutParams(-1, -2, Gravity.TOP).apply { setMargins(dpi(14f), dpi(24f), dpi(10f), 0) })
         // caption + owner tools
         val bottom = vbox(ctx, 12f, Gravity.CENTER_HORIZONTAL).apply {
             setPadding(dpi(18f), dpi(48f), dpi(18f), dpi(20f))
-            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 30, 0, 14), Color.argb(219, 30, 0, 14)))
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.argb(0, 30, 0, 14), Rs.argb(219, 30, 0, 14)))
         }
         val bottomWrap = bottom
-        val caption = sdText(ctx, "", 19f, Color.WHITE).apply { gravity = Gravity.CENTER; lineHeight(1.2f); shadow(6f, 1f, Color.argb(153, 0, 0, 0)) }
+        val caption = sdText(ctx, "", 19f, Color.WHITE).apply { gravity = Gravity.CENTER; lineHeight(1.2f); shadow(6f, 1f, Rs.argb(153, 0, 0, 0)) }
         bottom.addView(caption, lp(MATCH, WRAP))
         val tools = hbox(ctx, 10f, Gravity.CENTER)
-        val viewsBtn = sdText(ctx, "", 15f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(Color.argb(46, 255, 255, 255), 22f); setPadding(dpi(18f), 0, dpi(18f), 0) }
-        val delBtn = sdText(ctx, "Delete", 15f, Ui.c("#ffd0d6"), bold = false).icon(Icon(Lucide.Trash2, Ui.c("#ffd0d6"), 16f), 7f).apply {
-            gravity = Gravity.CENTER; background = rounded(Color.argb(51, 0, 0, 0), 22f, 1f, Color.argb(153, 255, 180, 190)); setPadding(dpi(16f), 0, dpi(16f), 0)
+        val viewsBtn = sdText(ctx, "", 15f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(Rs.argb(46, 255, 255, 255), 22f); setPadding(dpi(18f), 0, dpi(18f), 0) }
+        val delBtn = sdText(ctx, "Delete", 15f, Rs.c("#ffd0d6"), bold = false).icon(Icon(Lucide.Trash2, Rs.c("#ffd0d6"), 16f), 7f).apply {
+            gravity = Gravity.CENTER; background = rounded(Rs.argb(51, 0, 0, 0), 22f, 1f, Rs.argb(153, 255, 180, 190)); setPadding(dpi(16f), 0, dpi(16f), 0)
         }
         tools.addView(viewsBtn, lp(WRAP, dpi(44f))); tools.addView(delBtn, lp(WRAP, dpi(44f)))
         if (mine) bottom.addView(tools, lp(MATCH, WRAP))
@@ -140,13 +140,13 @@ object StoryViewer {
             if (!confirm) {
                 confirm = true; pause()
                 delBtn.text = "Tap to delete"; delBtn.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-                delBtn.setTextColor(Color.WHITE); delBtn.typeface = Ui.bold; delBtn.background = rounded(Ui.c("#c0153d"), 22f)
+                delBtn.setTextColor(Color.WHITE); delBtn.typeface = Ui.bold; delBtn.background = rounded(Rs.c("#c0153d"), 22f)
             } else h.deleteStory { close() }
         }
         viewsBtn.press().onTap {
             setPaused(true)
             val panel = vbox(ctx).apply { background = K.sheet(); setPadding(dpi(18f), dpi(16f), dpi(18f), dpi(18f)) }
-            panel.addView(sdText(ctx, "Seen by", 24f, K.wine, italic = true), lp(WRAP, WRAP, b = 10f))
+            panel.addView(sdText(ctx, "Seen by", 24f, K.wine, serif = true), lp(WRAP, WRAP, b = 10f))
             val wait = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(K.rose) }
             panel.addView(wait, lp(dpi(22f), dpi(22f)))
             h.layer.sheet(panel, z = 40f, onClose = { setPaused(false) })
@@ -171,7 +171,7 @@ object StoryViewer {
     private fun shade(ctx: android.content.Context, top: Boolean) = object : View(ctx) {
         val p = Paint()
         override fun onSizeChanged(w: Int, hh: Int, ow: Int, oh: Int) {
-            val a = Color.argb(if (top) 168 else 0, 30, 0, 14); val b = Color.argb(if (top) 0 else 219, 30, 0, 14)
+            val a = Rs.argb(if (top) 168 else 0, 30, 0, 14); val b = Rs.argb(if (top) 0 else 219, 30, 0, 14)
             p.shader = LinearGradient(0f, 0f, 0f, hh.toFloat(), a, b, Shader.TileMode.CLAMP)
         }
         override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }

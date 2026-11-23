@@ -16,6 +16,7 @@ object Demo {
     var noBlur = false            // test runs only: compare speed without the side-card blur
     var noChats = false           // test runs only: no chats yet (the empty Chats page)
     var notJoined = false         // test runs only: not a member of Secret Dating yet (the Join card)
+    var tfChat = false            // test runs only: the chats are True Find's own (they keep the pink look)
 
     private val girls = listOf("Anvi" to "Rohtak", "Simran" to "Delhi", "Kavya" to "Jaipur", "Riya" to "Hisar", "Meher" to "Chandigarh", "Ishita" to "Noida", "Pooja" to "Panipat")
     private val boys = listOf("Aarav" to "Rohtak", "Rohan" to "Delhi", "Kabir" to "Jaipur", "Arjun" to "Hisar", "Karan" to "Chandigarh")
@@ -122,7 +123,7 @@ object Demo {
         val o = chatOther(id) ?: return null
         val m = messages(id); val last = m.optJSONObject(m.length() - 1)
         val unread = when (id) { "m1" -> 0; "m3" -> 1; else -> 0 }
-        return JSONObject().put("match_id", id).put("app", "secret")
+        return JSONObject().put("match_id", id).put("app", if (tfChat) "truefind" else "secret")
             .put("other", JSONObject().put("name", o.optString("name")).put("photo", "").put("profile_id", o.optString("id")).put("user_id", o.optString("user_id"))
                 .put("verified", true).put("online", o.optBoolean("online")).put("last_active", o.optString("last_active")).put("age", o.optInt("age")).put("gender", o.optString("gender")))
             .put("last_message", last).put("last_message_at", last?.optString("created_date")).put("unread_count", unread)

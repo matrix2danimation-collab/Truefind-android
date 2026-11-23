@@ -53,18 +53,31 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     private val scroll = ScrollView(context)
     private val col = vbox(context)
     private val lockBox = LinearLayout(context)
-    private val lockTitle = sdText(context, "", 17f, Ui.c("#9A1246"))
-    private val lockSub = sdText(context, "", 14f, Ui.c("#8E2A55"), bold = false)
+    private val lockTitle = sdText(context, "", 17f, Rs.c("#9A1246"))
+    private val lockSub = sdText(context, "", 14f, Rs.c("#8E2A55"), bold = false)
     private val lockIcon = ImageView(context)
     private val searchBox = LinearLayout(context)
     private val search = EditText(context)
     private val clear = ImageView(context)
     private val listBox = vbox(context, 8f)
     private var q = ""
+    // owner's picture (23 Nov): a round search button at the top, and All · Online · Unread under "Chats"
+    private val searchBtn = ImageView(context)
+    private var searchOpen = false
+    private var tab = "all"
+    private val tabViews = ArrayList<Triple<String, LinearLayout, android.widget.TextView>>()
+    private val unreadBadge = sdText(context, "", 11.5f, Color.WHITE)
 
     var chats: List<Chat>? = null; private set
     /** test shots: scroll to the end, or search */
-    fun preview(what: String) { when (what) { "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height); "search" -> search.setText("si") } }
+    fun preview(what: String) {
+        when (what) {
+            "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height)
+            "search" -> { searchOpen = true; render(); search.setText("si") }
+            "unread" -> pickTab("unread")
+            "online" -> pickTab("online")
+        }
+    }
     var failed = false; private set
 
     init {
@@ -72,14 +85,33 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         scroll.isFillViewport = true
         addView(scroll, LayoutParams(-1, -1))
-        col.setPadding(dpi(16f), dpi(16f), dpi(16f), dpi(40f))
+        col.setPadding(dpi(16f), dpi(10f), dpi(16f), dpi(34f))
         scroll.addView(col, LayoutParams(-1, -2))
-        col.addView(h.pageHeader("Chats"), lp(MATCH, WRAP))
-        col.addView(h.pageSub("Choose who you want to chat with"), lp(MATCH, WRAP, t = 8f))
+        // the logo · search, then "Chats"
+        searchBtn.scaleType = ImageView.ScaleType.CENTER
+        searchBtn.press().onTap { toggleSearch() }
+        col.addView(h.pageHeader("Chats", FrameLayout(context).apply { addView(searchBtn, LayoutParams(dpi(42f), dpi(42f), Gravity.CENTER)) }), lp(MATCH, WRAP))
+        // All · Online · Unread (flat chips; the chosen one maroon)
+        val tabs = hbox(context, 8f)
+        for ((key, label) in listOf("all" to "All", "online" to "Online", "unread" to "Unread")) {
+            val t = sdText(context, label, 15f, Rs.ICON)
+            val chip = hbox(context, 6f, Gravity.CENTER).apply { setPadding(dpi(18f), 0, dpi(18f), 0) }
+            if (key == "online") chip.addView(View(context).apply { background = oval(K.green) }, lp(dpi(9f), dpi(9f)))
+            chip.addView(t)
+            if (key == "unread") {
+                unreadBadge.gravity = Gravity.CENTER; unreadBadge.background = rounded(Rs.RED, 9f); unreadBadge.setPadding(dpi(5f), 0, dpi(5f), 0); unreadBadge.minWidth = dpi(18f)
+                chip.addView(unreadBadge, lp(WRAP, dpi(18f)))
+            }
+            chip.press().onTap { pickTab(key) }
+            tabViews.add(Triple(key, chip, t))
+            tabs.addView(chip, lp(WRAP, dpi(38f)))
+        }
+        col.addView(tabs, lp(MATCH, WRAP, t = 12f))
+        paintTabs()
 
         // "Chat is Premium" / "Verify to chat free"
         lockBox.orientation = LinearLayout.HORIZONTAL; lockBox.gravity = Gravity.CENTER_VERTICAL
-        lockBox.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FCDDEC"), Ui.c("#FDE8F2"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), Color.argb(71, 232, 120, 170)) }
+        lockBox.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Rs.c("#FCDDEC"), Rs.c("#FDE8F2"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), Rs.argb(71, 232, 120, 170)) }
         lockBox.setPadding(dpi(10f), dpi(10f), dpi(8f), dpi(10f))
         lockIcon.scaleType = ImageView.ScaleType.CENTER; lockIcon.background = K.badge()
         lockBox.addView(lockIcon, lp(dpi(44f), dpi(44f), r = 10f))
@@ -94,7 +126,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         searchBox.background = rounded(Color.WHITE, 24f, 1f, K.line)
         searchBox.setPadding(dpi(14f), 0, dpi(8f), 0)
         searchBox.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Search, K.wine, 19f)) }, lp(dpi(19f), dpi(19f), r = 8f))
-        search.hint = "Search by name"; search.setHintTextColor(Ui.c("#A8909C")); search.setTextColor(K.ink); search.typeface = Ui.regular
+        search.hint = "Search by name"; search.setHintTextColor(Rs.c("#A8909C")); search.setTextColor(K.ink); search.typeface = Ui.regular
         search.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, Ui.dp(16f)); search.background = null; search.isSingleLine = true
         search.imeOptions = EditorInfo.IME_ACTION_SEARCH; search.setPadding(0, 0, 0, 0)
         search.contentDescription = "Search chats"
@@ -108,7 +140,7 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         clear.contentDescription = "Clear search"
         clear.onTap { search.setText("") }
         searchBox.addView(clear, lp(dpi(32f), dpi(32f)))
-        col.addView(searchBox, lp(MATCH, dpi(48f), t = 14f))
+        col.addView(searchBox, lp(MATCH, dpi(48f), t = 12f))
 
         col.addView(listBox, lp(MATCH, WRAP, t = 14f))
         val foot = sdText(context, "Numbers, links and IDs are never shared in chat.", 13.5f, K.sub, bold = false).icon(Icon(Lucide.Lock, K.rose, 14f), 7f).apply {
@@ -202,11 +234,38 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         lockTitle.text = if (verify) "Verify to chat free" else "Chat is Premium"
         lockSub.text = if (verify) "Chat is free for verified girls — no plan needed." else "Get Premium to open your chats."
         lockBox.contentDescription = if (verify) "Verify your profile to chat free" else "Chat is for Premium members. Get Premium"
-        searchBox.visibility = if (!chats.isNullOrEmpty()) VISIBLE else GONE
+        val some = !chats.isNullOrEmpty()
+        searchBtn.visibility = if (some) VISIBLE else INVISIBLE
+        searchBtn.background = if (searchOpen) oval(Rs.M) else oval(Color.WHITE, 1f, Rs.LINE)
+        searchBtn.setImageDrawable(Icon(if (searchOpen) Lucide.X else Lucide.Search, if (searchOpen) Color.WHITE else Rs.ICON, 21f, 2.1f))
+        searchBtn.contentDescription = if (searchOpen) "Close search" else "Search chats"
+        searchBox.visibility = if (some && searchOpen) VISIBLE else GONE
+        (tabViews.firstOrNull()?.second?.parent as? View)?.visibility = if (some) VISIBLE else GONE
+        paintTabs()
         renderList()
     }
+    /** the round button at the top: the search box opens (with the keyboard) and closes again (the search is cleared) */
+    private fun toggleSearch() {
+        searchOpen = !searchOpen
+        val keys = context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        if (!searchOpen) { search.setText(""); search.clearFocus(); keys.hideSoftInputFromWindow(search.windowToken, 0) }
+        render()
+        if (searchOpen) { search.requestFocus(); keys.showSoftInput(search, 0) }
+    }
+    private fun pickTab(key: String) { if (tab != key) { tab = key; paintTabs(); renderList() } }
+    private fun paintTabs() {
+        val n = chats?.count { it.unread > 0 } ?: 0
+        unreadBadge.text = if (n > 99) "99+" else n.toString()
+        unreadBadge.visibility = if (n > 0) VISIBLE else GONE
+        for ((key, chip, t) in tabViews) {
+            val on = key == tab
+            chip.background = if (on) Rs.flat(Rs.M, 19f) else rounded(Rs.CHIP, 19f, 1f, Rs.LINE)
+            t.setTextColor(if (on) Color.WHITE else Rs.ICON)
+            chip.contentDescription = "${t.text}${if (key == "unread" && n > 0) ", $n" else ""}${if (on) ", chosen" else ""}"
+        }
+    }
 
-    private fun card() = rounded(Color.WHITE, 22f, 1f, K.line)
+    private fun card() = rounded(Color.WHITE, 22f, 1f, Rs.LINE)
     private fun renderList() {
         listBox.removeAllViews()
         val all = chats
@@ -224,15 +283,21 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
             all.isEmpty() -> {
                 val b = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = card(); setPadding(dpi(20f), dpi(30f), dpi(20f), dpi(30f)); elevation = Ui.dp(3f) }
                 b.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.MessageCircleMore, K.rose, 34f, 1.7f)) }, lp(dpi(34f), dpi(34f)))
-                b.addView(sdText(context, "No chats yet", 22f, K.wine, italic = true), lp(WRAP, WRAP, t = 10f))
+                b.addView(sdText(context, "No chats yet", 22f, K.wine, serif = true), lp(WRAP, WRAP, t = 10f))
                 b.addView(sdText(context, "Send a request to someone you like. When they accept, your private chat opens here.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(MATCH, WRAP, t = 6f, b = 16f))
                 b.addView(sdText(context, "Find people online", 16.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = K.btn(24f); setPadding(dpi(24f), 0, dpi(24f), 0); elevation = Ui.dp(4f) }
                     .press().onTap { h.goHome() }, lp(WRAP, dpi(48f)))
                 listBox.addView(b, lp(MATCH, WRAP))
             }
             else -> {
-                val shown = if (query.isEmpty()) all else all.filter { it.name.lowercase().contains(query) }
-                if (shown.isEmpty()) listBox.addView(sdText(context, "No chat with “${q.trim()}”.", 15f, Color.WHITE).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 18f, b = 18f))
+                val inTab = when (tab) { "online" -> all.filter { it.online }; "unread" -> all.filter { it.unread > 0 }; else -> all }
+                val shown = if (query.isEmpty()) inTab else inTab.filter { it.name.lowercase().contains(query) }
+                if (shown.isEmpty()) listBox.addView(sdText(context, when {
+                    query.isNotEmpty() -> "No chat with “${q.trim()}”."
+                    tab == "online" -> "No one you chat with is online right now."
+                    tab == "unread" -> "No unread chats. You're all caught up."
+                    else -> "No chats here."
+                }, 15f, Rs.SUB, bold = false).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 22f, b = 18f))
                 for (c in shown) listBox.addView(row(c), lp(MATCH, WRAP))
             }
         }
@@ -241,16 +306,16 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     private fun row(c: Chat): View {
         val st = h.chatStoryFor(c.uid, c.pid, "")
         val locked = h.premiumInfo.second && !h.isPremium
-        val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 20f, 1f, if (c.unread > 0) Ui.c("#F3A7C6") else K.line2); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(10f)); elevation = Ui.dp(2f) }
+        val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 20f, 1f, if (c.unread > 0) Rs.c("#F3A7C6") else Rs.LINE); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(10f)) }
         // the photo (a story ring when they have one) → their profile
         val ph = FrameLayout(context)
         val ring = FrameLayout(context).apply {
             if (st != null) {
-                background = if (st.optBoolean("seen")) oval(Ui.c("#EBC9D9")) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#E3086C"), Ui.c("#FF84BD"))).apply { shape = GradientDrawable.OVAL }
+                background = if (st.optBoolean("seen")) oval(Rs.c("#EBC9D9")) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Rs.c("#E3086C"), Rs.c("#FF84BD"))).apply { shape = GradientDrawable.OVAL }
                 setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
             }
         }
-        val inner = FrameLayout(context).apply { background = oval(Ui.c("#F6D6E6"), if (st != null) 2f else 1f, if (st != null) Color.WHITE else K.line2); setPadding(dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f)) }
+        val inner = FrameLayout(context).apply { background = oval(Rs.c("#F6D6E6"), if (st != null) 2f else 1f, if (st != null) Color.WHITE else K.line2); setPadding(dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f)) }
         val photo = RoundPhoto(context, 56f)
         photo.set(listOf(c.photoThumb, c.photo), Demo.round(JSONObject().put("id", c.pid), Ui.dpi(56f)))
         inner.addView(photo, LayoutParams(-1, -1)); ring.addView(inner, LayoutParams(-1, -1))
@@ -275,11 +340,11 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
         t.addView(sdText(context, if (c.text.isNotEmpty()) "${if ((c.from.isNotEmpty() && c.from == h.myIdNow) || c.mine) "You: " else ""}${c.text}" else "Say hi 👋", 14.5f, if (c.unread > 0) K.ink2 else K.sub, bold = c.unread > 0).oneLine(), lp(MATCH, WRAP, t = 3f))
         mid.addView(t, lp(0, WRAP, 1f))
         val end = vbox(context, 6f, Gravity.END)
-        end.addView(sdText(context, chatTime(c.time), 12.5f, if (c.unread > 0) K.hot else K.soft, bold = c.unread > 0), lp(WRAP, WRAP))
+        end.addView(sdText(context, chatTime(c.time), 12.5f, if (c.unread > 0) K.hot else Rs.TIME, bold = c.unread > 0), lp(WRAP, WRAP))
         when {
             c.unread > 0 -> end.addView(sdText(context, if (c.unread > 99) "99+" else c.unread.toString(), 12.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(K.pill, 11f); setPadding(dpi(7f), 0, dpi(7f), 0); minWidth = dpi(22f) }, lp(WRAP, dpi(22f)))
             locked -> end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, K.soft, 15f)) }, lp(dpi(15f), dpi(15f)))
-            else -> end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, Ui.c("#E3A6C2"), 18f)) }, lp(dpi(18f), dpi(18f)))
+            else -> end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, Rs.ICON, 18f)) }, lp(dpi(18f), dpi(18f)))
         }
         mid.addView(end, lp(WRAP, WRAP))
         mid.setPadding(0, dpi(4f), 0, dpi(4f))
@@ -317,11 +382,11 @@ class Skeleton(ctx: android.content.Context, private val radiusDp: Float) : View
     private val t0 = System.currentTimeMillis()
     override fun onDraw(c: android.graphics.Canvas) {
         val w = width.toFloat(); val hh = height.toFloat(); val r = Ui.dp(radiusDp)
-        p.shader = null; p.color = Ui.c("#FCE4F0"); c.drawRoundRect(0f, 0f, w, hh, r, r, p)
+        p.shader = null; p.color = Rs.c("#FCE4F0"); c.drawRoundRect(0f, 0f, w, hh, r, r, p)
         if (GlobeMap.REDUCED) return
         val f = ((System.currentTimeMillis() - t0) % 750) / 750f
         val x = -w + f * 2 * w
-        p.shader = android.graphics.LinearGradient(x, 0f, x + w, 0f, intArrayOf(Ui.c("#FCE4F0"), Ui.c("#FFF3F9"), Ui.c("#FCE4F0")), floatArrayOf(.25f, .5f, .75f), android.graphics.Shader.TileMode.CLAMP)
+        p.shader = android.graphics.LinearGradient(x, 0f, x + w, 0f, intArrayOf(Rs.c("#FCE4F0"), Rs.c("#FFF3F9"), Rs.c("#FCE4F0")), floatArrayOf(.25f, .5f, .75f), android.graphics.Shader.TileMode.CLAMP)
         c.save(); val path = android.graphics.Path().apply { addRoundRect(0f, 0f, w, hh, r, r, android.graphics.Path.Direction.CW) }; c.clipPath(path)
         c.drawRect(0f, 0f, w, hh, p); c.restore()
         if (isShown) postInvalidateOnAnimation()

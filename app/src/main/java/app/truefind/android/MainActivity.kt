@@ -235,6 +235,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         root = PageHost(this).apply { clipChildren = false }
         // white as before; the strip under the phone's status bar turns Explore's purple while Explore is open
         appBg = AppBackground({ root.paddingTop }, { if (::explore.isInitialized) explore.headerHeight else 0 })
+        appBg.bottomStrip = { root.paddingBottom }
         root.background = appBg
         setContentView(root)
         // keep everything clear of the status bar, the phone's own buttons and the keyboard
@@ -242,7 +243,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
-            // Secret Dating's grey bar runs on down over the phone's own button strip (as in the owner's photo)
+            // Secret Dating's bar (the page's blush) runs on down over the phone's own button strip
             if (::sdNav.isInitialized && sdNav.below != bars.bottom) {
                 sdNav.below = bars.bottom
                 (sdNav.layoutParams as? FrameLayout.LayoutParams)?.let { it.bottomMargin = -bars.bottom; sdNav.layoutParams = it }
@@ -259,7 +260,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         secret = SecretHome(this, root) { p, state -> navigate(p, state) }
         secret.visibility = View.GONE
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        // Secret Dating's own bottom bar (Home · My Activity · Chat · Online Map); the heart opens My Activity over the page
+        // Secret Dating's own bottom bar (Discover · Likes · Chat · Map); Likes opens My Activity over the page
         // (owner, 21 Nov: the bar stays under My Activity, the heart lit; another tab closes My Activity and opens)
         sdNav = SdNavBar(this) { to -> if (to == "likes") secret.openMyActivity("liked", aboveBar = sdNav.barPx) else { secret.closeMyActivity(); navigate(to) } }
         secret.onLikesDot = { on -> sdNav.heartDot = on }
@@ -989,6 +990,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     private fun chatBack() { if (!goBack()) navigate("/secret-app?tab=chat", null, true) }
     private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> navigate(p, st) }, goBack = { chatBack() }, replace = { navigate(it, null, true) }).also {
         it.visibility = View.GONE
+        // a Secret Dating chat has a maroon top and a blush page: the phone's strips follow (True Find's own chats: white as before)
+        it.onStrip = { if (roomShown) roomStrips() }
         // pinned / unpinned in the chat: the Secret Dating chat list moves it at once
         it.onPinned = { id, on -> if (::secret.isInitialized) secret.chatPinned(id, on) }
         root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -1245,14 +1248,30 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
     }
 
-    /** Secret Dating's bar is showing: its grey (#F3F3F3) runs on under the phone's own button strip — the strip is
-     *  painted the same grey (older phones paint it themselves) and the bar may draw over the padding (owner, 21 Nov) */
+    /** Secret Dating's bar is showing: the page's blush runs on under the phone's own button strip — the strip is
+     *  painted the same blush (older phones paint it themselves) and the bar may draw over the padding (owner, 21 Nov) */
     private var sdBottomOn: Boolean? = null
 
-    private val SD_TOP = Color.rgb(251, 92, 148)    // Secret Dating's pink page, at its top (#FB5C94)
+    private val SD_TOP = Rs.BG_TOP                  // Secret Dating's blush page, at its top (23 Nov; was the pink #FB5C94)
+    private var roomShown = false
+    /** one Secret Dating chat is open: maroon behind the clock (white clock), blush over the phone's buttons */
+    private fun roomStrips() {
+        val r = chatRoom
+        pageStrip(r?.stripTop)
+        appBg.bottom = r?.stripBottom
+        navStrip(r?.stripBottom ?: Color.WHITE)
+    }
+    private var navNow: Int? = null
+    /** the phone's own button strip in [col] (phones that paint it themselves) */
+    private fun navStrip(col: Int) {
+        if (navNow == col) return
+        navNow = col
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = col
+    }
     private val HOME_TOP = Color.rgb(250, 248, 253) // True Find Home's light lilac page (#FAF8FD)
     private var stripNow: Int? = -1
-    /** the status bar's strip in [col] (null: white as before); white clock and icons on the pink, dark elsewhere.
+    /** the status bar's strip in [col] (null: white as before); white clock and icons on a chat's maroon, dark elsewhere.
      *  Explore keeps its own purple strip (exploreStatusBar). */
     private fun pageStrip(col: Int?) {
         if (appBg.purple) return
@@ -1261,14 +1280,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         appBg.top = col
         @Suppress("DEPRECATION")
         window.statusBarColor = col ?: Color.WHITE
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = col != SD_TOP
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = col != Rs.M
     }
     private fun sdBottom(on: Boolean) {
         root.clipToPadding = !on
-        if (sdBottomOn == on) return
         sdBottomOn = on
-        @Suppress("DEPRECATION")
-        window.navigationBarColor = Color.WHITE   // the bar is white now too (owner, 22 Nov)
     }
 
     private fun sizeTo(v: View, h: Int) {
@@ -1335,7 +1351,12 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // the bar's grey runs on down under the phone's own button strip (it may draw over the padding there; owner, 21 Nov)
         sdBottom(showSecret)
         // the strip under the phone's status bar in the page's own top colour: no separate white strip (owner, 21 Nov)
-        pageStrip(if (show) null else if (showSecret && !showRoom) SD_TOP else if (inApp && !showRoom && (p.isEmpty() || p == "/home")) HOME_TOP else null)
+        roomShown = showRoom
+        if (showRoom) roomStrips() else {
+            appBg.bottom = null
+            navStrip(if (showSecret) Rs.BG_END else Color.WHITE)   // the bar's blush (23 Nov)
+            pageStrip(if (show) null else if (showSecret) SD_TOP else if (inApp && (p.isEmpty() || p == "/home")) HOME_TOP else null)
+        }
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp
         // opened afresh (a tap, not Back): the Wallet starts at its top on the tab its address asks for (owner, 19 Nov)
@@ -1504,6 +1525,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Demo.noBlur = intent.getBooleanExtra("tf_noblur", false)
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
         Demo.notJoined = intent.getBooleanExtra("tf_notjoined", false)
+        Demo.tfChat = intent.getBooleanExtra("tf_tfchat", false)
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
@@ -1512,6 +1534,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             val r = room()
             r.visibility = View.VISIBLE
             r.open(intent.getStringExtra("tf_chat") ?: "m1")
+            roomShown = true; roomStrips()
             if (open.isNotEmpty()) root.postDelayed({ r.preview(open) }, 1500)
             return
         }
@@ -1531,6 +1554,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             // Secret Dating's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
             sdBottom(true)
+            navStrip(Rs.BG_END)
             pageStrip(SD_TOP)
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(secret, innerH - sdNav.barPx) }
         }

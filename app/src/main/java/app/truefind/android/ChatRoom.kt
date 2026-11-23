@@ -98,6 +98,23 @@ class ChatRoom(
     private var meId = ""
     private var gen = 0
 
+    // ── the look: a Secret Dating chat wears the maroon and blush of the owner's picture (23 Nov);
+    //    True Find's own chats keep the pink they had. Every colour below asks which one it is. ──
+    private val sdLook get() = chatApp != "truefind"
+    private val pk: SdPal get() = if (sdLook) K else KP
+    private fun pc(hex: String): Int = if (sdLook) Rs.c(hex) else Ui.c(hex)
+    private fun pa(a: Int, r: Int, g: Int, b: Int): Int = if (sdLook) Rs.argb(a, r, g, b) else Color.argb(a, r, g, b)
+    /** words and icons drawn straight on the page (not on a card): black on the blush, white on the pink */
+    private val onBg get() = if (sdLook) Rs.INK else Color.WHITE
+    private fun ckBtn(radiusDp: Float, ring: Int? = null): GradientDrawable = if (sdLook) K.btn(radiusDp).apply { if (ring != null) setStroke(Ui.dpi(2f), ring) } else CK.btn(radiusDp, ring)
+    private fun ckOval(): GradientDrawable = if (sdLook) K.badge() else CK.btnOval()
+    private fun ckPill(radiusDp: Float): GradientDrawable = if (sdLook) K.btn(radiusDp) else CK.pill(radiusDp)
+    /** the phone's strips around this chat: maroon behind the clock (blush while a page is open over the chat),
+     *  blush over the phone's buttons; True Find's own chats: white as before (null) */
+    val stripTop: Int? get() = if (!sdLook) null else if (layer.pageOpen) Rs.BG_TOP else Rs.M
+    val stripBottom: Int? get() = if (sdLook) Rs.BG_END else null
+    var onStrip: (() -> Unit)? = null
+
     // ── views ──
     private val headPhoto = RoundPhoto(ctx, 43f)
     private val headRing = FrameLayout(ctx)
@@ -112,25 +129,35 @@ class ChatRoom(
     private val emptyBox = vbox(ctx, 0f, Gravity.CENTER_HORIZONTAL)
     private val listCol = vbox(ctx, 6f)
     private val tailCol = vbox(ctx, 6f)
-    private val spinner = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(K.rose) }
+    private val spinner = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(pk.rose) }
     private val failBtn = sdText(ctx, "Message didn't send. Check your internet and tap to try again.", 14.5f, CK.red)
     private val tray = FrameLayout(ctx)
     private val composer = FrameLayout(ctx)
     private val input = EditText(ctx)
-    private val counter = sdText(ctx, "", 12f, K.soft, bold = false)
-    private val gifBtn = sdText(ctx, "GIF", 14f, K.hot)
+    private val counter = sdText(ctx, "", 12f, pk.soft, bold = false)
+    private val gifBtn = sdText(ctx, "GIF", 14f, pk.hot)
+    // Secret Dating's look (23 Nov): the gifts on their own round button, a smiley for a row of quick emojis
+    private val backdrop = PinkBackdrop(ctx)
+    private val headBand = FrameLayout(ctx)
+    private val headWhite = FrameLayout(ctx)
+    private val giftBtn = ImageView(ctx)
+    private val emojiBtn = ImageView(ctx)
+    private val emojiBar = android.widget.HorizontalScrollView(ctx)
+    private var emojiOpen = false
+    private var lookNow: Boolean? = null
+    private val unblockBtn = sdText(ctx, "Unblock", 15f, Color.WHITE)
     private val sendBtn = FrameLayout(ctx)
     private val sendIcon = ImageView(ctx)
     private val sendSpin = ProgressBar(ctx).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE) }
     private val inputBox = LinearLayout(ctx)
     private val blockedBar = LinearLayout(ctx)
-    private val blockedText = sdText(ctx, "", 15.5f, K.ink2, bold = false)
+    private val blockedText = sdText(ctx, "", 15.5f, pk.ink2, bold = false)
     private var fx: GiftFxView? = null
     // "Connecting…" / "No internet" under the header, only while the live connection is down (ConnWatch)
     private val conn = ConnWatch()
-    private val connBar = sdText(ctx, "", 13.5f, K.ink2).apply {
+    private val connBar = sdText(ctx, "", 13.5f, pk.ink2).apply {
         gravity = Gravity.CENTER; setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f))
-        background = rounded(Ui.c("#FFF7E0"), 14f, 1f, Ui.c("#F5D98B")); visibility = GONE
+        background = rounded(pc("#FFF7E0"), 14f, 1f, pc("#F5D98B")); visibility = GONE
         contentDescription = "Connection status"
     }
     private var unsubConn: (() -> Unit)? = null
@@ -151,12 +178,13 @@ class ChatRoom(
 
     init {
         isClickable = true
-        addView(PinkBackdrop(ctx), LayoutParams(-1, -1))
+        addView(backdrop, LayoutParams(-1, -1))
         val colv = vbox(ctx)
         addView(colv, LayoutParams(-1, -1))
-        colv.addView(buildHeader(), lp(MATCH, WRAP))
+        headBand.addView(buildHeader(), LayoutParams(-1, -2))
+        colv.addView(headBand, lp(MATCH, WRAP))
         colv.addView(connBar, lp(WRAP, WRAP, t = 8f, gravity = Gravity.CENTER_HORIZONTAL))
-        errorBox.background = rounded(Ui.c("#FFF1F3"), 16f, 1f, Ui.c("#F8B4C2"))
+        errorBox.background = rounded(pc("#FFF1F3"), 16f, 1f, pc("#F8B4C2"))
         errorBox.setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(12f)); errorBox.visibility = GONE
         colv.addView(errorBox, lp(MATCH, WRAP, l = 14f, r = 14f, t = 12f))
         scroll.isVerticalScrollBarEnabled = false; scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS; scroll.isFillViewport = true
@@ -178,12 +206,68 @@ class ChatRoom(
             false
         }
         colv.addView(scroll, lp(MATCH, 0, 1f))
-        failBtn.gravity = Gravity.CENTER; failBtn.background = rounded(Ui.c("#FFF1F3"), 16f, 1f, Ui.c("#F8B4C2")); failBtn.setPadding(dpi(11f), dpi(11f), dpi(11f), dpi(11f))
+        failBtn.gravity = Gravity.CENTER; failBtn.background = rounded(pc("#FFF1F3"), 16f, 1f, pc("#F8B4C2")); failBtn.setPadding(dpi(11f), dpi(11f), dpi(11f), dpi(11f))
         failBtn.visibility = GONE; failBtn.onTap { send() }
         colv.addView(failBtn, lp(MATCH, WRAP, l = 12f, r = 12f, t = 4f))
         tray.visibility = GONE
         colv.addView(tray, lp(MATCH, WRAP, l = 10f, r = 10f))
+        buildEmojiBar()
+        colv.addView(emojiBar, lp(MATCH, dpi(46f), l = 12f, r = 12f, t = 4f))
         colv.addView(buildComposer(), lp(MATCH, WRAP))
+        // a page over the chat (their profile) has the blush behind the clock; back in the chat, the maroon again
+        layer.onChange = { onStrip?.invoke() }
+        applyLook()
+    }
+
+    /** the parts built once — the page behind, the top band, the message box — in this chat's look (see sdLook) */
+    private fun applyLook() {
+        val rose = sdLook
+        if (lookNow == rose) return
+        lookNow = rose
+        backdrop.rose = rose
+        // the top: a flat maroon band with round lower corners (the picture's chat); the pink look has none
+        headBand.background = if (rose) GradientDrawable().apply { setColor(Rs.M); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(24f), Ui.dp(24f), Ui.dp(24f), Ui.dp(24f)) } else null
+        headBand.setPadding(0, 0, 0, dpi(if (rose) 6f else 0f))
+        headWhite.background = oval(pk.tint, 2f, Color.WHITE)
+        spinner.indeterminateTintList = android.content.res.ColorStateList.valueOf(pk.rose)
+        giftBtn.visibility = if (rose) VISIBLE else GONE
+        emojiBtn.visibility = if (rose) VISIBLE else GONE
+        gifBtn.visibility = if (rose) GONE else VISIBLE
+        inputBox.background = rounded(Color.WHITE, 26f, if (rose) 1f else 1.5f, pk.line)
+        inputBox.elevation = if (rose) 0f else Ui.dp(3f)
+        inputBox.setPadding(dpi(if (rose) 10f else 6f), 0, dpi(6f), 0)
+        input.setTextColor(pk.ink); input.setHintTextColor(pc("#A8909C"))
+        counter.setTextColor(pk.soft)
+        sendBtn.background = ckOval()
+        blockedBar.background = rounded(Color.WHITE, 20f, 1f, pk.line); blockedBar.elevation = if (rose) 0f else Ui.dp(3f)
+        blockedText.setTextColor(pk.ink2)
+        unblockBtn.background = ckPill(19f)
+        if (!rose) emojiOpen = false
+        renderEmoji()
+        renderTray()
+        onStrip?.invoke()
+    }
+
+    // ── a row of quick emojis over the message box (the smiley in it) ──
+    private fun buildEmojiBar() {
+        emojiBar.isHorizontalScrollBarEnabled = false; emojiBar.overScrollMode = View.OVER_SCROLL_NEVER
+        emojiBar.background = rounded(Color.WHITE, 23f, 1f, Rs.LINE)
+        val row = hbox(context).apply { setPadding(dpi(6f), 0, dpi(6f), 0) }
+        for (e in EMOJIS) row.addView(TextView(context).apply {
+            text = e; setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(23f)); setTextColor(Color.BLACK); gravity = Gravity.CENTER; includeFontPadding = false; contentDescription = "Add $e"
+        }.onTap { addEmoji(e) }, lp(dpi(42f), dpi(46f)))
+        emojiBar.addView(row)
+        emojiBar.visibility = GONE
+    }
+    private fun addEmoji(e: String) {
+        if (input.text.length + e.length > 500) return
+        val at = input.selectionStart.let { if (it < 0) input.text.length else it }
+        input.text.insert(at, e)
+    }
+    private fun renderEmoji() {
+        val on = emojiOpen && sdLook && blockRow == null
+        emojiBar.visibility = if (on) VISIBLE else GONE
+        emojiBtn.setImageDrawable(Icon(Lucide.Smile, if (on) Rs.M else Rs.SOFT, 23f, 2f))
     }
 
     // ═════════════ open / close (the route /chat/:id) ═════════════
@@ -210,6 +294,8 @@ class ChatRoom(
         ChatCache.messages(id)?.let { list -> messages.addAll(list); loading = false }
         ChatCache.me().takeIf { it.isNotEmpty() }?.let { meId = it }
         shownNow = true
+        emojiOpen = false
+        applyLook()
         renderAll()
         if (!loading) scrollToEnd(false)
         load(g)
@@ -272,6 +358,7 @@ class ChatRoom(
         if (tries >= 0) { postDelayed({ preview(what, -1) }, 900); return }
         when (what) {
             "gif" -> { gifOpen = true; renderTray() }
+            "emoji" -> { emojiOpen = true; renderEmoji() }
             "gifpremium" -> { gifOpen = true; gifTab = "premium"; renderTray() }
             "menu" -> menu()
             "report" -> report()
@@ -336,6 +423,7 @@ class ChatRoom(
                 ChatCache.putChat(chat)
                 other = chat.optJSONObject("other") ?: JSONObject()
                 chatApp = if (chat.optString("app") == "truefind") "truefind" else "secret"
+                applyLook()
                 otherPhotoRaw = SdRules.s(other, "photo")
                 Api.invoke("getWallet", JSONObject().put("app", chatApp)) { w -> if (g == gen && w.ok) { balance = w.data.optJSONObject("wallet")?.optInt("coins") ?: 0; renderTray() } }
                 // did I block this person?
@@ -587,10 +675,10 @@ class ChatRoom(
             .press().onTap { goBack() }, lp(dpi(44f), dpi(44f)))
         val ph = FrameLayout(context)
         headRing.setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
-        val white = FrameLayout(context).apply { background = oval(K.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+        val white = headWhite.apply { background = oval(pk.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
         white.addView(headPhoto, LayoutParams(-1, -1)); headRing.addView(white, LayoutParams(-1, -1))
         ph.addView(headRing, LayoutParams(dpi(48f), dpi(48f)))
-        headDot.background = oval(K.green, 2.5f, Color.WHITE)
+        headDot.background = oval(pk.green, 2.5f, Color.WHITE)
         ph.addView(headDot, LayoutParams(dpi(13f), dpi(13f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(1f); bottomMargin = dpi(1f) })
         ph.elevation = Ui.dp(3f)
         ph.press().onTap { openProfile() }
@@ -614,21 +702,23 @@ class ChatRoom(
         headPhoto.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", SdRules.s(o, "profile_id", "id")).put("gender", SdRules.s(o, "gender")), Ui.dpi(43f)))
         val st = story
         headRing.background = when {
+            // on the maroon band: a white ring; their story lights it bright pink (seen: pale)
+            sdLook -> oval(if (st == null) Color.WHITE else if (st.optBoolean("seen")) Rs.c("#F0C9C8") else Rs.SEAL)
             st == null -> GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
             st.optBoolean("seen") -> oval(Ui.c("#F2C3D8"))
             else -> RingDrawable(intArrayOf(Ui.c("#FFC2DF"), Ui.c("#F7569F"), Ui.c("#E3086C"), Ui.c("#FF8CC8"), Ui.c("#FFC2DF")), floatArrayOf(0f, .25f, .5f, .75f, 1f))
         }
         headDot.visibility = if (isOnline && !loading) VISIBLE else GONE
         headName.text = SdRules.s(o, "name").ifEmpty { if (loading) "" else "Chat" }
-        headName.setCompoundDrawablesWithIntrinsicBounds(null, null, if (isVerified) Seal(19f, Color.WHITE, K.rose) else null, null); headName.compoundDrawablePadding = dpi(6f)
+        headName.setCompoundDrawablesWithIntrinsicBounds(null, null, if (!isVerified) null else if (sdLook) Seal(19f, Rs.SEAL, Color.WHITE) else Seal(19f, Color.WHITE, pk.rose), null); headName.compoundDrawablePadding = dpi(6f)
         headStatus.removeAllViews()
         if (!loading) {
             when {
                 otherTyping -> headStatus.addView(sdText(context, "typing…", 13.5f, Color.WHITE))
-                isOnline -> { headStatus.addView(View(context).apply { background = oval(K.green) }, lp(dpi(8f), dpi(8f), r = 5f)); headStatus.addView(sdText(context, "Online now", 13.5f, Color.WHITE, bold = false)) }
+                isOnline -> { headStatus.addView(View(context).apply { background = oval(pk.green) }, lp(dpi(8f), dpi(8f), r = 5f)); headStatus.addView(sdText(context, "Online now", 13.5f, Color.WHITE, bold = false)) }
                 else -> headStatus.addView(sdText(context, lastSeenOf(o), 13.5f, Color.WHITE, bold = false))
             }
-            if (!otherTyping) headStatus.addView(sdText(context, " · tap for profile", 13.5f, Color.argb(217, 255, 255, 255), bold = false).oneLine(), lp(0, WRAP, 1f))
+            if (!otherTyping) headStatus.addView(sdText(context, " · tap for profile", 13.5f, pa(217, 255, 255, 255), bold = false).oneLine(), lp(0, WRAP, 1f))
         }
         menuBtn.visibility = if (SdRules.s(o, "profile_id").isNotEmpty()) VISIBLE else GONE
         (headPhoto.parent?.parent?.parent as? View)?.contentDescription = "Open ${SdRules.s(o, "name").ifEmpty { "user" }}'s profile"
@@ -642,7 +732,7 @@ class ChatRoom(
         if (other == null && !lowCoins) errorBox.addView(btn("Open your chats") { replace("/secret-app?tab=chat") }, lp(MATCH, dpi(44f), t = 10f))
         if (lowCoins) errorBox.addView(btn("Top up in Wallet") { go("/wallet?app=$chatApp", null) }, lp(MATCH, dpi(44f), t = 10f))
     }
-    private fun btn(t: String, onClick: () -> Unit) = sdText(context, t, 16f, Color.WHITE).apply { gravity = Gravity.CENTER; background = CK.btn(22f) }.press().onTap { onClick() }
+    private fun btn(t: String, onClick: () -> Unit) = sdText(context, t, 16f, Color.WHITE).apply { gravity = Gravity.CENTER; background = ckBtn(22f) }.press().onTap { onClick() }
 
     // ═════════════ the list ═════════════
     private fun renderAll() { renderHeader(); renderError(); renderInfo(); renderList(); renderTail(); renderTray(); renderComposer(); refreshFx() }
@@ -651,10 +741,10 @@ class ChatRoom(
         infoBox.removeAllViews()
         if (loading || error.isNotEmpty()) return
         // (no "Chat open till … · … left" any more: a chat once opened stays open — owner, 20 Nov)
-        infoBox.addView(infoPill("Numbers, links, IDs, email & abusive words are not sent", Lucide.ShieldCheck, K.sub, false), lp(WRAP, WRAP, t = 2f, b = 8f))
+        infoBox.addView(infoPill("Numbers, links, IDs, email & abusive words are not sent", Lucide.ShieldCheck, pk.sub, false), lp(WRAP, WRAP, t = 2f, b = 8f))
     }
-    private fun infoPill(t: String, icon: String, color: Int, bold: Boolean) = sdText(context, t, if (bold) 13.5f else 13f, color, bold = bold).icon(Icon(icon, K.rose, 15f), 7f).apply {
-        gravity = Gravity.CENTER_VERTICAL; background = rounded(Color.WHITE, 99f, 1f, K.line2); setPadding(dpi(13f), dpi(7f), dpi(13f), dpi(7f)); lineHeight(1.1f)
+    private fun infoPill(t: String, icon: String, color: Int, bold: Boolean) = sdText(context, t, if (bold) 13.5f else 13f, color, bold = bold).icon(Icon(icon, pk.rose, 15f), 7f).apply {
+        gravity = Gravity.CENTER_VERTICAL; background = rounded(Color.WHITE, 99f, 1f, pk.line2); setPadding(dpi(13f), dpi(7f), dpi(13f), dpi(7f)); lineHeight(1.1f)
     }
 
     private var shownKeys: List<String> = emptyList()
@@ -704,12 +794,12 @@ class ChatRoom(
         emptyBox.setPadding(dpi(10f), dpi(44f), dpi(10f), dpi(44f))
         val wave = sdText(context, "👋", 50f, Color.BLACK, bold = false)
         emptyBox.addView(wave); Emoji.animate(wave, "wave")
-        emptyBox.addView(sdText(context, "Say hi to ${firstName.ifEmpty { "them" }}", 26f, Color.WHITE).shadow(2f, 1f, Color.argb(71, 160, 20, 80)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 10f, b = 4f))
-        emptyBox.addView(sdText(context, "Send a message or a GIF.", 16f, Color.WHITE).shadow(2f, 1f, Color.argb(71, 160, 20, 80)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
+        emptyBox.addView(sdText(context, "Say hi to ${firstName.ifEmpty { "them" }}", 26f, Color.WHITE).shadow(2f, 1f, pa(71, 160, 20, 80)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 10f, b = 4f))
+        emptyBox.addView(sdText(context, "Send a message or a GIF.", 16f, Color.WHITE).shadow(2f, 1f, pa(71, 160, 20, 80)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
         if (blockRow == null) {
             val r = hbox(context, 10f, Gravity.CENTER)
             for (g in GIFS.take(3)) {
-                val b = FrameLayout(context).apply { background = rounded(Color.WHITE, 20f, 1f, K.line); elevation = Ui.dp(3f); contentDescription = "Send ${g.label} GIF" }
+                val b = FrameLayout(context).apply { background = rounded(Color.WHITE, 20f, 1f, pk.line); elevation = Ui.dp(3f); contentDescription = "Send ${g.label} GIF" }
                 val e = sdText(context, g.e, 34f, Color.BLACK, bold = false); b.addView(e, LayoutParams(-2, -2, Gravity.CENTER)); Emoji.animate(e, g.cls)
                 b.press().onTap { pickGif(g) }
                 r.addView(b, lp(dpi(74f), dpi(74f)))
@@ -722,16 +812,16 @@ class ChatRoom(
         for (p in pending) {
             val f = FrameLayout(context).apply { alpha = 0.85f; setPadding(dpi(6f), dpi(4f), dpi(6f), dpi(22f)) }
             f.addView(gifView(p.gif, big = false, showPrice = false, onPink = false), LayoutParams(-2, -2))
-            val tag = hbox(context, 4f).apply { background = rounded(Color.WHITE, 9f, 1f, K.line2); setPadding(dpi(8f), dpi(2f), dpi(8f), dpi(2f)) }
-            tag.addView(ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(K.sub) }, lp(dpi(12f), dpi(12f)))
-            tag.addView(sdText(context, "Sending", 11.5f, K.sub, bold = false))
+            val tag = hbox(context, 4f).apply { background = rounded(Color.WHITE, 9f, 1f, pk.line2); setPadding(dpi(8f), dpi(2f), dpi(8f), dpi(2f)) }
+            tag.addView(ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(pk.sub) }, lp(dpi(12f), dpi(12f)))
+            tag.addView(sdText(context, "Sending", 11.5f, pk.sub, bold = false))
             f.addView(tag, LayoutParams(-2, -2, Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(4f) })
             tailCol.addView(f, lp(WRAP, WRAP, gravity = Gravity.END))
         }
         if (otherTyping) {
             val b = hbox(context, 4f).apply { background = bubbleBg(false, false); setPadding(dpi(15f), dpi(12f), dpi(15f), dpi(12f)) }
             b.contentDescription = "${firstName.ifEmpty { "They" }} is typing"
-            for (i in 0 until 3) { val d = View(context).apply { background = oval(K.rose) }; b.addView(d, lp(dpi(7f), dpi(7f))); Emoji.typingDot(d, i) }
+            for (i in 0 until 3) { val d = View(context).apply { background = oval(pk.rose) }; b.addView(d, lp(dpi(7f), dpi(7f))); Emoji.typingDot(d, i) }
             tailCol.addView(b, lp(WRAP, WRAP))
         }
     }
@@ -740,7 +830,7 @@ class ChatRoom(
     }
 
     private fun divider(t: String) = FrameLayout(context).apply {
-        addView(sdText(context, t, 12.5f, K.sub).apply { letterSpacing = .03f; background = rounded(Color.WHITE, 99f, 1f, K.line2); setPadding(dpi(13f), dpi(4f), dpi(13f), dpi(4f)) },
+        addView(sdText(context, t, 12.5f, pk.sub).apply { letterSpacing = .03f; background = rounded(Color.WHITE, 99f, 1f, pk.line2); setPadding(dpi(13f), dpi(4f), dpi(13f), dpi(4f)) },
             LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(8f); bottomMargin = dpi(4f) })
     }
 
@@ -749,8 +839,9 @@ class ChatRoom(
         if (bare) return null
         val r = Ui.dp(18f); val s = Ui.dp(6f)
         val radii = if (mine) floatArrayOf(r, r, r, r, s, s, r, r) else floatArrayOf(r, r, r, r, r, r, s, s)
+        if (sdLook) return GradientDrawable().apply { setColor(if (mine) Rs.M else Color.WHITE); cornerRadii = radii; if (!mine) setStroke(dpi(1f), Rs.LINE) }
         return if (mine) CssGradient(160f, intArrayOf(Ui.c("#F43D95"), Ui.c("#E3086C"), Ui.c("#C80962")), floatArrayOf(0f, .55f, 1f), radii, Ui.dp(1.5f), Color.WHITE)
-        else GradientDrawable().apply { setColor(Color.WHITE); cornerRadii = radii; setStroke(dpi(1f), K.line2) }
+        else GradientDrawable().apply { setColor(Color.WHITE); cornerRadii = radii; setStroke(dpi(1f), pk.line2) }
     }
     private fun bubble(m: JSONObject): View {
         val mine = m.optString("from_user_id") == meId
@@ -759,13 +850,13 @@ class ChatRoom(
         val wrap = FrameLayout(context)
         val b = vbox(context)
         b.background = bubbleBg(mine, bare)
-        if (!bare) { b.elevation = Ui.dp(2f); b.outlineSpotShadowColorCompat(if (mine) Color.argb(178, 200, 9, 98) else Color.argb(89, 150, 0, 60)) }
+        if (!bare && !sdLook) { b.elevation = Ui.dp(2f); b.outlineSpotShadowColorCompat(if (mine) Color.argb(178, 200, 9, 98) else Color.argb(89, 150, 0, 60)) }
         when (k) {
             "photo" -> b.setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f))
             "gif" -> if (bare) b.setPadding(dpi(6f), dpi(4f), dpi(6f), dpi(4f)) else b.setPadding(dpi(13f), dpi(9f), dpi(13f), dpi(7f))
             else -> b.setPadding(dpi(13f), dpi(9f), dpi(13f), dpi(7f))
         }
-        val inkOnBubble = if (mine) Color.WHITE else K.ink
+        val inkOnBubble = if (mine) Color.WHITE else pk.ink
         when (k) {
             "photo" -> b.addView(photoBubble(SdRules.s(m, "media_uri", "media_url")), lp(dpi(210f).coerceAtMost(maxBubble), (dpi(210f).coerceAtMost(maxBubble) * 5 / 4)))
             "voice" -> b.addView(voiceBubble(SdRules.s(m, "media_uri", "media_url"), m.optDouble("duration_sec", 0.0), mine), lp(WRAP, WRAP))
@@ -776,14 +867,14 @@ class ChatRoom(
                 else if (g == null) b.addView(sdText(context, "GIF", 13f, inkOnBubble, bold = false).apply { alpha = 0.7f }, lp(WRAP, WRAP))
                 else {
                     b.addView(gifView(g, big = false, showPrice = mine, onPink = false), lp(WRAP, WRAP, gravity = Gravity.CENTER_HORIZONTAL))
-                    if (!mine) b.addView(sdText(context, "You earned ${fmtHalf(g.price)}", 12f, Ui.c("#17803A")).icon(Icon(Lucide.CoinsIcon, Ui.c("#17803A"), 12f), 4f).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 4f, gravity = Gravity.CENTER_HORIZONTAL))
+                    if (!mine) b.addView(sdText(context, "You earned ${fmtHalf(g.price)}", 12f, pc("#17803A")).icon(Icon(Lucide.CoinsIcon, pc("#17803A"), 12f), 4f).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 4f, gravity = Gravity.CENTER_HORIZONTAL))
                 }
             }
             else -> b.addView(sdText(context, m.optString("text"), 16f, inkOnBubble, bold = false).apply { lineHeight(1.15f); maxWidth = maxBubble - dpi(26f); setTextIsSelectable(false) }, lp(WRAP, WRAP))
         }
         val meta = hbox(context, 4f, Gravity.END or Gravity.CENTER_VERTICAL)
         if (k == "photo") meta.setPadding(dpi(6f), 0, dpi(6f), dpi(2f))
-        val metaColor = if (mine && !bare && k != "photo") Color.argb(217, 255, 255, 255) else K.soft
+        val metaColor = if (mine && !bare && k != "photo") pa(217, 255, 255, 255) else pk.soft
         meta.addView(sdText(context, timeOf(SdRules.ms(m.optString("created_date"))), 11.5f, metaColor, bold = false))
         if (mine) { val tick = ImageView(context); meta.addView(tick, lp(dpi(14f), dpi(14f))); ticks[m.optString("id")] = tick; tick.tag = (bare || k == "photo"); paintTick(tick, m) }
         b.addView(meta, lp(WRAP, WRAP, t = 3f, gravity = Gravity.END))
@@ -794,7 +885,8 @@ class ChatRoom(
         val onWhite = v.tag == true
         val read = m.optBoolean("read")
         // same as the web (ChatRoom.jsx): two ticks always — blue when read, grey / soft white when only sent
-        v.setImageDrawable(if (read) Icon(Lucide.CheckCheck, Ui.c("#3B82F6"), 14f) else Icon(Lucide.CheckCheck, if (onWhite) Color.argb(179, 140, 135, 139) else Color.argb(179, 255, 255, 255), 14f))
+        // (on the maroon bubble a lighter blue, so "read" can be told from "sent")
+        v.setImageDrawable(if (read) Icon(Lucide.CheckCheck, if (sdLook && !onWhite) Ui.c("#8FD3FF") else Ui.c("#3B82F6"), 14f) else Icon(Lucide.CheckCheck, if (onWhite) Color.argb(179, 140, 135, 139) else Color.argb(179, 255, 255, 255), 14f))
         v.contentDescription = if (read) "Read" else "Sent"
     }
     private fun heldView(h: JSONObject): View {
@@ -802,23 +894,23 @@ class ChatRoom(
         val row = hbox(context, 7f)
         row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 15f, 3f)); scaleType = ImageView.ScaleType.CENTER; background = oval(CK.red); elevation = Ui.dp(2f); contentDescription = "Not sent" }, lp(dpi(24f), dpi(24f)))
         val b = vbox(context).apply {
-            background = GradientDrawable().apply { setColor(Ui.c("#FFF1F3")); val r = Ui.dp(18f); val s = Ui.dp(6f); cornerRadii = floatArrayOf(r, r, r, r, s, s, r, r); setStroke(dpi(1f), Ui.c("#F8B4C2")) }
+            background = GradientDrawable().apply { setColor(pc("#FFF1F3")); val r = Ui.dp(18f); val s = Ui.dp(6f); cornerRadii = floatArrayOf(r, r, r, r, s, s, r, r); setStroke(dpi(1f), pc("#F8B4C2")) }
             setPadding(dpi(13f), dpi(9f), dpi(13f), dpi(7f))
         }
-        b.addView(sdText(context, h.optString("text"), 16f, Ui.c("#6B1730"), bold = false).apply { lineHeight(1.15f); maxWidth = (resources.displayMetrics.widthPixels * 0.86f).toInt() - dpi(80f) }, lp(WRAP, WRAP))
-        b.addView(sdText(context, timeOf(h.optLong("at")), 11.5f, Ui.c("#B04A63"), bold = false).icon(Icon(Lucide.X, CK.red, 13f, 3f), 4f, end = true), lp(WRAP, WRAP, t = 3f, gravity = Gravity.END))
+        b.addView(sdText(context, h.optString("text"), 16f, pc("#6B1730"), bold = false).apply { lineHeight(1.15f); maxWidth = (resources.displayMetrics.widthPixels * 0.86f).toInt() - dpi(80f) }, lp(WRAP, WRAP))
+        b.addView(sdText(context, timeOf(h.optLong("at")), 11.5f, pc("#B04A63"), bold = false).icon(Icon(Lucide.X, CK.red, 13f, 3f), 4f, end = true), lp(WRAP, WRAP, t = 3f, gravity = Gravity.END))
         row.addView(b, lp(WRAP, WRAP))
         col.addView(row, lp(WRAP, WRAP))
         val note = hbox(context, 8f, Gravity.END or Gravity.CENTER_VERTICAL).apply { background = rounded(Color.WHITE, 12f); setPadding(dpi(10f), dpi(3f), dpi(10f), dpi(3f)) }
         note.addView(sdText(context, "Not sent · ${h.optString("reason")}", 13f, CK.red).apply { maxWidth = (resources.displayMetrics.widthPixels * 0.6f).toInt() })
-        note.addView(sdText(context, "Remove", 13f, K.sub).apply { paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG; contentDescription = "Remove this unsent message"; setPadding(0, dpi(2f), 0, dpi(2f)) }.onTap { dropHeld(h.optString("id")) })
+        note.addView(sdText(context, "Remove", 13f, pk.sub).apply { paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG; contentDescription = "Remove this unsent message"; setPadding(0, dpi(2f), 0, dpi(2f)) }.onTap { dropHeld(h.optString("id")) })
         col.addView(note, lp(WRAP, WRAP, t = 4f))
         return FrameLayout(context).apply { addView(col, LayoutParams(-2, -2, Gravity.END)) }
     }
     private fun photoBubble(uri: String): View {
-        val f = FrameLayout(context).apply { background = rounded(K.tint, 14f); clipToOutline = true; outlineProvider = roundOutline(14f); contentDescription = "Open photo" }
+        val f = FrameLayout(context).apply { background = rounded(pk.tint, 14f); clipToOutline = true; outlineProvider = roundOutline(14f); contentDescription = "Open photo" }
         val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
-        val sp = ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(K.rose) }
+        val sp = ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(pk.rose) }
         f.addView(img, LayoutParams(-1, -1)); f.addView(sp, LayoutParams(dpi(22f), dpi(22f), Gravity.CENTER))
         var loaded: Bitmap? = null
         Photos.loadFull(uri, 1200) { b -> if (b != null) { loaded = b; img.setImageBitmap(b); sp.visibility = GONE } }
@@ -827,7 +919,7 @@ class ChatRoom(
     }
     private fun voiceBubble(uri: String, secs: Double, mine: Boolean): View {
         val r = hbox(context, 10f).apply { minimumWidth = dpi(190f) }
-        val play = FrameLayout(context).apply { background = oval(if (mine) Color.WHITE else K.pill) }
+        val play = FrameLayout(context).apply { background = oval(if (mine) Color.WHITE else pk.pill) }
         val ic = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER }
         play.addView(ic, LayoutParams(-1, -1))
         r.addView(play, lp(dpi(38f), dpi(38f)))
@@ -839,16 +931,16 @@ class ChatRoom(
                 val n = 26; val gap = Ui.dp(2f); val bw = (width - gap * (n - 1)) / n
                 for (i in 0 until n) {
                     val hh = Ui.dp((5 + abs(sin(i * 1.7 + uri.length)) * 15).toFloat())
-                    p.color = if ((i / 26f) * 100 < pct) (if (mine) Color.WHITE else K.hot) else if (mine) Color.argb(115, 255, 255, 255) else Ui.c("#F3C6DA")
+                    p.color = if ((i / 26f) * 100 < pct) (if (mine) Color.WHITE else pk.hot) else if (mine) pa(115, 255, 255, 255) else pc("#F3C6DA")
                     val x = i * (bw + gap); c.drawRoundRect(x, (height - hh) / 2, x + bw, (height + hh) / 2, Ui.dp(2f), Ui.dp(2f), p)
                 }
             }
         }
         right.addView(bars, lp(MATCH, dpi(22f)))
-        val time = sdText(context, mmss(secs), 11.5f, if (mine) Color.argb(217, 255, 255, 255) else K.soft, bold = false)
+        val time = sdText(context, mmss(secs), 11.5f, if (mine) pa(217, 255, 255, 255) else pk.soft, bold = false)
         right.addView(time)
         r.addView(right, lp(0, WRAP, 1f))
-        fun paint(playing: Boolean) { ic.setImageDrawable(Icon(if (playing) Lucide.Pause else Lucide.Play, if (mine) K.hot else Color.WHITE, 17f, 2f, if (mine) K.hot else Color.WHITE)) }
+        fun paint(playing: Boolean) { ic.setImageDrawable(Icon(if (playing) Lucide.Pause else Lucide.Play, if (mine) pk.hot else Color.WHITE, 17f, 2f, if (mine) pk.hot else Color.WHITE)) }
         paint(false)
         play.contentDescription = "Play voice message"
         play.press().onTap {
@@ -879,15 +971,15 @@ class ChatRoom(
         if (!g.vip) {
             val v = vbox(context, 2f, Gravity.CENTER_HORIZONTAL).apply { if (big) setPadding(dpi(8f), dpi(4f), dpi(8f), dpi(4f)) }
             v.addView(emoji, lp(WRAP, WRAP))
-            v.addView(sdText(context, g.label, if (big) 18f else 15f, if (onPink) Color.WHITE else K.wine, italic = true), lp(WRAP, WRAP))
-            if (showPrice) v.addView(sdText(context, g.price.toString(), 11.5f, if (onPink) Color.WHITE else K.hot).icon(Icon(Lucide.CoinsIcon, if (onPink) Color.WHITE else K.hot, 12f), 3f).apply { alpha = 0.9f }, lp(WRAP, WRAP))
+            v.addView(sdText(context, g.label, if (big) 18f else 15f, if (onPink) Color.WHITE else pk.wine, italic = true), lp(WRAP, WRAP))
+            if (showPrice) v.addView(sdText(context, g.price.toString(), 11.5f, if (onPink) Color.WHITE else pk.hot).icon(Icon(Lucide.CoinsIcon, if (onPink) Color.WHITE else pk.hot, 12f), 3f).apply { alpha = 0.9f }, lp(WRAP, WRAP))
             return v
         }
         // premium gift card: gold frame, glow, sparkles, shine
         val w = if (big) 190f else 150f
         val card = FrameLayout(context).apply {
             background = VipBg(); clipToOutline = true; outlineProvider = roundOutline(20f); elevation = Ui.dp(4f)
-            outlineSpotShadowColorCompat(Color.argb(191, 200, 10, 100))
+            outlineSpotShadowColorCompat(pa(191, 200, 10, 100))
             setPadding(dpi(if (big) 10f else 8f), dpi(if (big) 16f else 12f), dpi(if (big) 10f else 8f), dpi(if (big) 12f else 10f))
         }
         val glowTop = if (big) 50f else 40f
@@ -895,13 +987,13 @@ class ChatRoom(
         if (!Lite.on) card.addView(Sparkles(context, size * 0.85f), LayoutParams(dpi(size * 2), dpi(size * 2), Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(glowTop - size) - dpi(if (big) 16f else 12f) })
         val v = vbox(context, 0f, Gravity.CENTER_HORIZONTAL)
         v.addView(emoji, lp(WRAP, WRAP))
-        v.addView(sdText(context, g.label, if (big) 20f else 17f, Color.WHITE, italic = true).shadow(6f, 1f, Color.argb(128, 90, 0, 30)), lp(WRAP, WRAP, t = 4f))
-        val chip = sdText(context, "PREMIUM" + if (showPrice) " · " else "", 11f, Ui.c("#5A2A00")).apply {
+        v.addView(sdText(context, g.label, if (big) 20f else 17f, Color.WHITE, italic = true).shadow(6f, 1f, pa(128, 90, 0, 30)), lp(WRAP, WRAP, t = 4f))
+        val chip = sdText(context, "PREMIUM" + if (showPrice) " · " else "", 11f, pc("#5A2A00")).apply {
             letterSpacing = .06f; gravity = Gravity.CENTER_VERTICAL
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FBE7B5"), Ui.c("#E2B04F"))).apply { cornerRadius = Ui.dp(99f) }
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(pc("#FBE7B5"), pc("#E2B04F"))).apply { cornerRadius = Ui.dp(99f) }
             setPadding(dpi(8f), dpi(2f), dpi(8f), dpi(2f))
         }
-        if (showPrice) chip.text = android.text.SpannableStringBuilder("PREMIUM · ").append(coinSpan(11f, Ui.c("#5A2A00"))).append(g.price.toString())
+        if (showPrice) chip.text = android.text.SpannableStringBuilder("PREMIUM · ").append(coinSpan(11f, pc("#5A2A00"))).append(g.price.toString())
         v.addView(chip, lp(WRAP, WRAP, t = 4f))
         card.addView(v, LayoutParams(-1, -2))
         if (!Lite.on) card.addView(Shine(context), LayoutParams(-1, -1))
@@ -974,19 +1066,21 @@ class ChatRoom(
         tray.removeAllViews()
         tray.visibility = if (gifOpen && blockRow == null) VISIBLE else GONE
         if (tray.visibility == GONE) tray.tag = null
-        gifBtn.background = rounded(if (gifOpen) K.pill else K.tint, 18f); gifBtn.setTextColor(if (gifOpen) Color.WHITE else K.hot)
+        gifBtn.background = rounded(if (gifOpen) pk.pill else pk.tint, 18f); gifBtn.setTextColor(if (gifOpen) Color.WHITE else pk.hot)
+        giftBtn.background = if (gifOpen) oval(Rs.M) else oval(Color.WHITE, 1f, Rs.LINE)
+        giftBtn.setImageDrawable(Icon(Lucide.Gift, if (gifOpen) Color.WHITE else Rs.M, 24f, 1.9f))
         if (!gifOpen || blockRow != null) return
-        val box = vbox(context).apply { background = rounded(Color.WHITE, 22f, 1f, K.line2); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(8f)); elevation = Ui.dp(6f) }
+        val box = vbox(context).apply { background = rounded(Color.WHITE, 22f, 1f, pk.line2); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(8f)); elevation = Ui.dp(6f) }
         val head = hbox(context, 8f)
-        head.addView(sdText(context, "Send a GIF", 20f, K.deep), lp(0, WRAP, 1f))
-        val bal = sdText(context, "${balance ?: "–"} ", 14f, K.wine).apply {
-            gravity = Gravity.CENTER_VERTICAL; background = rounded(K.tint2, 16f, 1f, K.line); setPadding(dpi(11f), 0, dpi(11f), 0)
-            setCompoundDrawablesWithIntrinsicBounds(Icon(Lucide.CoinsIcon, K.hot, 15f), null, null, null); compoundDrawablePadding = dpi(5f)
-            append(android.text.SpannableString("+").apply { setSpan(android.text.style.ForegroundColorSpan(K.hot), 0, 1, 0); setSpan(android.text.style.RelativeSizeSpan(16f / 14f), 0, 1, 0) })
+        head.addView(sdText(context, "Send a GIF", 20f, pk.deep), lp(0, WRAP, 1f))
+        val bal = sdText(context, "${balance ?: "–"} ", 14f, pk.wine).apply {
+            gravity = Gravity.CENTER_VERTICAL; background = rounded(pk.tint2, 16f, 1f, pk.line); setPadding(dpi(11f), 0, dpi(11f), 0)
+            setCompoundDrawablesWithIntrinsicBounds(Icon(Lucide.CoinsIcon, pk.hot, 15f), null, null, null); compoundDrawablePadding = dpi(5f)
+            append(android.text.SpannableString("+").apply { setSpan(android.text.style.ForegroundColorSpan(pk.hot), 0, 1, 0); setSpan(android.text.style.RelativeSizeSpan(16f / 14f), 0, 1, 0) })
             contentDescription = "Balance ${balance ?: "–"} coins. Top up"
         }
         head.addView(bal.press().onTap { go("/wallet?app=$chatApp", null) }, lp(WRAP, dpi(32f)))
-        head.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, K.wine, 20f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Close GIFs" }.onTap { gifOpen = false; renderTray() }, lp(dpi(36f), dpi(36f)))
+        head.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, pk.wine, 20f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Close GIFs" }.onTap { gifOpen = false; renderTray() }, lp(dpi(36f), dpi(36f)))
         box.addView(head, lp(MATCH, WRAP, l = 2f, r = 2f, b = 8f))
         // the categories
         val tabsScroll = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER }
@@ -994,9 +1088,9 @@ class ChatRoom(
         var selectedTab: View? = null
         for (t in GIF_GROUPS) {
             val on = gifTab == t.first
-            val tv = sdText(context, (if (t.first == "premium") "👑 " else "") + t.second, 14f, if (on) Color.WHITE else K.wine).apply {
+            val tv = sdText(context, (if (t.first == "premium") "👑 " else "") + t.second, 14f, if (on) Color.WHITE else pk.wine).apply {
                 gravity = Gravity.CENTER; setPadding(dpi(14f), 0, dpi(14f), 0)
-                background = if (on) (if (t.first == "premium") GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F2B84B"), Ui.c("#FF6FAF"), Ui.c("#E3086C"))).apply { cornerRadius = Ui.dp(17f) } else CK.pill(17f)) else rounded(Color.WHITE, 17f, 1f, K.line2)
+                background = if (on) (if (t.first == "premium") GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F2B84B"), pc("#FF6FAF"), pc("#E3086C"))).apply { cornerRadius = Ui.dp(17f) } else ckPill(17f)) else rounded(Color.WHITE, 17f, 1f, pk.line2)
             }
             if (on) selectedTab = tv
             tabs.addView(tv.press().onTap { gifTab = t.first; renderTray() }, lp(WRAP, dpi(34f)))
@@ -1031,22 +1125,22 @@ class ChatRoom(
             false
         }
         box.addView(gridScroll, lp(MATCH, dpi(214f)))
-        box.addView(sdText(context, "Swipe left or right for more · Text messages are free", 12.5f, K.soft, bold = false).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 8f))
+        box.addView(sdText(context, "Swipe left or right for more · Text messages are free", 12.5f, pk.soft, bold = false).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 8f))
         tray.addView(box, LayoutParams(-1, -2))
         if (tray.tag != "up") { tray.tag = "up"; tray.translationY = Ui.dp(300f); tray.animate().translationY(0f).setStartDelay(70).setDuration(340).setInterpolator(SdLayer.EASE_UP).start() }
     }
     private fun gifTile(g: Gif): View {
         val v = vbox(context, 3f, Gravity.CENTER).apply {
-            background = if (g.vip) VipBg(true) else rounded(K.tint2, 16f, 1f, K.line2)
-            if (g.vip) { elevation = Ui.dp(4f); outlineSpotShadowColorCompat(Color.argb(178, 200, 10, 100)) }
+            background = if (g.vip) VipBg(true) else rounded(pk.tint2, 16f, 1f, pk.line2)
+            if (g.vip) { elevation = Ui.dp(4f); outlineSpotShadowColorCompat(pa(178, 200, 10, 100)) }
             setPadding(dpi(2f), dpi(6f), dpi(2f), dpi(6f))
             contentDescription = "${g.label} GIF, ${g.price} ${if (g.price == 1) "coin" else "coins"}"
         }
         val e = sdText(context, g.e, 30f, Color.BLACK, bold = false); v.addView(e, lp(WRAP, WRAP)); Emoji.animate(e, g.cls)
-        v.addView(sdText(context, g.label, 12f, if (g.vip) Color.WHITE else K.wine).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
-        val price = sdText(context, g.price.toString(), 12f, if (g.vip) Ui.c("#5A2A00") else K.hot).icon(Icon(Lucide.CoinsIcon, if (g.vip) Ui.c("#5A2A00") else K.hot, 12f), 3f).apply {
+        v.addView(sdText(context, g.label, 12f, if (g.vip) Color.WHITE else pk.wine).oneLine().apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
+        val price = sdText(context, g.price.toString(), 12f, if (g.vip) pc("#5A2A00") else pk.hot).icon(Icon(Lucide.CoinsIcon, if (g.vip) pc("#5A2A00") else pk.hot, 12f), 3f).apply {
             gravity = Gravity.CENTER_VERTICAL
-            if (g.vip) { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FBE7B5"), Ui.c("#E2B04F"))).apply { cornerRadius = Ui.dp(99f) }; setPadding(dpi(7f), dpi(1f), dpi(7f), dpi(1f)) }
+            if (g.vip) { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(pc("#FBE7B5"), pc("#E2B04F"))).apply { cornerRadius = Ui.dp(99f) }; setPadding(dpi(7f), dpi(1f), dpi(7f), dpi(1f)) }
         }
         v.addView(price, lp(WRAP, WRAP))
         return v.press().onTap { pickGif(g) }
@@ -1056,14 +1150,19 @@ class ChatRoom(
     private fun buildComposer(): View {
         composer.setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(12f))
         val row = hbox(context, 8f, Gravity.BOTTOM)
+        // Secret Dating's look: the gifts on a round button of their own, left of the message box
+        giftBtn.setImageDrawable(Icon(Lucide.Gift, Rs.M, 24f, 1.9f)); giftBtn.scaleType = ImageView.ScaleType.CENTER
+        giftBtn.background = oval(Color.WHITE, 1f, Rs.LINE); giftBtn.contentDescription = "Gifts"
+        giftBtn.press().onTap { gifOpen = !gifOpen; if (gifOpen) { hideKeyboard(); emojiOpen = false; renderEmoji() }; renderTray() }
+        row.addView(giftBtn, lp(dpi(52f), dpi(52f)))
         inputBox.orientation = LinearLayout.HORIZONTAL; inputBox.gravity = Gravity.CENTER_VERTICAL
-        inputBox.background = rounded(Color.WHITE, 26f, 1.5f, K.line)
-        inputBox.elevation = Ui.dp(3f); inputBox.outlineSpotShadowColorCompat(Color.argb(115, 150, 0, 60))
+        inputBox.background = rounded(Color.WHITE, 26f, 1.5f, pk.line)
+        inputBox.elevation = Ui.dp(3f); inputBox.outlineSpotShadowColorCompat(pa(115, 150, 0, 60))
         inputBox.setPadding(dpi(6f), 0, dpi(6f), 0); inputBox.minimumHeight = dpi(52f)
         gifBtn.gravity = Gravity.CENTER; gifBtn.letterSpacing = .05f; gifBtn.setPadding(dpi(11f), 0, dpi(11f), 0); gifBtn.contentDescription = "GIFs"
         gifBtn.press().onTap { gifOpen = !gifOpen; if (gifOpen) hideKeyboard(); renderTray() }
         inputBox.addView(gifBtn, lp(WRAP, dpi(36f)))
-        input.background = null; input.setTextColor(K.ink); input.setHintTextColor(Ui.c("#A8909C")); input.typeface = Ui.regular
+        input.background = null; input.setTextColor(pk.ink); input.setHintTextColor(pc("#A8909C")); input.typeface = Ui.regular
         input.setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(16f)); input.isSingleLine = true; input.filters = arrayOf(InputFilter.LengthFilter(500))
         input.imeOptions = EditorInfo.IME_ACTION_SEND or EditorInfo.IME_FLAG_NO_EXTRACT_UI; input.setPadding(dpi(6f), 0, dpi(6f), 0)
         input.contentDescription = "Message"
@@ -1074,14 +1173,17 @@ class ChatRoom(
             override fun afterTextChanged(s: Editable?) { onType(s.toString()) }
         })
         input.setOnFocusChangeListener { _, f ->
-            inputBox.background = rounded(Color.WHITE, 26f, 1.5f, if (f) K.rose else K.line)
+            inputBox.background = rounded(Color.WHITE, 26f, if (sdLook) 1f else 1.5f, if (f) pk.rose else pk.line)
             if (f) { if (gifOpen) { gifOpen = false; renderTray() }; main.postDelayed({ scrollToEnd(false) }, 250) }
         }
         inputBox.addView(input, lp(0, dpi(48f), 1f))
+        emojiBtn.scaleType = ImageView.ScaleType.CENTER; emojiBtn.contentDescription = "Emojis"
+        emojiBtn.press().onTap { emojiOpen = !emojiOpen; if (emojiOpen && gifOpen) { gifOpen = false; renderTray() }; renderEmoji() }
+        inputBox.addView(emojiBtn, lp(dpi(38f), dpi(44f)))
         counter.visibility = GONE
         inputBox.addView(counter, lp(WRAP, WRAP, r = 4f))
         row.addView(inputBox, lp(0, WRAP, 1f))
-        sendBtn.background = CK.btnOval()
+        sendBtn.background = ckOval()
         sendIcon.setImageDrawable(Icon(Lucide.Send, Color.WHITE, 21f)); sendIcon.scaleType = ImageView.ScaleType.CENTER; sendIcon.translationX = -Ui.dp(2f)
         sendBtn.addView(sendIcon, LayoutParams(-1, -1)); sendBtn.addView(sendSpin, LayoutParams(dpi(21f), dpi(21f), Gravity.CENTER)); sendSpin.visibility = GONE
         sendBtn.contentDescription = "Send"
@@ -1090,11 +1192,11 @@ class ChatRoom(
         composer.addView(row, LayoutParams(-1, -2))
         // blocked: "You blocked Priya." · Unblock
         blockedBar.orientation = LinearLayout.HORIZONTAL; blockedBar.gravity = Gravity.CENTER_VERTICAL
-        blockedBar.background = rounded(Color.WHITE, 20f, 1f, K.line); blockedBar.elevation = Ui.dp(3f)
+        blockedBar.background = rounded(Color.WHITE, 20f, 1f, pk.line); blockedBar.elevation = Ui.dp(3f)
         blockedBar.setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f))
         blockedBar.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Ban, CK.red, 19f)) }, lp(dpi(19f), dpi(19f), r = 10f))
         blockedBar.addView(blockedText, lp(0, WRAP, 1f))
-        blockedBar.addView(sdText(context, "Unblock", 15f, Color.WHITE).apply { gravity = Gravity.CENTER; background = CK.pill(19f); setPadding(dpi(16f), 0, dpi(16f), 0) }.press().onTap { unblock() }, lp(WRAP, dpi(38f), l = 10f))
+        blockedBar.addView(unblockBtn.apply { gravity = Gravity.CENTER; background = ckPill(19f); setPadding(dpi(16f), 0, dpi(16f), 0) }.press().onTap { unblock() }, lp(WRAP, dpi(38f), l = 10f))
         blockedBar.visibility = GONE
         composer.addView(blockedBar, LayoutParams(-1, -2))
         return composer
@@ -1104,6 +1206,8 @@ class ChatRoom(
         (inputBox.parent as View).visibility = if (blocked) GONE else VISIBLE
         blockedBar.visibility = if (blocked) VISIBLE else GONE
         blockedText.text = "You blocked ${firstName.ifEmpty { "this person" }}."
+        if (blocked && emojiOpen) emojiOpen = false
+        renderEmoji()
         input.hint = "Message $firstName…"
         renderSendState()
     }
@@ -1156,7 +1260,7 @@ class ChatRoom(
     private fun profilePage() {
         val o = other ?: return
         val root = FrameLayout(context)
-        root.addView(PinkBackdrop(context), LayoutParams(-1, -1))
+        root.addView(PinkBackdrop(context).apply { rose = sdLook }, LayoutParams(-1, -1))
         val sc = ScrollView(context).apply { isVerticalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS }
         root.addView(sc, LayoutParams(-1, -1))
         val col = vbox(context)
@@ -1176,14 +1280,14 @@ class ChatRoom(
             val online = isOnline
             // top bar
             val top = FrameLayout(context).apply { setPadding(dpi(6f), dpi(16f), dpi(8f), 0) }
-            top.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ArrowLeft, Color.WHITE, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back to chat" }.press().onTap { close() },
+            top.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ArrowLeft, onBg, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back to chat" }.press().onTap { close() },
                 LayoutParams(dpi(44f), dpi(44f), Gravity.START))
-            val more = ImageView(context).apply { setImageDrawable(Icon(Lucide.MoreVertical, Color.WHITE, 24f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "More options" }
+            val more = ImageView(context).apply { setImageDrawable(Icon(Lucide.MoreVertical, onBg, 24f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "More options" }
             top.addView(more.press().onTap { profileMenu(more) { close() } }, LayoutParams(dpi(44f), dpi(44f), Gravity.END))
             col.addView(top, lp(MATCH, WRAP))
             // round photo
             val ph = FrameLayout(context)
-            val ring = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f)); elevation = Ui.dp(8f); outlineSpotShadowColorCompat(Color.argb(153, 200, 16, 100)) }
+            val ring = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F7569F"), pc("#C7105F"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f)); elevation = Ui.dp(8f); outlineSpotShadowColorCompat(pa(153, 200, 16, 100)) }
             val white = FrameLayout(context).apply { background = oval(Color.WHITE); setPadding(dpi(5f), dpi(5f), dpi(5f), dpi(5f)) }
             val photo = RoundPhoto(context, 186f)
             photo.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", pid).put("gender", SdRules.s(o, "gender")), Ui.dpi(186f)))
@@ -1195,33 +1299,34 @@ class ChatRoom(
             col.addView(ph, lp(dpi(204f), dpi(204f), t = 4f, gravity = Gravity.CENTER_HORIZONTAL))
             // name · city
             val nameRow = hbox(context, 10f, Gravity.CENTER)
-            nameRow.addView(sdText(context, first.ifEmpty { "Member" } + (age?.let { ", $it" } ?: ""), 30f, Color.WHITE).oneLine().shadow(2f, 1f, Color.argb(71, 160, 20, 80)), lp(WRAP, WRAP))
+            val glow = if (sdLook) Color.TRANSPARENT else Color.argb(71, 160, 20, 80)
+            nameRow.addView((if (sdLook) Rs.title(context, first.ifEmpty { "Member" } + (age?.let { ", $it" } ?: ""), 28f) else sdText(context, first.ifEmpty { "Member" } + (age?.let { ", $it" } ?: ""), 30f, Color.WHITE)).oneLine().shadow(2f, 1f, glow), lp(WRAP, WRAP))
             if (online) nameRow.addView(LiveDot(context, 12f))
             col.addView(nameRow, lp(MATCH, WRAP, l = 24f, r = 24f, t = 18f))
-            col.addView(sdText(context, if (online) "Online now" else lastSeenOf(o), 15f, Color.WHITE).shadow(2f, 1f, Color.argb(71, 160, 20, 80)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 6f))
-            if (where.isNotEmpty()) col.addView(sdText(context, where, 17f, Color.WHITE).oneLine().shadow(2f, 1f, Color.argb(71, 160, 20, 80)).icon(Icon(Lucide.MapPin, Color.WHITE, 19f, 2f), 6f), lp(WRAP, WRAP, t = 6f, gravity = Gravity.CENTER_HORIZONTAL))
+            col.addView(sdText(context, if (online) "Online now" else lastSeenOf(o), 15f, if (sdLook) Rs.SUB else Color.WHITE).shadow(2f, 1f, glow).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 6f))
+            if (where.isNotEmpty()) col.addView(sdText(context, where, 17f, onBg).oneLine().shadow(2f, 1f, glow).icon(Icon(Lucide.MapPin, if (sdLook) Rs.ICON else Color.WHITE, 19f, 2f), 6f), lp(WRAP, WRAP, t = 6f, gravity = Gravity.CENTER_HORIZONTAL))
             // story
             story?.let {
-                val b = hbox(context, 9f).apply { background = rounded(Color.WHITE, 22f, 1f, K.line); setPadding(dpi(4f), 0, dpi(16f), 0) }
-                val sr = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-                val sw = FrameLayout(context).apply { background = oval(K.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+                val b = hbox(context, 9f).apply { background = rounded(Color.WHITE, 22f, 1f, pk.line); setPadding(dpi(4f), 0, dpi(16f), 0) }
+                val sr = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F7569F"), pc("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+                val sw = FrameLayout(context).apply { background = oval(pk.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
                 val sp = RoundPhoto(context, 28f); sp.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", pid), Ui.dpi(28f))); if (!storyPremium) sp.dim = 0.35f
                 sw.addView(sp, LayoutParams(-1, -1)); sr.addView(sw, LayoutParams(-1, -1))
                 b.addView(sr, lp(dpi(36f), dpi(36f)))
-                b.addView(if (storyPremium) sdText(context, "Watch story", 15.5f, K.wine) else sdText(context, "Story · Premium", 15.5f, K.wine).icon(Icon(Lucide.Lock, K.wine, 15f), 6f))
+                b.addView(if (storyPremium) sdText(context, "Watch story", 15.5f, pk.wine) else sdText(context, "Story · Premium", 15.5f, pk.wine).icon(Icon(Lucide.Lock, pk.wine, 15f), 6f))
                 b.contentDescription = if (storyPremium) "Watch $first's story" else "Stories are for Premium members"
                 col.addView(b.press().onTap { openStory() }, lp(WRAP, dpi(44f), t = 14f, gravity = Gravity.CENTER_HORIZONTAL))
             }
             // main button: back to the chat
             val back = sdText(context, "Back to Chat", 22f, Color.WHITE).icon(Icon(Lucide.MessageCircleMore, Color.WHITE, 27f, 2f), 10f).apply { gravity = Gravity.CENTER }
-            val backBox = FrameLayout(context).apply { background = CK.btn(30f, Color.WHITE); elevation = Ui.dp(6f); outlineSpotShadowColorCompat(Color.argb(191, 190, 0, 85)); addView(back, LayoutParams(-2, -1, Gravity.CENTER)) }
+            val backBox = FrameLayout(context).apply { background = ckBtn(30f, Color.WHITE); elevation = Ui.dp(6f); outlineSpotShadowColorCompat(pa(191, 190, 0, 85)); addView(back, LayoutParams(-2, -1, Gravity.CENTER)) }
             col.addView(backBox.press().onTap { close() }, lp(MATCH, dpi(60f), l = 24f, r = 24f, t = 18f))
-            col.addView(sdText(context, "Your private chat with ${first.ifEmpty { "them" }}. Numbers, links and IDs stay hidden.", 14f, K.wine).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(MATCH, WRAP, l = 24f, r = 24f, t = 8f))
+            col.addView(sdText(context, "Your private chat with ${first.ifEmpty { "them" }}. Numbers, links and IDs stay hidden.", 14f, pk.wine).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(MATCH, WRAP, l = 24f, r = 24f, t = 8f))
             // about
             val sec = vbox(context).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
             if (about.isNotEmpty()) {
-                sec.addView(sdText(context, "About Me", 21f, Ui.c("#A1144A")))
-                sec.addView(sdText(context, about, 17f, Ui.c("#161216"), bold = false).lineHeight(1.2f).inlineIcon(Icon(Lucide.Heart, K.rose, 16f, 2.2f), 4f, atEnd = true), lp(MATCH, WRAP, t = 8f))
+                sec.addView(sdText(context, "About Me", 21f, pc("#A1144A")))
+                sec.addView(sdText(context, about, 17f, pc("#161216"), bold = false).lineHeight(1.2f).inlineIcon(Icon(Lucide.Heart, pk.rose, 16f, 2.2f), 4f, atEnd = true), lp(MATCH, WRAP, t = 8f))
             }
             val g = SdRules.sexOf(d)
             val job = SdRules.s(d, "profession", "job", "work", "occupation")
@@ -1229,12 +1334,12 @@ class ChatRoom(
                 SdRules.s(d, "height").takeIf { it.isNotEmpty() }?.let { Lucide.Ruler to it }, job.takeIf { it.isNotEmpty() }?.let { Lucide.Briefcase to it },
                 SdRules.s(d, "education").takeIf { it.isNotEmpty() }?.let { Lucide.Sparkles to it }).take(5)
             if (chips.isNotEmpty()) sec.addView(SdProfileView.Flow(context, 6f).apply {
-                for ((ic, t) in chips) addView(sdText(context, t, 14.5f, K.ink, bold = false).icon(Icon(ic, Ui.c("#97294B"), 16f, 2f), 5f).apply { gravity = Gravity.CENTER_VERTICAL; background = rounded(Color.WHITE, 999f, 1f, Ui.c("#EED6E2")); setPadding(dpi(9f), 0, dpi(11f), 0); minHeight = dpi(36f) })
+                for ((ic, t) in chips) addView(sdText(context, t, 14.5f, pk.ink, bold = false).icon(Icon(ic, pc("#97294B"), 16f, 2f), 5f).apply { gravity = Gravity.CENTER_VERTICAL; background = rounded(Color.WHITE, 999f, 1f, pc("#EED6E2")); setPadding(dpi(9f), 0, dpi(11f), 0); minHeight = dpi(36f) })
             }, lp(MATCH, WRAP, t = 14f))
             val tagsArr = d.optJSONArray("interests") ?: d.optJSONArray("hobbies")
             val tags = (0 until (tagsArr?.length() ?: 0)).map { tagsArr!!.opt(it).toString() }.take(8)
             if (tags.isNotEmpty()) sec.addView(SdProfileView.Flow(context, 6f).apply {
-                for (t in tags) addView(sdText(context, t, 14f, K.wine).apply { background = rounded(K.tint2, 99f, 1f, K.line); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) })
+                for (t in tags) addView(sdText(context, t, 14f, pk.wine).apply { background = rounded(pk.tint2, 99f, 1f, pk.line); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) })
             }, lp(MATCH, WRAP, t = 8f))
             val main1 = SdRules.s(d, "photo"); val main2 = SdRules.s(d, "profile_picture")
             val pics = photoListOf(d).filter { it != main1 && it != main2 }.take(4)
@@ -1242,7 +1347,7 @@ class ChatRoom(
                 val row = hbox(context, 8f, Gravity.TOP)
                 val side = (resources.displayMetrics.widthPixels - dpi(48f) - dpi(8f) * 3) / 4
                 for (u in pics) {
-                    val f = FrameLayout(context).apply { background = rounded(K.tint, 14f, 1f, K.line2); clipToOutline = true; outlineProvider = roundOutline(14f); contentDescription = "See photo" }
+                    val f = FrameLayout(context).apply { background = rounded(pk.tint, 14f, 1f, pk.line2); clipToOutline = true; outlineProvider = roundOutline(14f); contentDescription = "See photo" }
                     val img = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
                     f.addView(img, LayoutParams(-1, -1))
                     Photos.loadFull(u, 600) { b -> if (b != null) img.setImageBitmap(b) }
@@ -1253,23 +1358,23 @@ class ChatRoom(
             col.addView(sec, lp(MATCH, WRAP, t = 18f))
             if (verified) {
                 val v = vbox(context).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
-                v.addView(sdText(context, "Verification", 21f, Ui.c("#A1144A")))
-                val box = hbox(context, 12f).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FDE5F1"), Ui.c("#FFF6FA"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), Ui.c("#F5C7DC")) }; setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
-                box.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ShieldCheck, K.rose, 38f, 1.8f)) }, lp(dpi(38f), dpi(38f)))
-                val tx = vbox(context); tx.addView(sdText(context, "Verified Member", 17f, Ui.c("#A91C56"))); tx.addView(sdText(context, "Identity & profile verified for a safer experience.", 14f, K.ink2, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 2f))
+                v.addView(sdText(context, "Verification", 21f, pc("#A1144A")))
+                val box = hbox(context, 12f).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(pc("#FDE5F1"), pc("#FFF6FA"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), pc("#F5C7DC")) }; setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
+                box.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ShieldCheck, pk.rose, 38f, 1.8f)) }, lp(dpi(38f), dpi(38f)))
+                val tx = vbox(context); tx.addView(sdText(context, "Verified Member", 17f, pc("#A91C56"))); tx.addView(sdText(context, "Identity & profile verified for a safer experience.", 14f, pk.ink2, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 2f))
                 box.addView(tx, lp(0, WRAP, 1f))
                 v.addView(box, lp(MATCH, WRAP, t = 10f))
                 col.addView(v, lp(MATCH, WRAP, t = 22f))
             }
             // rules + block / report
-            val rules = hbox(context, 10f, Gravity.TOP).apply { background = rounded(Color.WHITE, 16f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
-            rules.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, K.rose, 17f)) }, lp(dpi(17f), dpi(17f), t = 1f))
-            rules.addView(sdText(context, "Chat only. Phone numbers, email, links and social IDs (Instagram, Telegram, WhatsApp…) are not allowed — such messages are not sent.", 14f, K.sub, bold = false).lineHeight(1.2f), lp(0, WRAP, 1f))
+            val rules = hbox(context, 10f, Gravity.TOP).apply { background = rounded(Color.WHITE, 16f, 1f, pk.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
+            rules.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, pk.rose, 17f)) }, lp(dpi(17f), dpi(17f), t = 1f))
+            rules.addView(sdText(context, "Chat only. Phone numbers, email, links and social IDs (Instagram, Telegram, WhatsApp…) are not allowed — such messages are not sent.", 14f, pk.sub, bold = false).lineHeight(1.2f), lp(0, WRAP, 1f))
             col.addView(rules, lp(MATCH, WRAP, l = 24f, r = 24f, t = 16f))
             val two = hbox(context, 10f, Gravity.CENTER)
-            two.addView(sdText(context, if (blockRow != null) "Unblock" else "Block", 15.5f, CK.red).icon(Icon(Lucide.Ban, CK.red, 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 22f, 1f, Ui.c("#f3a7b5")); setPadding(dpi(18f), 0, dpi(18f), 0) }
+            two.addView(sdText(context, if (blockRow != null) "Unblock" else "Block", 15.5f, CK.red).icon(Icon(Lucide.Ban, CK.red, 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 22f, 1f, pc("#f3a7b5")); setPadding(dpi(18f), 0, dpi(18f), 0) }
                 .press().onTap { close(); if (blockRow != null) unblock() else confirm("block") }, lp(WRAP, dpi(44f)))
-            two.addView(sdText(context, "Report", 15.5f, K.ink2).icon(Icon(Lucide.Flag, K.ink2, 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 22f, 1f, K.line); setPadding(dpi(18f), 0, dpi(18f), 0) }
+            two.addView(sdText(context, "Report", 15.5f, pk.ink2).icon(Icon(Lucide.Flag, pk.ink2, 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 22f, 1f, pk.line); setPadding(dpi(18f), 0, dpi(18f), 0) }
                 .press().onTap { close(); report() }, lp(WRAP, dpi(44f)))
             col.addView(two, lp(MATCH, WRAP, t = 14f, b = 30f))
         }
@@ -1282,38 +1387,38 @@ class ChatRoom(
         }
     }
     private fun profileMenu(anchor: View, closePage: () -> Unit) {
-        val panel = vbox(context).apply { background = rounded(Color.WHITE, 16f, 1f, K.line2); setPadding(dpi(6f), dpi(6f), dpi(6f), dpi(6f)); elevation = Ui.dp(10f) }
+        val panel = vbox(context).apply { background = rounded(Color.WHITE, 16f, 1f, pk.line2); setPadding(dpi(6f), dpi(6f), dpi(6f), dpi(6f)); elevation = Ui.dp(10f) }
         val pop = android.widget.PopupWindow(panel, dpi(176f), ViewGroup.LayoutParams.WRAP_CONTENT, true)
         pop.elevation = Ui.dp(10f)
         panel.addView(sdText(context, if (blockRow != null) "Unblock" else "Block", 15.5f, CK.red).icon(Icon(Lucide.Ban, CK.red, 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
             .onTap { pop.dismiss(); closePage(); if (blockRow != null) unblock() else confirm("block") }, lp(MATCH, dpi(44f)))
-        panel.addView(sdText(context, "Report", 15.5f, K.ink2).icon(Icon(Lucide.Flag, K.ink2, 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
+        panel.addView(sdText(context, "Report", 15.5f, pk.ink2).icon(Icon(Lucide.Flag, pk.ink2, 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
             .onTap { pop.dismiss(); closePage(); report() }, lp(MATCH, dpi(44f)))
         pop.showAsDropDown(anchor, -dpi(176f) + anchor.width - dpi(4f), dpi(2f))
     }
 
     private fun sheetPanel(): LinearLayout = vbox(context).apply {
-        background = K.sheet(); setPadding(dpi(18f), dpi(10f), dpi(18f), dpi(18f))
-        addView(View(context).apply { background = rounded(Ui.c("#F2C3D8"), 3f) }, lp(dpi(44f), dpi(5f), b = 14f, gravity = Gravity.CENTER_HORIZONTAL))
+        background = pk.sheet(); setPadding(dpi(18f), dpi(10f), dpi(18f), dpi(18f))
+        addView(View(context).apply { background = rounded(pc("#F2C3D8"), 3f) }, lp(dpi(44f), dpi(5f), b = 14f, gravity = Gravity.CENTER_HORIZONTAL))
     }
     private fun sheetRow(icon: String, label: String, sub: String?, danger: Boolean, onClick: () -> Unit): View {
-        val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 16f, 1f, if (danger) Ui.c("#F8C9D3") else K.line2); setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(8f)); minimumHeight = dpi(58f) }
-        r.addView(ImageView(context).apply { setImageDrawable(Icon(icon, if (danger) CK.red else K.rose, 20f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(if (danger) Ui.c("#FFE4E8") else K.tint, 12f) }, lp(dpi(40f), dpi(40f)))
+        val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 16f, 1f, if (danger) pc("#F8C9D3") else pk.line2); setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(8f)); minimumHeight = dpi(58f) }
+        r.addView(ImageView(context).apply { setImageDrawable(Icon(icon, if (danger) CK.red else pk.rose, 20f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(if (danger) pc("#FFE4E8") else pk.tint, 12f) }, lp(dpi(40f), dpi(40f)))
         val t = vbox(context)
-        t.addView(sdText(context, label, 16f, if (danger) CK.red else K.ink2))
-        if (sub != null) t.addView(sdText(context, sub, 13f, K.sub, bold = false), lp(WRAP, WRAP, t = 1f))
+        t.addView(sdText(context, label, 16f, if (danger) CK.red else pk.ink2))
+        if (sub != null) t.addView(sdText(context, sub, 13f, pk.sub, bold = false), lp(WRAP, WRAP, t = 1f))
         r.addView(t, lp(0, WRAP, 1f))
         return r.press().onTap { onClick() }
     }
     private fun menu() {
         val p = sheetPanel()
         val head = hbox(context, 12f).apply { setPadding(dpi(4f), 0, dpi(4f), dpi(8f)) }
-        val ring = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-        val w = FrameLayout(context).apply { background = oval(K.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+        val ring = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F7569F"), pc("#C7105F"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+        val w = FrameLayout(context).apply { background = oval(pk.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
         val ph = RoundPhoto(context, 42f); ph.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", SdRules.s(other, "profile_id")), Ui.dpi(42f)))
         w.addView(ph, LayoutParams(-1, -1)); ring.addView(w, LayoutParams(-1, -1))
         head.addView(ring, lp(dpi(50f), dpi(50f)))
-        head.addView(sdText(context, SdRules.s(other, "name"), 22f, K.deep).oneLine(), lp(0, WRAP, 1f))
+        head.addView(sdText(context, SdRules.s(other, "name"), 22f, pk.deep).oneLine(), lp(0, WRAP, 1f))
         p.addView(head, lp(MATCH, WRAP))
         var close: () -> Unit = {}
         p.addView(sheetRow(Lucide.User, "View profile", null, false) { close(); profilePage() }, lp(MATCH, WRAP, t = 8f))
@@ -1327,14 +1432,14 @@ class ChatRoom(
         close = layer.sheet(p, z = 80f, maxVh = 0.88f)
     }
     private fun confirm(kind: String) {
-        val box = FrameLayout(context).apply { setBackgroundColor(Color.argb(115, 60, 0, 25)); setPadding(dpi(24f), dpi(24f), dpi(24f), dpi(24f)) }
-        val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 24f, 1f, K.line2); setPadding(dpi(18f), dpi(22f), dpi(18f), dpi(16f)); elevation = Ui.dp(16f); isClickable = true }
-        card.addView(sdText(context, if (kind == "delete") "Delete this chat?" else "Block ${firstName}?", 24f, K.deep).apply { gravity = Gravity.CENTER })
-        card.addView(sdText(context, if (kind == "delete") "All messages in this chat will be removed for you. This can't be undone." else "They won't be able to message you. You can unblock anytime from this chat or Settings.", 15.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(MATCH, WRAP, t = 8f, b = 18f))
+        val box = FrameLayout(context).apply { setBackgroundColor(pa(115, 60, 0, 25)); setPadding(dpi(24f), dpi(24f), dpi(24f), dpi(24f)) }
+        val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 24f, 1f, pk.line2); setPadding(dpi(18f), dpi(22f), dpi(18f), dpi(16f)); elevation = Ui.dp(16f); isClickable = true }
+        card.addView(sdText(context, if (kind == "delete") "Delete this chat?" else "Block ${firstName}?", 24f, pk.deep).apply { gravity = Gravity.CENTER })
+        card.addView(sdText(context, if (kind == "delete") "All messages in this chat will be removed for you. This can't be undone." else "They won't be able to message you. You can unblock anytime from this chat or Settings.", 15.5f, pk.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(MATCH, WRAP, t = 8f, b = 18f))
         var close: () -> Unit = {}
         val two = hbox(context, 10f)
-        two.addView(sdText(context, "Cancel", 16f, K.ink2).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 24f, 1f, K.line) }.press().onTap { close() }, lp(0, dpi(48f), 1f))
-        two.addView(sdText(context, if (kind == "delete") "Delete" else "Block", 16f, Color.WHITE).apply { gravity = Gravity.CENTER; background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F0506C"), Ui.c("#C0153D"))).apply { cornerRadius = Ui.dp(24f) } }
+        two.addView(sdText(context, "Cancel", 16f, pk.ink2).apply { gravity = Gravity.CENTER; background = rounded(Color.WHITE, 24f, 1f, pk.line) }.press().onTap { close() }, lp(0, dpi(48f), 1f))
+        two.addView(sdText(context, if (kind == "delete") "Delete" else "Block", 16f, Color.WHITE).apply { gravity = Gravity.CENTER; background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(pc("#F0506C"), pc("#C0153D"))).apply { cornerRadius = Ui.dp(24f) } }
             .press().onTap { close(); if (kind == "delete") deleteChat() else block() }, lp(0, dpi(48f), 1f))
         card.addView(two, lp(MATCH, WRAP))
         box.addView(card, LayoutParams(dpi(340f).coerceAtMost(resources.displayMetrics.widthPixels - dpi(48f)), -2, Gravity.CENTER))
@@ -1401,12 +1506,12 @@ class ChatRoom(
         val p = sheetPanel()
         var reason = ""; var details = ""; val shots = ArrayList<Shot>(); var busy = false
         var close: () -> Unit = {}
-        p.addView(sdText(context, "Report ${firstName}", 25f, K.deep), lp(MATCH, WRAP, l = 4f, r = 4f, b = 4f))
-        p.addView(sdText(context, "Your report is private. Our team checks it and can remove them from the app. They'll also be blocked for you.", 15f, K.sub, bold = false).lineHeight(1.2f), lp(MATCH, WRAP, l = 4f, r = 4f, b = 12f))
+        p.addView(sdText(context, "Report ${firstName}", 25f, pk.deep), lp(MATCH, WRAP, l = 4f, r = 4f, b = 4f))
+        p.addView(sdText(context, "Your report is private. Our team checks it and can remove them from the app. They'll also be blocked for you.", 15f, pk.sub, bold = false).lineHeight(1.2f), lp(MATCH, WRAP, l = 4f, r = 4f, b = 12f))
         val reasons = vbox(context, 6f)
         p.addView(reasons, lp(MATCH, WRAP))
         val detailsIn = EditText(context)
-        val hint = sdText(context, "", 13f, K.soft, bold = false)
+        val hint = sdText(context, "", 13f, pk.soft, bold = false)
         val shotsRow = hbox(context, 8f)
         val sendB = hbox(context, 8f, Gravity.CENTER)
         fun ready() = reason.isNotEmpty() && details.trim().length >= 10
@@ -1415,44 +1520,44 @@ class ChatRoom(
             reasons.removeAllViews()
             for ((k, label, sub) in REPORT_REASONS) {
                 val on = reason == k
-                val r = hbox(context, 12f).apply { background = rounded(if (on) K.tint2 else Color.WHITE, 16f, if (on) 1.5f else 1f, if (on) K.rose else K.line2); setPadding(dpi(12f), dpi(11f), dpi(12f), dpi(11f)) }
-                val dot = FrameLayout(context).apply { background = oval(Color.TRANSPARENT, 2f, if (on) K.rose else Ui.c("#D9B3C5")) }
-                if (on) dot.addView(View(context).apply { background = oval(K.rose) }, LayoutParams(dpi(11f), dpi(11f), Gravity.CENTER))
+                val r = hbox(context, 12f).apply { background = rounded(if (on) pk.tint2 else Color.WHITE, 16f, if (on) 1.5f else 1f, if (on) pk.rose else pk.line2); setPadding(dpi(12f), dpi(11f), dpi(12f), dpi(11f)) }
+                val dot = FrameLayout(context).apply { background = oval(Color.TRANSPARENT, 2f, if (on) pk.rose else pc("#D9B3C5")) }
+                if (on) dot.addView(View(context).apply { background = oval(pk.rose) }, LayoutParams(dpi(11f), dpi(11f), Gravity.CENTER))
                 r.addView(dot, lp(dpi(22f), dpi(22f)))
-                val t = vbox(context); t.addView(sdText(context, label, 16f, K.ink)); if (sub.isNotEmpty()) t.addView(sdText(context, sub, 13.5f, K.sub, bold = false))
+                val t = vbox(context); t.addView(sdText(context, label, 16f, pk.ink)); if (sub.isNotEmpty()) t.addView(sdText(context, sub, 13.5f, pk.sub, bold = false))
                 r.addView(t, lp(0, WRAP, 1f))
                 r.contentDescription = label + if (on) ", selected" else ""
                 reasons.addView(r.press().onTap { reason = k; paint() }, lp(MATCH, WRAP))
             }
             val ok = details.trim().length >= 10
-            detailsIn.background = rounded(Color.WHITE, 16f, 1.5f, if (ok) K.line else Ui.c("#F8B4C2"))
+            detailsIn.background = rounded(Color.WHITE, 16f, 1.5f, if (ok) pk.line else pc("#F8B4C2"))
             hint.text = if (ok) "Thank you — this helps our team." else "Please write at least 10 letters."
-            hint.setTextColor(if (ok) K.soft else CK.red)
+            hint.setTextColor(if (ok) pk.soft else CK.red)
             shotsRow.removeAllViews()
             for ((i, sh) in shots.withIndex()) {
-                val f = FrameLayout(context).apply { background = rounded(K.tint, 14f, 1f, K.line); clipToOutline = true; outlineProvider = roundOutline(14f) }
+                val f = FrameLayout(context).apply { background = rounded(pk.tint, 14f, 1f, pk.line); clipToOutline = true; outlineProvider = roundOutline(14f) }
                 f.addView(ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setImageBitmap(sh.bmp) }, LayoutParams(-1, -1))
-                f.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 14f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(153, 0, 0, 0)); contentDescription = "Remove screenshot ${i + 1}" }
+                f.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 14f)); scaleType = ImageView.ScaleType.CENTER; background = oval(pa(153, 0, 0, 0)); contentDescription = "Remove screenshot ${i + 1}" }
                     .onTap { shots.removeAt(i); paint() }, LayoutParams(dpi(24f), dpi(24f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(3f), dpi(3f), 0) })
                 shotsRow.addView(f, lp(dpi(74f), dpi(98f)))
             }
             if (shots.size < 3) {
                 val add = vbox(context, 4f, Gravity.CENTER).apply { background = DashedRect(); contentDescription = "Add screenshot" }
-                add.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Camera, K.rose, 22f)) }, lp(dpi(22f), dpi(22f)))
-                add.addView(sdText(context, "Add", 13f, K.rose), lp(WRAP, WRAP))
+                add.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Camera, pk.rose, 22f)) }, lp(dpi(22f), dpi(22f)))
+                add.addView(sdText(context, "Add", 13f, pk.rose), lp(WRAP, WRAP))
                 shotsRow.addView(add.press().onTap {
                     val pick = SdSheets.pickImage ?: return@onTap
                     pick { b, type -> if (b != null && type.startsWith("image/") && shots.size < 3) { shots.add(Shot(b, decodeSmall(b))); paint() } }
                 }, lp(dpi(74f), dpi(98f)))
             }
             sendB.removeAllViews()
-            sendB.background = if (ready()) GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F0506C"), Ui.c("#C0153D"))).apply { cornerRadius = Ui.dp(27f) } else rounded(Ui.c("#F3E3EA"), 27f)
+            sendB.background = if (ready()) GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(pc("#F0506C"), pc("#C0153D"))).apply { cornerRadius = Ui.dp(27f) } else rounded(pc("#F3E3EA"), 27f)
             if (busy) sendB.addView(ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE) }, lp(dpi(19f), dpi(19f)))
-            else sendB.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Flag, if (ready()) Color.WHITE else Ui.c("#B79AA8"), 18f)) }, lp(dpi(18f), dpi(18f)))
-            sendB.addView(sdText(context, "Report & block", 17f, if (ready()) Color.WHITE else Ui.c("#B79AA8")))
+            else sendB.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Flag, if (ready()) Color.WHITE else pc("#B79AA8"), 18f)) }, lp(dpi(18f), dpi(18f)))
+            sendB.addView(sdText(context, "Report & block", 17f, if (ready()) Color.WHITE else pc("#B79AA8")))
         }
-        p.addView(sdText(context, "What did they do? ", 16f, K.wine).apply { append(android.text.SpannableString("*").apply { setSpan(android.text.style.ForegroundColorSpan(CK.red), 0, 1, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
-        detailsIn.hint = "Describe their behaviour — what they said or sent"; detailsIn.setHintTextColor(Ui.c("#A8909C")); detailsIn.setTextColor(K.ink); detailsIn.typeface = Ui.regular
+        p.addView(sdText(context, "What did they do? ", 16f, pk.wine).apply { append(android.text.SpannableString("*").apply { setSpan(android.text.style.ForegroundColorSpan(CK.red), 0, 1, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
+        detailsIn.hint = "Describe their behaviour — what they said or sent"; detailsIn.setHintTextColor(pc("#A8909C")); detailsIn.setTextColor(pk.ink); detailsIn.typeface = Ui.regular
         detailsIn.setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(16f)); detailsIn.minLines = 3; detailsIn.gravity = Gravity.TOP; detailsIn.filters = arrayOf(InputFilter.LengthFilter(1000))
         detailsIn.setPadding(dpi(13f), dpi(11f), dpi(13f), dpi(11f)); detailsIn.contentDescription = "Details"
         detailsIn.addTextChangedListener(object : TextWatcher {
@@ -1462,7 +1567,7 @@ class ChatRoom(
         })
         p.addView(detailsIn, lp(MATCH, WRAP))
         p.addView(hint, lp(MATCH, WRAP, l = 4f, r = 4f, t = 3f))
-        p.addView(sdText(context, "Screenshots ", 16f, K.wine).apply { append(android.text.SpannableString("(up to 3, optional)").apply { setSpan(android.text.style.ForegroundColorSpan(K.soft), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.regular), 0, length, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
+        p.addView(sdText(context, "Screenshots ", 16f, pk.wine).apply { append(android.text.SpannableString("(up to 3, optional)").apply { setSpan(android.text.style.ForegroundColorSpan(pk.soft), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.regular), 0, length, 0) }) }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 14f, b = 6f))
         p.addView(shotsRow, lp(MATCH, WRAP))
         p.addView(sendB.press().onTap {
             if (!ready() || busy) return@onTap
@@ -1512,17 +1617,17 @@ class ChatRoom(
         var close: () -> Unit = {}
         val c = vbox(context, 10f, Gravity.CENTER_HORIZONTAL).apply { setPadding(0, dpi(4f), 0, dpi(6f)) }
         c.addView(gifView(g, big = true, showPrice = false, onPink = false), lp(WRAP, WRAP))
-        c.addView(sdText(context, android.text.SpannableStringBuilder("Send ").append(android.text.SpannableString(g.label).apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }).append(" to ${firstName.ifEmpty { "them" }}"), 16.5f, K.sub, bold = false).apply { gravity = Gravity.CENTER })
-        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(K.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }), 15f, K.sub, bold = false).icon(Icon(Lucide.CoinsIcon, K.hot, 16f), 6f), lp(WRAP, WRAP))
+        c.addView(sdText(context, android.text.SpannableStringBuilder("Send ").append(android.text.SpannableString(g.label).apply { setSpan(android.text.style.ForegroundColorSpan(pk.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }).append(" to ${firstName.ifEmpty { "them" }}"), 16.5f, pk.sub, bold = false).apply { gravity = Gravity.CENTER })
+        c.addView(sdText(context, android.text.SpannableStringBuilder("Your balance: ").append(android.text.SpannableString("${balance ?: "–"}").apply { setSpan(android.text.style.ForegroundColorSpan(pk.deep), 0, length, 0); setSpan(Compat.typefaceSpan(Ui.bold), 0, length, 0) }), 15f, pk.sub, bold = false).icon(Icon(Lucide.CoinsIcon, pk.hot, 16f), 6f), lp(WRAP, WRAP))
         p.addView(c, lp(MATCH, WRAP))
         val bal = balance
         if (bal != null && bal < g.price) {
-            p.addView(sdText(context, "Not enough coins · Top up", 18f, Color.WHITE).apply { gravity = Gravity.CENTER; background = CK.btn(28f) }.press().onTap { close(); go("/wallet?app=$chatApp", null) }, lp(MATCH, dpi(56f), t = 10f))
+            p.addView(sdText(context, "Not enough coins · Top up", 18f, Color.WHITE).apply { gravity = Gravity.CENTER; background = ckBtn(28f) }.press().onTap { close(); go("/wallet?app=$chatApp", null) }, lp(MATCH, dpi(56f), t = 10f))
         } else {
             val label = sdText(context, android.text.SpannableStringBuilder("Send for ").append(coinSpan(18f, Color.WHITE)).append("${g.price} coin${if (g.price == 1) "" else "s"}"), 18f, Color.WHITE)
             val b = FrameLayout(context).apply {
-                background = if (g.vip) GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F2B84B"), Ui.c("#FF6FAF"), Ui.c("#E3086C"))).apply { cornerRadius = Ui.dp(28f) } else CK.btn(28f)
-                elevation = Ui.dp(6f); outlineSpotShadowColorCompat(Color.argb(217, 200, 9, 98))
+                background = if (g.vip) GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F2B84B"), pc("#FF6FAF"), pc("#E3086C"))).apply { cornerRadius = Ui.dp(28f) } else ckBtn(28f)
+                elevation = Ui.dp(6f); outlineSpotShadowColorCompat(pa(217, 200, 9, 98))
                 addView(label, LayoutParams(-2, -2, Gravity.CENTER))
             }
             p.addView(b.press().onTap {
@@ -1532,16 +1637,16 @@ class ChatRoom(
                 sendGifNow(g)
             }, lp(MATCH, dpi(56f), t = 10f))
         }
-        p.addView(sdText(context, "Cancel", 16f, K.sub).apply { gravity = Gravity.CENTER }.onTap { close() }, lp(MATCH, dpi(46f), t = 8f))
+        p.addView(sdText(context, "Cancel", 16f, pk.sub).apply { gravity = Gravity.CENTER }.onTap { close() }, lp(MATCH, dpi(46f), t = 8f))
         p.contentDescription = "Send ${g.label}"
         close = layer.sheet(p, z = 81f, maxVh = 0.88f)
     }
 
     private fun viewPhoto(b: Bitmap) {
-        val f = FrameLayout(context).apply { setBackgroundColor(Color.argb(242, 0, 0, 0)) }
+        val f = FrameLayout(context).apply { setBackgroundColor(pa(242, 0, 0, 0)) }
         f.addView(ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_CENTER; setImageBitmap(b); contentDescription = "Photo" }, LayoutParams(-1, -1))
         var close: () -> Unit = {}
-        f.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 22f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(36, 255, 255, 255)); contentDescription = "Close photo" }
+        f.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 22f)); scaleType = ImageView.ScaleType.CENTER; background = oval(pa(36, 255, 255, 255)); contentDescription = "Close photo" }
             .onTap { close() }, LayoutParams(dpi(44f), dpi(44f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(12f), dpi(14f), 0) })
         f.setOnClickListener { close() }
         close = layer.fade(f, z = 90f)
@@ -1557,17 +1662,17 @@ class ChatRoom(
         f.addView(img, LayoutParams(-1, -1)); f.addView(sp, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
         Photos.loadFull(SdRules.s(s, "media_url", "media_uri"), 1600) { b -> if (b != null) { img.setImageBitmap(b); sp.visibility = GONE } }
         val top = vbox(context).apply { setPadding(dpi(12f), dpi(10f), dpi(12f), 0) }
-        val track = FrameLayout(context).apply { background = rounded(Color.argb(64, 255, 255, 255), 2f) }
+        val track = FrameLayout(context).apply { background = rounded(pa(64, 255, 255, 255), 2f) }
         val fill = View(context).apply { background = rounded(Color.WHITE, 2f); pivotX = 0f; scaleX = 0f }
         track.addView(fill, LayoutParams(-1, -1))
         top.addView(track, lp(MATCH, dpi(3f)))
         val row = FrameLayout(context)
         row.addView(sdText(context, SdRules.s(s, "name").ifEmpty { SdRules.s(other, "name") }, 18f, Color.WHITE), LayoutParams(-2, -2, Gravity.START or Gravity.CENTER_VERTICAL))
         var close: () -> Unit = {}
-        row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 22f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(102, 0, 0, 0)); contentDescription = "Close story" }.onTap { close() }, LayoutParams(dpi(40f), dpi(40f), Gravity.END))
+        row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 22f)); scaleType = ImageView.ScaleType.CENTER; background = oval(pa(102, 0, 0, 0)); contentDescription = "Close story" }.onTap { close() }, LayoutParams(dpi(40f), dpi(40f), Gravity.END))
         top.addView(row, lp(MATCH, WRAP, t = 10f))
         f.addView(top, LayoutParams(-1, -2, Gravity.TOP))
-        if (SdRules.s(s, "caption").isNotEmpty()) f.addView(sdText(context, SdRules.s(s, "caption"), 16f, Color.WHITE, bold = false).shadow(6f, 1f, Color.argb(230, 0, 0, 0)).apply { gravity = Gravity.CENTER },
+        if (SdRules.s(s, "caption").isNotEmpty()) f.addView(sdText(context, SdRules.s(s, "caption"), 16f, Color.WHITE, bold = false).shadow(6f, 1f, pa(230, 0, 0, 0)).apply { gravity = Gravity.CENTER },
             LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), dpi(28f)) })
         f.setOnClickListener { close() }
         Api.invoke("viewStory", JSONObject().put("story_id", s.optString("id"))) { }
@@ -1582,10 +1687,10 @@ class ChatRoom(
     private val hideToast = Runnable { toastView?.let { v -> v.animate().alpha(0f).setDuration(200).withEndAction { (v.parent as? ViewGroup)?.removeView(v) }.start() }; toastView = null }
     private fun say(msg: String, kind: String = "ok") {
         toastView?.let { (it.parent as? ViewGroup)?.removeView(it) }
-        val t = hbox(context, 10f).apply { background = rounded(Color.WHITE, 18f, 1f, if (kind == "err") Ui.c("#F8B4C2") else K.line); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)); elevation = Ui.dp(12f) }
-        val ic = when (kind) { "premium", "verify" -> Icon(Lucide.Lock, K.rose, 18f); "err" -> Icon(Lucide.AlertTriangle, CK.red, 18f); else -> Icon(Lucide.ShieldCheck, Ui.c("#17803A"), 18f) }
+        val t = hbox(context, 10f).apply { background = rounded(Color.WHITE, 18f, 1f, if (kind == "err") pc("#F8B4C2") else pk.line); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)); elevation = Ui.dp(12f) }
+        val ic = when (kind) { "premium", "verify" -> Icon(Lucide.Lock, pk.rose, 18f); "err" -> Icon(Lucide.AlertTriangle, CK.red, 18f); else -> Icon(Lucide.ShieldCheck, pc("#17803A"), 18f) }
         t.addView(ImageView(context).apply { setImageDrawable(ic) }, lp(dpi(18f), dpi(18f)))
-        t.addView(sdText(context, msg, 15f, K.ink, bold = false).lineHeight(1.1f), lp(0, WRAP, 1f))
+        t.addView(sdText(context, msg, 15f, pk.ink, bold = false).lineHeight(1.1f), lp(0, WRAP, 1f))
         if (kind == "premium") t.addView(sdText(context, "Unlock", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/wallet?app=secret", null) })
         if (kind == "verify") t.addView(sdText(context, "Verify Now", 14f, Color.WHITE).apply { gravity = Gravity.CENTER; background = rounded(CK.PILL_END, 16f); setPadding(dpi(12f), dpi(7f), dpi(12f), dpi(7f)) }.onTap { main.removeCallbacks(hideToast); hideToast.run(); go("/profile?open=creator", null) })
         val wrap = FrameLayout(context).apply { elevation = Ui.dp(60f) + 96f }
@@ -1600,6 +1705,8 @@ class ChatRoom(
 
     // ═════════════ helpers (same as the web) ═════════════
     companion object {
+        /** the row of quick emojis (Secret Dating's chat) */
+        val EMOJIS = listOf("😊", "😂", "❤️", "😍", "😘", "🥰", "😉", "👍", "🙏", "😎", "🤗", "🔥", "🌹", "💕", "🎉", "👋", "😇", "🤔", "😋", "😢")
         fun kindOf(m: JSONObject): String {
             val k = (listOf("kind", "type", "message_type").map { m.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "").lowercase()
             if (Regex("voice|audio").containsMatchIn(k)) return "voice"

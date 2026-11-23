@@ -284,6 +284,30 @@ nshot v01-verify-girl 9 $P verify --ez tf_girl true
 nshot v02-verify-boy 9 $P verify
 nshot v03-verify-pending 10 $P verify --ez tf_girl true --es tf_open pending
 fi
+# Secret Dating's maroon-and-blush look (owner's picture, 23 Nov): its main screens in one quick set
+if [ "$SET" = rose ]; then
+shot r01-home home --es tf_preview secret --ez tf_premium true
+shot r02-home-free home --es tf_preview secret
+shot r03-home-end open --es tf_preview secret --ez tf_premium true --es tf_open scroll
+shot r04-nearby open --es tf_preview secret --ez tf_premium true --es tf_open nearby
+shot r05-favorite open --es tf_preview secret --ez tf_premium true --es tf_open favorite
+shot r06-like quick --es tf_preview secret --ez tf_premium true --es tf_open like
+shot r07-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
+shot r08-my open --es tf_preview secret --ez tf_premium true --es tf_open my
+shot r09-activity open --es tf_preview secret --ez tf_premium true --es tf_open heart
+shot r10-request open --es tf_preview secret --ez tf_premium true --es tf_open request
+shot r11-premium open --es tf_preview secret --es tf_open premium
+shot r12-chats home --es tf_preview secret-chat --ez tf_premium true
+shot r13-chats-unread open --es tf_preview secret-chat --ez tf_premium true --es tf_open unread
+shot r14-room home --es tf_preview chatroom --ez tf_premium true
+shot r15-room-gifs open --es tf_preview chatroom --ez tf_premium true --es tf_open gif
+shot r16-room-emoji open --es tf_preview chatroom --ez tf_premium true --es tf_open emoji
+shot r17-room-menu open --es tf_preview chatroom --ez tf_premium true --es tf_open menu
+shot r18-room-profile open --es tf_preview chatroom --ez tf_premium true --es tf_open profile
+shot r19-map home --es tf_preview secret-map --ez tf_premium true
+shot r20-join home --es tf_preview secret --ez tf_notjoined true
+shot r21-room-truefind home --es tf_preview chatroom --ez tf_premium true --ez tf_tfchat true
+fi
 if [ "$SET" = sd ]; then
 shot 01-explore home --es tf_preview explore
 shot 02-secret-free home --es tf_preview secret

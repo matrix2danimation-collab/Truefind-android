@@ -116,28 +116,37 @@ class SecretHome(
     private val headRight = FrameLayout(ctx)
     private var headMember: Boolean? = null
     private val bellBtn = FrameLayout(ctx)
-    private val bellIcon = Icon(Lucide.Bell, Color.WHITE, 18f, 2.3f)
+    private val bellIcon = Icon(Lucide.Bell, Rs.INK, 24f, 2f)
     private val bellDot = BellDot(ctx)
     private val myBadge = FrameLayout(ctx)
-    private val creditsPill = sdText(ctx, "", 13f, Color.WHITE)
+    private val creditsPill = sdText(ctx, "", 14f, Rs.INK)
     private val pills = ArrayList<TextView>()                 // the same pill on the map and chat pages
     /** which Secret Dating page: "home" (/secret-app) · "map" (/dating) · "chat" (/secret-app?tab=chat) */
     var page = "home"; private set
     private var mapPage: SdMapPage? = null
     private var chatPage: SdChatsPage? = null
-    private val noticeBox = sdText(ctx, "", 15f, Ui.c("#166534"), bold = false)
+    private val noticeBox = sdText(ctx, "", 15f, Rs.c("#166534"), bold = false)
     private val actBox = FrameLayout(ctx)
     private val completeBtn = LinearLayout(ctx)
-    private val completeSub = sdText(ctx, "", 13.5f, Ui.c("#8E2A55"), bold = false)
-    private val onlineRow = hbox(ctx, 8f, Gravity.CENTER)
+    private val completeSub = sdText(ctx, "", 13.5f, Rs.c("#8E2A55"), bold = false)
     private val deckBox = FrameLayout(ctx)
-    private val deck = SdDeck(ctx, onOpen = { openProfile(it) }, onChat = { askRequest(it) })
+    private val deck = SdDeck(ctx, onOpen = { openProfile(it) }, onLike = { p, heart -> likeTap(p, heart) }, isLiked = { isLikedNow(it) })
+    // Discover · Nearby · Favorite over the card (owner's picture, 23 Nov)
+    private var deckTab = "discover"
+    private var deckRestart = false
+    private val deckChips = ArrayList<Triple<String, TextView, Icon>>()
+    /** the people I liked (getMyActivity's "You liked"); null = not asked yet */
+    private var favs: List<JSONObject>? = null
+    private var favSeq = 0
+    private val likedIds = LinkedHashSet<String>()
+    private val unlikedIds = HashSet<String>()
+    private val likedPeople = HashMap<String, JSONObject>()
+    private val liking = HashSet<String>()
     private val storyRow = LinearLayout(ctx)
     private val storyLock = LinearLayout(ctx)
-    private val storyLockTitle = sdText(ctx, "", 17f, Ui.c("#9A1246"))
-    private val storyLockSub = sdText(ctx, "", 14f, Ui.c("#8E2A55"), bold = false)
+    private val storyLockTitle = sdText(ctx, "", 17f, Rs.c("#9A1246"))
+    private val storyLockSub = sdText(ctx, "", 14f, Rs.c("#8E2A55"), bold = false)
     private val storyLockIcon = ImageView(ctx)
-    private val addLine = sdText(ctx, "You can post a story every day to find your true friend.", 15.5f, K.deep)
     private val toast = LinearLayout(ctx)
     private val toastText = sdText(ctx, "", 15f, K.ink2, bold = false)
     private val toastBtn = sdText(ctx, "", 14f, Color.WHITE)
@@ -154,21 +163,20 @@ class SecretHome(
         scroll.isFillViewport = true
         scroll.clipToPadding = false
         addView(scroll, LayoutParams(-1, -1))
-        col.setPadding(dpi(16f), dpi(16f), dpi(16f), dpi(40f))
+        col.setPadding(dpi(16f), dpi(8f), dpi(16f), dpi(34f))
         col.clipChildren = false
         scroll.addView(col, LayoutParams(-1, -2))
         // the page fades softly into the bottom bar instead of being cut off under it
         addView(object : View(ctx) {
             val p = android.graphics.Paint()
             override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
-                p.shader = android.graphics.LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(Color.argb(0, 255, 255, 255), Color.WHITE), null, android.graphics.Shader.TileMode.CLAMP)
+                p.shader = android.graphics.LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(Color.argb(0, Color.red(Rs.BG_END), Color.green(Rs.BG_END), Color.blue(Rs.BG_END)), Rs.BG_END), null, android.graphics.Shader.TileMode.CLAMP)
             }
             override fun onDraw(c: android.graphics.Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
-        }, LayoutParams(-1, dpi(30f), Gravity.BOTTOM))
+        }, LayoutParams(-1, dpi(22f), Gravity.BOTTOM))
 
         buildHeader()
-        buildTitle()
-        noticeBox.background = rounded(Ui.c("#F0FDF4"), 14f, 1f, Color.argb(89, 22, 163, 74))
+        noticeBox.background = rounded(Rs.c("#F0FDF4"), 14f, 1f, Rs.argb(89, 22, 163, 74))
         noticeBox.setPadding(dpi(14f), dpi(11f), dpi(14f), dpi(11f))
         noticeBox.visibility = GONE
         noticeBox.setOnClickListener { notice = ""; noticeBox.visibility = GONE }
@@ -177,10 +185,11 @@ class SecretHome(
         buildComplete()
         body.clipChildren = false
         col.addView(body, lp(MATCH, WRAP))
-        body.addView(onlineRow, lp(MATCH, WRAP, t = 12f))
-        deckBox.clipChildren = false
-        body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 10f))
+        // owner's picture (23 Nov): Stories first, then Discover · Nearby · Favorite, the tall card, Private by Design
         buildStories()
+        buildChips()
+        deckBox.clipChildren = false
+        body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 12f))
         buildPrivate()
         buildToast()
         render()
@@ -278,7 +287,7 @@ class SecretHome(
         val after = pageView(view)
         if (shown && isShown && before != null && after != null && before !== after) {
             // side by side like FRND's tabs; the pink bar at the bottom stays still
-            val order = listOf("map", "home", "chat")
+            val order = listOf("home", "chat", "map")
             PageFx.run(this, PageFx.Kind.TAB, before, after, dir = if (order.indexOf(view) > order.indexOf(from)) 1 else -1,
                 onEnd = { pageView(page)?.let { cur -> listOf(scroll, mapPage, chatPage).forEach { v -> if (v != null && v !== cur) v.visibility = GONE } } })
         }
@@ -466,46 +475,32 @@ class SecretHome(
     // ═════════════════ header ═════════════════
     private fun buildHeader() {
         val row = LinearLayout(context)
-        // my photo: flat two-tone ring, a fine white gap, then the photo
+        // my photo: a fine white edge and a thin line around it (flat)
         val btn = FrameLayout(context)
-        val ring = FrameLayout(context).apply {
-            background = RingDrawable(intArrayOf(Ui.c("#FF7DBB"), Ui.c("#E3086C"), Ui.c("#8E1243"), Ui.c("#FF9CCB"), Ui.c("#FF7DBB")), floatArrayOf(0f, .35f, .65f, .85f, 1f))
-            setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
-        }
-        val gapW = FrameLayout(context).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-        gapW.addView(myPhoto, LayoutParams(-1, -1))
-        ring.addView(gapW, LayoutParams(-1, -1))
-        btn.addView(ring, LayoutParams(dpi(52f), dpi(52f), Gravity.CENTER))
+        val ring = FrameLayout(context).apply { background = oval(Color.WHITE, 1.5f, Rs.c("#E3B9BC")); setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f)) }
+        ring.addView(myPhoto, LayoutParams(-1, -1))
+        btn.addView(ring, LayoutParams(dpi(48f), dpi(48f), Gravity.CENTER))
         btn.addView(myBadge, LayoutParams(-1, -1))
         btn.contentDescription = "My profile"
         btn.press().onTap { openMyProfile(false) }
-        // (inside the page's edge: a margin past it cut the ring's left side — owner, 20 Nov)
-        headLeft.addView(btn, LayoutParams(dpi(56f), dpi(56f), Gravity.START or Gravity.CENTER_VERTICAL))
+        headLeft.addView(btn, LayoutParams(dpi(52f), dpi(52f), Gravity.START or Gravity.CENTER_VERTICAL))
+        // the logo right after the photo (owner's picture, 23 Nov)
         val vw = resources.displayMetrics.widthPixels / Ui.density
-        headTitle.addView(sdText(context, "TrueFind", (vw * .074f).coerceIn(26f, 31f), Color.WHITE, italic = true).apply { setPadding(dpi(4f), 0, dpi(4f), 0) }.oneLine(),
-            LayoutParams(-2, -2, Gravity.CENTER))
+        headTitle.addView(Rs.logo(context, (vw * .064f).coerceIn(21f, 26f)), LayoutParams(-2, -2, Gravity.START or Gravity.CENTER_VERTICAL).apply { leftMargin = dpi(8f) })
         // credits pill — opens the Secret Dating wallet
-        creditsPill.background = rounded(K.wine2, 17f)
-        creditsPill.elevation = Ui.dp(3f)
-        creditsPill.gravity = Gravity.CENTER_VERTICAL
-        creditsPill.setPadding(dpi(7f), 0, dpi(5f), 0)
-        creditsPill.compoundDrawablePadding = dpi(4f)
-        val plus = Icon(Lucide.Plus, K.hot, 13f, 3.2f)
-        creditsPill.setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(plus), null)
-        val pillBox = FrameLayout(context).apply { addView(creditsPill, LayoutParams(-2, dpi(34f), Gravity.CENTER)) }
+        styleCreditsPill(creditsPill)
+        val pillBox = FrameLayout(context).apply { addView(creditsPill, LayoutParams(-2, dpi(36f), Gravity.CENTER)) }
         pillBox.press().onTap { wallet() }
         // bell → My Activity (Liked you · You liked · Matches · Requests, with Notifications at its top); red dot while something is new (Nov 20)
-        val bellFace = ImageView(context).apply { setImageDrawable(bellIcon); scaleType = ImageView.ScaleType.CENTER; background = oval(K.wine2); elevation = Ui.dp(3f) }
-        bellBtn.addView(bellFace, LayoutParams(dpi(34f), dpi(34f), Gravity.CENTER))
-        bellDot.background = oval(Ui.c("#FF1F3D"), 2f, Color.WHITE)
-        bellDot.elevation = Ui.dp(4f)
+        val bellFace = ImageView(context).apply { setImageDrawable(bellIcon); scaleType = ImageView.ScaleType.CENTER }
+        bellBtn.addView(bellFace, LayoutParams(dpi(40f), dpi(40f), Gravity.CENTER))
+        bellDot.background = oval(Ui.c("#E11D48"), 2f, Rs.BG_TOP)
         bellDot.visibility = GONE
-        bellBtn.addView(bellDot, LayoutParams(dpi(12f), dpi(12f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(4f), dpi(4f), 0) })
+        bellBtn.addView(bellDot, LayoutParams(dpi(12f), dpi(12f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(9f), dpi(9f), 0) })
         bellBtn.contentDescription = "My Activity"
         bellBtn.press().onTap { openMyActivity("liked") }
-        val right = hbox(context, 4f)
+        val right = hbox(context, 2f)
         right.addView(bellBtn, lp(dpi(44f), dpi(44f)))
-        // (inside the page's edge too: the "+" circle was cut on the right — owner, 20 Nov)
         right.addView(pillBox, lp(WRAP, dpi(44f)))
         headRight.addView(right, LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL))
         row.orientation = LinearLayout.HORIZONTAL
@@ -513,6 +508,14 @@ class SecretHome(
         row.addView(headLeft); row.addView(headTitle); row.addView(headRight)
         layoutHeader(true)
         col.addView(row, lp(MATCH, WRAP))
+    }
+    /** the credits pill as in the picture: white, the coins, "9 Credits", a maroon + */
+    private fun styleCreditsPill(t: TextView) {
+        t.background = rounded(Color.WHITE, 18f, 1f, Rs.LINE)
+        t.gravity = Gravity.CENTER_VERTICAL
+        t.setPadding(dpi(9f), 0, dpi(5f), 0)
+        t.compoundDrawablePadding = dpi(5f)
+        t.setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(Icon(Lucide.Plus, Color.WHITE, 13f, 3f)), null)
     }
     /** a member: photo · TrueFind (in the middle of what is left) · bell + credits; not a member yet: TrueFind in the middle of the row */
     private fun layoutHeader(member: Boolean) {
@@ -526,7 +529,7 @@ class SecretHome(
     /** the bell: filled, with a blinking red dot, while new likes / messages / views are unseen */
     private fun renderBell() {
         val n = activity?.optJSONObject("counts")?.optInt("total") ?: 0
-        bellIcon.tint(Color.WHITE, if (n > 0) Color.WHITE else null)
+        bellIcon.tint(Rs.INK, null)
         bellDot.visibility = if (n > 0) VISIBLE else GONE
         onLikesDot?.invoke(n > 0)
         bellBtn.contentDescription = if (n > 0) "My Activity, $n new" else "My Activity"
@@ -548,9 +551,9 @@ class SecretHome(
 
     /** the little white "+" circle at the end of the credits pill */
     private class PlusChip(val icon: Icon) : android.graphics.drawable.Drawable() {
-        private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-        override fun getIntrinsicWidth() = Ui.dpi(22f)
-        override fun getIntrinsicHeight() = Ui.dpi(22f)
+        private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Rs.M }
+        override fun getIntrinsicWidth() = Ui.dpi(24f)
+        override fun getIntrinsicHeight() = Ui.dpi(24f)
         override fun draw(c: android.graphics.Canvas) {
             val b = bounds; c.drawCircle(b.exactCenterX(), b.exactCenterY(), b.width() / 2f, p)
             val s = Ui.dpi(13f); icon.setBounds(b.centerX() - s / 2, b.centerY() - s / 2, b.centerX() + s / 2, b.centerY() + s / 2); icon.draw(c)
@@ -560,29 +563,17 @@ class SecretHome(
         @Deprecated("Deprecated in Java") override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
     }
 
-    private fun buildTitle() {
-        val box = vbox(context, 9f, Gravity.CENTER_HORIZONTAL)
-        val vw = resources.displayMetrics.widthPixels / Ui.density
-        box.addView(sdText(context, "SECRET DATING", (vw * .082f).coerceIn(28f, 34f), Color.WHITE).apply { letterSpacing = .06f })
-        val pill = sdText(context, "Serious Singles Only", 16.5f, Ui.c("#961846")).icon(Icon(Lucide.Gem, K.hot, 15f, 2.2f), 7f).apply {
-            letterSpacing = .01f; gravity = Gravity.CENTER_VERTICAL
-            background = rounded(Color.WHITE, 999f); setPadding(dpi(12f), 0, dpi(16f), 0); elevation = Ui.dp(3f)
-        }
-        box.addView(pill, lp(WRAP, dpi(34f)))
-        col.addView(box, lp(MATCH, WRAP, t = 10f))
-    }
-
     private fun buildComplete() {
         completeBtn.orientation = LinearLayout.HORIZONTAL
         completeBtn.gravity = Gravity.CENTER_VERTICAL
-        completeBtn.background = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = Ui.dp(18f); setStroke(dpi(1.5f), Ui.c("#F3A7C6")) }
+        completeBtn.background = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = Ui.dp(18f); setStroke(dpi(1.5f), Rs.c("#F3A7C6")) }
         completeBtn.setPadding(dpi(10f), dpi(10f), dpi(8f), dpi(10f))
         completeBtn.elevation = Ui.dp(2f)
         completeBtn.contentDescription = "Complete your profile"
         val ic = ImageView(context).apply { setImageDrawable(Icon(Lucide.User, Color.WHITE, 22f, 2.2f)); scaleType = ImageView.ScaleType.CENTER; background = K.badge() }
         completeBtn.addView(ic, lp(dpi(42f), dpi(42f), r = 10f))
         val t = vbox(context)
-        t.addView(sdText(context, "Complete your profile", 16f, Ui.c("#9A1246")))
+        t.addView(sdText(context, "Complete your profile", 16f, Rs.c("#9A1246")))
         t.addView(completeSub, lp(WRAP, WRAP, t = 3f))
         completeBtn.addView(t, lp(0, WRAP, 1f))
         completeBtn.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, K.wine, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 10f))
@@ -591,79 +582,85 @@ class SecretHome(
         col.addView(completeBtn, lp(MATCH, WRAP, t = 12f))
     }
 
-    private fun sectionTitle(title: String, sub: String? = null): View {
-        val box = vbox(context)
-        val row = hbox(context, 12f)
-        fun lineView(toRight: Boolean) = View(context).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                if (toRight) intArrayOf(Color.argb(0, 214, 40, 120), Ui.c("#D93A86")) else intArrayOf(Ui.c("#D93A86"), Color.argb(0, 214, 40, 120)))
-        }
-        fun diamond() = View(context).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#FF7DBB"), Ui.c("#C80962"))).apply { cornerRadius = Ui.dp(1.5f) }
-            rotation = 45f
-        }
-        row.addView(lineView(true), lp(0, dpi(1.5f), 1f))
-        row.addView(diamond(), lp(dpi(7f), dpi(7f)))
-        row.addView(sdText(context, title, 26f, Ui.c("#941544"), italic = true).apply { letterSpacing = .005f })
-        row.addView(diamond(), lp(dpi(7f), dpi(7f)))
-        row.addView(lineView(false), lp(0, dpi(1.5f), 1f))
-        box.addView(row, lp(MATCH, WRAP))
-        if (sub != null) box.addView(sdText(context, sub, 15.5f, Ui.c("#A31C55")).apply { gravity = Gravity.CENTER; lineHeight(1.1f) }, lp(MATCH, WRAP, l = 6f, r = 6f, t = 6f))
-        return box
-    }
-
     private fun buildStories() {
-        body.addView(sectionTitle("Stories"), lp(MATCH, WRAP, t = 24f, b = 14f))
+        // Stories at the top of Home, "Add Story" at the row's end (owner's picture, 23 Nov)
+        val head = hbox(context)
+        head.addView(Rs.section(context, "Stories"), lp(0, WRAP, 1f))
+        val add = sdText(context, "Add Story", 14.5f, Rs.ICON).icon(Icon(Lucide.Plus, Rs.ICON, 14f, 2.6f), 4f).apply {
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(8f), 0, dpi(2f), 0); contentDescription = "Add to your story"
+        }
+        head.addView(add.press().onTap { addStory() }, lp(WRAP, dpi(36f)))
+        body.addView(head, lp(MATCH, WRAP, t = 8f, b = 4f))
         val hs = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; clipToPadding = false }
         storyRow.orientation = LinearLayout.HORIZONTAL
-        storyRow.setPadding(dpi(12f), dpi(2f), dpi(12f), dpi(4f))
+        storyRow.setPadding(dpi(12f), dpi(2f), dpi(12f), dpi(2f))
         hs.addView(storyRow)
         body.addView(hs, lp(MATCH, WRAP, l = -16f, r = -16f))
         // "Stories are Premium Only" / "Verify to use Stories free"
         storyLock.orientation = LinearLayout.HORIZONTAL; storyLock.gravity = Gravity.CENTER_VERTICAL
-        storyLock.background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FCDDEC"), Ui.c("#FDE8F2"))).apply { cornerRadius = Ui.dp(18f); setStroke(dpi(1f), Color.argb(71, 232, 120, 170)) }
-        storyLock.setPadding(dpi(10f), dpi(10f), dpi(8f), dpi(10f))
+        storyLock.background = rounded(Color.WHITE, 16f, 1f, Rs.LINE)
+        storyLock.setPadding(dpi(10f), dpi(8f), dpi(8f), dpi(8f))
         storyLockIcon.scaleType = ImageView.ScaleType.CENTER; storyLockIcon.background = K.badge()
-        storyLock.addView(storyLockIcon, lp(dpi(44f), dpi(44f), r = 10f))
-        val t = vbox(context); t.addView(storyLockTitle); t.addView(storyLockSub, lp(WRAP, WRAP, t = 3f))
+        storyLock.addView(storyLockIcon, lp(dpi(40f), dpi(40f), r = 10f))
+        val t = vbox(context); t.addView(storyLockTitle); t.addView(storyLockSub, lp(WRAP, WRAP, t = 2f))
         storyLock.addView(t, lp(0, WRAP, 1f))
         storyLock.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, K.wine, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 10f))
         storyLock.press().onTap { locked("watch") }
-        body.addView(storyLock, lp(MATCH, WRAP, t = 14f))
-        addLine.gravity = Gravity.CENTER; addLine.lineHeight(1.15f)
-        addLine.inlineIcon(Icon(Lucide.Pencil, K.deep, 17f, 2.2f), 7f)
-        addLine.setPadding(dpi(6f), dpi(8f), dpi(6f), dpi(8f)); addLine.minHeight = dpi(44f)
-        addLine.press().onTap { addStory() }
-        body.addView(addLine, lp(MATCH, WRAP, t = 8f))
+        body.addView(storyLock, lp(MATCH, WRAP, t = 8f))
+    }
+
+    /** Discover (everyone online) · Nearby (the nearest first) · Favorite (the people you liked) — flat chips, the chosen one maroon */
+    private fun buildChips() {
+        val row = hbox(context, 8f)
+        for ((key, label, path) in listOf(Triple("discover", "Discover", Lucide.Flame), Triple("nearby", "Nearby", Lucide.MapPin), Triple("favorite", "Favorite", Lucide.Star))) {
+            val ic = Icon(path, Rs.ICON, 16f, 2.1f)
+            val t = sdText(context, label, 15f, Rs.ICON).inlineIcon(ic, 6f).apply { gravity = Gravity.CENTER; maxLines = 1 }
+            t.press().onTap { pickDeck(key) }
+            deckChips.add(Triple(key, t, ic))
+            row.addView(t, lp(0, dpi(40f), 1f))
+        }
+        body.addView(row, lp(MATCH, WRAP, t = 12f))
+        paintChips()
+    }
+    private fun paintChips() {
+        for ((key, t, ic) in deckChips) {
+            val on = key == deckTab
+            t.background = if (on) Rs.flat(Rs.M, 20f) else rounded(Rs.CHIP, 20f, 1f, Rs.LINE)
+            val col = if (on) Color.WHITE else Rs.ICON
+            t.setTextColor(col); ic.tint(col, if (on && key != "nearby") col else null); t.invalidate()
+            t.contentDescription = "${t.text.toString().trim('\uFFFC')}${if (on) ", chosen" else ""}"
+        }
+    }
+    private fun pickDeck(key: String) {
+        if (deckTab == key) return
+        deckTab = key
+        deckRestart = true
+        if (key == "favorite") loadFavs()
+        render()
     }
 
     private fun buildPrivate() {
-        // owner, 20 Nov: the four boxes were written unprofessionally — each point now has a short title and one clear line
-        body.addView(sectionTitle("Private by Design", "Your privacy is our most important feature."), lp(MATCH, WRAP, t = 24f, b = 14f))
+        // owner's picture (23 Nov): four plain rows — an icon, a short title, one clear line
+        body.addView(Rs.section(context, "Private by Design"), lp(MATCH, WRAP, t = 22f))
+        body.addView(sdText(context, "Your privacy is our most important feature.", 14f, Rs.SUB, bold = false), lp(MATCH, WRAP, l = 13f, t = 3f, b = 10f))
         val points = listOf(
             Triple(Lucide.Lock, "Your number stays private", "Your phone number is never shown or shared."),
             Triple(Lucide.Link2Off, "No links or IDs", "Links, IDs and social handles are blocked in chat."),
             Triple(Lucide.ShieldCheck, "Verified members", "Every feature opens after full verification."),
             Triple(Lucide.MessageCircleMore, "Unlimited chat", "Once a chat is open, talk as much as you like."),
         )
-        val grid = vbox(context, 10f)
-        for (r in 0 until 2) {
-            val row = hbox(context, 10f, Gravity.TOP).apply { isBaselineAligned = false }
-            for (c in 0 until 2) {
-                val (ic, title, line) = points[r * 2 + c]
-                val cell = vbox(context, 0f).apply {
-                    background = rounded(Color.WHITE, 18f, 1f, Color.argb(40, 214, 40, 120))
-                    setPadding(dpi(12f), dpi(12f), dpi(12f), dpi(13f)); elevation = Ui.dp(2f)
-                }
-                cell.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Color.WHITE, 18f, 2.1f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.hot) }, lp(dpi(36f), dpi(36f)))
-                cell.addView(sdText(context, title, 15f, Ui.c("#7A1240")).lineHeight(1.08f), lp(MATCH, WRAP, t = 10f))
-                cell.addView(sdText(context, line, 13f, K.sub, bold = false).lineHeight(1.18f), lp(MATCH, WRAP, t = 4f))
-                cell.contentDescription = "$title. $line"
-                row.addView(cell, lp(0, MATCH, 1f))
-            }
-            grid.addView(row, lp(MATCH, WRAP))
+        val rows = vbox(context, 7f)
+        for ((ic, title, line) in points) {
+            val row = hbox(context, 12f).apply { background = rounded(Color.WHITE, 14f, 1f, Rs.LINE); setPadding(dpi(11f), dpi(9f), dpi(12f), dpi(9f)) }
+            row.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Rs.ICON, 20f, 1.9f)); scaleType = ImageView.ScaleType.CENTER; background = rounded(Rs.BG_TOP, 11f) }, lp(dpi(38f), dpi(38f)))
+            val t = vbox(context)
+            t.addView(sdText(context, title, 15f, Rs.INK))
+            t.addView(sdText(context, line, 13f, Rs.SUB, bold = false).lineHeight(1.15f), lp(MATCH, WRAP, t = 1f))
+            row.addView(t, lp(0, WRAP, 1f))
+            row.contentDescription = "$title. $line"
+            rows.addView(row, lp(MATCH, WRAP))
         }
-        body.addView(grid, lp(MATCH, WRAP))
+        body.addView(rows, lp(MATCH, WRAP))
     }
 
     private fun buildToast() {
@@ -692,7 +689,7 @@ class SecretHome(
         myPhoto.set(listOf(pid))
         myBadge.removeAllViews()
         when {
-            profileKnown && missing.isNotEmpty() -> myBadge.addView(sdText(context, missing.size.toString(), 12f, Color.WHITE).apply { gravity = Gravity.CENTER; background = oval(Ui.c("#E3086C"), 2f, Color.WHITE) },
+            profileKnown && missing.isNotEmpty() -> myBadge.addView(sdText(context, missing.size.toString(), 12f, Color.WHITE).apply { gravity = Gravity.CENTER; background = oval(Rs.c("#E3086C"), 2f, Color.WHITE) },
                 LayoutParams(dpi(18f), dpi(18f), Gravity.END or Gravity.TOP).apply { topMargin = dpi(1f) })
             premium -> myBadge.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Crown, Color.WHITE, 11f, 2.2f, Color.WHITE)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.hot, 2f, Color.WHITE) },
                 LayoutParams(dpi(21f), dpi(21f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -dpi(1f); bottomMargin = dpi(1f) })
@@ -713,7 +710,6 @@ class SecretHome(
             joinCard = JoinCard.build(context, "secret") { needSecret = false; render(); loadPeople() }
                 .also { col.addView(it, col.indexOfChild(body), lp(MATCH, WRAP, t = 22f)) }
         } else if (!needSecret) joinCard?.let { col.removeView(it); joinCard = null }
-        renderOnline()
         renderDeck()
         renderActivity()
         renderStories()
@@ -731,63 +727,101 @@ class SecretHome(
         noticeBox.visibility = if (notice.isNotEmpty()) VISIBLE else GONE
     }
 
-    private fun renderOnline() {
-        onlineRow.removeAllViews()
-        val n = liveDeck.size
-        val pill = hbox(context, 9f, Gravity.CENTER).apply { background = rounded(Color.WHITE, 999f, 1f, Color.argb(36, 214, 40, 120)); setPadding(dpi(13f), 0, dpi(16f), 0) }
-        if (n > 0) {
-            pill.addView(LiveDot(context, 10f, 3f, Color.argb(56, 61, 214, 42)))
-            pill.addView(sdText(context, "${SdRules.inr(n)} Online Now", 17f, Ui.c("#141215")))
-        } else {
-            pill.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Lock, K.rose, 15f, 2.2f)) }, lp(dpi(15f), dpi(15f)))
-            pill.addView(sdText(context, "Private · Members only", 17f, K.sub))
+    private var deckState = ""
+    private var nearKey = ""
+    private var nearList: List<JSONObject> = emptyList()
+    /** Nearby: the same people, the nearest first, with how far they are on the card (my city from my profile) */
+    private fun nearbyDeck(): List<JSONObject> {
+        val base = liveDeck
+        val my = if (me != null) me else mine
+        val city = SdRules.s(my, "city"); val state = SdRules.s(my, "state")
+        if (city.isEmpty() && state.isEmpty()) return base
+        val key = "$city|$state|" + base.joinToString(",") { it.optString("id") + (if (isLikedNow(it)) "+" else "") }
+        if (key != nearKey) {
+            nearKey = key
+            val here = SdRules.geoOf(city, state)
+            nearList = base.map { p -> JSONObject(p.toString()).put("_km", SdRules.kmBetween(here, SdRules.geoOf(SdRules.s(p, "city"), SdRules.s(p, "state")))) }.sortedBy { it.optDouble("_km") }
         }
-        onlineRow.orientation = LinearLayout.HORIZONTAL
-        onlineRow.addView(pill, lp(WRAP, dpi(36f)))
-        val d = daysLeft
-        if (premiumKnown && premium && d != null) {
-            val renew = d == "Renew"
-            val plan = sdText(context, if (renew) "Premium ended · Renew" else "Premium · $d", 13f, if (renew) Ui.c("#B4183C") else K.wine)
-                .icon(Icon(Lucide.Hourglass, if (renew) Ui.c("#B4183C") else K.wine, 13f), 5f).apply {
-                    gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
-                    // always one whole line (owner, 20 Nov: it was squeezed into two lines and cut)
-                    isSingleLine = true; maxLines = 1
-                }
-            plan.press().onTap { wallet() }
-            // both side by side only when both fit whole; otherwise the plan goes under, centred
-            val free = resources.displayMetrics.widthPixels - dpi(32f)
-            val un = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-            pill.measure(un, un); plan.measure(un, un)
-            if (pill.measuredWidth + dpi(8f) + plan.measuredWidth > free) onlineRow.orientation = LinearLayout.VERTICAL
-            onlineRow.addView(plan, lp(WRAP, dpi(28f)))
+        return nearList
+    }
+    /** Favorite: the people I liked — the ones liked just now first, then My Activity's "You liked" */
+    private fun favList(): List<JSONObject>? {
+        val known = favs
+        if (known == null && likedIds.isEmpty()) return null       // still asking
+        val pool = (online ?: emptyList()) + (discover ?: emptyList())
+        val out = ArrayList<JSONObject>(); val seen = HashSet<String>()
+        for (id in likedIds.reversed()) (likedPeople[id] ?: pool.firstOrNull { it.optString("id") == id })?.let { if (seen.add(id)) out.add(it) }
+        for (p in known ?: emptyList()) { val id = p.optString("id"); if (id !in unlikedIds && seen.add(id)) out.add(p) }
+        for (p in pool) { val id = p.optString("id"); if (p.optBoolean("liked_by_me") && id !in unlikedIds && seen.add(id)) out.add(p) }
+        return out
+    }
+    private fun loadFavs() {
+        val my = ++favSeq
+        Api.invoke("getMyActivity", JSONObject()) { r ->
+            if (my != favSeq) return@invoke
+            if (r.ok && r.data.optString("error").isEmpty()) {
+                favs = list(r.data.optJSONArray("you_liked")).mapNotNull { it.optJSONObject("person") }.filter { it.optString("id").isNotEmpty() }.map { it.put("liked_by_me", true) }
+            } else if (favs == null) favs = emptyList()
+            render()
         }
     }
+    private fun isLikedNow(p: JSONObject): Boolean { val id = p.optString("id"); return id in likedIds || (p.optBoolean("liked_by_me") && id !in unlikedIds) }
 
-    private var deckState = ""
+    /** ♥ on a Home card: the same like as the heart on a profile (likeProfile) — they are told, and the person goes into Favorite */
+    private fun likeTap(p: JSONObject, heart: View) {
+        val id = p.optString("id")
+        if (id.isEmpty() || id in liking || sameGender(p)) return
+        val next = !isLikedNow(p)
+        fun mark(on: Boolean) { if (on) { likedIds.add(id); unlikedIds.remove(id); likedPeople[id] = p } else { likedIds.remove(id); unlikedIds.add(id) } }
+        if (next) HeartBurst.play(heart, layer.root)
+        // a demo profile (testing only): the heart changes here, but no like is sent anywhere
+        if (SdDemo.isDemo(p)) { mark(next); if (next) say("Demo profile: likes reach real members only"); render(); afterLike(next); return }
+        mark(next); liking.add(id); render()
+        val first = SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "They" }
+        Api.invoke("likeProfile", JSONObject().put("to_profile_id", id).put("app", "secret").put("action", if (next) "like" else "unlike")) { r ->
+            liking.remove(id)
+            if (r.ok && r.data.optString("error").isEmpty()) {
+                online = online?.map { if (it.optString("id") == id) it.put("liked_by_me", next) else it }
+                if (next) say(if (r.data.optBoolean("mutual")) "You both like each other" else "$first will be notified")
+            } else {
+                mark(!next)
+                say(r.data.optString("message").ifEmpty { r.data.optString("error").ifEmpty { "Couldn't send the like. Try again." } }, "err")
+            }
+            render()
+        }
+        afterLike(next)
+    }
+    /** after a like the next profile comes (not while looking through Favorite) */
+    private fun afterLike(on: Boolean) { if (on && deckTab != "favorite") main.postDelayed({ if (shown && page == "home" && !layer.open) deck.next() }, 560) }
+
+    /** the cards of the chosen chip: everyone online · the nearest first · the people I liked (null: still loading) */
+    private fun deckList(): List<JSONObject>? = when (deckTab) {
+        "favorite" -> favList()
+        "nearby" -> if (online == null && discover == null) null else nearbyDeck()
+        else -> if (online == null && discover == null) null else liveDeck
+    }
     private fun renderDeck() {
-        val state = if (online == null && discover == null) "loading" else if (liveDeck.isNotEmpty()) "deck" else "empty"
+        paintChips()
+        val people = deckList()
+        val state = if (people == null) "loading" else if (people.isNotEmpty()) "deck" else "empty-$deckTab"
         if (state != deckState) {
             deckState = state
             deckBox.removeAllViews()
-            when (state) {
-                "loading" -> {
-                    val w = minOf(resources.displayMetrics.widthPixels - dpi(74f), dpi(360f))
-                    deckBox.addView(View(context).apply { background = rounded(Ui.c("#FCE4F0"), 28f) },
-                        LayoutParams(w, (w * 1.48f).toInt(), Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(8f) })
-                }
-                "deck" -> deckBox.addView(deck, LayoutParams(-1, -2))
+            val w = SdDeck.cardW(context); val hh = SdDeck.cardH(context, w)
+            when {
+                state == "loading" -> deckBox.addView(View(context).apply { background = rounded(Rs.c("#FCE4F0"), 26f) }, LayoutParams(w, hh, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
+                state == "deck" -> deckBox.addView(deck, LayoutParams(-1, -2))
                 else -> {
-                    val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply {
-                        background = rounded(Color.WHITE, 28f, 1f, K.line); setPadding(dpi(22f), dpi(44f), dpi(22f), dpi(44f)); elevation = Ui.dp(6f)
-                    }
-                    card.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.Sparkles, K.rose, 30f, 1.6f)) }, lp(dpi(30f), dpi(30f)))
-                    card.addView(sdText(context, "No one online right now", 22f, K.wine, italic = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 12f))
-                    card.addView(sdText(context, "Members appear here the moment they come online.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(WRAP, WRAP, t = 6f))
-                    deckBox.addView(card, LayoutParams((resources.displayMetrics.widthPixels * 0.78f).toInt(), -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(8f) })
+                    val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 26f, 1f, Rs.LINE); setPadding(dpi(22f), dpi(46f), dpi(22f), dpi(46f)) }
+                    val fav = deckTab == "favorite"
+                    card.addView(ImageView(context).apply { setImageDrawable(Icon(if (fav) Lucide.Star else Lucide.Sparkles, K.rose, 30f, 1.6f)) }, lp(dpi(30f), dpi(30f)))
+                    card.addView(sdText(context, if (fav) "No favourites yet" else "No one online right now", 22f, K.wine, serif = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 12f))
+                    card.addView(sdText(context, if (fav) "Tap the heart on a profile you like. It shows up here." else "Members appear here the moment they come online.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(WRAP, WRAP, t = 6f))
+                    deckBox.addView(card, LayoutParams(w, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
                 }
             }
         }
-        if (state == "deck") deck.set(liveDeck, canRequest, inviteState)
+        if (people != null && state == "deck") { deck.set(people, deckRestart); deckRestart = false; deck.refresh() }
     }
 
     // ── Notifications (who liked you, messaged you, viewed your profile) ──
@@ -802,7 +836,7 @@ class SecretHome(
         val older = items.filter { it.optString("id") !in freshIds }
         val all = fresh + older
         val canSee = data?.optBoolean("can_see") == true
-        val box = vbox(context).apply { background = rounded(Color.WHITE, 24f, 1f, Color.argb(41, 214, 40, 120)); setPadding(dpi(10f), dpi(12f), dpi(10f), dpi(10f)); elevation = Ui.dp(4f) }
+        val box = vbox(context).apply { background = rounded(Color.WHITE, 24f, 1f, Rs.argb(41, 214, 40, 120)); setPadding(dpi(10f), dpi(12f), dpi(10f), dpi(10f)); elevation = Ui.dp(4f) }
         // header: bell (the red dot blinks while something is new) · Notifications · how many new
         val head = hbox(context, 10f).apply { setPadding(dpi(4f), 0, dpi(4f), 0) }
         val bell = FrameLayout(context).apply { background = K.badge(); elevation = Ui.dp(3f) }
@@ -810,16 +844,16 @@ class SecretHome(
         if (fresh.isNotEmpty()) bell.addView(BlinkDot(context), LayoutParams(dpi(12f), dpi(12f), Gravity.END or Gravity.TOP))
         head.addView(bell, lp(dpi(42f), dpi(42f)))
         val t = vbox(context)
-        t.addView(sdText(context, "Notifications", 21f, K.wine, italic = true))
+        t.addView(sdText(context, "Notifications", 21f, K.wine, serif = true))
         t.addView(sdText(context, when { data == null -> "Checking…"; fresh.isNotEmpty() -> "${fresh.size} new for you"; items.isNotEmpty() -> "You're all caught up"; else -> "Likes, messages and profile views" },
             13.5f, if (fresh.isNotEmpty()) K.hot else K.sub, bold = fresh.isNotEmpty()), lp(WRAP, WRAP, t = 2f))
         head.addView(t, lp(0, WRAP, 1f))
         if (fresh.isNotEmpty()) head.addView(sdText(context, if (fresh.size > 99) "99+" else fresh.size.toString(), 14f, Color.WHITE).apply {
-            gravity = Gravity.CENTER; background = rounded(Ui.c("#FF1F3D"), 14f); setPadding(dpi(9f), 0, dpi(9f), 0); minWidth = dpi(28f)
+            gravity = Gravity.CENTER; background = rounded(Rs.c("#FF1F3D"), 14f); setPadding(dpi(9f), 0, dpi(9f), 0); minWidth = dpi(28f)
         }, lp(WRAP, dpi(28f)))
         box.addView(head, lp(MATCH, WRAP))
         when {
-            data == null -> { for (i in 0..1) box.addView(View(context).apply { background = rounded(Ui.c("#FCE4F0"), 14f) }, lp(MATCH, dpi(52f), l = 4f, r = 4f, t = if (i == 0) 12f else 8f)) }
+            data == null -> { for (i in 0..1) box.addView(View(context).apply { background = rounded(Rs.c("#FCE4F0"), 14f) }, lp(MATCH, dpi(52f), l = 4f, r = 4f, t = if (i == 0) 12f else 8f)) }
             all.isEmpty() -> box.addView(sdText(context, "When someone likes you, messages you or views your profile, you'll see it here.", 14f, K.sub, bold = false).apply {
                 gravity = Gravity.CENTER; lineHeight(1.2f); background = rounded(K.tint2, 14f); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f))
             }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 10f, b = 2f))
@@ -828,9 +862,9 @@ class SecretHome(
                 fun count(kind: String) = items.filter { it.optString("kind") == kind }.sumOf { if (kind == "message") (it.optInt("unread").takeIf { u -> u > 0 } ?: it.optInt("count").takeIf { c -> c > 0 } ?: 1) else 1 }
                 for ((k, l, ic) in listOf(Triple("like", "Like", Lucide.Heart), Triple("message", "Message", Lucide.MessageCircleMore), Triple("view", "View", Lucide.Eye))) {
                     val n = count(k)
-                    val col = if (n > 0) K.wine else Ui.c("#B8A3AE")
+                    val col = if (n > 0) K.wine else Rs.c("#B8A3AE")
                     // icon + count side by side in the middle of the chip
-                    val chip = FrameLayout(context).apply { background = rounded(if (n > 0) K.tint else Ui.c("#FAF5F8"), 15f) }
+                    val chip = FrameLayout(context).apply { background = rounded(if (n > 0) K.tint else Rs.c("#FAF5F8"), 15f) }
                     chip.addView(sdText(context, "$n ${if (n == 1) l else "${l}s"}", 13f, col).icon(Icon(ic, col, 14f, 2.4f, if (k == "like" && n > 0) col else null), 5f).apply {
                         gravity = Gravity.CENTER; maxLines = 1
                     }, LayoutParams(-2, -1, Gravity.CENTER))
@@ -865,7 +899,7 @@ class SecretHome(
         val kind = x.optString("kind").ifEmpty { "like" }
         val p = x.optJSONObject("person")
         val show = canSee && p != null
-        val bg = when (kind) { "message" -> K.hot; "view" -> K.wine; else -> Ui.c("#F0386B") }
+        val bg = when (kind) { "message" -> K.hot; "view" -> K.wine; else -> Rs.c("#F0386B") }
         val ic = when (kind) { "message" -> Lucide.MessageCircleMore; "view" -> Lucide.Eye; else -> Lucide.Heart }
         val text = when (kind) {
             "message" -> if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"
@@ -875,13 +909,13 @@ class SecretHome(
         val at = SdRules.timeAgo(x.optString("at")).let { if (it == "just now") "Just now" else it }
         val row = hbox(context, 11f).apply {
             setPadding(dpi(8f), dpi(9f), dpi(8f), dpi(9f))
-            background = if (isNew) grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FFF0F7"), Color.WHITE), 16f) else null
+            background = if (isNew) grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Rs.c("#FFF0F7"), Color.WHITE), 16f) else null
         }
         val face = FrameLayout(context).apply { clipChildren = false }
         if (show) {
             val ph = RoundPhoto(context, 48f)
             ph.set(SdRules.thumbs(p), Demo.round(p, dpi(48f)))
-            val ringB = FrameLayout(context).apply { background = oval(Color.WHITE, 1.5f, Ui.c("#F6C2DA")); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+            val ringB = FrameLayout(context).apply { background = oval(Color.WHITE, 1.5f, Rs.c("#F6C2DA")); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             ringB.addView(ph, LayoutParams(-1, -1))
             face.addView(ringB, LayoutParams(dpi(50f), dpi(50f), Gravity.CENTER))
         } else face.addView(BlurFace(context, x.optString("g")), LayoutParams(dpi(48f), dpi(48f), Gravity.CENTER))
@@ -895,7 +929,7 @@ class SecretHome(
             line.append(name, ForegroundColorSpan(K.ink), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             line.setSpan(BoldSpan(), 0, line.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         } else {
-            line.append(if (x.optString("g") == "f") "Someone pretty" else "Someone nice", ForegroundColorSpan(Color.argb(110, Color.red(K.wine), Color.green(K.wine), Color.blue(K.wine))), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            line.append(if (x.optString("g") == "f") "Someone pretty" else "Someone nice", ForegroundColorSpan(Rs.argb(110, Color.red(K.wine), Color.green(K.wine), Color.blue(K.wine))), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             line.setSpan(BlurSpan(), 0, line.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         line.append(" $text")
@@ -909,7 +943,7 @@ class SecretHome(
             gravity = Gravity.CENTER; background = rounded(K.pill, 11f); setPadding(dpi(7f), 0, dpi(7f), 0); minWidth = dpi(22f)
         }, lp(WRAP, dpi(22f)))
         else if (isNew) end.addView(sdText(context, "New", 11.5f, K.hot).apply { background = rounded(K.tint, 10f); setPadding(dpi(8f), dpi(2f), dpi(8f), dpi(2f)) })
-        end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, Ui.c("#D9A2BC"), 17f, 2.4f)) }, lp(dpi(17f), dpi(17f)))
+        end.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, Rs.c("#D9A2BC"), 17f, 2.4f)) }, lp(dpi(17f), dpi(17f)))
         row.addView(end)
         row.contentDescription = "${if (show) SdRules.firstName(SdRules.s(p, "name")) else "Someone"} $text, $at${if (isNew) ", new" else ""}"
         row.press().onTap { openActivity(x) }
@@ -936,9 +970,9 @@ class SecretHome(
         override fun onDraw(c: android.graphics.Canvas) {
             val r = width / 2f
             val ph = if (t < .6f) t / .6f else (1f - t) / .4f      // 0 → 1 (at 60 %) → 0
-            p.color = Color.argb(((1f - ph) * 0.7f * 255).toInt(), 255, 31, 61); c.drawCircle(r, r, r * (1f + 1.17f * ph), p)
+            p.color = Rs.argb(((1f - ph) * 0.7f * 255).toInt(), 255, 31, 61); c.drawCircle(r, r, r * (1f + 1.17f * ph), p)
             p.color = Color.WHITE; c.drawCircle(r, r, r, p)
-            p.color = Color.argb(((1f - .45f * ph) * 255).toInt(), 255, 31, 61); c.drawCircle(r, r, r - Ui.dp(2f), p)
+            p.color = Rs.argb(((1f - .45f * ph) * 255).toInt(), 255, 31, 61); c.drawCircle(r, r, r - Ui.dp(2f), p)
         }
     }
 
@@ -948,15 +982,15 @@ class SecretHome(
         private val lock = Icon(Lucide.Lock, Color.WHITE, 14f, 2.6f)
         override fun onDraw(c: android.graphics.Canvas) {
             val s = width.toFloat()
-            val tone = if (g == "f") intArrayOf(Ui.c("#FF9CC6"), Ui.c("#E3086C")) else intArrayOf(Ui.c("#C9A6F5"), Ui.c("#8E1243"))
+            val tone = if (g == "f") intArrayOf(Rs.c("#FF9CC6"), Rs.c("#E3086C")) else intArrayOf(Rs.c("#C9A6F5"), Rs.c("#8E1243"))
             c.save(); c.clipPath(android.graphics.Path().apply { addCircle(s / 2, s / 2, s / 2, android.graphics.Path.Direction.CW) })
             p.shader = android.graphics.LinearGradient(0f, 0f, s, s, tone[0], tone[1], android.graphics.Shader.TileMode.CLAMP); c.drawRect(0f, 0f, s, s, p); p.shader = null
             p.maskFilter = android.graphics.BlurMaskFilter(s * 3.4f / 48f, android.graphics.BlurMaskFilter.Blur.NORMAL)
             val k = s / 48f
             c.save(); c.scale(1.08f, 1.08f, s / 2, s / 2)
-            p.color = Color.argb(217, 255, 255, 255); c.drawCircle(24 * k, 19 * k, 9 * k, p)
-            c.drawPath(androidx.core.graphics.PathParser.createPathFromPathData("M7 48c1.5-10 8.6-15.5 17-15.5S39.5 38 41 48z").apply { transform(android.graphics.Matrix().apply { setScale(k, k) }) }, p.apply { color = Color.argb(204, 255, 255, 255) })
-            p.color = Color.argb(89, 255, 255, 255); c.drawCircle(12 * k, 10 * k, 7 * k, p)
+            p.color = Rs.argb(217, 255, 255, 255); c.drawCircle(24 * k, 19 * k, 9 * k, p)
+            c.drawPath(androidx.core.graphics.PathParser.createPathFromPathData("M7 48c1.5-10 8.6-15.5 17-15.5S39.5 38 41 48z").apply { transform(android.graphics.Matrix().apply { setScale(k, k) }) }, p.apply { color = Rs.argb(204, 255, 255, 255) })
+            p.color = Rs.argb(89, 255, 255, 255); c.drawCircle(12 * k, 10 * k, 7 * k, p)
             c.restore(); p.maskFilter = null; c.restore()
             val ls = (s * 0.3f).toInt(); lock.setBounds((s / 2).toInt() - ls / 2, (s / 2).toInt() - ls / 2, (s / 2).toInt() + ls / 2, (s / 2).toInt() + ls / 2); lock.draw(c)
         }
@@ -1041,15 +1075,15 @@ class SecretHome(
         if (kind == "add") {
             ringBox.addView(ImageView(context).apply {
                 setImageDrawable(Icon(Lucide.Plus, K.hot, size * 0.46f, 2.6f)); scaleType = ImageView.ScaleType.CENTER
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFF3F9"), Ui.c("#FDDDEC"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Ui.c("#EC4E98")) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.c("#FFF3F9"), Rs.c("#FDDDEC"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Rs.c("#EC4E98")) }
                 elevation = Ui.dp(2f)
             }, FrameLayout.LayoutParams(dpi(size), dpi(size)))
         } else {
             val ring = FrameLayout(context).apply {
                 background = when (kind) {
-                    "seen" -> oval(Ui.c("#EBC9D9"))
-                    "mine" -> RingDrawable(intArrayOf(Ui.c("#F43D95"), Ui.c("#8E1243"), Ui.c("#FF7DBB"), Ui.c("#F43D95")), floatArrayOf(0f, .55f, .85f, 1f))
-                    else -> RingDrawable(intArrayOf(Ui.c("#FF7DBB"), Ui.c("#E3086C"), Ui.c("#8E1243"), Ui.c("#FF9CCB"), Ui.c("#FF7DBB")), floatArrayOf(0f, .4f, .7f, .9f, 1f))
+                    "seen" -> oval(Rs.c("#EBC9D9"))
+                    "mine" -> RingDrawable(intArrayOf(Rs.c("#F43D95"), Rs.c("#8E1243"), Rs.c("#FF7DBB"), Rs.c("#F43D95")), floatArrayOf(0f, .55f, .85f, 1f))
+                    else -> RingDrawable(intArrayOf(Rs.c("#FF7DBB"), Rs.c("#E3086C"), Rs.c("#8E1243"), Rs.c("#FF9CCB"), Rs.c("#FF7DBB")), floatArrayOf(0f, .4f, .7f, .9f, 1f))
                 }
                 setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
             }
@@ -1061,7 +1095,7 @@ class SecretHome(
         }
         if (crown) ringBox.addView(ImageView(context).apply {
             setImageDrawable(Icon(Lucide.Crown, Color.WHITE, 12f, 2.2f, Color.WHITE)); scaleType = ImageView.ScaleType.CENTER
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F23D93"), Ui.c("#C20A5E"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Color.WHITE) }
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.c("#F23D93"), Rs.c("#C20A5E"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Color.WHITE) }
         }, FrameLayout.LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -dpi(4f); bottomMargin = -dpi(2f) })
         col.addView(ringBox, lp(dpi(size), dpi(size)))
         col.addView(sdText(context, label, 13f, if (kind == "seen") K.soft else K.ink).oneLine().apply { maxWidth = dpi(size + 8f) })
@@ -1118,42 +1152,31 @@ class SecretHome(
     fun goHome() = go("/secret-app", null)
     /** the same credits pill as the Home header (opens the Secret Dating wallet) */
     fun newCreditsPill(): View {
-        val t = sdText(context, creditsPill.text, 13f, Color.WHITE).apply {
-            background = rounded(K.wine2, 17f); elevation = Ui.dp(3f); gravity = Gravity.CENTER_VERTICAL
-            setPadding(dpi(7f), 0, dpi(5f), 0); compoundDrawablePadding = dpi(4f)
-            setCompoundDrawablesWithIntrinsicBounds(Coins(18f), null, PlusChip(Icon(Lucide.Plus, K.hot, 13f, 3.2f)), null)
-        }
+        val t = sdText(context, creditsPill.text, 14f, Rs.INK).apply { styleCreditsPill(this) }
         pills.add(t)
-        return FrameLayout(context).apply { addView(t, LayoutParams(-2, dpi(34f), Gravity.CENTER)); contentDescription = creditsPill.contentDescription }.also { it.press().onTap { wallet() } }
+        return FrameLayout(context).apply { addView(t, LayoutParams(-2, dpi(36f), Gravity.CENTER)); contentDescription = creditsPill.contentDescription }.also { it.press().onTap { wallet() } }
     }
-    /** header of the map and chat pages: back · title · credits */
-    fun pageHeader(title: String): View {
-        val row = hbox(context, 2f)
-        row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ArrowLeft, Color.WHITE, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back to Secret Dating" }
-            .press().onTap { goHome() }, lp(dpi(44f), dpi(44f)))
-        val vw = resources.displayMetrics.widthPixels / Ui.density
-        row.addView(sdText(context, title, (vw * .076f).coerceIn(25f, 32f), Color.WHITE, italic = true).oneLine(), lp(0, WRAP, 1f, l = 4f))
-        row.addView(newCreditsPill(), lp(WRAP, dpi(44f)))
-        return FrameLayout(context).apply { addView(row, LayoutParams(-1, -2).apply { setMargins(-dpi(12f), 0, -dpi(8f), 0) }); clipChildren = false }
+    /** the top of a tab's page (owner's picture, 23 Nov): the logo, [end] at the right (credits / search), then the page's name */
+    fun pageHeader(title: String, end: View? = null): View {
+        val box = vbox(context)
+        val row = hbox(context)
+        row.addView(Rs.logo(context, 23f), lp(WRAP, WRAP))
+        row.addView(View(context), lp(0, 1, 1f))
+        row.addView(end ?: newCreditsPill(), lp(WRAP, dpi(44f)))
+        box.addView(row, lp(MATCH, WRAP))
+        box.addView(Rs.title(context, title, 29f, Rs.M_INK), lp(WRAP, WRAP, t = 6f))
+        return box
     }
-    /** "— Verified Boys & Girls Across India —" */
-    fun pageSub(text: String): View {
-        val row = hbox(context, 8f, Gravity.CENTER)
-        fun line(toRight: Boolean) = View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, if (toRight) intArrayOf(Color.argb(0, 255, 255, 255), Color.argb(230, 255, 255, 255)) else intArrayOf(Color.argb(230, 255, 255, 255), Color.argb(0, 255, 255, 255))) }
-        val vw = resources.displayMetrics.widthPixels / Ui.density
-        row.addView(line(true), lp(dpi(26f), dpi(1.5f)))
-        row.addView(sdText(context, text, (vw * .039f).coerceIn(13.5f, 15f), Color.WHITE))
-        row.addView(line(false), lp(dpi(26f), dpi(1.5f)))
-        return row
-    }
+    /** one quiet line under a page's name */
+    fun pageSub(text: String): View = sdText(context, text, 14f, Rs.SUB, bold = false)
     /** "Premium · 2d left" (tap: wallet) — null without a running plan */
     fun planPill(): View? {
         val d = daysLeft
         if (!(premiumKnown && premium && d != null)) return null
         val renew = d == "Renew"
-        return sdText(context, if (renew) "Premium ended · Renew" else "Premium · $d", 13f, if (renew) Ui.c("#B4183C") else K.wine)
-            .icon(Icon(Lucide.Hourglass, if (renew) Ui.c("#B4183C") else K.wine, 13f), 5f).apply {
-                gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Ui.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
+        return sdText(context, if (renew) "Premium ended · Renew" else "Premium · $d", 13f, if (renew) Rs.c("#B4183C") else K.wine)
+            .icon(Icon(Lucide.Hourglass, if (renew) Rs.c("#B4183C") else K.wine, 13f), 5f).apply {
+                gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Rs.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
             }.also { it.press().onTap { wallet() } }
     }
     /** a story from someone you're chatting with (shown on their profile) */
@@ -1277,7 +1300,11 @@ class SecretHome(
         }
     }
 
-    fun liked(id: String, v: Boolean) { online = online?.map { if (it.optString("id") == id) it.put("liked_by_me", v) else it } }
+    fun liked(id: String, v: Boolean) {
+        online = online?.map { if (it.optString("id") == id) it.put("liked_by_me", v) else it }
+        if (v) { likedIds.add(id); unlikedIds.remove(id) } else { likedIds.remove(id); unlikedIds.add(id) }
+        render()
+    }
 
     fun openChat(p: JSONObject) { val id = p.optString("_chatId"); layer.closeAll(); go("/chat/$id", JSONObject().put("openChat", 1)) }
 
@@ -1350,7 +1377,10 @@ class SecretHome(
             "stories" -> scroll.scrollTo(0, (storyRow.parent as View).top - dpi(260f))
             "seeall" -> openMyActivity("liked", all = true)
             "activity" -> openMyActivity("liked")
-            "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(60f))   // as from the bottom bar's heart (its height)
+            "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(SdNavBar.BAR))   // as from the bottom bar's Likes (its height)
+            "nearby" -> pickDeck("nearby")
+            "favorite" -> pickDeck("favorite")
+            "like" -> deck.front?.let { likeTap(it, deckBox) }
             "activity-you" -> openMyActivity("you")
             "activity-match" -> openMyActivity("match")
             "activity-req" -> openMyActivity("req")
@@ -1389,7 +1419,7 @@ class SecretHome(
         val bottomGap = host.height - host.paddingBottom - (bottom - dpi(12f))
         (toast.layoutParams as FrameLayout.LayoutParams).bottomMargin = maxOf(dpi(12f), bottomGap)
         toastText.text = text
-        toastText.setTextColor(if (kind == "err") Ui.c("#B4183C") else K.ink2)
+        toastText.setTextColor(if (kind == "err") Rs.c("#B4183C") else K.ink2)
         toastBtn.visibility = if (kind == "credits" || kind == "premium") VISIBLE else GONE
         toastBtn.text = if (kind == "credits" || freeGirl) "Get a Plan" else "Get Premium"
         toastBtn.setOnClickListener { main.removeCallbacks(hideToast); toast.visibility = GONE; unlock() }
@@ -1404,7 +1434,7 @@ class SecretHome(
         val kind = x.optString("kind")
         val text = when (kind) { "message" -> if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"; "view" -> "viewed your profile"; else -> if (x.optBoolean("mutual")) "likes you — you liked them too" else "liked your profile" }
         val title = if (items.size > 1) "${items.size} new notifications" else "${p?.let { SdRules.firstName(SdRules.s(it, "name")) } ?: "Someone"} $text"
-        val card = hbox(context, 11f).apply { background = rounded(Color.WHITE, 20f, 1f, Color.argb(46, 214, 40, 120)); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)); elevation = Ui.dp(95f) }
+        val card = hbox(context, 11f).apply { background = rounded(Color.WHITE, 20f, 1f, Rs.argb(46, 214, 40, 120)); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)); elevation = Ui.dp(95f) }
         val face: View = if (p != null) RoundPhoto(context, 44f).also { it.set(SdRules.thumbs(p)) } else BlurFace(context, x.optString("g"))
         card.addView(face, lp(dpi(44f), dpi(44f)))
         val t = vbox(context); t.addView(sdText(context, title, 15.5f, K.ink).oneLine()); t.addView(sdText(context, if (canSee) "Tap to see" else "Tap to see who", 13f, K.hot))

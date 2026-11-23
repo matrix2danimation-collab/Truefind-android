@@ -24,26 +24,28 @@ object SdProfileView {
         scroll.addView(col, FrameLayout.LayoutParams(-1, -2))
         var close: () -> Unit = {}
         val white = Color.WHITE
-        val textShadow = Color.argb(71, 160, 20, 80)
+        // the page is blush now (23 Nov): what stands straight on it is black / maroon, with no glow behind the words
+        val ink = Rs.INK
+        val textShadow = Color.TRANSPARENT
 
         // ── top bar: back · ⋮ (Block / Report) ──
         val top = FrameLayout(ctx).apply { setPadding(dpi(6f), dpi(18f), dpi(8f), 0) }
-        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ArrowLeft, white, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back" }.press().onTap { close() },
+        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ArrowLeft, ink, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back" }.press().onTap { close() },
             FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.START))
         val menu = vbox(ctx).apply { background = rounded(white, 16f, 1f, K.line2); setPadding(dpi(6f), dpi(6f), dpi(6f), dpi(6f)); elevation = Ui.dp(8f); visibility = View.GONE }
-        menu.addView(sdText(ctx, "Block", 15f, Ui.c("#c0153d")).icon(Icon(Lucide.Ban, Ui.c("#c0153d"), 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
+        menu.addView(sdText(ctx, "Block", 15f, Rs.c("#c0153d")).icon(Icon(Lucide.Ban, Rs.c("#c0153d"), 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
             .onTap { menu.visibility = View.GONE; h.moderate(p, "block") }, lp(dpi(158f), dpi(44f)))
         menu.addView(sdText(ctx, "Report", 15f, K.ink2).icon(Icon(Lucide.Flag, K.ink2, 17f), 10f).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dpi(10f), 0, dpi(10f), 0) }
             .onTap { menu.visibility = View.GONE; h.moderate(p, "report") }, lp(dpi(158f), dpi(44f)))
-        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.MoreVertical, white, 24f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "More options" }
+        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.MoreVertical, ink, 24f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "More options" }
             .press().onTap { menu.visibility = if (menu.visibility == View.VISIBLE) View.GONE else View.VISIBLE }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.END))
         col.addView(top, lp(MATCH, WRAP))
 
         // ── round photo (gradient ring, white gap) + verified seal ──
         val photoBox = FrameLayout(ctx).apply { clipChildren = false }
         val ring = FrameLayout(ctx).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
-            setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f)); elevation = Ui.dp(10f)
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Rs.c("#F7569F"), Rs.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
+            setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f))
         }
         val gap = FrameLayout(ctx).apply { background = oval(white); setPadding(dpi(5f), dpi(5f), dpi(5f), dpi(5f)) }
         val ph = RoundPhoto(ctx, 186f)
@@ -61,24 +63,24 @@ object SdProfileView {
         val head = hbox(ctx, 12f).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
         val info = vbox(ctx, 6f)
         val nameRow = hbox(ctx, 10f)
-        nameRow.addView(sdText(ctx, SdRules.firstName(SdRules.s(p, "name")) + SdRules.s(p, "age").let { if (it.isNotEmpty()) ", $it" else "" }, 30f, white).oneLine().shadow(2f, 1f, textShadow), lp(0, WRAP, 1f).apply { weight = 0f; width = WRAP })
-        if (live) nameRow.addView(LiveDot(ctx, 12f, 3f, Color.argb(46, 61, 214, 42)))
+        nameRow.addView(Rs.title(ctx, SdRules.firstName(SdRules.s(p, "name")) + SdRules.s(p, "age").let { if (it.isNotEmpty()) ", $it" else "" }, 28f, ink).oneLine(), lp(0, WRAP, 1f).apply { weight = 0f; width = WRAP })
+        if (live) nameRow.addView(LiveDot(ctx, 12f, 3f, Rs.argb(46, 61, 214, 42)))
         info.addView(nameRow)
         val c = SdRules.cityOf(p); val st = SdRules.s(p, "state")
         val where = listOf(c, if (st.isNotEmpty() && SdRules.s(p, "city").isNotEmpty() && st != SdRules.s(p, "city")) st else "").filter { it.isNotEmpty() }.joinToString(", ")
-        if (where.isNotEmpty()) info.addView(sdText(ctx, where, 17f, white).oneLine().shadow(2f, 1f, textShadow).icon(Icon(Lucide.MapPin, white, 19f), 6f))
-        val dot = if (live) oval(K.green, 2f, Color.argb(217, 255, 255, 255)) else oval(Color.argb(191, 255, 255, 255))
-        info.addView(sdText(ctx, SdRules.seenText(p), 15f, white).shadow(2f, 1f, textShadow).icon(dot.apply { setSize(dpi(9f), dpi(9f)) }, 7f))
+        if (where.isNotEmpty()) info.addView(sdText(ctx, where, 17f, ink).oneLine().icon(Icon(Lucide.MapPin, Rs.ICON, 19f), 6f))
+        val dot = if (live) oval(K.green) else oval(Rs.SOFT)
+        info.addView(sdText(ctx, SdRules.seenText(p), 15f, Rs.SUB).icon(dot.apply { setSize(dpi(9f), dpi(9f)) }, 7f))
         head.addView(info, lp(0, WRAP, 1f))
-        val likeMsg = sdText(ctx, "", 14f, white).apply { gravity = Gravity.END; shadow(2f, 1f, textShadow); visibility = View.GONE }
+        val likeMsg = sdText(ctx, "", 14f, Rs.ICON).apply { gravity = Gravity.END; visibility = View.GONE }
         if (!same) {
             var fav = p.optBoolean("liked_by_me")
             var liking = false
-            val heart = Icon(Lucide.Heart, if (fav) white else Ui.c("#C8186C"), 26f, 2f, if (fav) white else null)
+            val heart = Icon(Lucide.Heart, if (fav) white else Rs.c("#C8186C"), 26f, 2f, if (fav) white else null)
             val heartView = ImageView(ctx).apply { setImageDrawable(heart); scaleType = ImageView.ScaleType.CENTER }
-            val btn = FrameLayout(ctx).apply { background = oval(if (fav) Ui.c("#E3086C") else Ui.c("#FDEFF7"), 1f, Ui.c("#F6CFE1")); elevation = Ui.dp(4f); contentDescription = if (fav) "Liked. Tap to take back" else "Like" }
+            val btn = FrameLayout(ctx).apply { background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); elevation = Ui.dp(4f); contentDescription = if (fav) "Liked. Tap to take back" else "Like" }
             btn.addView(heartView, FrameLayout.LayoutParams(-1, -1))
-            fun paint() { btn.background = oval(if (fav) Ui.c("#E3086C") else Ui.c("#FDEFF7"), 1f, Ui.c("#F6CFE1")); heart.tint(if (fav) white else Ui.c("#C8186C"), if (fav) white else null) }
+            fun paint() { btn.background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); heart.tint(if (fav) white else Rs.c("#C8186C"), if (fav) white else null) }
             btn.press().onTap {
                 if (liking) return@onTap
                 val next = !fav
@@ -86,7 +88,7 @@ object SdProfileView {
                 // a demo profile (testing only): the heart changes here, but no like is sent anywhere
                 if (SdDemo.isDemo(p)) {
                     fav = next; paint()
-                    likeMsg.text = "Demo profile: likes reach real members only"; likeMsg.icon(Icon(Lucide.Heart, white, 14f, 2f, white), 5f)
+                    likeMsg.text = "Demo profile: likes reach real members only"; likeMsg.icon(Icon(Lucide.Heart, Rs.ICON, 14f, 2f, Rs.ICON), 5f)
                     likeMsg.visibility = if (next) View.VISIBLE else View.GONE
                     return@onTap
                 }
@@ -100,7 +102,7 @@ object SdProfileView {
                         fav = !next; paint()
                         likeMsg.text = r.data.optString("message").ifEmpty { r.data.optString("error").ifEmpty { "Couldn't send the like. Try again." } }; likeMsg.visibility = View.VISIBLE
                     }
-                    likeMsg.icon(Icon(Lucide.Heart, white, 14f, 2f, white), 5f)
+                    likeMsg.icon(Icon(Lucide.Heart, Rs.ICON, 14f, 2f, Rs.ICON), 5f)
                 }
             }
             head.addView(btn, lp(dpi(52f), dpi(52f)))
@@ -113,7 +115,7 @@ object SdProfileView {
         if (story != null) {
             val prem = h.isPremium
             val b = hbox(ctx, 9f).apply { background = rounded(white, 22f, 1f, K.line); setPadding(dpi(4f), 0, dpi(16f), 0) }
-            val r2 = FrameLayout(ctx).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
+            val r2 = FrameLayout(ctx).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Rs.c("#F7569F"), Rs.c("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             val w2 = FrameLayout(ctx).apply { background = oval(white); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
             w2.addView(RoundPhoto(ctx, 32f).also { it.set(SdRules.thumbs(p)); if (!prem) it.dim = 0.35f }, FrameLayout.LayoutParams(-1, -1)); r2.addView(w2, FrameLayout.LayoutParams(-1, -1))
             b.addView(r2, lp(dpi(36f), dpi(36f)))
@@ -130,7 +132,6 @@ object SdProfileView {
             val tv = sdText(ctx, text, 22f, if (sent) K.wine else white).apply { gravity = Gravity.CENTER; if (icon != null) icon(icon, 10f) }
             return FrameLayout(ctx).apply {
                 background = if (sent) rounded(white, 30f, 1.5f, K.line) else K.btn(30f).apply { setStroke(dpi(2f), white) }
-                elevation = if (sent) 0f else Ui.dp(6f)
                 addView(tv, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
                 press().onTap(onClick)
             }
@@ -166,8 +167,8 @@ object SdProfileView {
                     val tv = sdText(ctx, "Send Request", 22f, white).apply { gravity = Gravity.CENTER; icon(Icon(Lucide.Lock, white, 22f, 2.3f), 10f) }
                     val row = hbox(ctx, 10f, Gravity.CENTER)
                     row.addView(tv)
-                    row.addView(sdText(ctx, tag, 11.5f, white).apply { letterSpacing = .06f; background = rounded(Color.argb(61, 255, 255, 255), 10f); setPadding(dpi(8f), dpi(4f), dpi(8f), dpi(4f)) })
-                    val b = FrameLayout(ctx).apply { background = K.btn(30f).apply { setStroke(dpi(2f), white) }; elevation = Ui.dp(6f); addView(row, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER)); press().onTap { h.locked("request") } }
+                    row.addView(sdText(ctx, tag, 11.5f, white).apply { letterSpacing = .06f; background = rounded(Rs.argb(61, 255, 255, 255), 10f); setPadding(dpi(8f), dpi(4f), dpi(8f), dpi(4f)) })
+                    val b = FrameLayout(ctx).apply { background = K.btn(30f).apply { setStroke(dpi(2f), white) }; addView(row, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER)); press().onTap { h.locked("request") } }
                     mainBox.addView(b, lp(MATCH, dpi(60f)))
                     val line = hbox(ctx, 6f, Gravity.CENTER)
                     line.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Lock, K.wine, 15f)) }, lp(dpi(15f), dpi(15f)))
@@ -185,8 +186,8 @@ object SdProfileView {
         val about = SdRules.s(p, "bio", "about", "description")
         val sec = vbox(ctx).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
         if (about.isNotEmpty()) {
-            sec.addView(sdText(ctx, "About Me", 21f, Ui.c("#A1144A")))
-            sec.addView(sdText(ctx, about, 17f, Ui.c("#161216"), bold = false).lineHeight(1.2f).inlineIcon(Icon(Lucide.Heart, K.hot, 16f, 2.2f), 4f, atEnd = true), lp(MATCH, WRAP, t = 8f))
+            sec.addView(sdText(ctx, "About Me", 21f, Rs.c("#A1144A")))
+            sec.addView(sdText(ctx, about, 17f, Rs.c("#161216"), bold = false).lineHeight(1.2f).inlineIcon(Icon(Lucide.Heart, K.hot, 16f, 2.2f), 4f, atEnd = true), lp(MATCH, WRAP, t = 8f))
         }
         val g = SdRules.sexOf(p)
         val chips = listOfNotNull(
@@ -196,8 +197,8 @@ object SdProfileView {
             SdRules.s(p, "profession", "job", "work", "occupation").takeIf { it.isNotEmpty() }?.let { Lucide.Briefcase to it },
             SdRules.s(p, "education").takeIf { it.isNotEmpty() }?.let { Lucide.Sparkles to it },
         ).take(5)
-        if (chips.isNotEmpty()) sec.addView(Flow(ctx, 6f).apply { for ((ic, t) in chips) addView(sdText(ctx, t, 14f, K.ink, bold = false).icon(Icon(ic, Ui.c("#97294B"), 16f), 5f).apply {
-            gravity = Gravity.CENTER_VERTICAL; background = rounded(white, 999f, 1f, Ui.c("#EED6E2")); setPadding(dpi(9f), 0, dpi(11f), 0); height = dpi(36f); maxLines = 1
+        if (chips.isNotEmpty()) sec.addView(Flow(ctx, 6f).apply { for ((ic, t) in chips) addView(sdText(ctx, t, 14f, K.ink, bold = false).icon(Icon(ic, Rs.c("#97294B"), 16f), 5f).apply {
+            gravity = Gravity.CENTER_VERTICAL; background = rounded(white, 999f, 1f, Rs.c("#EED6E2")); setPadding(dpi(9f), 0, dpi(11f), 0); height = dpi(36f); maxLines = 1
         }) }, lp(MATCH, WRAP, t = 14f))
         val tagsArr = p.optJSONArray("interests") ?: p.optJSONArray("hobbies")
         val tags = if (tagsArr == null) emptyList() else (0 until minOf(8, tagsArr.length())).map { tagsArr.optString(it) }.filter { it.isNotEmpty() }
@@ -206,11 +207,11 @@ object SdProfileView {
 
         // ── verification ──
         val ver = vbox(ctx).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
-        ver.addView(sdText(ctx, "Verification", 21f, Ui.c("#A1144A")))
-        val vb = hbox(ctx, 12f).apply { background = grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#FDE5F1"), Ui.c("#FFF6FA")), 18f, 1f, Ui.c("#F5C7DC")); setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
+        ver.addView(sdText(ctx, "Verification", 21f, Rs.c("#A1144A")))
+        val vb = hbox(ctx, 12f).apply { background = grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Rs.c("#FDE5F1"), Rs.c("#FFF6FA")), 18f, 1f, Rs.c("#F5C7DC")); setPadding(dpi(14f), dpi(13f), dpi(14f), dpi(13f)) }
         vb.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, if (verified) K.rose else K.soft, 38f, 1.8f)) }, lp(dpi(38f), dpi(38f)))
         val vt = vbox(ctx)
-        vt.addView(sdText(ctx, if (verified) "Verified Member" else "Not verified yet", 17f, if (verified) Ui.c("#A91C56") else K.ink2))
+        vt.addView(sdText(ctx, if (verified) "Verified Member" else "Not verified yet", 17f, if (verified) Rs.c("#A91C56") else K.ink2))
         vt.addView(sdText(ctx, if (verified) "Identity & profile verified for a safer experience." else "This member hasn't finished verification yet.", 14f, K.ink2, bold = false).lineHeight(1.1f), lp(WRAP, WRAP, t = 2f))
         vb.addView(vt, lp(0, WRAP, 1f))
         ver.addView(vb, lp(MATCH, WRAP, t = 10f))
@@ -225,7 +226,7 @@ object SdProfileView {
         val moreBox = FrameLayout(ctx)
         val moreLink = sdText(ctx, "Block or report", 14f, K.soft, bold = false).apply { gravity = Gravity.CENTER }
         val two = hbox(ctx, 10f, Gravity.CENTER).apply { visibility = View.GONE; setPadding(0, dpi(4f), 0, 0) }
-        two.addView(sdText(ctx, "Block", 15f, Ui.c("#c0153d")).icon(Icon(Lucide.Ban, Ui.c("#c0153d"), 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(white, 22f, 1f, Ui.c("#f3a7b5")); setPadding(dpi(18f), 0, dpi(18f), 0) }
+        two.addView(sdText(ctx, "Block", 15f, Rs.c("#c0153d")).icon(Icon(Lucide.Ban, Rs.c("#c0153d"), 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(white, 22f, 1f, Rs.c("#f3a7b5")); setPadding(dpi(18f), 0, dpi(18f), 0) }
             .onTap { h.moderate(p, "block") }, lp(WRAP, dpi(44f)))
         two.addView(sdText(ctx, "Report", 15f, K.ink2).icon(Icon(Lucide.Flag, K.ink2, 16f), 6f).apply { gravity = Gravity.CENTER; background = rounded(white, 22f, 1f, K.line); setPadding(dpi(18f), 0, dpi(18f), 0) }
             .onTap { h.moderate(p, "report") }, lp(WRAP, dpi(44f)))

@@ -82,9 +82,9 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
 
         // top bar: back · My Activity · credits
         val bar = hbox(ctx, 8f)
-        bar.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ArrowLeft, Color.WHITE, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back" }
+        bar.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ArrowLeft, Rs.INK, 26f, 2.3f)); scaleType = ImageView.ScaleType.CENTER; contentDescription = "Back" }
             .press().onTap { close() }, lp(dpi(44f), dpi(44f)))
-        bar.addView(sdText(ctx, "My Activity", 26f, Color.WHITE, italic = true).oneLine(), lp(0, WRAP, 1f))
+        bar.addView(sdText(ctx, "My Activity", 26f, Rs.M_INK, serif = true).oneLine(), lp(0, WRAP, 1f))
         val p = h.newCreditsPill().also { pill = it }
         bar.addView(p, lp(WRAP, dpi(44f)))
         col.addView(bar, lp(MATCH, WRAP, l = -8f, r = -6f))
@@ -94,14 +94,14 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
 
         // the four tabs
         tabsRow.orientation = LinearLayout.HORIZONTAL
-        tabsRow.background = rounded(Color.WHITE, 22f, 1f, Color.argb(36, 214, 40, 120))
+        tabsRow.background = rounded(Color.WHITE, 22f, 1f, Rs.argb(36, 214, 40, 120))
         tabsRow.elevation = Ui.dp(4f)
         tabsRow.setPadding(dpi(4f), dpi(4f), dpi(4f), dpi(4f))
         for ((i, t) in TABS.withIndex()) {
             val (k, label, _) = t
             val cell = FrameLayout(ctx).apply { contentDescription = label }
             val box = vbox(ctx, 1f, Gravity.CENTER_HORIZONTAL)
-            val name = sdText(ctx, label, 13f, Ui.c("#111111")).oneLine().apply { gravity = Gravity.CENTER }
+            val name = sdText(ctx, label, 13f, Rs.c("#111111")).oneLine().apply { gravity = Gravity.CENTER }
             val num = sdText(ctx, "·", 16f, K.hot).apply { gravity = Gravity.CENTER }
             box.addView(name); box.addView(num)
             cell.addView(box, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
@@ -126,7 +126,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             num.text = n
             cell.contentDescription = "${t.second}, ${if (data == null) "loading" else n}${if (on) ", selected" else ""}"
             val bgTo = if (on) K.hot else Color.TRANSPARENT
-            val nameTo = if (on) Color.WHITE else Ui.c("#111111")
+            val nameTo = if (on) Color.WHITE else Rs.c("#111111")
             val numTo = if (on) Color.WHITE else K.hot
             val bg = (cell.background as? GradientDrawable) ?: rounded(Color.TRANSPARENT, 18f).also { cell.background = it }
             val from = tabBg[i]
@@ -179,7 +179,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
                 card.addView(sdText(ctx, "Couldn't load your activity.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER })
                 card.addView(pillView("Try again", K.pill, Color.WHITE, null).also { it.press().onTap { load() } }, lp(WRAP, dpi(34f)))
                 body.addView(card, lp(MATCH, WRAP))
-            } else for (i in 0..2) body.addView(View(ctx).apply { background = rounded(Ui.c("#FCE4F0"), 18f) }, lp(MATCH, dpi(64f), t = if (i == 0) 0f else 8f))
+            } else for (i in 0..2) body.addView(View(ctx).apply { background = rounded(Rs.c("#FCE4F0"), 18f) }, lp(MATCH, dpi(64f), t = if (i == 0) 0f else 8f))
             return
         }
         val l = list().filter { person(it) != null || ((tab == "liked" || tab == "match") && d.optBoolean("can_see") != true) }
@@ -191,7 +191,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
                 else -> "Requests you send show up here with their status."
             }
             body.addView(sdText(ctx, msg, 15f, K.sub, bold = false).apply {
-                gravity = Gravity.CENTER; lineHeight(1.2f); background = rounded(Color.WHITE, 18f, 1f, Color.argb(36, 214, 40, 120)); setPadding(dpi(16f), dpi(14f), dpi(16f), dpi(14f))
+                gravity = Gravity.CENTER; lineHeight(1.2f); background = rounded(Color.WHITE, 18f, 1f, Rs.argb(36, 214, 40, 120)); setPadding(dpi(16f), dpi(14f), dpi(16f), dpi(14f))
             }, lp(MATCH, WRAP))
             return
         }
@@ -205,7 +205,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
         }
     }
 
-    private fun cardBg() = rounded(Color.WHITE, 24f, 1f, Color.argb(41, 214, 40, 120))
+    private fun cardBg() = rounded(Color.WHITE, 24f, 1f, Rs.argb(41, 214, 40, 120))
 
     /** two columns of tiles */
     private fun grid(n: Int, cell: (Int) -> View) {
@@ -223,19 +223,19 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             val x = l[i]
             val girl = x.optString("g") == "f"
             val tile = FrameLayout(ctx).apply {
-                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, if (girl) intArrayOf(Ui.c("#FF9CC6"), Ui.c("#E3086C")) else intArrayOf(Ui.c("#C9A6F5"), Ui.c("#8E1243"))).apply { cornerRadius = Ui.dp(20f) }
+                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, if (girl) intArrayOf(Rs.c("#FF9CC6"), Rs.c("#E3086C")) else intArrayOf(Rs.c("#C9A6F5"), Rs.c("#8E1243"))).apply { cornerRadius = Ui.dp(20f) }
                 clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND; elevation = Ui.dp(4f)
                 contentDescription = "Someone ${if (what == "match") "matched with you" else "liked you"}, ${ago(x.optString("at"))}. Locked"
             }
             tile.addView(BlurPerson(ctx), FrameLayout.LayoutParams(-1, -1))
-            tile.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Lock, Color.WHITE, 15f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Color.argb(77, 255, 255, 255)) },
+            tile.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Lock, Color.WHITE, 15f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; background = oval(Rs.argb(77, 255, 255, 255)) },
                 FrameLayout.LayoutParams(dpi(30f), dpi(30f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(10f), dpi(10f), 0) })
             val foot = vbox(ctx).apply {
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 142, 18, 67), Color.argb(166, 142, 18, 67)))
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.argb(0, 142, 18, 67), Rs.argb(166, 142, 18, 67)))
                 setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f))
             }
             foot.addView(sdText(ctx, if (girl) "Someone pretty" else "Someone nice", 15f, Color.WHITE).oneLine())
-            foot.addView(sdText(ctx, "${if (what == "match") "It's a Match" else "Liked you"} · ${ago(x.optString("at"))}", 13f, Ui.c("#FFE1EE"), bold = false).oneLine())
+            foot.addView(sdText(ctx, "${if (what == "match") "It's a Match" else "Liked you"} · ${ago(x.optString("at"))}", 13f, Rs.c("#FFE1EE"), bold = false).oneLine())
             tile.addView(foot, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
             tile.press().onTap { h.locked("activity") }
             FrameLayout(ctx).apply { addView(tile, FrameLayout.LayoutParams(-1, dpi(176f))) }
@@ -254,21 +254,21 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
         grid(l.size) { i ->
             val x = l[i]; val p = person(x)!!
             val tile = FrameLayout(ctx).apply {
-                background = rounded(Ui.c("#F6D6E6"), 20f, 3f, Color.WHITE)
+                background = rounded(Rs.c("#F6D6E6"), 20f, 3f, Color.WHITE)
                 clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND; elevation = Ui.dp(4f)
                 setPadding(dpi(3f), dpi(3f), dpi(3f), dpi(3f))
                 contentDescription = "${nameOf(p)} liked you, ${ago(x.optString("at"))}"
             }
-            val inner = FrameLayout(ctx).apply { background = rounded(Ui.c("#F6D6E6"), 17f); clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND }
+            val inner = FrameLayout(ctx).apply { background = rounded(Rs.c("#F6D6E6"), 17f); clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND }
             val img = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
             inner.addView(img, FrameLayout.LayoutParams(-1, -1))
-            inner.addView(View(ctx).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.argb(0, 122, 0, 54), Color.argb(0, 122, 0, 54), Color.argb(230, 92, 0, 40))) }, FrameLayout.LayoutParams(-1, -1))
+            inner.addView(View(ctx).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.argb(0, 122, 0, 54), Rs.argb(0, 122, 0, 54), Rs.argb(230, 92, 0, 40))) }, FrameLayout.LayoutParams(-1, -1))
             val foot = vbox(ctx).apply { setPadding(dpi(10f), 0, dpi(8f), dpi(8f)) }
             val nameRow = hbox(ctx, 5f)
             if (SdRules.liveOf(p)) nameRow.addView(LiveDot(ctx, 7f))
             nameRow.addView(sdText(ctx, nameOf(p), 15.5f, Color.WHITE).oneLine())
             foot.addView(nameRow)
-            foot.addView(sdText(ctx, listOf(SdRules.s(p, "city"), ago(x.optString("at"))).filter { it.isNotEmpty() }.joinToString(" · "), 12.5f, Color.argb(230, 255, 255, 255), bold = false).oneLine())
+            foot.addView(sdText(ctx, listOf(SdRules.s(p, "city"), ago(x.optString("at"))).filter { it.isNotEmpty() }.joinToString(" · "), 12.5f, Rs.argb(230, 255, 255, 255), bold = false).oneLine())
             inner.addView(foot, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
             inner.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.Heart, Color.WHITE, 13f, 2.4f, Color.WHITE)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.hot, 2f, Color.WHITE) },
                 FrameLayout.LayoutParams(dpi(28f), dpi(28f), Gravity.END or Gravity.TOP).apply { setMargins(0, dpi(5f), dpi(5f), 0) })
@@ -294,7 +294,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
     /** a 48 round face with a 2 white gap and a 1.5 pink ring around it (outside its 48, like the web's box-shadow rings) */
     private fun face(p: JSONObject): View {
         val box = FrameLayout(ctx).apply { clipChildren = false; clipToPadding = false }
-        val ring = FrameLayout(ctx).apply { background = oval(Color.WHITE, 1.5f, Ui.c("#F6C2DA")); setPadding(dpi(3.5f), dpi(3.5f), dpi(3.5f), dpi(3.5f)) }
+        val ring = FrameLayout(ctx).apply { background = oval(Color.WHITE, 1.5f, Rs.c("#F6C2DA")); setPadding(dpi(3.5f), dpi(3.5f), dpi(3.5f), dpi(3.5f)) }
         ring.addView(RoundPhoto(ctx, 48f).also { it.set(SdRules.thumbs(p), Demo.round(p, dpi(48f))) }, FrameLayout.LayoutParams(-1, -1))
         box.addView(ring, FrameLayout.LayoutParams(dpi(55f), dpi(55f), Gravity.CENTER).apply { setMargins(-dpi(3.5f), -dpi(3.5f), -dpi(3.5f), -dpi(3.5f)) })
         return box
@@ -310,8 +310,8 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
         val mid = r?.optString("match_id").orEmpty().takeIf { it.isNotEmpty() && r?.isNull("match_id") == false }
         return when {
             st == "accepted" && mid != null -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid) } }
-            st == "pending" -> pillView("Request sent", K.tint, Ui.c("#A91C56"), Icon(Lucide.Hourglass, Ui.c("#A91C56"), 13f))
-            st == "declined" -> pillView("Not accepted", Ui.c("#F4EFF2"), Ui.c("#7A6A73"), null)
+            st == "pending" -> pillView("Request sent", K.tint, Rs.c("#A91C56"), Icon(Lucide.Hourglass, Rs.c("#A91C56"), 13f))
+            st == "declined" -> pillView("Not accepted", Rs.c("#F4EFF2"), Rs.c("#7A6A73"), null)
             else -> pillView("Send Request", K.pill, Color.WHITE, Icon(Lucide.Send, Color.WHITE, 14f, 2.4f)).also { it.press().onTap { person(x)?.let { p -> h.askRequest(p) } } }
         }
     }
@@ -350,7 +350,7 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             val m = vbox(ctx)
             m.addView(sdText(ctx, nameOf(p), 16f, K.ink).oneLine())
             m.addView(when (st) {
-                "accepted" -> sdText(ctx, "Accepted · you can chat now", 13.5f, Ui.c("#1E9E3A"))
+                "accepted" -> sdText(ctx, "Accepted · you can chat now", 13.5f, Rs.c("#1E9E3A"))
                 "declined" -> sdText(ctx, "Not accepted", 13.5f, K.sub, bold = false)
                 else -> sdText(ctx, "Waiting for a reply", 13.5f, K.sub, bold = false)
             }.oneLine())
@@ -358,8 +358,8 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             row.addView(m, lp(0, WRAP, 1f))
             row.addView(when {
                 st == "accepted" && mid != null -> pillView("Open Chat", K.pill, Color.WHITE, Icon(Lucide.MessageCircleMore, Color.WHITE, 15f, 2.4f)).also { it.press().onTap { openChat(mid) } }
-                st == "declined" -> pillView("Not accepted", Ui.c("#F4EFF2"), Ui.c("#7A6A73"), null)
-                else -> pillView("Pending", K.tint, Ui.c("#A91C56"), Icon(Lucide.Hourglass, Ui.c("#A91C56"), 13f))
+                st == "declined" -> pillView("Not accepted", Rs.c("#F4EFF2"), Rs.c("#7A6A73"), null)
+                else -> pillView("Pending", K.tint, Rs.c("#A91C56"), Icon(Lucide.Hourglass, Rs.c("#A91C56"), 13f))
             }, lp(WRAP, dpi(34f)))
             row.contentDescription = "${nameOf(p)}, ${if (st == "accepted") "accepted" else if (st == "declined") "not accepted" else "pending"}"
             row.press(0.98f).onTap { h.openProfile(p) }
@@ -380,8 +380,8 @@ class SdActivity private constructor(private val h: SecretHome, start: String, p
             c.save(); c.translate((width - 48 * s) / 2, (height - 48 * s) / 2); c.scale(s, s)
             // blur(5px): a 5 px softness on screen, whatever the tile's size
             p.maskFilter = android.graphics.BlurMaskFilter(((5f * Ui.density - 0.5f) / 0.57735f) / s, android.graphics.BlurMaskFilter.Blur.NORMAL)
-            p.color = Color.argb(204, 255, 255, 255); c.drawCircle(24f, 19f, 9f, p)
-            p.color = Color.argb(191, 255, 255, 255); c.drawPath(body, p)
+            p.color = Rs.argb(204, 255, 255, 255); c.drawCircle(24f, 19f, 9f, p)
+            p.color = Rs.argb(191, 255, 255, 255); c.drawPath(body, p)
             p.maskFilter = null
             c.restore()
         }

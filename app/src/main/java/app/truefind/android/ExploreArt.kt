@@ -184,6 +184,11 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
     /** the strip under the status bar in the page's own top colour (Secret Dating pink, Home's light lilac; owner, 21 Nov) */
     var top: Int? = null
         set(v) { if (field != v) { field = v; invalidateSelf() } }
+    /** the strip over the phone's own buttons (and behind the keyboard) in the page's bottom colour: a Secret Dating
+     *  chat ends in blush, not in a separate white strip (23 Nov). [bottomStrip] = that strip's height. */
+    var bottom: Int? = null
+        set(v) { if (field != v) { field = v; invalidateSelf() } }
+    var bottomStrip: () -> Int = { 0 }
     private val topPaint = Paint()
     private val white = Paint().apply { color = Color.WHITE }
     private val base = Paint().apply { color = Ui.c("#4C1D95") }
@@ -193,6 +198,8 @@ class AppBackground(private val strip: () -> Int, private val box: () -> Int) : 
     override fun draw(c: Canvas) {
         val b = bounds
         c.drawRect(b, white)
+        val bc = bottom; val bs = bottomStrip()
+        if (bc != null && bs > 0) { topPaint.color = bc; c.drawRect(b.left.toFloat(), b.bottom - bs.toFloat(), b.right.toFloat(), b.bottom.toFloat(), topPaint) }
         val s = strip()
         val tc = top
         if (!purple && tc != null && s > 0) { topPaint.color = tc; c.drawRect(b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.top + s.toFloat(), topPaint); return }

@@ -37,32 +37,71 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** Secret Dating colours — the web's K. */
-object K {
-    val wine = Ui.c("#8E1243"); val wine2 = Ui.c("#9E1447"); val rose = Ui.c("#E3086C"); val hot = Ui.c("#D80F6E"); val deep = Ui.c("#8A0E3C")
-    val ink = Ui.c("#1B1A1D"); val ink2 = Ui.c("#2A1F25"); val sub = Ui.c("#6E5562"); val soft = Ui.c("#8C878B")
-    val tint = Ui.c("#FDE1EF"); val tint2 = Ui.c("#FFF0F7"); val line = Ui.c("#F4BFD7"); val line2 = Ui.c("#F6DAE7")
-    val green = Ui.c("#3DD62A"); val pill = Ui.c("#D80F6E")
-    /** every Secret Dating page: light pink at the top, white at the bottom */
+/** Secret Dating's colours: the names every page uses (the web's K). */
+interface SdPal {
+    val wine: Int; val wine2: Int; val rose: Int; val hot: Int; val deep: Int
+    val ink: Int; val ink2: Int; val sub: Int; val soft: Int
+    val tint: Int; val tint2: Int; val line: Int; val line2: Int
+    val green: Int; val pill: Int
+    fun btn(radiusDp: Float): GradientDrawable
+    fun sheet(): GradientDrawable
+    fun badge(): GradientDrawable
+}
+
+/** The earlier pink (the web's K). True Find's own chats still wear it (ChatRoom); Secret Dating moved to [K]. */
+object KP : SdPal {
+    override val wine = Ui.c("#8E1243"); override val wine2 = Ui.c("#9E1447"); override val rose = Ui.c("#E3086C"); override val hot = Ui.c("#D80F6E"); override val deep = Ui.c("#8A0E3C")
+    override val ink = Ui.c("#1B1A1D"); override val ink2 = Ui.c("#2A1F25"); override val sub = Ui.c("#6E5562"); override val soft = Ui.c("#8C878B")
+    override val tint = Ui.c("#FDE1EF"); override val tint2 = Ui.c("#FFF0F7"); override val line = Ui.c("#F4BFD7"); override val line2 = Ui.c("#F6DAE7")
+    override val green = Ui.c("#3DD62A"); override val pill = Ui.c("#D80F6E")
+    /** every pink page: light pink at the top, white at the bottom */
     val PAGE = intArrayOf(Ui.c("#FB5C94"), Ui.c("#FD6FA3"), Ui.c("#FD82B0"), Ui.c("#FE94BC"), Ui.c("#FEA6C8"), Ui.c("#FDB9D3"), Ui.c("#FED8E6"), Ui.c("#FFFFFF"))
     val PAGE_AT = floatArrayOf(0f, .18f, .34f, .48f, .60f, .69f, .80f, .90f)
     /** K.btn: linear-gradient(90deg,#F23D93,#D80F6E) */
-    fun btn(radiusDp: Float) = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#F23D93"), Ui.c("#D80F6E"))).apply { cornerRadius = Ui.dp(radiusDp) }
+    override fun btn(radiusDp: Float) = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#F23D93"), Ui.c("#D80F6E"))).apply { cornerRadius = Ui.dp(radiusDp) }
     /** K.sheet: linear-gradient(180deg,#FFD6E6 0%,#FFFFFF 50%) */
-    fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFD6E6"), Color.WHITE, Color.WHITE)).apply {
+    override fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FFD6E6"), Color.WHITE, Color.WHITE)).apply {
         cornerRadii = floatArrayOf(Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), 0f, 0f, 0f, 0f)
     }
     /** the round pink icon box: linear-gradient(180deg,#F43D95,#C80962) */
-    fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F43D95"), Ui.c("#C80962"))).apply { shape = GradientDrawable.OVAL }
+    override fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F43D95"), Ui.c("#C80962"))).apply { shape = GradientDrawable.OVAL }
 }
 
-/** The page background, drawn once and kept still while the page scrolls (sticky in the web). */
-class PinkBackdrop(ctx: Context) : View(ctx) {
-    private val p = Paint()
-    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
-        p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), K.PAGE, K.PAGE_AT, Shader.TileMode.CLAMP)
+/** Secret Dating now (owner's picture, 23 Nov): maroon on blush, flat buttons. The same names as the pink had. */
+object K : SdPal {
+    override val wine = Ui.c("#6D1328"); override val wine2 = Ui.c("#77152C"); override val rose = Ui.c("#931A39"); override val hot = Ui.c("#931A39"); override val deep = Ui.c("#671226")
+    override val ink = Ui.c("#161214"); override val ink2 = Ui.c("#2A1F22"); override val sub = Ui.c("#6A6061"); override val soft = Ui.c("#8C878B")
+    override val tint = Ui.c("#FAE8E6"); override val tint2 = Ui.c("#FDF4F3"); override val line = Ui.c("#F0C9C8"); override val line2 = Ui.c("#F7DEDC")
+    override val green = Ui.c("#3DD62A"); override val pill = Ui.c("#931A39")
+    /** the main button: flat maroon */
+    override fun btn(radiusDp: Float) = GradientDrawable().apply { setColor(Rs.M); cornerRadius = Ui.dp(radiusDp) }
+    /** a bottom sheet: a breath of blush at its top, then white */
+    override fun sheet() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#FBE3E1"), Color.WHITE, Color.WHITE)).apply {
+        cornerRadii = floatArrayOf(Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), Ui.dp(28f), 0f, 0f, 0f, 0f)
     }
-    override fun onDraw(c: Canvas) { c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p) }
+    /** the round icon box: flat maroon */
+    override fun badge() = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Rs.M) }
+}
+
+/**
+ * The page background, drawn once and kept still while the page scrolls (sticky in the web).
+ * Secret Dating: blush with fine hearts and leaves ([rose], 23 Nov). True Find's own chats: the earlier pink.
+ */
+class PinkBackdrop(ctx: Context) : View(ctx) {
+    var rose = true
+        set(v) { if (field != v) { field = v; shade(); invalidate() } }
+    private val p = Paint()
+    private val deco by lazy { RoseDeco() }
+    private fun shade() {
+        if (height <= 0) return
+        p.shader = if (rose) LinearGradient(0f, 0f, 0f, height.toFloat(), Rs.BG_TOP, Rs.BG_END, Shader.TileMode.CLAMP)
+            else LinearGradient(0f, 0f, 0f, height.toFloat(), KP.PAGE, KP.PAGE_AT, Shader.TileMode.CLAMP)
+    }
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) { shade() }
+    override fun onDraw(c: Canvas) {
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), p)
+        if (rose) deco.draw(c, width.toFloat(), height.toFloat())
+    }
 }
 
 /** A Lucide icon: stroke (round caps), optional fill — like <Heart strokeWidth fill/> in the web. */
@@ -88,7 +127,7 @@ class Icon(svg: String, private var color: Int, sizeDp: Float, private val strok
 }
 
 /** pink scalloped "verified" badge (Seal) */
-class Seal(sizeDp: Float, private val fill: Int = K.rose, private val tick: Int = Color.WHITE) : Drawable() {
+class Seal(sizeDp: Float, private val fill: Int = Rs.SEAL, private val tick: Int = Color.WHITE) : Drawable() {
     private val px = Ui.dpi(sizeDp)
     private val shape = PathParser.createPathFromPathData("M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z")
     private val check = PathParser.createPathFromPathData("m8.6 12.2 2.3 2.3 4.6-4.8")
@@ -218,12 +257,13 @@ class RingDrawable(private val colors: IntArray, private val stops: FloatArray?)
 }
 
 // ───────── small view helpers ─────────
-fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boolean = true, italic: Boolean = false): TextView =
+/** [serif]: a heading in Secret Dating's serif (a little smaller: its letters are wider than the app font's) */
+fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boolean = true, italic: Boolean = false, serif: Boolean = false): TextView =
     TextView(ctx).apply {
         text = s
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(sizeDp))
+        setTextSize(TypedValue.COMPLEX_UNIT_PX, Ui.dp(if (serif) sizeDp * .9f else sizeDp))
         setTextColor(color)
-        typeface = if (italic) Ui.boldItalic else if (bold) Ui.bold else Ui.regular
+        typeface = if (serif) Rs.serif else if (italic) Ui.boldItalic else if (bold) Ui.bold else Ui.regular
         includeFontPadding = false
     }
 

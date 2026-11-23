@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
@@ -13,23 +14,12 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
 import androidx.core.graphics.PathParser
 
-private object NavLook {
-    val BG = Color.WHITE   // owner, 22 Nov: white bar (was #F3F3F3)
-    val INK = Ui.c("#111114")   // icons: bold outline; the open tab filled black (owner, 22 Nov)
-    val LINE = Ui.c("#E8E7EB")
-    val ON = Ui.c("#E94057")
-    val OFF = Ui.c("#ADAFBB")
-    const val HEART_FILL = "M12 20.6c-.3 0-.6-.1-.8-.3C7.4 17.2 2.6 13.4 2.6 8.9 2.6 6 4.8 3.8 7.5 3.8c1.8 0 3.4.9 4.5 2.4 1.1-1.5 2.7-2.4 4.5-2.4 2.7 0 4.9 2.2 4.9 5.1 0 4.5-4.8 8.3-8.6 11.4-.2.2-.5.3-.8.3Z"
-    const val CHAT_FILL = "M12.2 2.8a9.2 9.2 0 1 1 0 18.4H4.4a1.6 1.6 0 0 1-1.6-1.6V12a9.2 9.2 0 0 1 9.4-9.2Z"
-    const val CHAT_LINES = "M8.1 9.6h8.2M8.1 12.9h8.2M8.1 16.2h4.7"
-    const val PIN_FILL = "M12 2.3c-4.3 0-7.7 3.3-7.7 7.6 0 5.4 6.3 11.4 7.1 12 .35.3.85.3 1.2 0 .8-.6 7.1-6.6 7.1-12 0-4.3-3.4-7.6-7.7-7.6Z"
-}
-
 /**
- * Secret Dating's bottom bar, from the owner's photo (20 Nov; asked again 21 Nov with the pink look): a light
- * grey bar, icons only — cards (Home) · heart (My Activity: who liked you) · chat · map pin (Online Map) — the
- * open tab pink-red with a short line on the bar's top edge. No profile icon (owner: "profile hta de").
- * The heart opens My Activity over the page you are on; a red dot on it while new likes / messages wait.
+ * Secret Dating's bottom bar, from the owner's picture (23 Nov): one white, pill-shaped bar on the blush page —
+ * Discover (Home) · Likes (My Activity: who liked you) · Chat · Map — each an icon with its name under it.
+ * The open tab is a flat maroon pill with a white icon and name ("2D": no gloss, no shadow).
+ * The blush runs on under the bar, down over the phone's own button strip, so no separate strip shows.
+ * Likes opens My Activity over the page you are on; a red dot on its heart while new likes / messages wait.
  * A tap on another tab opens it; a tap on the tab you are on does nothing.
  */
 @SuppressLint("ViewConstructor")
@@ -37,14 +27,14 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     private class Item(val key: String, val label: String, val path: String)
     private val items = listOf(
-        Item("home", "Home", "/secret-app"),
-        Item("likes", "My Activity", "likes"),
-        Item("chat", "Chats", "/secret-app?tab=chat"),
-        Item("map", "Online Map", "/dating"),
+        Item("home", "Discover", "/secret-app"),
+        Item("likes", "Likes", "likes"),
+        Item("chat", "Chat", "/secret-app?tab=chat"),
+        Item("map", "Map", "/dating"),
     )
 
     /** the bar's height: the Secret Dating pages end where this starts */
-    val barPx: Int get() = Ui.dpi(60f)
+    val barPx: Int get() = Ui.dpi(BAR)
 
     /** which page is open: "home" · "likes" · "chat" · "map" */
     var current = "home"
@@ -57,7 +47,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             contentDescription = "Secret Dating, ${items[to].label}"
         }
 
-    /** the phone's own button strip under the bar: the grey runs on over it (MainActivity sets it) */
+    /** the phone's own button strip under the bar: the blush runs on over it (MainActivity sets it) */
     var below = 0
         set(v) { if (field != v) { field = v; requestLayout() } }
 
@@ -65,15 +55,18 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     var heartDot = false
         set(v) { if (field != v) { field = v; invalidate() } }
 
-    private val bg = Paint().apply { color = NavLook.BG }
-    private val line = Paint().apply { color = NavLook.LINE }
-    private val red = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = NavLook.ON }
+    private val bg = Paint().apply { color = Rs.BG_END }
+    private val pillFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val pillLine = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Rs.LINE }
+    private val on = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Rs.M }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
-    private val heart = PathParser.createPathFromPathData(NavLook.HEART_FILL)
-    private val chat = PathParser.createPathFromPathData(NavLook.CHAT_FILL)
-    private val chatLines = PathParser.createPathFromPathData(NavLook.CHAT_LINES)
-    private val pin = PathParser.createPathFromPathData(NavLook.PIN_FILL)
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textAlign = Paint.Align.CENTER }
+    private val flame: Path = PathParser.createPathFromPathData(Lucide.Flame)
+    private val heart: Path = PathParser.createPathFromPathData(Lucide.Heart)
+    private val bubble: Path = PathParser.createPathFromPathData("M7.9 20A9 9 0 1 0 4 16.1L2 22Z")
+    private val dots: Path = PathParser.createPathFromPathData("M8 12h.01 M12 12h.01 M16 12h.01")
+    private val pin: Path = PathParser.createPathFromPathData("M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0")
     private val r = RectF()
 
     private var at = 0f
@@ -86,7 +79,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     init {
         isClickable = true
-        contentDescription = "Secret Dating, Home"
+        contentDescription = "Secret Dating, Discover"
     }
 
     override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), barPx + below)
@@ -121,81 +114,74 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
         i == fromAt -> 1f - tint
         else -> 0f
     }
-    private fun cell(): Float = (width - 2 * Ui.dp(10f)) / 4f
+    private val side get() = Ui.dp(SIDE)
+    private val inner get() = Ui.dp(5f)
+    private fun cell(): Float = (width - 2 * side - 2 * inner) / 4f
 
     override fun onDraw(c: Canvas) {
-        // the grey runs on under the bar, down over the phone's own button strip (this view's height includes it)
+        // the page's blush under the bar, on down over the phone's own button strip (this view's height includes it)
         c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bg)
-        c.drawRect(0f, 0f, width.toFloat(), maxOf(1f, Ui.dp(1f)), line)
-        val pad = Ui.dp(10f); val cw = cell()
-        // the red line over the open tab (62 wide, on the top edge)
-        val lx = pad + at * cw + cw / 2f
-        r.set(lx - Ui.dp(31f), 0f, lx + Ui.dp(31f), Ui.dp(3f))
-        c.drawRoundRect(r, Ui.dp(1.5f), Ui.dp(1.5f), red)
-        c.drawRect(r.left, 0f, r.right, Ui.dp(1.5f), red)
-        val s = Ui.dp(24f) / 24f
+        val top = Ui.dp(TOP); val ph = Ui.dp(PILL)
+        r.set(side, top, width - side, top + ph)
+        c.drawRoundRect(r, ph / 2f, ph / 2f, pillFill)
+        pillLine.strokeWidth = maxOf(1f, Ui.dp(1f))
+        c.drawRoundRect(r, ph / 2f, ph / 2f, pillLine)
+        val cw = cell(); val x0 = side + inner
+        // the open tab: a flat maroon pill that slides to the tab you tap
+        r.set(x0 + at * cw, top + inner, x0 + at * cw + cw, top + ph - inner)
+        c.drawRoundRect(r, r.height() / 2f, r.height() / 2f, on)
+        val s = Ui.dp(23f) / 24f
+        text.textSize = Ui.dp(12.5f)
         for ((i, it) in items.withIndex()) {
-            val cx = pad + cw * i + cw / 2f
-            val cy = Ui.dp(30f)
+            val cx = x0 + cw * i + cw / 2f
+            val cy = top + Ui.dp(21.5f)
             val o = onness(i)
-            val inner = mix(NavLook.INK, NavLook.BG, o)   // inside details: black lines on the outline, white on the filled icon
-            stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f
+            val col = mix(Rs.INK, Color.WHITE, o)
             c.save()
-            if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, cy)
+            if (scale[i] != 1f) c.scale(scale[i], scale[i], cx, top + ph / 2f)
+            c.save()
             c.translate(cx - 12f * s, cy - 12f * s); c.scale(s, s)
+            stroke.color = col; stroke.strokeWidth = 2f
             when (it.key) {
-                "home" -> cards(c, o)
+                "home" -> outlined(c, flame, o)
                 "likes" -> {
                     outlined(c, heart, o)
                     if (heartDot && current != "likes") {
-                        fill.color = NavLook.BG; c.drawCircle(18.6f, 5.2f, 4.6f, fill)
-                        fill.color = NavLook.ON; c.drawCircle(18.6f, 5.2f, 3.1f, fill)
+                        fill.color = Color.WHITE; fill.alpha = 255; c.drawCircle(19.6f, 4.6f, 4.8f, fill)
+                        fill.color = Rs.RED; c.drawCircle(19.6f, 4.6f, 3.3f, fill)
                     }
                 }
                 "chat" -> {
-                    outlined(c, chat, o)
-                    stroke.color = inner; stroke.strokeWidth = 1.7f; c.drawPath(chatLines, stroke)
+                    outlined(c, bubble, o)
+                    stroke.color = mix(Rs.INK, Rs.M, o); stroke.strokeWidth = 2.2f; c.drawPath(dots, stroke)
                 }
                 else -> {
                     outlined(c, pin, o)
-                    if (o > 0f) { fill.color = NavLook.BG; fill.alpha = (255 * o).toInt(); c.drawCircle(12f, 9.9f, 2.6f, fill); fill.alpha = 255 }
-                    stroke.color = NavLook.INK; stroke.strokeWidth = 1.7f; c.drawCircle(12f, 9.9f, 2.6f, stroke)
+                    if (o > 0f) { fill.color = Rs.M; fill.alpha = (255 * o).toInt(); c.drawCircle(12f, 10f, 3f, fill); fill.alpha = 255 }
+                    stroke.color = mix(Rs.INK, Rs.M, o); stroke.strokeWidth = 2f; c.drawCircle(12f, 10f, 3f, stroke)
                 }
             }
+            c.restore()
+            text.color = col
+            c.drawText(it.label, cx, top + Ui.dp(48.5f), text)
             c.restore()
         }
     }
 
-    /** two cards: one upright behind, the front one tilted, with a thin gap of the bar's grey */
-    /** a bold black outline; the open tab's icon fills black inside ([o] 0..1 while the tab slides) */
-    private fun outlined(c: Canvas, p: android.graphics.Path, o: Float) {
-        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawPath(p, fill); fill.alpha = 255 }
-        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawPath(p, stroke)
-    }
-
-    private fun cards(c: Canvas, o: Float) {
-        r.set(10.4f, 6.4f, 20.6f, 21f)
-        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawRoundRect(r, 1.8f, 1.8f, fill); fill.alpha = 255 }
-        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        c.save(); c.rotate(-12f, 8.7f, 10.7f)
-        r.set(3.4f, 3.2f, 14f, 18.2f)
-        // the front card hides the back one: white under it, then its own outline / fill
-        fill.color = NavLook.BG; c.drawRoundRect(r, 1.8f, 1.8f, fill)
-        stroke.color = NavLook.BG; stroke.strokeWidth = 3.4f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        if (o > 0f) { fill.color = NavLook.INK; fill.alpha = (255 * o).toInt(); c.drawRoundRect(r, 1.8f, 1.8f, fill); fill.alpha = 255 }
-        stroke.color = NavLook.INK; stroke.strokeWidth = 1.9f; c.drawRoundRect(r, 1.8f, 1.8f, stroke)
-        c.restore()
+    /** a line icon; on the open tab it is white and filled ([o] 0..1 while the maroon pill slides) */
+    private fun outlined(c: Canvas, p: Path, o: Float) {
+        if (o > 0f) { fill.color = Color.WHITE; fill.alpha = (255 * o).toInt(); c.drawPath(p, fill); fill.alpha = 255 }
+        c.drawPath(p, stroke)
     }
 
     private fun hit(x: Float, y: Float): Int {
-        if (y < 0 || y > barPx || x < 0 || x > width) return -1
-        val pad = Ui.dp(10f)
-        return ((x - pad) / cell()).toInt().coerceIn(0, 3)
+        if (y < 0 || y > barPx || x < side || x > width - side) return -1
+        return ((x - side - inner) / cell()).toInt().coerceIn(0, 3)
     }
 
     private fun press(i: Int, down: Boolean) {
         if (i !in 0..3) return
-        ValueAnimator.ofFloat(scale[i], if (down) 0.9f else 1f).apply {
+        ValueAnimator.ofFloat(scale[i], if (down) 0.92f else 1f).apply {
             duration = 120
             addUpdateListener { scale[i] = it.animatedValue as Float; invalidate() }
             start()
@@ -218,5 +204,13 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             MotionEvent.ACTION_CANCEL -> { press(pressed, false); pressed = -1 }
         }
         return true
+    }
+
+    companion object {
+        /** the bar's whole height · the white pill's height · its gap from the page above · its gap from the screen's sides (dp) */
+        const val BAR = 76f
+        const val PILL = 62f
+        const val TOP = 6f
+        const val SIDE = 14f
     }
 }

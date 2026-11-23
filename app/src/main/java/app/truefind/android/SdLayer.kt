@@ -19,9 +19,11 @@ import android.widget.ScrollView
  * and plain fades. The phone's Back closes the top one first.
  */
 class SdLayer(private val host: FrameLayout) {
-    private class Item(val view: View, val back: () -> Boolean, val close: () -> Unit)
+    private class Item(val view: View, val back: () -> Boolean, val close: () -> Unit, val page: Boolean)
     private val stack = ArrayList<Item>()
     val open: Boolean get() = stack.isNotEmpty()
+    /** a full page (a profile …) covers what is under it — a sheet or a story does not count */
+    val pageOpen: Boolean get() = stack.any { it.page }
     val root: FrameLayout get() = host
     var onChange: (() -> Unit)? = null
 
@@ -34,10 +36,10 @@ class SdLayer(private val host: FrameLayout) {
 
     fun closeAll() { for (i in stack.toList()) remove(i.view, animate = false) }
 
-    private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float, bottom: Int = 0) {
+    private fun add(v: View, back: () -> Boolean, close: () -> Unit, z: Float, bottom: Int = 0, page: Boolean = false) {
         v.elevation = Ui.dp(60f) + z
         host.addView(v, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT).apply { bottomMargin = bottom })
-        stack.add(Item(v, back, close))
+        stack.add(Item(v, back, close, page))
         onChange?.invoke()
     }
 
@@ -97,7 +99,7 @@ class SdLayer(private val host: FrameLayout) {
             }
         }
         view.isClickable = true
-        add(view, back, close, z, bottom)
+        add(view, back, close, z, bottom, page = true)
         if (animate) {
             view.translationX = host.width.toFloat().coerceAtLeast(1000f)
             view.animate().translationX(0f).setDuration(340).setInterpolator(EASE_IN).start()
