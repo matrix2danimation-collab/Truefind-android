@@ -345,22 +345,22 @@ fi
 if [ "$SET" = rosetap ]; then
 # (the Home card is a little longer than the second picture's since 23 Nov evening — 1.8 × its width: its ✕ ♥ come up with a small
 #  scroll, so those taps start from "tf_open card", the page scrolled until the card's top shows)
-tshot t01-tap-heart "701 1803" --es tf_preview secret --ez tf_premium true --es tf_open card
-tshot t02-tap-skip "378 1803" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t01-tap-heart "672 1720" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t02-tap-skip "409 1720" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t03-swipe-left "850 1270 250 1270" --es tf_preview secret --ez tf_premium true
 tshot t04-swipe-right "850 1270 250 1270; 250 1270 850 1270" --es tf_preview secret --ez tf_premium true
 tshot t05-side-card-next "1066 1500" --es tf_preview secret --ez tf_premium true
 tshot t06-tap-card "540 1150" --es tf_preview secret --ez tf_premium true
 tshot t07-chip-nearby "540 746" --es tf_preview secret --ez tf_premium true
-tshot t08-like-then-favorite "701 1803; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
+tshot t08-like-then-favorite "672 1720; 540 700 540 2000; 880 746" --es tf_preview secret --ez tf_premium true --es tf_open card
 tshot t09-chats-unread-tab "600 457" --es tf_preview secret-chat --ez tf_premium true
 tshot t10-chats-search-btn "982 212" --es tf_preview secret-chat --ez tf_premium true
 tshot t11-room-emoji "823 2236; 102 2085; 322 2085" --es tf_preview chatroom --ez tf_premium true
 tshot t12-room-gift "100 2236" --es tf_preview chatroom --ez tf_premium true
 tshot t13-scroll-page "540 1900 540 900" --es tf_preview secret --ez tf_premium true
 tshot t14-bar-over-card "701 2224" --es tf_preview secret --ez tf_premium true
-tshot t15-free-heart "701 1803" --es tf_preview secret --es tf_open card
-tshot t16-free-skip "378 1803" --es tf_preview secret --es tf_open card
+tshot t15-free-heart "672 1720" --es tf_preview secret --es tf_open card
+tshot t16-free-skip "409 1720" --es tf_preview secret --es tf_open card
 tshot t17-small-scroll "540 1700 540 1450" --es tf_preview secret --ez tf_premium true
 # 23 Nov evening: a chat row opens the chat wherever it is tapped (photo · name), a demo row a demo chat; "Your Story" adds a story; the bell
 tshot t18-chat-photo-opens-chat "148 650" --es tf_preview secret-chat --ez tf_premium true

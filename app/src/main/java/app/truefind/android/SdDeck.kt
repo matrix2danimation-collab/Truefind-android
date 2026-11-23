@@ -150,7 +150,9 @@ class SdDeck(
             card.x = (cw - W) / 2f + pos * step
             card.y = Ui.dp(2f)
             // the ones at the sides: a little smaller, shaded, under the one in front
-            card.scaleX = 1f - .08f * a; card.scaleY = 1f - .08f * a
+            // (they shrink towards the front card's side, so as much of them peeks out as [PEEK])
+            card.pivotX = if (pos > 0) 0f else W.toFloat(); card.pivotY = H / 2f
+            card.scaleX = 1f - .07f * a; card.scaleY = 1f - .07f * a
             card.shadeTo(a)
             card.translationZ = (1f - a) * 4f
             card.visibility = if (abs(pos) >= 1.9f) INVISIBLE else VISIBLE
@@ -221,6 +223,7 @@ class SdDeck(
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 val cancel = e.actionMasked == MotionEvent.ACTION_CANCEL
+                if (Demo.on) android.util.Log.i("TFDBG", "deck up cancel=$cancel axis=$axis dx=$dx x=${e.x} downOn=$downOn idx=$idx n=$n cw=$cw W=$W")
                 val btn = downBtn
                 release()
                 if (axis == 0) {
@@ -261,7 +264,7 @@ class SdDeck(
          */
         const val RATIO = 1.95f
         /** how far the cards before and after peek out at each side, and the gap between the cards (dp) */
-        const val PEEK = 20f
+        const val PEEK = 22f
         const val GAP = 10f
         /**
          * false (the owner's word, 23 Nov): the long card ([RATIO]) on every phone; its foot (✕ ♥) comes up only with a
@@ -346,7 +349,7 @@ class SdDeck(
             addView(sideShade, LayoutParams(-1, -1))
         }
         /** [a]: 0 in front … 1 at a side */
-        fun shadeTo(a: Float) { sideShade.alpha = a * .38f; buttons.alpha = 1f - a; info.alpha = 1f - a * .6f }
+        fun shadeTo(a: Float) { sideShade.alpha = a * .32f; buttons.alpha = 1f - a; info.alpha = 1f - a * .6f }
 
         fun bind(p: JSONObject) {
             person = p

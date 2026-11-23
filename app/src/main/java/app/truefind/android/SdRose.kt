@@ -262,8 +262,8 @@ class LogoView(ctx: Context, private val maxDp: Float) : View(ctx) {
 
     companion object {
         const val WORD = "TrueFind"
-        /** the heart's size: 0.42 × the tall letters' height */
-        private const val HEART = .42f
+        /** the heart's size: half the tall letters' height */
+        private const val HEART = .5f
         private val HUE = intArrayOf(Ui.c("#E11D48"), Ui.c("#FF4F9A"), Ui.c("#B3124A"), Ui.c("#E11D48"))
         private fun hue(t: Float): Int {
             val f = t * (HUE.size - 1); val i = f.toInt().coerceAtMost(HUE.size - 2)
