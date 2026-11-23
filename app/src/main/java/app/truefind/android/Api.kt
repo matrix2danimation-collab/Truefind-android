@@ -83,12 +83,15 @@ object Api {
             Regex("rate.?limit|too many requests", RegexOption.IGNORE_CASE).containsMatchIn(json.optString("error") + " " + json.optString("message") + " " + text.take(300)))
     /** seconds the server asked to wait (1–10; 4 when it didn't say) */
     fun busyWaitMs(r: Result): Long = (r.data.optDouble("retry_after", 4.0).takeIf { !it.isNaN() } ?: 4.0).let { (it * 1000).toLong().coerceIn(1000L, 10_000L) }
+    /** the same wait, spread (24 Nov): every phone told "busy, 6 s" asked again at the very same moment and met
+     *  the busy server together — now each waits 100–150 % of it, a moment of its own */
+    private fun spreadWaitMs(r: Result): Long = busyWaitMs(r).let { it + (Math.random() * it * 0.5).toLong() }
     private fun actWithBusyRetry(work: () -> Result, done: (Result) -> Unit, tries: Int = 0, most: Int = 2, ex: java.util.concurrent.ExecutorService = pool) {
         ex.execute {
             val r = work()
             main.post {
                 val again = tries < most && ready && !Demo.on && r.status == 429 && r.data.optBoolean("server_busy") && r.data.optBoolean("retry_safe")
-                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1, most, ex) }, if (most > 2) minOf(busyWaitMs(r), 5000L) else busyWaitMs(r))
+                if (again) main.postDelayed({ actWithBusyRetry(work, done, tries + 1, most, ex) }, if (most > 2) minOf(spreadWaitMs(r), 6500L) else spreadWaitMs(r))
                 else done(r)
             }
         }
@@ -121,7 +124,7 @@ object Api {
         ex.execute {
             val r = work()
             main.post {
-                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1, ex) }, if (r.status == 429) busyWaitMs(r) else if (tries == 0) 700L else 1800L)
+                if (tries < 2 && ready && !Demo.on && passing(r)) main.postDelayed({ readWithRetry(work, done, tries + 1, ex) }, if (r.status == 429) spreadWaitMs(r) else if (tries == 0) 700L else 1800L)
                 else PageFx.whenStill { done(r) }
             }
         }
@@ -251,6 +254,18 @@ object Api {
     fun delete(entity: String, id: String, done: (Result) -> Unit) {
         if (Demo.on) { main.post { done(Result(200, JSONObject(), null)) }; return }
         act({ request("DELETE", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", null, null) }, done)
+    }
+
+    /** entities.X.create(data) — a row of the member's own (the Typing table, 24 Nov) */
+    fun create(entity: String, data: JSONObject, done: (Result) -> Unit = {}) {
+        if (Demo.on) { main.post { done(Result(200, JSONObject(data.toString()).put("id", "demo-row"), null)) }; return }
+        act({ requestOk("POST", "/entities/$entity", data) }, done)
+    }
+
+    /** entities.X.update(id, data) — a row of the member's own */
+    fun update(entity: String, id: String, data: JSONObject, done: (Result) -> Unit = {}) {
+        if (Demo.on) { main.post { done(Result(200, JSONObject(data.toString()).put("id", id), null)) }; return }
+        act({ requestOk("PUT", "/entities/$entity/${java.net.URLEncoder.encode(id, "UTF-8")}", data) }, done)
     }
 
     /** entities.X.updateMany(query, data) — PATCH …/update-many (HttpURLConnection can't send PATCH: OkHttp does) */

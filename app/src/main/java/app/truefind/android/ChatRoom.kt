@@ -309,6 +309,7 @@ class ChatRoom(
         if (SdDemoChat.owns(id) && !demoTold) { demoTold = true; main.postDelayed({ if (shownNow && matchId == id) say("Demo chat, for testing: messages stay on this phone.") }, 700) }
         unsubMsg = Realtime.subscribe("Message") { ev -> onMessageEvent(ev) }
         unsubMatch = Realtime.subscribe("Match") { ev -> onMatchEvent(ev) }
+        unsubTyping = Realtime.subscribe("Typing") { ev -> onTypingEvent(ev) }
         conn.state(Realtime.connected, android.os.SystemClock.elapsedRealtime())
         unsubConn = Realtime.onState { up -> conn.state(up, android.os.SystemClock.elapsedRealtime()); renderConn() }
         renderConn()
@@ -336,6 +337,7 @@ class ChatRoom(
     }
     private var unsubMsg: (() -> Unit)? = null
     private var unsubMatch: (() -> Unit)? = null
+    private var unsubTyping: (() -> Unit)? = null
 
     fun close() {
         if (!shownNow) return
@@ -343,7 +345,7 @@ class ChatRoom(
         // what is on screen now is what shows first next time
         if (matchId.isNotEmpty() && !loading && error.isEmpty()) ChatCache.putMessages(matchId, messages)
         gen++
-        unsubMsg?.invoke(); unsubMsg = null; unsubMatch?.invoke(); unsubMatch = null
+        unsubMsg?.invoke(); unsubMsg = null; unsubMatch?.invoke(); unsubMatch = null; unsubTyping?.invoke(); unsubTyping = null
         unsubConn?.invoke(); unsubConn = null; main.removeCallbacks(connCheck); connBar.visibility = GONE
         main.removeCallbacks(presence); main.removeCallbacks(fallback); main.removeCallbacks(typingOff); main.removeCallbacks(typingHide); main.removeCallbacks(fxEnd)
         layer.closeAll()
@@ -519,6 +521,23 @@ class ChatRoom(
         // when they start typing, show the dots (if you're reading the latest messages)
         if (fresh && scroll.getChildAt(0).height - scroll.scrollY - scroll.height < dpi(220f)) main.postDelayed({ scrollToEnd(true) }, 30)
     }
+    /** the other phone's own "… is typing" row (Typing table, 24 Nov): the same dots as from the chat's row */
+    private fun onTypingEvent(ev: Realtime.Event) {
+        val d = ev.data ?: return
+        if (ev.type == "delete" || d.optString("match_id") != matchId || meId.isEmpty()) return
+        val otherUid = other?.optString("user_id").orEmpty()
+        val from = d.optString("created_by_id")
+        // only the other person's row, written to me; nothing from someone I blocked (a row without its writer's
+        // id is taken when it is written to me for this very chat)
+        if (from == meId || (from.isNotEmpty() && otherUid.isNotEmpty() && from != otherUid) || d.optString("to_user_id") != meId || blockRow != null) return
+        val at = SdRules.ms(d.optString("updated_date").ifEmpty { d.optString("typing_at") })
+        val fresh = d.optBoolean("typing", false) && at > 0 && System.currentTimeMillis() - at < 5000
+        otherTyping = fresh
+        main.removeCallbacks(typingHide)
+        if (fresh) main.postDelayed(typingHide, 5000)
+        renderHeader(); renderTail()
+        if (fresh && scroll.getChildAt(0).height - scroll.scrollY - scroll.height < dpi(220f)) main.postDelayed({ scrollToEnd(true) }, 30)
+    }
     // keep "Online now" / "Last seen …" fresh while the chat is open
     private val presence = object : Runnable {
         override fun run() {
@@ -539,7 +558,54 @@ class ChatRoom(
     // ═════════════ typing ping ═════════════
     private var typingPing = 0L
     private val typingOff = Runnable { setTyping(false) }
-    private fun setTyping(flag: Boolean) { if (matchId.isNotEmpty()) Api.invoke("setTyping", JSONObject().put("match_id", matchId).put("typing", flag)) { } }
+    // "… is typing" is written by this phone itself in its own row (Typing table, 24 Nov): out of this member's
+    // own allowance, not the one the whole app shares (the setTyping function wrote the chat for every ping).
+    // If the table is not there (the server not updated yet) or a write is refused, setTyping as before.
+    private var typingRow = ""            // this phone's row for this chat
+    private var typingRowFor = ""         // … and which chat it belongs to
+    private var typingDirect = true
+    private var typingLooking = false
+    private var typingFails = 0
+    private fun setTyping(flag: Boolean) {
+        if (matchId.isEmpty()) return
+        val id = matchId
+        val to = other?.optString("user_id").orEmpty()
+        if (!typingDirect || Demo.on || SdDemoChat.owns(id) || to.isEmpty() || meId.isEmpty()) { typingByServer(id, flag); return }
+        if (typingRowFor != id) { typingRowFor = id; typingRow = "" }
+        val data = JSONObject().put("match_id", id).put("to_user_id", to).put("typing", flag).put("typing_at", Tf.isoNow())
+        // a refusal or an unknown table: never again in this app run; any other failure twice: the same
+        val failed = { r: Api.Result -> r.status in 400..499 && r.status != 408 && r.status != 429 || ++typingFails >= 2 }
+        if (typingRow.isNotEmpty()) {
+            Api.update("Typing", typingRow, data) { r ->
+                if (r.ok) return@update
+                typingRow = ""
+                if (failed(r)) typingDirect = false
+                typingByServer(id, flag)
+            }
+            return
+        }
+        if (!flag) { typingByServer(id, false); return }          // nothing of ours to clear yet
+        if (typingLooking) return
+        typingLooking = true
+        // this phone's row of this chat (made the first time, then only changed)
+        Api.filter("Typing", JSONObject().put("match_id", id).put("created_by_id", meId), null, 1) { f ->
+            if (!f.ok) { typingLooking = false; if (failed(f)) typingDirect = false; typingByServer(id, flag); return@filter }
+            val have = f.data.optJSONArray("items")?.optJSONObject(0)?.optString("id").orEmpty()
+            if (have.isNotEmpty()) {
+                Api.update("Typing", have, data) { r ->
+                    typingLooking = false
+                    if (r.ok) { if (typingRowFor == id) typingRow = have } else { if (failed(r)) typingDirect = false; typingByServer(id, flag) }
+                }
+            } else {
+                Api.create("Typing", data) { r ->
+                    typingLooking = false
+                    val made = r.data.optString("id")
+                    if (r.ok && made.isNotEmpty()) { if (typingRowFor == id) typingRow = made } else { if (failed(r)) typingDirect = false; typingByServer(id, flag) }
+                }
+            }
+        }
+    }
+    private fun typingByServer(id: String, flag: Boolean) { if (id.isNotEmpty()) Api.invoke("setTyping", JSONObject().put("match_id", id).put("typing", flag)) { } }
     private fun onType(v: String) {
         val now = System.currentTimeMillis()
         if (v.trim().isNotEmpty() && now - typingPing > 4000) { typingPing = now; setTyping(true) }

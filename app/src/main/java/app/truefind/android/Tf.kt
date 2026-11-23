@@ -27,6 +27,9 @@ import java.util.TimeZone
  * (sizes in dp = the web's CSS px; text in Calibri / Carlito like the web).
  */
 object Tf {
+    /** now, as the server writes times (UTC, ISO 8601 with milliseconds) */
+    fun isoNow(): String = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date())
+
     /** The True Find blue of the "long train" loader */
     val BLUE = Ui.c("#5664EF")
 
