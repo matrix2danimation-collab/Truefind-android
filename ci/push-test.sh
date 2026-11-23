@@ -112,6 +112,13 @@ send t=missed "title=Missed call" "body=Riya tried to video call you on True Fin
 if wait_gone call-T1 20; then pass "2  caller hung up: ringing stopped"; else fail "2  still ringing after the caller hung up"; fi
 if wait_active missed-T1 20; then pass "2a 'Missed call' shown"; sleep 1; shot 02-missed-call; else fail "2a no 'Missed call'"; fi
 
+# ── 1p. the caller's photo on the ringing call (for the picture) ──
+close_app; adb logcat -c
+call TP voice "https://picsum.photos/id/64/360/360"
+if wait_log "push shown t=call id=TP.*photo=true" 30; then pass "1p the caller's photo shows on the ringing call"; else info "1p photo not in time: $(tfdbg | grep -o 'push shown t=call id=TP.*' | tail -1)"; fi
+sleep 1; shot 01p-call-with-photo
+clear_calls
+
 # ── 3. a message while True Find is closed ──
 close_app
 adb logcat -c
@@ -221,14 +228,14 @@ else
 fi
 adb shell cmd statusbar collapse > /dev/null 2>&1
 
-# ── 9. a slow caller photo never holds up the ringing (it rings without the photo after at most 1 s) ──
+# ── 9. a slow caller photo never holds up the ringing (it rings without the photo after at most 1.5 s) ──
 close_app
 adb logcat -c
 call T9 video "https://httpbin.org/delay/8"
 if wait_log "push shown t=call id=T9" 30; then
   g=$(tfdbg | grep "push got t=call" | tail -1 | awk '{print $1}'); s=$(tfdbg | grep "push shown t=call id=T9" | tail -1 | awk '{print $1}')
   ms=$(python3 -c "print(int((float('$s')-float('$g'))*1000))" 2>/dev/null || echo "?")
-  if [ "$ms" != "?" ] && [ "$ms" -le 2000 ]; then pass "9  slow photo: rang ${ms} ms after the message came"; else fail "9  slow photo held the ringing up (${ms} ms)"; fi
+  if [ "$ms" != "?" ] && [ "$ms" -le 2500 ]; then pass "9  slow photo: rang ${ms} ms after the message came"; else fail "9  slow photo held the ringing up (${ms} ms)"; fi
 else fail "9  slow photo: the call did not ring"; fi
 clear_calls
 

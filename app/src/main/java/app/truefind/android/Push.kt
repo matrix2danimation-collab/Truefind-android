@@ -69,7 +69,7 @@ object Push {
     private val pool = Executors.newSingleThreadExecutor()
     private val io = Executors.newCachedThreadPool()
     /** the caller's photo may hold up the ringing for at most this long (a slow network must never delay a call) */
-    private const val PHOTO_WAIT_MS = 1000L
+    private const val PHOTO_WAIT_MS = 1500L
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -240,10 +240,16 @@ object Push {
                         .setFullScreenIntent(open(ctx, req + 2, "/", callId, ""), true)
                     if (callStyle) {
                         // the phone's own call look (Decline / Answer), and never grouped or silenced by Android 16+
+                        // like WhatsApp: the caller's name big and bold, their photo — or, without one, the same
+                        // drawn face the app shows for them (AvatarArt, by their profile id and gender)
+                        val who = d["name"].orEmpty().ifEmpty { title.substringBefore(" is calling").ifEmpty { "True Find" } }
+                        val face = big ?: try {
+                            AvatarArt.forKey(d["pid"].orEmpty().ifEmpty { who }, d["gender"] != "male", 192)
+                        } catch (e: Throwable) { null }
                         val caller = androidx.core.app.Person.Builder()
-                            .setName(d["name"].orEmpty().ifEmpty { title.substringBefore(" is calling").ifEmpty { "True Find" } })
+                            .setName(who)
                             .setImportant(true)
-                            .apply { if (big != null) setIcon(androidx.core.graphics.drawable.IconCompat.createWithBitmap(big)) }
+                            .apply { if (face != null) setIcon(androidx.core.graphics.drawable.IconCompat.createWithBitmap(face)) }
                             .build()
                         b.setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, decline, answer).setIsVideo(video)).addPerson(caller)
                     } else {
