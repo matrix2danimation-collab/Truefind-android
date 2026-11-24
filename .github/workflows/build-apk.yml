@@ -11,6 +11,9 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      # branch supabase-app builds the "True Find Preview" app (its own id, name, icon and Update channel)
+      TF_PREVIEW: ${{ github.ref_name == 'supabase-app' && 'true' || 'false' }}
     outputs:
       sets: ${{ steps.sets.outputs.list }}
     steps:
@@ -54,8 +57,32 @@ jobs:
         run: |
           if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; echo "Firebase on"; else echo "No GOOGLE_SERVICES_JSON secret: built without notifications"; fi
 
+      # the Preview app has its own id (app.truefind.android.preview): Firebase's file gets the same entry for it
+      # (a copy of the real app's), unless the file already has one
+      - name: Firebase file for the Preview app
+        if: env.TF_PREVIEW == 'true' && hashFiles('app/google-services.json') != ''
+        run: |
+          python3 - <<'PY'
+          import json, copy
+          p = "app/google-services.json"
+          d = json.load(open(p))
+          pk = lambda c: c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+          names = [pk(c) for c in d.get("client", [])]
+          if "app.truefind.android.preview" in names:
+              print("Firebase file already has the Preview app")
+          else:
+              src = next((c for c in d.get("client", []) if pk(c) == "app.truefind.android"), None)
+              if src is None:
+                  print("no app.truefind.android entry: Preview built without notifications"); raise SystemExit(0)
+              c = copy.deepcopy(src)
+              c["client_info"]["android_client_info"]["package_name"] = "app.truefind.android.preview"
+              d["client"].append(c)
+              json.dump(d, open(p, "w"))
+              print("Preview app added to the Firebase file")
+          PY
+
       - name: Build
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug $( [ "$TF_PREVIEW" = true ] && echo -PtfPreview=true ) --no-daemon --stacktrace
 
       # the Play Store build (release, -PtfStore=true) must not ask for the install permission that only the test
       # builds' Update button uses (Google Play doesn't allow self-updates); test builds keep it. Checked with the
@@ -119,6 +146,11 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk TrueFind-test.apk
           ls -la TrueFind-test.apk
           echo "{\"versionCode\": ${{ github.run_number }}, \"apk\": \"https://github.com/${{ github.repository }}/releases/download/test-build/TrueFind-test.apk\"}" > version.json
+          # the Preview app: its own file names and its own release ("preview-build")
+          if [ "$TF_PREVIEW" = true ]; then
+            cp app/build/outputs/apk/debug/app-debug.apk TrueFind-preview.apk
+            echo "{\"versionCode\": ${{ github.run_number }}, \"apk\": \"https://github.com/${{ github.repository }}/releases/download/preview-build/TrueFind-preview.apk\"}" > version.json
+          fi
           cat version.json
 
       - uses: actions/upload-artifact@v4
@@ -166,6 +198,21 @@ jobs:
           body: "Latest test APK, built from commit ${{ github.sha }}. Open on the phone, tap TrueFind-test.apk, install."
           files: |
             TrueFind-test.apk
+            version.json
+
+      # the Preview app (branch supabase-app): its own release, read only by the Preview app's Update button
+      - name: Put the Preview APK on the Releases page
+        if: env.TF_PREVIEW == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: preview-build
+          name: Preview build
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: "True Find Preview (Supabase), built from commit ${{ github.sha }}. Open on the phone, tap TrueFind-preview.apk, install once; after that the Preview app's Update button brings each new version."
+          files: |
+            TrueFind-preview.apk
             version.json
 
   screens:

@@ -3,20 +3,28 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// The "True Find Preview" app (-PtfPreview=true; GitHub builds it from the branch supabase-app): a second
+// app on the owner's phone, next to True Find (its own id, name and icon), to try every change before it goes
+// into the real app. Its Update button reads its own file (release "preview-build"), never the real app's.
+val tfPreview = project.findProperty("tfPreview") == "true"
+
 android {
     namespace = "app.truefind.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.truefind.android"
+        applicationId = if (tfPreview) "app.truefind.android.preview" else "app.truefind.android"
         minSdk = 24
         targetSdk = 36
         // every GitHub build gets the next number, so the app can tell an update is newer
         val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
         versionCode = build
         versionName = "0.1.$build"
+        // the name under the icon (the Preview app: "True Find Preview")
+        manifestPlaceholders["appLabel"] = if (tfPreview) "True Find Preview" else "@string/app_name"
         // test builds: the app checks this file and offers the newer APK (Update button)
-        buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/test-build/version.json\"")
+        buildConfigField("String", "UPDATE_INFO_URL", "\"https://github.com/matrix2danimation-collab/Truefind-android/releases/download/${if (tfPreview) "preview-build" else "test-build"}/version.json\"")
+        buildConfigField("boolean", "PREVIEW", tfPreview.toString())
         // The build for users (Play Store) is made with -PtfStore=true: then there is no Update box, no
         // "Check for update", no "Page speed report" and no test screens — all of them hang on this one switch.
         buildConfigField("boolean", "SELF_UPDATE", if (project.findProperty("tfStore") == "true") "false" else "true")
@@ -83,6 +91,8 @@ android {
     if (project.findProperty("tfStore") == "true") {
         sourceSets.getByName("release").manifest.srcFile("src/store/AndroidManifest.xml")
     }
+    // the Preview app's own icon (the same heart with an orange "PREVIEW" band): over the main one
+    if (tfPreview) sourceSets.getByName("debug").res.srcDir("src/preview/res")
     buildFeatures {
         buildConfig = true
     }

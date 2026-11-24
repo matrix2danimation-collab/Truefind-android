@@ -74,12 +74,12 @@ object WalletNet : WalletSource {
         if (!Api.ready) return null
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL("${Api.origin}/api/apps/${Api.appId}$path").openConnection() as HttpURLConnection).apply {
+            conn = (URL("${Api.base}$path").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 15000; readTimeout = 30000
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("X-App-Id", Api.appId)
-                setRequestProperty("Authorization", "Bearer ${Api.token}")
+                setRequestProperty("Authorization", "Bearer ${Auth.fresh()}")
             }
             if (conn.responseCode !in 200..299) return null
             val t = conn.inputStream.bufferedReader().use { it.readText() }.trim()

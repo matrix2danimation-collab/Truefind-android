@@ -60,7 +60,7 @@ private const val FAST_SCREEN = true
  * (SecretHome + its own bar SdNavBar, one chat in ChatRoom) · Wallet · Games · Live Dance · Live Rooms ·
  * Control Center · calls (CallManager) · status screens (AppStatus) · sign-in pages (LoginLayer).
  */
-class MainActivity : ComponentActivity(), WebBridge.Listener {
+class MainActivity : ComponentActivity() {
 
     companion object {
         const val START_URL = "https://truefindapp.com/"
@@ -225,6 +225,9 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         Push.onMessage = { t -> runOnUiThread { if (::work.isInitialized && (t == "msg" || t == "like" || t == "info")) work.unreadSoon(300) } }
         Push.onCall = { id -> runOnUiThread { if (::calls.isInitialized) calls.pushWhileOpen(id) } }
         Push.init(this)
+        // the sign-in (Supabase Auth) renews itself every hour: live updates take the new one; one the server ended signs out here
+        Auth.onRenewed = { _ -> if (!isDestroyed) tokenChanged() }
+        Auth.onEnded = { if (!isDestroyed && Api.token.isNotEmpty()) sessionRejected() }
         WindowCompat.setDecorFitsSystemWindows(window, false)
         // no grey veil of the phone's own over the strips at the top and bottom: they take the page's colours (owner, 21 Nov)
         if (android.os.Build.VERSION.SDK_INT >= 29) { window.isNavigationBarContrastEnforced = false; window.isStatusBarContrastEnforced = false }
@@ -359,7 +362,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         rules = RulesReminder(this, root) { p -> openBrowserTab(Api.origin.trimEnd('/') + p) }
         status = AppStatus(this, root, object : AppStatus.Host {
             override fun webJs(code: String) { web?.evaluateJavascript(code, null) }
-            override fun webLoad(url: String) { if (!native || leaving) loadWeb(url) }
+            // (there is no web page any more: "Go to Home" opens the app's Home when signed in)
+            override fun webLoad(url: String) { if (native && !leaving) navigate("/", null, true) }
             override fun retrySession() { if (::work.isInitialized) work.retry() }
         }, { p -> navigate(p) }, { signOut(true) })
         notify.navPx = { if (pages.nav.visibility == View.VISIBLE) pages.nav.barPx else 0 }
@@ -397,13 +401,10 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         live.visibility = View.GONE
         root.addView(live, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
-        // native sign-in pages (over everything else while the sign-in web page is on one of them)
+        // native sign-in pages (over everything else while signed out, or while a sign-in page opened from the app shows)
         login = LoginLayer(this, object : LoginLayer.Host {
-            override fun go(path: String, replace: Boolean) = webGo(path, null, replace)
-            override fun loadWeb(url: String) { this@MainActivity.loadWeb(url) }
-            override fun js(code: String) { web?.evaluateJavascript(code, null) }
-            override fun canWebBack() = web?.canGoBack() ?: false
-            override fun webBack() { web?.let { if (it.canGoBack()) it.goBack() } }
+            override fun signedIn(next: String) = this@MainActivity.signedIn(next)
+            override fun signOut(then: String) = this@MainActivity.signOutFromLogin(then)
             override fun finishApp() { finish() }
             override fun pickPhoto(done: (ByteArray?, String) -> Unit) {
                 pickDone?.invoke(null, "")
@@ -413,11 +414,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             override fun openTab(url: String): Boolean = openBrowserTab(url)
             override fun backToApp(): Boolean = this@MainActivity.backToApp()
         })
-        // the sign-in layer shows or goes: the pages move; a finished sign-in opens the app's own pages
+        // the sign-in layer shows or goes: the pages move
         var loginSeen = false
         login.onChange = {
             if (login.shown != loginSeen) { loginSeen = login.shown; note("sign-in page " + if (loginSeen) "shown" else "hidden") }
-            update(); checkLeave(); maybeEnterNative()
+            update()
         }
         root.addView(login, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
@@ -508,7 +509,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             login.startPreview(loginScene, intent?.getStringExtra("tf_open").orEmpty())
             return
         }
-        intent?.data?.takeIf { isAuthReturn(it) }?.let { pendingAuth = it }
         // test runs only (ci/session-test.sh): a made-up sign-in stays, to try the change between the two modes
         SessionWork.skipCheck = BuildConfig.SELF_UPDATE && intent?.getBooleanExtra("tf_test_nocheck", false) == true
         // test runs only (ci/push-test.sh): what the phone still needs so calls ring while closed (BgSetup)
@@ -523,66 +523,51 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
 
     // ═════════════════ signed in → the app's own pages · signed out → the sign-in pages ═════════════════
     /**
-     * The app opens: a sign-in kept on this phone goes straight to the app's own pages (no web page at all);
-     * without one the sign-in web page opens under the native sign-in pages (a phone that was signed in
-     * through the web page before this version hands its sign-in over there, once).
+     * The app opens: a sign-in kept on this phone goes straight to the app's own pages; without one the native
+     * sign-in pages open (WhatsApp OTP, Supabase Auth). There is no web page any more.
      */
     private fun startSession(first: String?, saved: Bundle?) {
         if (Session.load(this)) {
-            note("start: sign-in kept on this phone, no web page")
+            note("start: sign-in kept on this phone")
             val restored = saved?.getString("tf_router")?.let { router.restore(it) } == true
             enterNative(first ?: "/", restored && first == null)
             return
         }
-        note("start: no sign-in on this phone, the sign-in web page opens")
-        // (the app's id is the same for everyone: known from an earlier visit, the sign-in calls don't wait for it)
-        Session.knownAppId(this).takeIf { it.isNotEmpty() && Api.appId.isEmpty() }?.let { Api.appId = it }
-        val w = ensureWeb()
-        if (saved != null && w.restoreState(saved) != null) return
-        w.loadUrl(if (first != null) START_URL.trimEnd('/') + first else START_URL)
+        note("start: no sign-in on this phone, the sign-in pages open")
+        returnTo = null
+        showLogin(first?.takeIf { LoginLayer.isLoginPath(pathOnly(it)) } ?: "/welcome")
     }
 
-    /** The sign-in is good and the web page is off the sign-in pages: from here the app leads itself. */
-    private fun maybeEnterNative() {
-        if (native || preview.isNotEmpty() || walletPreviewing || previewing || callPreview.isNotEmpty() || fxTest) return
-        if (web == null || webRoute.isEmpty() || !Api.ready || Demo.on) return
-        if (!::login.isInitialized || login.shown || login.handActive()) return
-        val p = pathOnly(webRoute)
-        if (LoginLayer.isLoginPath(p)) return
-        note("signed in on the web page at $p: the app's own pages take over")
-        enterNative(webRoute, false)
+    /** The sign-in pages lead from [target] (/welcome …): signed out, or a sign-in page opened from the app. */
+    private fun showLogin(target: String) {
+        native = false; leaving = false; signingOut = false
+        main.removeCallbacks(leaveTimeout); showBusy(false)
+        // (signed in on a sign-in page — Finish profile —: calls still reach this phone)
+        calls.enabled = Api.token.isNotEmpty()
+        router.clear()
+        setPath(target)
+        login.open(target)
+        update()
+    }
+
+    /** The sign-in pages finished (the right OTP, a finished profile): the app's own pages from [next]. */
+    private fun signedIn(next: String) {
+        if (native || Api.token.isEmpty()) return
+        note("signed in: the app's own pages take over")
+        returnTo = null
+        val t = pathOnly(next).let { if (LoginLayer.isLoginPath(it)) "/" else next }
+        enterNative(t, false)
     }
 
     private fun enterNative(target: String, restored: Boolean, move: Router.Move = Router.Move.RESET) {
         native = true; leaving = false; signingOut = false
-        returnTo = null
         main.removeCallbacks(leaveTimeout); showBusy(false)
         Session.save(this)
         calls.enabled = true
         tokenChanged()
         calls.signedIn(Api.token)
-        login.setActive(false)
-        // this phone's id that the web page made before (kept, so the phone stays the same phone), then the page goes
-        val w = web
-        var started = false
-        val begin = {
-            if (!started) {
-                started = true
-                if (web === w && !leaving) dropWeb()
-                work.start()
-                // (the sign-in page may have said "offline" as it closed: "online" once more in a moment)
-                if (w != null) work.beatSoon()
-            }
-        }
-        if (w != null && !Session.hasDeviceId(this)) {
-            main.postDelayed({ begin() }, 700)
-            try {
-                w.evaluateJavascript("(function(){try{return localStorage.getItem('tf_device_id')||''}catch(e){return ''}})()") { v ->
-                    Session.adoptDeviceId(this, try { org.json.JSONTokener(v ?: "").nextValue() as? String } catch (e: Exception) { null })
-                    begin()
-                }
-            } catch (e: Throwable) { begin() }
-        } else begin()
+        login.close()
+        work.start()
         // (the first page of the app just shows: no move from the sign-in page)
         fxPath = ""
         note("native" + if (restored && router.started) " (history kept)" else " at ${pathOnly(target)}")
@@ -597,72 +582,65 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     }
 
     /**
-     * Leaves the app's own pages for a sign-in page ([target], e.g. /welcome to finish a profile): the sign-in
-     * web page is made and opened there; the page on screen stays until the native sign-in page shows.
+     * Leaves the app's own pages for a sign-in page ([target], e.g. /welcome to finish a profile). Back on its
+     * first page comes back to the page it was opened from.
      */
     private fun enterLogin(target: String, replace: Boolean = false) {
         if (!native || leaving) return
-        leaving = true; signingOut = false; webSynced = false; webAgrees = false
         // Back on that page comes back here (a page that sent you there in its own place: to the page before it)
         returnTo = if (replace) router.saveBelow() else router.save()
         note("leaving for the sign-in page ${pathOnly(target)}")
-        showBusy(true)
-        loadWeb(Api.origin.trimEnd('/') + target)
-        main.removeCallbacks(leaveTimeout); main.postDelayed(leaveTimeout, 12_000)
+        showLogin(target)
     }
 
     /**
      * Log out (the web's logout()): this phone stops getting this account's notifications, Explore is told
-     * "offline" ([presence]; 1.5 s at most), the sign-in is forgotten here and in the sign-in web page's
-     * storage, then the server's log-out → Get Started.
+     * "offline" ([presence]; 1.5 s at most), the sign-in is forgotten on this phone and on the server, then
+     * Get Started.
      */
     private fun signOut(presence: Boolean) {
         if (preview.isNotEmpty() || fxTest) return
-        if (!native) { if (::login.isInitialized && web != null) login.serverLogout(); return }
+        if (!native) { signOutFromLogin("/welcome"); return }
         if (leaving) return
-        leaving = true; signingOut = true; webSynced = false; webAgrees = false
+        leaving = true; signingOut = true
         returnTo = null
         // (a quiet "one moment" over the page until the sign-in page is up)
         showBusy(true)
         note("signing out")
         Push.unregister(this)
-        work.stop(presence) { finishSignOut() }
+        work.stop(presence) { finishSignOut("/welcome") }
+        main.removeCallbacks(leaveTimeout); main.postDelayed(leaveTimeout, 6_000)
     }
-    private fun finishSignOut() {
+    /** a sign-in page signs out (the number belongs to another account …): then [then] */
+    private fun signOutFromLogin(then: String) {
+        if (native) { signOut(false); return }
+        returnTo = null
+        if (Api.token.isEmpty()) { showLogin(then); return }
+        note("signing out from a sign-in page")
+        Push.unregister(this)
+        work.stop(false) { finishSignOut(then) }
+    }
+    private fun finishSignOut(then: String) {
+        if (!leaving && native) return
+        main.removeCallbacks(leaveTimeout)
+        val old = Api.token
         Session.clear(this)
         Api.token = ""
-        // the web page's own copy of the sign-in goes too (else it would sign itself in again)
-        try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (e: Throwable) { }
-        // (the app was closed meanwhile: no page to open — its cookies go here instead of by the server's log-out)
-        if (isDestroyed) { try { CookieManager.getInstance().removeAllCookies(null) } catch (e: Throwable) { }; return }
+        // the server forgets this phone's sign-in too
+        Auth.logout(old)
         tokenChanged()
         calls.signedIn("")
-        val o = Api.origin.trimEnd('/')
-        loadWeb("$o/api/apps/auth/logout?from_url=" + Uri.encode("$o/welcome"))
-        main.removeCallbacks(leaveTimeout); main.postDelayed(leaveTimeout, 12_000)
+        if (isDestroyed) return
+        showLogin(then)
     }
-    /** "Who am I" was answered with "not signed in": the sign-in is over. */
+    /** "Who am I" was answered with "not signed in", or the server ended the sign-in: it is over on this phone. */
     private fun sessionRejected() {
         note("the server no longer accepts this sign-in")
         when {
-            // on the sign-in pages already: only what this phone keeps is forgotten (the page handles its own)
-            !native -> { Session.clear(this); work.stop(false) }
+            // on the sign-in pages: forgotten here, Get Started again
+            !native -> { work.stop(false); finishSignOut("/welcome") }
             !leaving -> signOut(false)
-            // on the way to a sign-in page (Finish profile …): that becomes the log-out
-            !signingOut -> {
-                signingOut = true; webSynced = false; webAgrees = false; returnTo = null
-                Push.unregister(this)
-                work.stop(false) { finishSignOut() }
-            }
         }
-    }
-
-    /** the native sign-in page is up: the app's own pages go */
-    private fun checkLeave() {
-        if (!leaving || !::login.isInitialized || !login.shown) return
-        // (first the web page says which sign-in it holds: the app's own, or none after a log-out — see onInfo)
-        if (!webAgrees) return
-        endLeave()
     }
 
     /** Back on the first sign-in page, opened from a page of the app (Complete my profile …): that page again. */
@@ -674,17 +652,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         enterNative(router.current.url, true, Router.Move.POP)
         return true
     }
-    private fun endLeave() {
-        note("the sign-in pages lead" + if (::login.isInitialized && login.shown) "" else " (not shown yet)")
-        native = false; leaving = false; signingOut = false
-        main.removeCallbacks(leaveTimeout); showBusy(false)
-        calls.enabled = scriptAtStart
-        router.clear()
-        if (webRoute.isNotEmpty()) setPath(webRoute)
-        update()
-    }
-    /** the sign-in page never came (no internet …): whatever the web page shows is shown; a good sign-in comes back in */
-    private val leaveTimeout = Runnable { if (leaving) { note("the sign-in page did not come in 12 s"); endLeave(); maybeEnterNative() } }
+    /** a log-out that never finished (the "offline" message hung): it finishes now */
+    private val leaveTimeout = Runnable { if (leaving && signingOut) { note("log-out finished after waiting"); finishSignOut("/welcome") } }
 
     /** a quiet "one moment" over the page while the sign-in page is on its way (shown after a third of a second) */
     private var busyView: View? = null
@@ -717,53 +686,7 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (t.isNotEmpty()) CrashNote.sendPending(this)
     }
 
-    // ═════════════════ the sign-in web page (made when needed, thrown away when signed in) ═════════════════
-    private fun ensureWeb(): WebView {
-        web?.let { return it }
-        val w = WebView(this)
-        web = w
-        note("web page made")
-        webRoute = ""; webSynced = false
-        // under every native page
-        root.addView(w, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        setupWeb(w)
-        if (!native) calls.enabled = scriptAtStart
-        login.setActive(true)
-        return w
-    }
-    private fun loadWeb(url: String) { ensureWeb().loadUrl(url) }
-
-    /**
-     * Signed in, and the sign-in web page is already on a page of the app (a moment before the app's own
-     * pages take over): its own drawing of that page is never shown — a plain "one moment" covers it.
-     */
-    private var bootCover: View? = null
-    /** the app's own pages did not take over in time: the web page shows itself (it is the whole app too) */
-    private var coverGaveUp = false
-    private val coverTimeout = Runnable { if (bootCover != null) { note("the app's pages did not take over in 10 s: the web page shows"); coverGaveUp = true; coverWeb(false) } }
-    private fun coverWeb(on: Boolean) {
-        if (!on || coverGaveUp) { main.removeCallbacks(coverTimeout); bootCover?.let { root.removeView(it) }; bootCover = null; return }
-        if (bootCover != null) return
-        main.postDelayed(coverTimeout, 10_000)
-        val w = web ?: return
-        val box = FrameLayout(this).apply { setBackgroundColor(Color.WHITE); isClickable = true }
-        box.addView(TfLoader(this, 26f), FrameLayout.LayoutParams(Ui.dpi(26f), Ui.dpi(26f), android.view.Gravity.CENTER))
-        // just above the web page, under every native page
-        root.addView(box, root.indexOfChild(w) + 1, FrameLayout.LayoutParams(-1, -1))
-        bootCover = box
-    }
-    private fun dropWeb() {
-        val w = web ?: return
-        web = null
-        note("web page gone")
-        webRoute = ""; cover = false; navTopCss = -1f; coverGaveUp = false
-        try { w.stopLoading() } catch (e: Throwable) { }
-        coverWeb(false)
-        root.removeView(w)
-        try { w.destroy() } catch (e: Throwable) { }
-        if (::status.isInitialized) status.webGone()
-    }
-
+    // ═════════════════ (the sign-in web page is gone: Supabase's WhatsApp OTP sign-in is native) ═════════════════
     // ═════════════════ opened from a notification (Push) ═════════════════
     private var overLock = false
     /** an incoming call may show over the lock screen (and wake the screen) while it rings / its screen is open */
@@ -818,139 +741,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         return null
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun setupWeb(web: WebView) {
-        web.setBackgroundColor(Color.WHITE)
-        web.overScrollMode = View.OVER_SCROLL_NEVER
-        with(web.settings) {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            databaseEnabled = true
-            mediaPlaybackRequiresUserGesture = false
-            setGeolocationEnabled(true)
-            allowFileAccess = false
-            allowContentAccess = true
-            javaScriptCanOpenWindowsAutomatically = true
-            setSupportMultipleWindows(false)
-            userAgentString = "$userAgentString TrueFindApp/1"
-        }
-        CookieManager.getInstance().setAcceptCookie(true)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(web, true)
-        web.addJavascriptInterface(WebBridge(this), WebBridge.NAME)
-        // lib/push.js: inside this app the push token comes from here (no web push in a WebView)
-        web.addJavascriptInterface(Push.Bridge(applicationContext), Push.NAME)
-        // calls are the app's own: the web page hands its call pages over and keeps its own ringing quiet
-        web.addJavascriptInterface(calls.bridge, CallManager.NAME)
-        web.addJavascriptInterface(status.Bridge(), AppStatus.NAME)
-        if (scriptAtStart) {
-            WebViewCompat.addDocumentStartJavaScript(web, WebBridge.JS, ORIGINS)
-            WebViewCompat.addDocumentStartJavaScript(web, CallManager.JS, ORIGINS)
-            WebViewCompat.addDocumentStartJavaScript(web, AppStatus.JS, ORIGINS)
-        }
-        login.attach(web, scriptAtStart)
-
-        web.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val uri = request.url
-                return when (uri.scheme?.lowercase()) {
-                    "http", "https" -> false
-                    "intent" -> {
-                        // UPI / payment apps: intent://pay?...#Intent;scheme=upi;package=…;end
-                        try {
-                            val i = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME)
-                            i.addCategory(Intent.CATEGORY_BROWSABLE); i.component = null; i.selector = null
-                            try { startActivity(i) } catch (e: ActivityNotFoundException) {
-                                i.getStringExtra("browser_fallback_url")?.let { view.loadUrl(it) }
-                            }
-                        } catch (e: Exception) { }
-                        true
-                    }
-                    else -> {
-                        // upi:, tel:, mailto:, whatsapp: … open the right app
-                        try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (e: Exception) { }
-                        true
-                    }
-                }
-            }
-
-            override fun onPageFinished(view: WebView, url: String) {
-                if (view !== this@MainActivity.web) return
-                if (!scriptAtStart && isOurs(Uri.parse(url))) { view.evaluateJavascript(WebBridge.JS, null); view.evaluateJavascript(AppStatus.JS, null); view.evaluateJavascript(LoginLayer.JS, null) }
-                CookieManager.getInstance().flush()
-                if (::status.isInitialized) status.onPageFinished(url)
-                if (::login.isInitialized) {
-                    login.onWebPage(url, true)
-                    if (isOurs(Uri.parse(url))) pendingAuth?.let { u -> pendingAuth = null; login.onAuthReturn(u) }
-                }
-            }
-
-            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                if (view !== this@MainActivity.web) return
-                if (::login.isInitialized) login.onWebPage(url, false)
-                if (::status.isInitialized) status.onPageStarted(url)
-            }
-
-            // True Find's page could not load (no internet, server down): the native error screen, not Chrome's
-            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
-                if (view !== this@MainActivity.web) return
-                val d = error.description?.toString().orEmpty()
-                if (!request.isForMainFrame || d.contains("ERR_ABORTED") || d.contains("ERR_BLOCKED")) return
-                if (::status.isInitialized) status.onLoadError(request.url.toString(), true)
-            }
-            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: android.webkit.WebResourceResponse) {
-                if (view !== this@MainActivity.web) return
-                if (request.isForMainFrame && response.statusCode >= 500 && isOurs(request.url) && ::status.isInitialized) status.onLoadError(request.url.toString(), false)
-            }
-
-            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-                // the sign-in page crashed (low memory). Signed in, nobody needs it: it simply goes.
-                // On a sign-in page: the app screen starts again instead of closing.
-                if (view !== this@MainActivity.web) return true
-                if (native && !leaving) { root.post { if (this@MainActivity.web === view) dropWeb() } } else recreate()
-                return true
-            }
-        }
-
-        web.webChromeClient = object : WebChromeClient() {
-            override fun onPermissionRequest(request: PermissionRequest) {
-                runOnUiThread {
-                    val need = ArrayList<String>()
-                    for (r in request.resources) {
-                        if (r == PermissionRequest.RESOURCE_AUDIO_CAPTURE && !has(Manifest.permission.RECORD_AUDIO)) need.add(Manifest.permission.RECORD_AUDIO)
-                        if (r == PermissionRequest.RESOURCE_VIDEO_CAPTURE && !has(Manifest.permission.CAMERA)) need.add(Manifest.permission.CAMERA)
-                    }
-                    if (need.isEmpty()) {
-                        answer(request)
-                    } else {
-                        pendingWebPermission?.deny()
-                        pendingWebPermission = request
-                        askMedia.launch(need.toTypedArray())
-                    }
-                }
-            }
-
-            override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-                if (has(Manifest.permission.ACCESS_FINE_LOCATION) || has(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    callback.invoke(origin, true, false); return
-                }
-                pendingGeo = origin to callback
-                askLocation.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-            }
-
-            override fun onShowFileChooser(view: WebView, cb: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
-                fileCallback?.onReceiveValue(null)
-                fileCallback = cb
-                return try {
-                    pickFile.launch(params.createIntent())
-                    true
-                } catch (e: Exception) {
-                    fileCallback = null
-                    false
-                }
-            }
-        }
-    }
-
     private fun isOurs(u: Uri): Boolean = u.scheme == "https" && ORIGINS.contains("https://${u.host}")
 
     // ═════════════════ moving around ═════════════════
@@ -996,7 +786,8 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             pages.startPreview("profile", "settings=1")
             return
         }
-        if (!native) { webGo(full, state, replace); return }
+        // on the sign-in pages: only another sign-in page opens (the app's pages need the sign-in first)
+        if (!native) { if (LoginLayer.isLoginPath(pathOnly(full))) login.go(full, replace); return }
         if (leaving) return
         if (openCallPage(full, state)) return
         // a sign-in page (finish the profile, sign in again …): the sign-in layer takes over
@@ -1029,10 +820,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         if (leaving) return true
         return router.back(n)
     }
-    /** the sign-in web page's own router (same as navigate(path, { state, replace }) inside it) */
-    private fun webGo(p: String, state: JSONObject?, replace: Boolean) {
-        web?.evaluateJavascript("window.__tfGo && window.__tfGo(${JSONObject.quote(p)}, ${state?.toString() ?: "null"}, ${if (replace) "true" else "false"});", null)
-    }
     /** a chat's Back: the page you came from, or the Secret Dating chats (the web's goBack in ChatRoom.jsx) */
     private fun chatBack() { if (!goBack()) navigate("/secret-app?tab=chat", null, true) }
     private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> navigate(p, st) }, goBack = { chatBack() }, replace = { navigate(it, null, true) }).also {
@@ -1061,74 +848,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         update()
         calls.routeChanged()
     }
-
-    // ── from the sign-in web page ──
-    override fun onRoute(path: String) {
-        if (web == null) return
-        webRoute = path
-        // signed in, the app leads itself: the page's address only matters once the sign-in pages take over
-        if (native) return
-        setPath(path)
-        update()
-        calls.routeChanged()
-        maybeEnterNative()
-    }
-
-    override fun onInfo(origin: String, token: String, appId: String, navTopCss: Float, cover: Boolean) {
-        val w = web ?: return
-        if (native && !leaving) return
-        // only True Find's own page is believed (the sign-in is kept by the app from here on): a message that
-        // arrives while the web view is on someone else's page (Google's, a payment page) is not taken
-        val at = try { w.url.orEmpty() } catch (e: Throwable) { "" }
-        if (at.startsWith("http") && !(try { isOurs(Uri.parse(at)) } catch (e: Exception) { false })) return
-        if (MainActivity.ORIGINS.contains(origin) && origin != OLD_ORIGIN) Api.origin = origin
-        if (appId.isNotEmpty() && appId != Api.appId) { Api.appId = appId; Session.rememberAppId(this, appId) }
-        if (native) {
-            // On the way to a sign-in page: the app's own sign-in is what counts until that page is up. The web
-            // page must hold the same one (none after a log-out) before it takes over; one that doesn't is told
-            // once and opens again.
-            val want = if (signingOut) "" else Api.token
-            if (token == want) { if (!webAgrees) { webAgrees = true; checkLeave() } }
-            else if (!webSynced) {
-                webSynced = true
-                if (signingOut) {
-                    // logging out: a page that still holds the old sign-in forgets it and starts again
-                    note("the web page still held the sign-in: it forgets it")
-                    w.evaluateJavascript("(function(){try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}location.replace('/welcome')})()", null)
-                } else {
-                    // the page lost its copy of the sign-in: it gets the app's, and opens the page again with it
-                    note("the web page gets the app's sign-in")
-                    val t = JSONObject.quote(Api.token)
-                    w.evaluateJavascript("(function(){try{localStorage.setItem('base44_access_token',$t);localStorage.setItem('token',$t)}catch(e){}location.reload()})()", null)
-                }
-            }
-            return
-        }
-        val newLogin = token != Api.token
-        Api.token = token
-        if (newLogin) returnTo = null
-        // signed out on a sign-in page (Log out there, the server's log-out): this phone forgets the sign-in too
-        if (token.isEmpty() && (newLogin || Session.has(this))) { note("the web page says: signed out"); Session.clear(this); work.stop(false) }
-        tokenChanged()
-        calls.signedIn(token)
-        this.navTopCss = navTopCss
-        this.cover = cover
-        update()
-        maybeEnterNative()
-    }
-
-    override fun onRouteIdx(idx: Int) { if (!native) routeIdx = idx }
-
-    override fun onWebBack(n: Int) {
-        // (the sign-in web page's own back arrows) nothing behind: nothing happens, as in a browser
-        if (native) return
-        val w = web ?: return
-        if (!w.canGoBackOrForward(n)) return
-        backAt = uptime()
-        w.goBackOrForward(n)
-    }
-
-    override fun onCaps(dance: Boolean) { /* Live Dance is always the app's own now */ }
 
     /** the address in two parts, as the rest of the app keeps it: path and ?query */
     private fun setPath(full: String) {
@@ -1351,7 +1070,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
         // signed in and inside the app: its own pages show. Otherwise only the sign-in pages do.
         val inApp = native
         val covered = cover && !native
-        if (::login.isInitialized) login.setRoute(Api.token, covered)
         // ── Live Dance ──
         val wantDance = inApp && isDance(path + search)
         if (wantDance) {
@@ -1421,9 +1139,6 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
             notify.update(pages.onHome && pages.home.visibility == View.VISIBLE, inApp)
             rules.update(pages.onHome && pages.home.visibility == View.VISIBLE, inApp)
         }
-        // signed in and the sign-in page already on a page of the app: its own drawing is covered until the app's pages take over
-        coverWeb(!native && web != null && Api.token.isNotEmpty() && webRoute.isNotEmpty() && !LoginLayer.isLoginPath(pathOnly(webRoute)) &&
-            ::login.isInitialized && !login.shown && !login.away)
     }
 
     /** Test mode: the Control Center, a status screen or the notifications card with made-up data (no web page, no login). */
@@ -1774,16 +1489,11 @@ class MainActivity : ComponentActivity(), WebBridge.Listener {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val data = intent.data
-        if (data != null && isAuthReturn(data)) { login.onAuthReturn(data); return }
         if (pushOpen(intent, false) != null) return
         data?.takeIf { isOurs(it) }?.let { u ->
             if (native) navigate((u.encodedPath ?: "/").ifEmpty { "/" } + (u.encodedQuery?.let { "?$it" } ?: ""))
-            else loadWeb(u.toString())
         }
     }
-
-    /** truefind://auth?… — Google sign-in in the phone's browser handing the sign-in back (GoogleSignIn) */
-    private fun isAuthReturn(u: Uri) = u.scheme == "truefind" && u.host == "auth"
 
     /** Opens [url] in a Chrome Custom Tab (the phone's browser in the app's own window); false when there is none. */
     private fun openBrowserTab(url: String): Boolean = try {

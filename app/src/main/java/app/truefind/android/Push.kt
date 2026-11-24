@@ -99,16 +99,17 @@ object Push {
      * calls would go to the old token and never ring.
      */
     private fun registerClosed(ctx: Context, t: String) {
-        val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null } ?: return
-        val tok = auth.optString("t")
-        if (tok.isEmpty()) return
+        // (signed in on this phone: kept by keepAuth; the token itself comes from the sign-in, renewed when needed)
+        if (prefs(ctx).getString("auth", "").isNullOrEmpty()) return
         pool.execute {
+            val tok = Auth.freshFor(ctx)
+            if (tok.isEmpty()) return@execute
             var c: HttpURLConnection? = null
             try {
-                c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/pushSubscribe").openConnection() as HttpURLConnection).apply {
+                c = (URL("${Supa.API}/api/apps/${Supa.APP_ID}/functions/pushSubscribe").openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"; connectTimeout = 8000; readTimeout = 8000; doOutput = true
                     setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
-                    setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer $tok")
+                    setRequestProperty("X-App-Id", Supa.APP_ID); setRequestProperty("Authorization", "Bearer $tok")
                 }
                 c.outputStream.use { it.write(JSONObject().put("action", "native_save").put("token", t).put("device", device()).toString().toByteArray()) }
                 if (c.responseCode in 200..299) {
@@ -137,10 +138,13 @@ object Push {
         if (t.isNotEmpty() && Api.ready) Api.invoke("pushSubscribe", JSONObject().put("action", "native_remove").put("token", t), 1500) { }
     }
 
-    /** the sign-in the Decline button uses when the app is closed (kept on this phone only) */
+    /**
+     * Signed in or out on this phone, for the Decline button when the app is closed. Only "signed in" is kept here:
+     * the token itself is the sign-in's ([Auth], renewed every hour), read when Decline is tapped.
+     */
     fun keepAuth(ctx: Context, origin: String, appId: String, tok: String) {
         val p = prefs(ctx)
-        val v = if (tok.isEmpty() || appId.isEmpty()) "" else JSONObject().put("o", origin).put("a", appId).put("t", tok).toString()
+        val v = if (tok.isEmpty() || appId.isEmpty()) "" else JSONObject().put("signed", true).toString()
         if (p.getString("auth", "") != v) p.edit().putString("auth", v).apply()
     }
 
@@ -329,9 +333,10 @@ object Push {
     /** "Decline" on the ringing notification: answered without opening the app */
     fun decline(ctx: Context, callId: String, done: () -> Unit) {
         NotificationManagerCompat.from(ctx).cancel(callTag(callId), 1)
-        val auth = try { JSONObject(prefs(ctx).getString("auth", "").orEmpty()) } catch (e: Exception) { null }
-        if (auth == null) { done(); return }
+        if (prefs(ctx).getString("auth", "").isNullOrEmpty()) { done(); return }
         pool.execute {
+            // the sign-in kept on this phone (renewed first when its hour is nearly up: the app may have been closed for long)
+            val tok = Auth.freshFor(ctx)
             // tried 3 times: a Decline lost on a weak network or met by a busy server (429 — before 23 Nov counted as
             // "done") left the caller ringing and the one who declined "busy" for up to a minute; still not through →
             // the app's own queue sends it as soon as it can (CallEnder)
@@ -340,10 +345,10 @@ object Push {
                 for (attempt in 0 until 3) {
                     var c: HttpURLConnection? = null
                     val code = try {
-                        c = (URL("${auth.optString("o")}/api/apps/${auth.optString("a")}/functions/respondCall").openConnection() as HttpURLConnection).apply {
+                        c = (URL("${Supa.API}/api/apps/${Supa.APP_ID}/functions/respondCall").openConnection() as HttpURLConnection).apply {
                             requestMethod = "POST"; connectTimeout = 5000; readTimeout = 5000; doOutput = true
                             setRequestProperty("Content-Type", "application/json"); setRequestProperty("Accept", "application/json")
-                            setRequestProperty("X-App-Id", auth.optString("a")); setRequestProperty("Authorization", "Bearer ${auth.optString("t")}")
+                            setRequestProperty("X-App-Id", Supa.APP_ID); setRequestProperty("Authorization", "Bearer $tok")
                         }
                         c.outputStream.use { it.write(JSONObject().put("call_id", callId).put("action", "decline").toString().toByteArray()) }
                         c.responseCode

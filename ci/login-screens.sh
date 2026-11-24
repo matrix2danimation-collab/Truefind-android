@@ -46,7 +46,6 @@ shot w08-phone-note 4 welcome-phone-note
 shot w09-verify 4 welcome-verify
 shot w10-verify-typing 4 welcome-verify-typing
 shot w11-verify-error 4 welcome-verify-error
-shot w12-verify-owner 4 welcome-verify-owner
 shot w13-verify-demo 4 welcome-verify-demo
 shot w14-verify-resend 4 welcome-verify-resend
 shot w15-gender 4 welcome-gender
@@ -58,31 +57,7 @@ shot w20-profile-state 4 welcome-profile state
 shot w21-profile-city 4 welcome-profile city
 shot w22-profile-fail 4 welcome-profile-fail
 shot w23-boot 3 welcome-boot
-# ── /login (email and password · WhatsApp OTP · the MFA step) ──
-shot l01-login 4 login
-shot l02-login-phone 4 login-phone
-shot l02b-login-keyboard 5 login-phone kb
-shot l03-login-phone-filled 4 login-phone-filled
-shot l04-login-otp 4 login-otp
-shot l05-login-otp-owner 4 login-otp-owner
-shot l06-login-mfa 4 login-mfa
-shot l07-login-error 4 login-error
-# ── /register, /forgot-password, /reset-password ──
-shot r01-register 4 register
-shot r02-register-error 4 register-error
-shot r03-register-otp 4 register-otp
-shot f01-forgot 4 forgot
-shot f02-forgot-sent 4 forgot-sent
-shot f03-reset 4 reset
-# ── /mfa (two-factor settings) ──
-shot m01-mfa 5 mfa
-shot m02-mfa-verify 4 mfa-verify
-shot m03-mfa-enroll 4 mfa-enroll
-shot m04-mfa-manage 4 mfa-manage
-# ── the old profile pages and /delete-account ──
-shot b01-basic 4 basic
-shot c01-complete 5 complete
-shot c02-complete-photo 5 complete-photo
+# ── /delete-account (e-mail sign-in, MFA, Google and the old profile pages were removed: WhatsApp OTP only, Supabase) ──
 shot d01-delete 4 delete
 shot d02-delete-sent 4 delete-sent
 adb logcat -d > "$OUT/logcat-last.txt"

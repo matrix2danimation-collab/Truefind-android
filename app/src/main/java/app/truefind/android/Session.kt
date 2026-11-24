@@ -19,44 +19,24 @@ object Session {
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    /** Reads the saved sign-in into [Api]. true when there is one. */
-    fun load(ctx: Context): Boolean {
-        val p = prefs(ctx)
-        val token = p.getString("token", "").orEmpty()
-        val appId = p.getString("app_id", "").orEmpty()
-        val origin = p.getString("origin", "").orEmpty()
-        if (token.isEmpty() || appId.isEmpty()) return false
-        // a sign-in saved on the old Base44 address stays on the new one (START_URL): same app, same server
-        if (origin.startsWith("https://") && MainActivity.ORIGINS.contains(origin) && origin != MainActivity.OLD_ORIGIN) Api.origin = origin
-        Api.appId = appId
-        Api.token = token
-        return true
-    }
+    /**
+     * Reads the saved sign-in into [Api]. true when there is one. Since the move to Supabase the sign-in is
+     * Supabase Auth's (an access token + a refresh token, [Auth]); a Base44 sign-in kept by an older version
+     * of the app is not one any more: it is forgotten here and the sign-in page shows.
+     */
+    fun load(ctx: Context): Boolean = Auth.load(ctx)
 
-    /** Remembers the sign-in [Api] holds now. */
-    fun save(ctx: Context) {
-        if (Api.token.isEmpty() || Api.appId.isEmpty() || Demo.on) return
-        val p = prefs(ctx)
-        if (p.getString("token", "") == Api.token && p.getString("app_id", "") == Api.appId && p.getString("origin", "") == Api.origin) return
-        p.edit().putString("token", Api.token).putString("app_id", Api.appId).putString("origin", Api.origin).apply()
-    }
+    /** The sign-in is kept by [Auth] as soon as it is made or renewed (nothing more to remember here). */
+    fun save(ctx: Context) { }
 
     /** a sign-in is kept on this phone */
-    fun has(ctx: Context): Boolean = !prefs(ctx).getString("token", "").isNullOrEmpty()
+    fun has(ctx: Context): Boolean = Auth.has(ctx)
 
-    /** Signed out: the sign-in is forgotten (the app's id and this phone's id stay). */
-    fun clear(ctx: Context) {
-        prefs(ctx).edit().remove("token").remove("expert").apply()
-    }
+    /** Signed out: the sign-in is forgotten (this phone's id stays). */
+    fun clear(ctx: Context) = Auth.clear(ctx)
 
-    /** the app's id, known from an earlier visit (it never changes) */
-    fun knownAppId(ctx: Context): String = prefs(ctx).getString("app_id", "").orEmpty()
-    /** the sign-in page told the app's id: kept, so the next start does not wait for it */
-    fun rememberAppId(ctx: Context, id: String) {
-        if (!Regex("^[A-Za-z0-9]{16,64}$").matches(id)) return
-        val p = prefs(ctx)
-        if (p.getString("app_id", "") != id) p.edit().putString("app_id", id).apply()
-    }
+    /** the app's id in the server's addresses (on Supabase it is fixed) */
+    fun knownAppId(ctx: Context): String = Supa.APP_ID
 
     /**
      * A random id kept on this phone (no personal data), sent with the first "I am online" after the app

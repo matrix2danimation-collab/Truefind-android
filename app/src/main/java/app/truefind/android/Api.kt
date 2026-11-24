@@ -10,15 +10,18 @@ import java.net.URL
 import java.util.concurrent.Executors
 
 /**
- * Calls the SAME Base44 backend functions the web app uses
- * (getOnlineNow, getWallet, startCall, follow, getAppConfig …).
- * Login is shared: the token and app id come from the Base44 page
- * running in the WebView (see WebBridge), so the user signs in once.
+ * Calls the app's backend functions (getOnlineNow, getWallet, startCall, follow, getAppConfig …) and tables.
+ * Since 24 Nov 2026 they run on Supabase ([Supa]): the "api" Edge Function answers the same addresses Base44
+ * did, so the paths below are unchanged. The sign-in is Supabase Auth ([Auth]): [token] is renewed by itself
+ * before it runs out, and a request the server answered with "session_expired" is asked once more with a new one.
  */
 object Api {
+    /** the website (truefindapp.com): web pages only — policies, invite and share links. The server is [base]. */
     @Volatile var origin: String = MainActivity.START_URL.trimEnd('/')
     @Volatile var appId: String = ""
     @Volatile var token: String = ""
+    /** where every function and table of the app is asked: …/api/apps/<id> on Supabase's "api" function */
+    val base: String get() = "${Supa.API}/api/apps/${appId.ifEmpty { Supa.APP_ID }}"
 
     class Result(val status: Int, val data: JSONObject, val error: String?) {
         val ok get() = status in 200..299
@@ -138,21 +141,32 @@ object Api {
     }
 
     /**
-     * Any Base44 request of this app (same as the web SDK): path after /api/apps/{appId}.
+     * Any request of this app to the server (same as the web SDK): path after /api/apps/{appId}.
      * The answer is wrapped: an array answer comes back as { "items": [...] }.
      */
     fun request(method: String, path: String, body: ByteArray?, contentType: String?, timeoutMs: Int = 30000): Result {
         if (!ready) return Result(0, JSONObject(), "Not signed in yet")
+        val first = requestOnce(method, path, body, contentType, timeoutMs)
+        // the sign-in's hour was up (the phone slept past its renewal): a new one, then the same request once more
+        if (expired(first) && Auth.renew(true)) return requestOnce(method, path, body, contentType, timeoutMs)
+        return first
+    }
+
+    /** the server said the sign-in's time is up (401 "session_expired"): [Auth] makes a new one */
+    private fun expired(r: Result) = r.status == 401 && r.data.optString("code") == "session_expired"
+
+    private fun requestOnce(method: String, path: String, body: ByteArray?, contentType: String?, timeoutMs: Int): Result {
         count(method, path)
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL("$origin/api/apps/$appId$path").openConnection() as HttpURLConnection).apply {
+            val bearer = Auth.fresh()
+            conn = (URL("$base$path").openConnection() as HttpURLConnection).apply {
                 requestMethod = method
                 connectTimeout = 15000
                 readTimeout = timeoutMs
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("X-App-Id", appId)
-                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Authorization", "Bearer $bearer")
                 if (body != null) {
                     doOutput = true
                     setRequestProperty("Content-Type", contentType ?: "application/json")
@@ -162,6 +176,8 @@ object Api {
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() } ?: ""
+            // a public function answered without the sign-in (its hour was up): the next request goes with a new one
+            if (conn.getHeaderField("X-Session-Expired") == "1") pool.execute { Auth.renew(true) }
             val json = markBusy(code, try {
                 val t = text.trim()
                 if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t)
@@ -280,11 +296,17 @@ object Api {
 
     private fun requestOk(method: String, path: String, body: JSONObject?): Result {
         if (!ready) return Result(0, JSONObject(), "Not signed in yet")
+        val first = requestOkOnce(method, path, body)
+        if (expired(first) && Auth.renew(true)) return requestOkOnce(method, path, body)
+        return first
+    }
+
+    private fun requestOkOnce(method: String, path: String, body: JSONObject?): Result {
         count(method, path)
         return try {
             val rb = body?.toString()?.toRequestBody("application/json".toMediaType())
-            val req = okhttp3.Request.Builder().url("$origin/api/apps/$appId$path").method(method, rb)
-                .header("Accept", "application/json").header("X-App-Id", appId).header("Authorization", "Bearer $token").build()
+            val req = okhttp3.Request.Builder().url("$base$path").method(method, rb)
+                .header("Accept", "application/json").header("X-App-Id", appId).header("Authorization", "Bearer ${Auth.fresh()}").build()
             http.newCall(req).execute().use { res ->
                 val text = res.body?.string() ?: ""
                 val json = markBusy(res.code, try { val t = text.trim(); if (t.startsWith("[")) JSONObject().put("items", org.json.JSONArray(t)) else JSONObject(t) } catch (e: Exception) { JSONObject() }, text)

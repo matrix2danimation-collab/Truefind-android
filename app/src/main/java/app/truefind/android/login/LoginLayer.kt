@@ -10,114 +10,58 @@ import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.animation.PathInterpolator
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ScrollView
 import app.truefind.android.Api
-import app.truefind.android.MainActivity
 import app.truefind.android.Ui
 import org.json.JSONObject
 
 /**
- * NATIVE SIGN-IN. Whenever the web app is on one of its sign-in pages, the phone draws that page itself
- * (this layer, over the web page, which stays underneath, hidden):
- *   /welcome (and "/" while signed out)  → Get Started, mobile number, WhatsApp OTP, gender, profile
- *   /login /register /register/phone /forgot-password /reset-password /mfa → email sign-in pages
- *   /register/basic-profile /register/complete-profile → the old profile pages (signed in)
+ * NATIVE SIGN-IN (Supabase, 24 Nov 2026). The phone draws every sign-in page itself; there is no web page
+ * under them any more (Base44's sign-in link, Google's page and the server's log-out needed one — WhatsApp OTP
+ * with Supabase Auth does not):
+ *   /welcome (and the old sign-in addresses /login, /register …) → Get Started, mobile number, WhatsApp OTP,
+ *                                                                   gender, profile
  *   /delete-account → how to delete an account
- * Every page makes the SAME Base44 calls as the web page (LoginApi): WhatsApp OTP, the one-time sign-in
- * link of returning members, Google for new members, Base44's email/password routes. A sign-in is handed
- * to the web page (its token, or the sign-in link opened in it), so the rest of the app is signed in too.
- * The web page stays the one place that knows where you are: page changes go through its router.
+ * Signing in is WhatsApp OTP only (Google and e-mail sign-in were removed): WelcomePage makes the session
+ * (Supabase Auth), and [Host.signedIn] opens the app. This layer keeps its own short history for Back.
  */
 @SuppressLint("ViewConstructor")
 class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     interface Host {
-        /** the web app's navigate(path, { replace }) */
-        fun go(path: String, replace: Boolean)
-        /** a full page load in the web view (sign-in links, Home after sign-up) */
-        fun loadWeb(url: String)
-        fun js(code: String)
-        fun canWebBack(): Boolean
-        fun webBack()
+        /** signed in (a finished profile): the app's own pages from [next] ("/" = Home) */
+        fun signedIn(next: String)
+        /** log out (the number belongs to another account …): the sign-in is forgotten, then this layer opens [then] */
+        fun signOut(then: String)
         fun finishApp()
         fun pickPhoto(done: (ByteArray?, String) -> Unit)
-        /** opens [url] in a Chrome Custom Tab (Google's own sign-in page); false when there is no browser */
+        /** opens [url] in a Chrome Custom Tab; false when there is no browser */
         fun openTab(url: String): Boolean
         /** Back on the first sign-in page, opened from a page of the app: that page again (true when it was) */
         fun backToApp(): Boolean = false
     }
 
     companion object {
-        const val NAME = "TFLogin"
         private val PAGES = mapOf(
-            "/welcome" to "welcome", "/register/phone" to "welcome", "/login" to "login", "/register" to "register",
-            "/forgot-password" to "forgot", "/reset-password" to "reset", "/mfa" to "mfa", "/delete-account" to "delete",
-            "/register/basic-profile" to "basic", "/register/complete-profile" to "complete",
+            "/welcome" to "welcome", "/register/phone" to "welcome", "/delete-account" to "delete",
+            // e-mail sign-in, Google and the old profile pages are gone: their addresses lead to the WhatsApp OTP sign-in
+            "/login" to "welcome", "/register" to "welcome", "/forgot-password" to "welcome", "/reset-password" to "welcome",
+            "/mfa" to "welcome", "/register/basic-profile" to "welcome", "/register/complete-profile" to "welcome",
         )
         fun norm(p: String): String = p.substringBefore('?').trimEnd('/').ifEmpty { "/" }
-        /** one of the sign-in pages this layer draws (/welcome, /login, /mfa, the old profile pages, /delete-account …) */
+        /** one of the sign-in pages this layer draws (/welcome, /delete-account and the old sign-in addresses) */
         fun isLoginPath(p: String): Boolean = PAGES.containsKey(norm(p))
         val EASE = PathInterpolator(0.25f, 0.8f, 0.25f, 1f)
-
-        /** Runs in the page as early as possible (and again after each load, harmless). */
-        val JS = """
-(function(){
-  if (window.__tfLoginInit) return; window.__tfLoginInit = true;
-  var L = window.$NAME; if (!L) return;
-  // The app draws the sign-in pages itself: the web's own ones stay hidden underneath.
-  var st = document.createElement('style');
-  st.textContent = '.tfw-root{visibility:hidden!important}html.tfln #root .tf-stage{visibility:hidden!important}';
-  (document.head || document.documentElement).appendChild(st);
-  var PUB = /^\/(welcome|login|register|register\/phone|forgot-password|reset-password|mfa|delete-account)${'$'}/;
-  var PROT = /^\/register\/(basic-profile|complete-profile)${'$'}/;
-  function tok(){ try { var t = localStorage.getItem('base44_access_token') || localStorage.getItem('token') || ''; if (t && t.charAt(0) === '"') { try { t = JSON.parse(t); } catch(e){} } return String(t || ''); } catch(e){ return ''; } }
-  function ours(){
-    var p = (location.pathname || '/').replace(/\/+${'$'}/, '') || '/', s = location.search || '';
-    if (p !== '/mfa') window.__tfMfaWeb = false;
-    if (p === '/mfa' && (/[?&]mfa_code=/.test(s) || window.__tfMfaWeb)) { window.__tfMfaWeb = true; return false; }
-    if (PUB.test(p)) return true;
-    if (PROT.test(p)) return !!tok();
-    return false;
-  }
-  var last = '';
-  function report(){
-    try {
-      var h = document.documentElement.classList, on = ours();
-      if (on !== h.contains('tfln')) { if (on) h.add('tfln'); else h.remove('tfln'); }
-      var o = { path: location.pathname || '/', search: location.search || '', welcome: !!document.querySelector('.tfw-root'), signed: !!tok(), mfaWeb: !!window.__tfMfaWeb };
-      var s = JSON.stringify(o);
-      if (s !== last) { last = s; L.state(location.origin, s); }
-    } catch(e){}
-  }
-  window.__tfLoginReport = function(){ last = ''; report(); };
-  ['pushState','replaceState'].forEach(function(k){ var o = history[k]; history[k] = function(){ var r = o.apply(this, arguments); report(); return r; }; });
-  addEventListener('popstate', function(){ report(); });
-  var t = 0;
-  function soon(){ if (!t) t = setTimeout(function(){ t = 0; report(); }, 60); }
-  function watch(){ if (!document.body) { setTimeout(watch, 30); return; } new MutationObserver(soon).observe(document.body, { childList: true }); }
-  watch();
-  setInterval(report, 700);
-  report();
-})();
-""".trimIndent()
     }
 
     private val main = Handler(Looper.getMainLooper())
 
-    // ── what the web page says ──
-    internal var path = "/"; private set
+    // ── where this layer is ──
+    internal var path = "/welcome"; private set
     internal var search = ""; private set
-    private var webWelcome = false
-    private var gotState = false
-    private var cover = false
-    private var token = ""
-    /** the web view is on someone else's page (Google): this layer steps aside */
-    private var foreign = false
-    private var pageLoading = false
-    private var pageDoneAt = 0L
+    /** the sign-in pages before this one (Back) */
+    private val history = ArrayList<String>()
 
     // ── pages ──
     private var page: LPage? = null
@@ -130,139 +74,52 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     init {
         visibility = View.GONE
-        isClickable = true // nothing falls through to the hidden web page
+        isClickable = true // nothing falls through to the pages under it
         isFocusable = true
         setBackgroundColor(Color.WHITE)
         clipChildren = false
     }
 
-    // ═════════════════ the web page link ═════════════════
-    fun attach(web: WebView, scriptAtStart: Boolean) {
-        web.addJavascriptInterface(Bridge(), NAME)
-        if (scriptAtStart) androidx.webkit.WebViewCompat.addDocumentStartJavaScript(web, JS, MainActivity.ORIGINS)
-    }
-
-    inner class Bridge {
-        @JavascriptInterface
-        fun state(origin: String?, json: String?) {
-            if (origin == null || !MainActivity.ORIGINS.contains(origin) || json == null) return
-            main.post { onState(origin, json) }
-        }
-    }
-
-    private var mfaWeb = false
-
-    /**
-     * false while the app's own pages lead (signed in: there is no sign-in web page): this layer is off and
-     * forgets what the last web page told it. true again when a sign-in web page is opened.
-     */
-    private var active = true
-    fun setActive(on: Boolean) {
-        if (preview.isNotEmpty() || active == on) return
-        active = on
-        gotState = false; webWelcome = false; foreign = false; mfaWeb = false
-        stale = false; main.removeCallbacks(unstale)
-        pageLoading = false
-        path = "/"; search = ""
-        if (!on) dropHand()
-        refresh()
-    }
-
-    private fun onState(origin: String, json: String) {
-        if (preview.isNotEmpty() || !active) return
-        val o = try { JSONObject(json) } catch (e: Exception) { return }
-        path = o.optString("path", "/").ifEmpty { "/" }
-        search = o.optString("search", "")
-        webWelcome = o.optBoolean("welcome")
-        mfaWeb = o.optBoolean("mfaWeb")
-        LoginApi.here = origin + path + search
-        gotState = true
-        stale = false; main.removeCallbacks(unstale)
-        foreign = false
-        refresh()
-    }
-
-    /** From the app: the login token the page holds and whether a web pop-up covers the page. */
-    fun setRoute(token: String, cover: Boolean) {
-        if (preview.isNotEmpty()) return
-        val signedNow = token.isNotEmpty() && this.token.isEmpty()
-        this.token = token
-        this.cover = cover
-        refresh()
-        if (signedNow) page?.signedIn()
-    }
-
-    /** The web view starts / finishes a page (sign-in hand-offs wait for it). */
-    fun onWebPage(url: String, finished: Boolean) {
-        if (preview.isNotEmpty() || !active) return
-        val u = try { Uri.parse(url) } catch (e: Exception) { null }
-        val ours = u != null && u.scheme == "https" && MainActivity.ORIGINS.contains("https://${u.host}")
-        if (!finished) {
-            pageLoading = true; foreign = !ours && url.startsWith("http"); mfaWeb = false
-            // a new page of the app: the page on screen stays until the new one says where it is (no flash)
-            if (ours) stale = true
-        } else {
-            pageLoading = false; pageDoneAt = SystemClock.uptimeMillis()
-            // a page that never says where it is (not the app): let it show
-            main.removeCallbacks(unstale); if (stale) main.postDelayed(unstale, 2500)
-        }
-        refresh()
-    }
-    /** a new page started and has not said where it is yet */
-    private var stale = false
-    private val unstale = Runnable { if (stale) { stale = false; gotState = false; refresh() } }
-
-    // ═════════════════ which page shows ═════════════════
-    private fun wantedKey(): String {
-        if (!active || cover || foreign || !gotState) return ""
-        if (stale) return if (page != null) pageKey else ""
-        val p = norm(path)
-        val key = PAGES[p]
-        if (key != null) {
-            // a Google / SSO sign-in finishing its second step (/mfa?mfa_code=…) is the web page's own
-            if (key == "mfa" && (mfaWeb || Regex("[?&]mfa_code=").containsMatchIn(search))) return ""
-            if ((key == "basic" || key == "complete") && token.isEmpty()) return ""
-            return key
-        }
-        // the web shows its Welcome ("/" while signed out): drawn here instead
-        if (webWelcome) return "welcome"
-        return ""
-    }
-
+    // ═════════════════ shown / gone ═════════════════
     val shown: Boolean get() = visibility == View.VISIBLE
-    /** the sign-in web page is on someone else's page (Google's, Base44's sign-in link): it must be seen */
-    val away: Boolean get() = foreign
 
-    private fun refresh() {
+    /** The sign-in pages take the screen at [target] (/welcome …): signed out, or a sign-in page opened from the app. */
+    fun open(target: String) {
         if (preview.isNotEmpty()) return
-        val h = hand
-        if (h != null) { checkHand(h); if (hand != null) { if (visibility != View.VISIBLE && !foreign) { visibility = View.VISIBLE; onChange() }; return } }
-        val key = wantedKey()
-        if (key.isEmpty()) {
-            if (visibility == View.VISIBLE) {
-                visibility = View.GONE
-                closeSheets()
-                page?.let { it.leave(); removeView(it) }
-                page = null; pageKey = ""
-                onChange()
-            }
-            return
+        history.clear()
+        setAddress(target)
+        refresh(false)
+    }
+
+    /** The app's own pages took over (signed in): this layer goes and forgets its pages. */
+    fun close() {
+        if (preview.isNotEmpty()) return
+        history.clear()
+        if (visibility == View.VISIBLE) {
+            visibility = View.GONE
+            closeSheets()
+            page?.let { it.leave(); removeView(it) }
+            page = null; pageKey = ""
+            onChange()
         }
+    }
+
+    private fun setAddress(target: String) {
+        val q = target.indexOf('?')
+        path = if (q >= 0) target.substring(0, q) else target
+        search = if (q >= 0) target.substring(q) else ""
+    }
+
+    private fun refresh(animate: Boolean) {
+        val key = PAGES[norm(path)] ?: "welcome"
         val appearing = visibility != View.VISIBLE
-        if (key != pageKey || page == null) open(key, !appearing) else page?.route(search)
+        if (key != pageKey || page == null) open(key, animate && !appearing) else page?.route(search)
         if (appearing) { visibility = View.VISIBLE; onChange() }
     }
 
     private fun make(key: String): LPage = when (key) {
-        "welcome" -> WelcomePage(context, this)
-        "login" -> LoginPage(context, this)
-        "register" -> RegisterPage(context, this)
-        "forgot" -> ForgotPage(context, this)
-        "reset" -> ResetPage(context, this)
-        "mfa" -> MfaPage(context, this)
         "delete" -> DeletePage(context, this)
-        "basic" -> BasicProfilePage(context, this)
-        else -> CompleteProfilePage(context, this)
+        else -> WelcomePage(context, this)
     }
 
     /** shows page [key]; with a move (slide + fade, like the app's other pages) when one was already showing */
@@ -287,25 +144,31 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         }
     }
 
-    // ═════════════════ moving around (through the web app's router) ═════════════════
-    /** navigate(path) of the web app */
+    // ═════════════════ moving around ═════════════════
+    /**
+     * Another page: a sign-in page here (its own history, for Back), anything else is a page of the app — only
+     * when signed in (a finished profile opens Home; signed out, it stays on the sign-in pages).
+     */
     fun go(path: String, replace: Boolean = false) {
         if (preview.isNotEmpty()) { toast("→ $path"); return }
-        host.go(path, replace)
+        if (!isLoginPath(path)) { if (Api.token.isNotEmpty()) host.signedIn(path); return }
+        if (!replace) history.add(this.path + search)
+        setAddress(path)
+        refresh(true)
     }
-    /** the phone's Back / a page's back arrow: the page before (web history) */
+    /** the phone's Back / a page's back arrow: the sign-in page before, else the app's page it was opened from, else out */
     fun back() {
         backAt = SystemClock.uptimeMillis()
         if (preview.isNotEmpty()) { host.finishApp(); return }
-        // (the first sign-in page, opened from a page of the app: that page again)
-        if (!host.canWebBack() && host.backToApp()) return
-        host.webBack()
+        if (history.isNotEmpty()) { setAddress(history.removeAt(history.size - 1)); refresh(true); return }
+        if (host.backToApp()) return
+        host.finishApp()
     }
 
     /**
-     * Back: a pop-up closes first, then the page's own steps, then the page before it (web history, like the
-     * browser). Nothing before it: Get Started leaves the app; another sign-in page goes to Get Started (in its
-     * place, so Back can never go round in a circle); the signed-in profile pages go Home.
+     * Back: a pop-up closes first, then the page's own steps, then the sign-in page before it. Nothing before it:
+     * the page of the app it was opened from (Finish profile …), else Get Started leaves the app and another
+     * sign-in page goes to Get Started (in its place, so Back can never go round in a circle).
      */
     fun onBack(): Boolean {
         if (sheets.isNotEmpty()) { sheets.last().second(); return true }
@@ -313,81 +176,26 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
         if (p.onBack()) return true
         backAt = SystemClock.uptimeMillis()
         if (preview.isNotEmpty()) { host.finishApp(); return true }
-        if (host.canWebBack()) { host.webBack(); return true }
+        if (history.isNotEmpty()) { setAddress(history.removeAt(history.size - 1)); refresh(true); return true }
         if (host.backToApp()) return true
-        when (pageKey) {
-            "welcome" -> host.finishApp()
-            "basic", "complete" -> host.go("/", true)
-            else -> host.go("/welcome", true)
-        }
+        if (pageKey == "welcome") host.finishApp() else go("/welcome", true)
         return true
     }
 
-    fun onAppVisible(v: Boolean) { page?.visible(v); GoogleSignIn.appVisible(v) }
+    fun onAppVisible(v: Boolean) { page?.visible(v) }
 
-    // ═════════════════ signing in through the web page ═════════════════
-    private class Hand(val kind: String, val at: Long, val fail: (String) -> Unit)
-    private var hand: Hand? = null
-    private val handTick = object : Runnable { override fun run() { hand?.let { checkHand(it); if (hand != null) main.postDelayed(this, 500) else refresh() } } }
-
-    /**
-     * The web page takes over a sign-in (a one-time sign-in link, a new token, the server's log-out, Home):
-     * this layer keeps the page on screen until the web page is signed in somewhere else, or says it is not.
-     * [fail] gets "session" (still signed out), or "timeout".
-     */
-    internal fun handOff(kind: String, fail: (String) -> Unit = {}) {
-        hand = Hand(kind, SystemClock.uptimeMillis(), fail)
-        main.removeCallbacks(handTick); main.postDelayed(handTick, 600)
-    }
-    internal fun handActive() = hand != null
-    internal fun dropHand() { hand = null; main.removeCallbacks(handTick) }
-
-    private fun checkHand(h: Hand) {
-        val now = SystemClock.uptimeMillis()
-        val age = now - h.at
-        if (age < 700) return
-        val loginPage = PAGES.containsKey(norm(path)) || ((norm(path) == "/" || norm(path) == "/home") && webWelcome)
-        when (h.kind) {
-            // signed in and out of the sign-in pages: done (Home shows)
-            "link", "token", "home" -> {
-                if (token.isNotEmpty() && !loginPage && !pageLoading) { dropHand(); return }
-                // the page came back signed out (the link made no session)
-                if (h.kind == "link" && token.isEmpty() && !pageLoading && webWelcome && pageDoneAt > h.at && now - pageDoneAt > 1500) { dropHand(); h.fail("session"); return }
-                // a token handed over and the web page is on a sign-in page with it: done (the page carries on)
-                if (h.kind == "token" && token.isNotEmpty() && !pageLoading && pageDoneAt > h.at) { dropHand(); return }
-                if (age > (if (h.kind == "home") 15000 else 25000)) { dropHand(); h.fail("timeout") }
-            }
-            // the server's log-out: done once a fresh page is up
-            "logout" -> if (!pageLoading && pageDoneAt > h.at && token.isEmpty()) dropHand() else if (age > 15000) { dropHand(); h.fail("timeout") }
-            else -> dropHand()
-        }
+    // ═════════════════ signed in / out ═════════════════
+    /** The sign-in is made and the profile finished: the app opens on [next]. */
+    internal fun signedIn(next: String = "/") {
+        if (preview.isNotEmpty()) { toast("→ $next"); return }
+        host.signedIn(next)
     }
 
-    /**
-     * Hands a new login token to the web page (base44.auth.setToken: both keys) and loads [next] there: a full
-     * page load, like the web's location.href ([replace] = location.replace, no step back to the sign-in page).
-     */
-    internal fun signInWith(tok: String, next: String, replace: Boolean = false) {
-        Api.token = tok
-        handOff("token") { }
-        host.js("(function(){try{localStorage.setItem('base44_access_token',${JSONObject.quote(tok)});localStorage.setItem('token',${JSONObject.quote(tok)});}catch(e){}location.${if (replace) "replace" else "assign"}(${JSONObject.quote(next)});})()")
-    }
-    /** base44.auth.setToken only (the page stays): MFA steps that return a new sign-in before going on */
-    internal fun setToken(tok: String) {
-        if (tok.isEmpty()) return
-        Api.token = tok
-        host.js("(function(){try{localStorage.setItem('base44_access_token',${JSONObject.quote(tok)});localStorage.setItem('token',${JSONObject.quote(tok)});}catch(e){}})()")
-    }
-
-    /** The server's log-out (tokens and cookies cleared), back on /welcome. */
+    /** Log out (the sign-in is forgotten here and on the server), then the sign-in page [then]. */
     internal fun serverLogout(then: String = "/welcome") {
-        Api.token = ""
-        handOff("logout") { }
-        host.js("(function(){try{localStorage.removeItem('base44_access_token');localStorage.removeItem('token')}catch(e){}var o=location.origin;location.href=o+'/api/apps/auth/logout?from_url='+encodeURIComponent(o+${JSONObject.quote(then)})})()")
+        if (preview.isNotEmpty()) { toast("→ $then"); return }
+        host.signOut(then)
     }
-
-    /** Google's sign-in returned to the app (truefind://auth?…) */
-    fun onAuthReturn(uri: Uri) { GoogleSignIn.onReturn(this, uri) }
 
     // ═════════════════ pop-ups (bottom sheets) and short messages ═════════════════
     private val sheets = ArrayList<Pair<View, () -> Unit>>()
@@ -461,21 +269,16 @@ class LoginLayer(ctx: Context, internal val host: Host) : FrameLayout(ctx) {
 
     // ═════════════════ test mode (emulator pictures on GitHub only) ═════════════════
     /**
-     * [scene] = page (+ a variant after "-"), e.g. "welcome", "welcome-verify", "login-phone"; [open] = an action on it.
-     * Made-up answers (LoginDemo), no web page, no login.
+     * [scene] = page (+ a variant after "-"), e.g. "welcome", "welcome-verify", "delete"; [open] = an action on it.
+     * Made-up answers (LoginDemo), no server, no login.
      */
     fun startPreview(scene: String, open: String) {
         preview = scene
         LK.autoKeyboard = open == "kb"
         LoginApi.demo = LoginDemo::answer
         LoginDemo.scene = scene
-        gotState = true
-        path = when (scene.substringBefore('-')) {
-            "login" -> "/login"; "register" -> "/register"; "forgot" -> "/forgot-password"; "reset" -> "/reset-password"
-            "mfa" -> "/mfa"; "delete" -> "/delete-account"; "basic" -> "/register/basic-profile"; "complete" -> "/register/complete-profile"
-            else -> "/welcome"
-        }
-        search = if (scene.startsWith("reset")) "?token=demo" else ""
+        path = if (scene.substringBefore('-') == "delete") "/delete-account" else "/welcome"
+        search = ""
         val key = PAGES[path] ?: "welcome"
         visibility = View.VISIBLE
         val p = make(key)

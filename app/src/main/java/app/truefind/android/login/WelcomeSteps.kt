@@ -102,10 +102,6 @@ internal class PhoneStep(ctx: Context, private val page: WelcomePage) : WelcomeS
         sheet.addView(noteV, WK.errLp())
         sheet.addView(WK.iconLine(ctx, WK.INFO, "We'll send a 6-digit OTP to verify your number.", 12.5f, false), LK.lp(t = 10f))
         sheet.addView(cta, LK.lp(-1, -2, t = 22f))
-        val links = LK.row(ctx, Gravity.CENTER)
-        links.addView(WK.link(ctx, "Email sign-in") { page.layer.go("/login") })
-        links.addView(WK.link(ctx, "Create account") { page.layer.go("/register") }, LK.lp(l = 24f))
-        sheet.addView(links, LK.lp(-1, -2, t = 16f))
         // trust lines
         val trust = LK.col(ctx).apply {
             background = CssBox(Color.WHITE).let { TopLine(LK.div) }
@@ -228,7 +224,7 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         sheet.addView(demoBox, LK.lp(-1, Ui.dpi(48f), t = 20f))
         sheet.addView(LK.grow(ctx, 16f))
         sheet.addView(WK.iconLine(ctx, WK.LOCK, "We never share your number with anyone.", 12f, true), LK.lp(-1, -2))
-        addView(WK.page(ctx, WK.head(ctx, 2, "Verify Your Number", "One quick check to keep every profile real", WK.ART_VERIFY, false) { page.ownerGoogle = false; page.goBack("verify") }, sheet), LayoutParams(-1, -1))
+        addView(WK.page(ctx, WK.head(ctx, 2, "Verify Your Number", "One quick check to keep every profile real", WK.ART_VERIFY, false) { page.verifyNote = ""; page.goBack("verify") }, sheet), LayoutParams(-1, -1))
 
         hidden.onText = { v -> onChange(v) }
         hidden.setOnFocusChangeListener { _, _ -> draw() }
@@ -257,7 +253,8 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         busy = true; error = ""; draw()
         val after = {
             passed = true
-            page.afterVerify { busy = false; draw() }
+            // (the right code made the sign-in; the next step could not open — no internet …: said here, Verify tries again)
+            page.afterVerify { busy = false; if (page.verifyNote.isNotEmpty()) { error = page.verifyNote; page.verifyNote = "" }; draw() }
         }
         if (passed) { after(); return }
         page.checkOtp(value) { err ->
@@ -298,9 +295,7 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         boxes.set(code, hidden.hasFocus() && !busy, error.isNotEmpty())
         hidden.isEnabled = !busy
         errV.text = error; errV.visibility = if (error.isNotEmpty()) View.VISIBLE else View.GONE
-        ownerV.removeAllViews()
-        ownerV.visibility = if (page.ownerGoogle) View.VISIBLE else View.GONE
-        if (page.ownerGoogle) ownerV.addView(WK.link(context, "App owner: sign in with Google", 13.5f) { page.ownerGoogleSignIn() })
+        ownerV.visibility = View.GONE
         cta.busy = busy
         drawResend()
         // DEMO box: the code shown on screen when the server is in demo mode
@@ -332,8 +327,7 @@ internal class OtpStep(ctx: Context, private val page: WelcomePage) : WelcomeSte
         when {
             variant.contains("error") -> { code = ""; error = "Invalid or expired OTP."; draw() }
             variant.contains("typing") -> { code = "482"; hidden.put("482"); draw() }
-            variant.contains("owner") -> { page.ownerGoogle = true; error = WelcomePage.directLoginMessage("privileged_user"); draw() }
-            variant.contains("resend") -> { page.sentAt = SystemClock.elapsedRealtime() - 40_000; draw() }
+            variant.contains("resend") -> { page.sentAt = SystemClock.elapsedRealtime() - (WelcomePage.RESEND_SECONDS - 20) * 1000L; draw() }
         }
     }
 }

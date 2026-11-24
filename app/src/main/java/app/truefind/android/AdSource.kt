@@ -55,6 +55,6 @@ object AdNet : AdSrc {
             if (u.isNotBlank() && u != "null") done(u) else Photos.url(raw) { done(it) }
         }
     }
-    override val origin: String get() = Api.origin
+    override val origin: String get() = Supa.API
     override val appId: String get() = Api.appId
 }

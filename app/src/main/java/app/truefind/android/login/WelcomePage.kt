@@ -6,28 +6,28 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.View
 import android.widget.FrameLayout
-import app.truefind.android.Api
 import app.truefind.android.Ui
-import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.TimeZone
 
 /**
- * True Find · Welcome (/welcome, and "/" while signed out), native — pages/Welcome.jsx:
+ * True Find · Welcome (/welcome), native — pages/Welcome.jsx:
  * Get Started (3 screens) → mobile number → WhatsApp OTP → gender → profile (name, date of birth,
- * state, city) → Home. The same rules as the web page:
- *  - a number that already has a finished account opens it directly (the server's one-time sign-in link,
- *    opened in the web page); Google is never shown to it;
- *  - a new number goes to Google once (Base44 makes the account), then gender → profile → Home;
- *  - one mobile number = one account (checkPhoneLogin after Google);
- *  - the OTP proof (15 min) and a profile filled in before Google (30 days) are kept on the phone.
+ * state, city) → Home. Since the move to Supabase (24 Nov 2026) the sign-in is Supabase Auth itself:
+ *  - the OTP goes out through Supabase Auth (its WhatsApp sender, Edge Function "send-sms"); the right OTP
+ *    makes the session at once ([Auth]) — there is no Google step and no e-mail sign-in any more;
+ *  - one mobile number = one account: the number IS the account (Supabase Auth), so a number that already has
+ *    a finished profile simply opens it (checkPhoneLogin "ok"); a new number fills in gender → profile
+ *    (createMyProfile), then Home;
+ *  - a profile from before that belongs to another account (checkPhoneLogin "taken") signs out with the reason.
  */
 internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) {
 
     companion object {
         const val OTP_LENGTH = 6
-        const val RESEND_SECONDS = 30
+        /** Supabase Auth sends a new code to the same number once a minute at most: the Resend timer waits as long */
+        const val RESEND_SECONDS = 60
         val STEPS = listOf("intro", "login", "verify", "gender", "profile")
         val BACK_TO = mapOf("login" to "intro", "verify" to "login", "gender" to "login", "profile" to "gender")
 
@@ -80,34 +80,50 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
             return ""
         }
 
-        /** True when this number already has a finished account (lib/directLogin.js accountExists) */
-        fun accountExists(d: JSONObject) = d.optBoolean("account_exists") || (d.optBoolean("has_profile") && d.optBoolean("profile_complete"))
+        /** a message of the sign-in that could not finish (shown on the number screen) */
         fun directLoginMessage(code: String?): String {
             val c = (code ?: "unknown").replace(Regex("[^a-z0-9_]", RegexOption.IGNORE_CASE), "").take(60).ifEmpty { "unknown" }
             if (c == "banned") return "This account has been blocked. Please contact True Find support."
-            if (c == "privileged_user") return "This number belongs to the app owner's account. Base44 does not allow a direct OTP sign-in for the owner account."
             return "We could not sign you in right now. Please try again in a minute. (Code: $c)"
+        }
+
+        /** Supabase Auth's answer to "send the OTP", in the words the person reads */
+        fun sendError(r: app.truefind.android.Api.Result): String {
+            if (r.status == 0) return "Could not send the OTP. Please check your internet and try again."
+            val code = r.data.optString("error_code").ifBlank { r.data.optString("code") }
+            val msg = app.truefind.android.Supa.authMessage(r.data)
+            val wait = Regex("after (\\d+) seconds?").find(msg)?.groupValues?.get(1)
+            return when {
+                wait != null -> "Please wait $wait seconds before asking for a new OTP."
+                r.status == 429 || code.contains("rate_limit") -> "Too many OTP requests. Please wait a few minutes and try again."
+                code == "phone_provider_disabled" || code == "sms_send_failed" || code.startsWith("hook") || r.status >= 500 ->
+                    "Could not send the OTP on WhatsApp right now. Please try again in a minute."
+                code == "validation_failed" || msg.contains("phone", true) && msg.contains("invalid", true) -> "Please enter a valid 10-digit mobile number."
+                else -> "Could not send the OTP. Please try again."
+            }
+        }
+
+        /** Supabase Auth's answer to the OTP check, in the words the person reads */
+        fun verifyError(r: app.truefind.android.Api.Result): String {
+            if (r.status == 0) return "Could not check the OTP. Please check your internet and try again."
+            val code = r.data.optString("error_code").ifBlank { r.data.optString("code") }
+            return when {
+                r.status == 429 || code.contains("rate_limit") -> "Too many attempts. Please wait a minute and try again."
+                code == "user_banned" -> directLoginMessage("banned")
+                code == "otp_expired" || r.status == 403 || r.status == 401 -> "Wrong or expired OTP. Please check the code or tap Resend."
+                r.status >= 500 -> "Server is busy right now. Please try again in a moment."
+                else -> "Wrong OTP. Please check and try again."
+            }
         }
     }
 
-    // ── kept on the phone (the web keeps the same in the browser's storage): LoginStore ──
+    // ── kept on the phone: a message for the number screen after a sign-out (LoginStore) ──
     init { LoginStore.init(ctx) }
-    private fun readPhoneProof(phone: String?) = LoginStore.readPhoneProof(phone)
-    private fun clearPhoneProof() = LoginStore.clearPhoneProof()
-    private fun proofPhone() = LoginStore.proofPhone()
-    private fun readPending() = LoginStore.readPending()
-    private fun writePending(o: JSONObject) = LoginStore.writePending(o)
-    private fun clearPending() = LoginStore.clearPending()
-    private fun saveLoginNote(text: String) = LoginStore.saveLoginNote(text)
-    private fun takeLoginNote() = LoginStore.takeLoginNote()
-    private fun markDirectLogin() = LoginStore.markDirectLogin()
-    private fun takeDirectLoginAttempt() = LoginStore.takeDirectLoginAttempt()
 
     // ── state (Onboarding of Welcome.jsx) ──
     var demo = false; private set
     var phone = ""
     var loginNote = ""
-    var ownerGoogle = false
     var demoOtp = ""
     var otpPhone = ""
     var sentAt = 0L
@@ -116,12 +132,10 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
     var profileBusy = false
     var profileMsg = ""
     var profileMsgType = ""
-    private var user: JSONObject? = null
-    private var userChecked = false
-    private var hasProfile = false
     private var otpSent = false
     private var seq = 0
     private var booted = ""
+    private val net = java.util.concurrent.Executors.newSingleThreadExecutor()
 
     // ── the screens: layers, the old one slides away while the new one slides in ──
     var step = "intro"; private set
@@ -143,227 +157,159 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
     private fun boot(search: String) {
         val my = ++seq
         demo = query(search, "demo") == "1"
-        val verifiedPhone = query(search, "verified_phone")
-        if (query(search, "reset") == "1") clearPending()
-        val startPending = readPending()
         history.clear(); depth = 0
-        if (startPending != null) {
-            phone = startPending.optString("phone", phone); gender = startPending.optString("gender", gender)
-            fName = startPending.optString("full_name"); fState = startPending.optString("state"); fCity = startPending.optString("city")
-            val parts = startPending.optString("date_of_birth").split("-")
-            if (parts.size == 3) fDob = "${parts[2]}/${parts[1]}/${parts[0]}"
+        // (a profile filled in before Google existed in the old sign-in: nothing of it is needed any more)
+        LoginStore.clearPending()
+        // signed out a moment ago with a reason (the number belongs to another account …): the number screen says it
+        val note = LoginStore.takeLoginNote()
+        if (note.isNotEmpty() && app.truefind.android.Api.token.isEmpty()) {
+            loginNote = note
+            if (top == null) show("login", "fade") else go("login", 0, false)
+            return
         }
-        if (top == null) show(if (startPending != null) "boot" else "intro", "fade")
-        LoginApi.me { u, _ ->
-            if (my != seq) return@me
-            user = u; userChecked = true
-            if (verifiedPhone.isNotEmpty()) { val d = onlyDigits(verifiedPhone).replace(Regex("^91"), "").takeLast(10); if (d.isNotEmpty()) phone = d }
-            val cameFromLink = takeDirectLoginAttempt()
-            val note = takeLoginNote().ifEmpty { if (u == null && cameFromLink) directLoginMessage("session_not_created") else "" }
-            if (u == null && note.isNotEmpty()) { loginNote = note; go("login", 0, false); return@me }
-            // ONE NUMBER = ONE ACCOUNT: signed in with a number just proven by OTP — do they belong together?
-            val proven = if (u != null && !demo) proofPhone() else ""
-            if (proven.isNotEmpty()) {
-                LoginApi.fn("checkPhoneLogin", JSONObject().put("phone", proven).put("phone_token", readPhoneProof(proven))) { r ->
-                    if (my != seq) return@fn
-                    val st = r.data.optString("status")
-                    if (r.ok && (st == "taken" || st == "mismatch")) { clearPending(); rejectLogin(r.data.optString("error")); return@fn }
-                    bootProfile(my, u, startPending, verifiedPhone)
+        // signed in already (a sign-in page opened from the app — Finish profile —, or the app closed during sign-up)
+        if (app.truefind.android.Api.token.isNotEmpty()) {
+            if (top == null) show("boot", "fade")
+            phone = app.truefind.android.Auth.phone.let { onlyDigits(it).replace(Regex("^91(?=\\d{10}$)"), "").takeLast(10) }.ifEmpty { phone }
+            whereNext(my) { err -> if (my == seq && err.isNotEmpty()) { loginNote = err; go("login", 0, false) } }
+            return
+        }
+        if (top == null) show("intro", "fade")
+    }
+
+    /**
+     * Signed in now (the right OTP): where to go. A finished profile → Home; none yet → gender → profile (what an
+     * unfinished one already has is filled in); the number's profile belongs to another account → signed out with
+     * the reason. [done] gets "" when it went on, else the message to show (the person can try again).
+     */
+    private fun whereNext(my: Int, done: (String) -> Unit) {
+        LoginApi.fn("checkPhoneLogin", JSONObject()) { r ->
+            if (my != seq) return@fn
+            val st = r.data.optString("status")
+            when {
+                r.ok && st == "ok" -> {
+                    if (r.data.optBoolean("banned")) { done(directLoginMessage("banned")); return@fn }
+                    LoginStore.clearPending(); openHome(); done("")
                 }
-            } else bootProfile(my, u, startPending, verifiedPhone)
-        }
-    }
-
-    private fun bootProfile(my: Int, u: JSONObject?, startPending: JSONObject?, verifiedPhone: String) {
-        if (u == null) { bootRest(my, null, null, startPending, verifiedPhone); return }
-        findMyProfile(u) { existing ->
-            if (my != seq) return@findMyProfile
-            val done = existing != null && (hasAllDetails(existing) || existing.optBoolean("profile_complete"))
-            hasProfile = done
-            if (done) clearPending()
-            val next = {
-                if (done && !demo) { if (!openHome()) bootRest(my, u, existing, startPending, verifiedPhone) }
-                else bootRest(my, u, existing, startPending, verifiedPhone)
+                r.ok && st == "taken" -> { rejectLogin(r.data.optString("error")); done("") }
+                r.ok && st == "no_profile" -> {
+                    findMyProfile { existing ->
+                        if (my != seq) return@findMyProfile
+                        if (existing != null) {
+                            // keep what was already filled in, so the person only completes the rest
+                            if (existing.optString("gender").isNotEmpty() && existing.opt("gender") != JSONObject.NULL) gender = existing.optString("gender").lowercase()
+                            if (fName.isEmpty()) fName = existing.optString("full_name").takeIf { existing.opt("full_name") != JSONObject.NULL }.orEmpty()
+                            if (fState.isEmpty()) fState = existing.optString("state").takeIf { existing.opt("state") != JSONObject.NULL }.orEmpty()
+                            if (fCity.isEmpty()) fCity = existing.optString("city").takeIf { existing.opt("city") != JSONObject.NULL }.orEmpty()
+                        }
+                        go("gender", 1, if (step == "verify") "replace" else false)
+                        done("")
+                    }
+                }
+                // the sign-in is not accepted (it ended meanwhile): back to the number
+                r.status == 401 -> done("Please verify your number again.")
+                else -> done(LoginApi.friendly(r, "Could not sign you in right now. Please try again."))
             }
-            // profiles saved before this was set stay hidden from every list: fixed on the way in
-            if (done && !demo && existing?.optBoolean("profile_complete") != true) markProfileComplete { if (my == seq) next() } else next()
         }
     }
 
-    private fun bootRest(my: Int, u: JSONObject?, existing: JSONObject?, startPending: JSONObject?, verifiedPhone: String) {
-        if (my != seq) return
-        if (existing != null && !hasProfile) {
-            // keep what was already filled in, so the person only completes the rest
-            if (existing.optString("gender").isNotEmpty()) gender = existing.optString("gender").lowercase()
-            if (fName.isEmpty()) fName = existing.optString("full_name")
-            if (fState.isEmpty()) fState = existing.optString("state")
-            if (fCity.isEmpty()) fCity = existing.optString("city")
-        }
-        if (startPending != null && u != null && !hasProfile) {
-            go("profile", 0, false)
-            profileBusy = true; refreshTop()
-            saveProfile(startPending) { err ->
-                if (my != seq) return@saveProfile
-                if (err == null) {
-                    clearPending()
-                    if (openHome()) return@saveProfile
-                    profileBusy = false; profileMsgType = "error"; profileMsg = "Could not open Home. Please try again."; refreshTop()
-                } else { profileBusy = false; profileMsgType = "error"; profileMsg = err; refreshTop() }
-            }
-            return
-        }
-        // signed in but sign-up never finished → gender + profile, only with a number proven by WhatsApp OTP
-        if (u != null && !demo && !hasProfile) {
-            val proven = proofPhone()
-            if (proven.isNotEmpty()) { phone = proven; go("gender", 0, false) } else go("login", 0, false)
-            return
-        }
-        // back from Google with a verified number but no session: straight to gender
-        if (u == null && verifiedPhone.isNotEmpty()) { go("gender", 0, false); return }
-        if (step == "boot") go("intro", 0, false)
+    /** this account's profile, if it has one already (unfinished) */
+    private fun findMyProfile(done: (JSONObject?) -> Unit) {
+        val uid = app.truefind.android.Auth.userId
+        if (uid.isEmpty()) { done(null); return }
+        LoginApi.profiles(JSONObject().put("created_by_id", uid), 1) { r -> done(if (r.ok) r.list.firstOrNull() else null) }
     }
-
-    private fun findMyProfile(u: JSONObject, done: (JSONObject?) -> Unit) {
-        val queries = ArrayList<JSONObject>()
-        if (u.optString("id").isNotEmpty()) queries.add(JSONObject().put("created_by_id", u.optString("id")))
-        if (u.optString("email").isNotEmpty()) queries.add(JSONObject().put("created_by", u.optString("email")))
-        fun next(i: Int) {
-            if (i >= queries.size) { done(null); return }
-            LoginApi.profiles(queries[i]) { r -> val first = if (r.ok) r.list.firstOrNull() else null; if (first != null) done(first) else next(i + 1) }
-        }
-        next(0)
-    }
-    private fun hasAllDetails(p: JSONObject) = listOf("full_name", "gender", "date_of_birth", "state", "city").all { p.optString(it).isNotEmpty() && p.opt(it) != JSONObject.NULL }
     private fun markProfileComplete(done: (Boolean) -> Unit) {
         LoginApi.fn("updateMyProfile", JSONObject().put("updates", JSONObject().put("profile_complete", true))) { r -> done(r.ok) }
     }
 
-    /** createMyProfile (+ profile_complete, + the account's name). null = saved, else the message to show */
+    /** createMyProfile (+ profile_complete). null = saved, else the message to show */
     private fun saveProfile(profile: JSONObject, done: (String?) -> Unit) {
-        val token = readPhoneProof(profile.optString("phone"))
-        LoginApi.fn("createMyProfile", JSONObject().put("profile", profile).put("phone_token", token)) { r ->
+        LoginApi.fn("createMyProfile", JSONObject().put("profile", profile)) { r ->
             val err = r.data.opt("error")
             if (!r.ok || (err != null && err != JSONObject.NULL && err.toString().isNotEmpty())) {
-                done(if (r.status == 404) "Profile service not found. Please check the createMyProfile function in Base44." else LoginApi.friendly(if (r.ok) LoginApi.R(400, r.data, r.text) else r, "Could not save your profile. Please try again."))
+                done(LoginApi.friendly(if (r.ok) LoginApi.R(400, r.data, r.text) else r, "Could not save your profile. Please try again."))
                 return@fn
             }
-            clearPhoneProof() // used once
-            val existing = r.data.optBoolean("existing")
-            markProfileComplete { ok ->
-                // a brand-new profile is already marked complete by createMyProfile
-                if (existing && !ok) { done("Could not save your profile. Please try again."); return@markProfileComplete }
-                LoginApi.updateMe(JSONObject().put("full_name", profile.optString("full_name"))) { done(null) }
-            }
+            // a brand-new profile is already marked complete by createMyProfile; one made before is marked now
+            if (!r.data.optBoolean("existing")) { done(null); return@fn }
+            markProfileComplete { ok -> done(if (ok) null else "Could not save your profile. Please try again.") }
         }
     }
 
-    /** A full page load into Home, so the app's own login check sees the session (2 quick tries at most). */
-    private fun openHome(): Boolean {
-        if (!LoginStore.homeHop()) return false
-        if (layer.preview.isNotEmpty()) { layer.toast("→ /home"); return true }
-        layer.handOff("home") { profileBusy = false; profileMsgType = "error"; profileMsg = "Could not open Home. Please try again."; refreshTop() }
-        layer.host.js("location.replace('/home')")
-        return true
-    }
+    /** the app's own pages take over, on Home */
+    private fun openHome() { layer.signedIn("/") }
 
-    /** The number and the signed-in account do not belong together: sign out, back to the login screen with the reason. */
+    /** The number and the signed-in account do not belong together: sign out, back to the number screen with the reason. */
     private fun rejectLogin(message: String) {
-        clearPhoneProof()
-        saveLoginNote(message.ifEmpty { "This mobile number is already linked to another True Find account." })
+        LoginStore.saveLoginNote(message.ifEmpty { "This mobile number is already linked to another True Find account." })
         booted = ""
         layer.serverLogout("/welcome")
     }
 
     // ═════════════════ OTP ═════════════════
-    /** sendPhoneOtp; [done] gets "" when sent, else the error to show */
+    /** Supabase Auth sends the OTP (WhatsApp); [done] gets "" when sent, else the error to show */
     fun sendOtp(done: (String) -> Unit) {
         val p = phone
-        LoginApi.fn("sendPhoneOtp", JSONObject().put("phone", p).put("country_code", "91")) { r ->
-            val d = r.data
-            if (!r.ok) { done(LoginApi.fnErr(r, "Could not send the OTP. Please check your internet and try again.")); return@fn }
-            if (!d.optBoolean("success")) { done(d.optString("error").ifEmpty { "Could not send the OTP. Please try again." }); return@fn }
-            otpSent = true
-            demoOtp = if (d.optBoolean("demo") && d.optString("demo_code").isNotEmpty()) d.optString("demo_code") else ""
-            otpPhone = p
-            sentAt = SystemClock.elapsedRealtime()
-            done("")
+        LoginApi.demo?.let { d -> main.postDelayed({ val r = d("fn", "sendPhoneOtp", JSONObject().put("phone", p)); otpSent = true; otpPhone = p; sentAt = SystemClock.elapsedRealtime(); demoOtp = r.data.optString("demo_code"); done("") }, 350); return }
+        net.execute {
+            val r = app.truefind.android.Supa.auth("POST", "otp", JSONObject().put("phone", "+91$p"))
+            main.post {
+                if (!r.ok) { done(sendError(r)); return@post }
+                otpSent = true
+                demoOtp = ""
+                otpPhone = p
+                sentAt = SystemClock.elapsedRealtime()
+                done("")
+            }
         }
     }
 
-    /** the Login screen's button: a code sent less than 30 s ago to the same number is reused */
+    /** the Login screen's button: a code sent less than a minute ago to the same number is reused */
     fun onSent(done: (String) -> Unit) {
         if (otpPhone != phone || sentAt == 0L || SystemClock.elapsedRealtime() - sentAt > RESEND_SECONDS * 1000L) {
             sendOtp { err -> if (err.isNotEmpty()) done(err) else { go("verify"); done("") } }
         } else { go("verify"); done("") }
     }
 
-    /** verifyPhoneOtp; [done] gets "" when right (then [afterVerify]), null while a sign-in link is opening, else the error */
+    /** Supabase Auth checks the OTP and, when right, makes the session; [done] gets "" when right, else the error */
     fun checkOtp(code: String, done: (String?) -> Unit) {
-        LoginApi.fn("verifyPhoneOtp", JSONObject().put("phone", phone).put("country_code", "91").put("otp", code)) { r ->
-            val d = r.data
-            if (!r.ok) { done(LoginApi.fnErr(r, "Could not check the OTP. Please check your internet and try again.")); return@fn }
-            if (!d.optBoolean("success")) { done(d.optString("error").ifEmpty { "Wrong OTP. Please check and try again." }); return@fn }
-            LoginStore.savePhoneProof(phone, d.optString("verification_token"))
-            // this number already has an account: the server signs that account in directly; Google is never opened for it
-            if (accountExists(d) && !demo) {
-                if (user != null) { clearPhoneProof(); done("This mobile number is already linked to another True Find account."); return@fn }
-                val link = d.optString("embed_url").takeIf { it.startsWith("https://") && d.opt("embed_url") != JSONObject.NULL }
-                if (link != null) {
-                    clearPhoneProof()
-                    markDirectLogin()
-                    done(null)
-                    if (layer.preview.isNotEmpty()) { layer.toast("→ sign-in link"); return@fn }
-                    layer.handOff("link") { why ->
-                        // the link made no session: say so on the number screen (Google is never opened)
-                        takeDirectLoginAttempt()
-                        loginNote = directLoginMessage(if (why == "timeout") "session_timeout" else "session_not_created")
-                        go("login", -1, false)
-                    }
-                    layer.host.loadWeb(link)
-                    return@fn
-                }
-                // (owner only: the proof stays, so the server can check after Google that the account and number belong together)
-                if (d.optString("direct_login") != "privileged_user") clearPhoneProof()
-                ownerGoogle = d.optString("direct_login") == "privileged_user"
-                done(directLoginMessage(d.optString("direct_login")))
-                return@fn
+        LoginApi.demo?.let { d -> main.postDelayed({ val r = d("fn", "verifyPhoneOtp", JSONObject().put("otp", code)); done(if (r.data.optBoolean("success")) "" else r.data.optString("error").ifEmpty { "Wrong OTP. Please check and try again." }) }, 350); return }
+        val p = phone
+        net.execute {
+            val r = app.truefind.android.Supa.auth("POST", "verify", JSONObject().put("type", "sms").put("phone", "+91$p").put("token", code))
+            val signed = r.ok && app.truefind.android.Auth.take(context, r.data)
+            main.post {
+                if (!r.ok) { done(verifyError(r)); return@post }
+                if (!signed) { done("Could not sign you in right now. Please try again."); return@post }
+                done("")
             }
-            done("")
         }
     }
 
-    /** after a right OTP: signed in already (only the phone was missing) → gender; else Google once (makes the account) */
+    /** after a right OTP (signed in now): Home for a finished profile, else gender → profile */
     fun afterVerify(done: () -> Unit) {
-        if (user != null) { go("gender", 1, "replace"); done(); return }
-        // the page leaves for Google ("started": stays busy until it has gone); Google could not start → gender
-        GoogleSignIn.start(layer, phone, null) { r -> when (r) { "fail" -> { go("gender", 1, "replace"); done() }; "back" -> done() } }
+        if (LoginApi.demo != null) { go("gender", 1, "replace"); done(); return }
+        val my = seq
+        whereNext(my) { err -> verifyNote = err; done() }
     }
-
-    fun ownerGoogleSignIn() { GoogleSignIn.start(layer, phone, "/welcome") { } }
+    /** a message for the OTP screen after the right code (the next step could not be opened) */
+    var verifyNote = ""
 
     // ═════════════════ profile ═════════════════
     /** Save & Continue */
     fun saveFromForm(payload: JSONObject) {
         profileBusy = true; refreshTop()
-        LoginApi.me { u, _ ->
-            user = u
-            if (u == null) {
-                // no session yet: keep the details and make the session through Google; they are saved on return
-                writePending(payload)
-                GoogleSignIn.start(layer, phone, null) { r ->
-                    if (r == "fail") { clearPending(); profileBusy = false; profileMsgType = "error"; profileMsg = "Could not start Google sign-in. Please try again."; refreshTop() }
-                    if (r == "back") { profileBusy = false; refreshTop() }
-                }
-                return@me
-            }
-            val finish = {
-                saveProfile(payload) { err ->
-                    if (err == null) { clearPending(); if (!openHome()) { profileBusy = false; profileMsgType = "error"; profileMsg = "Could not open Home. Please try again."; refreshTop() } }
-                    else { profileBusy = false; profileMsgType = "error"; profileMsg = err; refreshTop() }
-                }
-            }
-            if (demo) findMyProfile(u) { p -> if (p != null) { clearPending(); if (!openHome()) { profileBusy = false; refreshTop() } } else finish() }
-            else finish()
+        if (LoginApi.demo != null) { main.postDelayed({ profileBusy = false; refreshTop(); openHome() }, 400); return }
+        if (app.truefind.android.Api.token.isEmpty()) {
+            // (the sign-in ended meanwhile) the number is verified again first
+            profileBusy = false; profileMsgType = "error"; profileMsg = "Please verify your number again."; refreshTop()
+            main.postDelayed({ loginNote = "Please verify your number again."; go("login", -1, false) }, 900)
+            return
+        }
+        saveProfile(payload) { err ->
+            if (err == null) { LoginStore.clearPending(); openHome() }
+            else { profileBusy = false; profileMsgType = "error"; profileMsg = err; refreshTop() }
         }
     }
 
@@ -444,21 +390,16 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
             if (top?.onBack() == true) return true
             // nothing before Get Started: Back leaves the app (as the browser would)
             // (opened from a page of the app — "Complete my profile": back to that page)
-            if (!layer.host.canWebBack() && layer.preview.isEmpty()) { if (!layer.host.backToApp()) layer.host.finishApp(); return true }
+            if (layer.preview.isEmpty()) { if (!layer.host.backToApp()) layer.host.finishApp(); return true }
             return false
         }
         if (top?.onBack() == true) return true
-        if (s == "verify") ownerGoogle = false
+        if (s == "verify") verifyNote = ""
         goBack(s)
         return true
     }
 
-    override fun signedIn() {
-        // a sign-in arrived (Google came back): carry on from the start, signed in now
-        if (!layer.handActive()) { booted = ""; route(layer.search) }
-    }
-
-    override fun leave() { seq++; top?.dispose(); main.removeCallbacksAndMessages(null) }
+    override fun leave() { seq++; top?.dispose(); main.removeCallbacksAndMessages(null); net.shutdown() }
     override fun visible(v: Boolean) { top?.appVisible(v) }
 
     // ═════════════════ test mode ═════════════════

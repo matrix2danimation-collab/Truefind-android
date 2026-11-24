@@ -70,12 +70,12 @@ object GameApi {
         if (!Api.ready) return null
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL("${Api.origin}/api/apps/${Api.appId}$path").openConnection() as HttpURLConnection).apply {
+            conn = (URL("${Api.base}$path").openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"; connectTimeout = 15000; readTimeout = 20000; doOutput = true
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("X-App-Id", Api.appId)
-                setRequestProperty("Authorization", "Bearer ${Api.token}")
+                setRequestProperty("Authorization", "Bearer ${app.truefind.android.Auth.fresh()}")
             }
             conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             if (conn.responseCode !in 200..299) return null
