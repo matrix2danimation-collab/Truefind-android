@@ -58,6 +58,26 @@ tap() {
   return 1
 }
 shows() { dump && python3 ci/ui-find.py "$OUT/ui.xml" "$1" > /dev/null 2>&1; }
+# taps the LAST element whose text is [1] (a box over the page comes last: its button, not the page's line under it)
+tap_top() {
+  local end=$(( $(date +%s) + ${2:-20} )) xy
+  while [ "$(date +%s)" -lt $end ]; do
+    if dump; then
+      xy=$(python3 - "$OUT/ui.xml" "$1" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+want = sys.argv[2].lower(); hit = None
+for n in ET.parse(sys.argv[1]).getroot().iter("node"):
+    if want in ((n.get("text") or "").strip().lower(), (n.get("content-desc") or "").strip().lower()) and n.get("bounds"):
+        x1, y1, x2, y2 = map(int, re.findall(r"\d+", n.get("bounds"))); hit = f"{(x1 + x2) // 2} {(y1 + y2) // 2}"
+if hit: print(hit)
+PY
+)
+      if [ -n "$xy" ]; then adb shell input tap $xy; return 0; fi
+    fi
+    sleep 2
+  done
+  return 1
+}
 link() { adb shell am start -n $PKG/.MainActivity -a android.intent.action.VIEW -d "https://truefindapp.com$1" > /dev/null 2>&1; }
 # a Supabase Auth session for a test number (prints "<access token> <user id>")
 session() {
@@ -161,7 +181,7 @@ link "/profile?settings=1"; sleep 6
 for i in 1 2 3; do adb shell input swipe $((W / 2)) $((H * 3 / 4)) $((W / 2)) $((H / 4)) 300; sleep 1; done
 if tap "Log out" 30; then
   sleep 2
-  tap "Log out" 20   # the "Log out?" box
+  tap_top "Log out" 20   # the "Log out?" box's own button
   if waitlog "signing out" 15 && waitlog "sign-in page shown" 20; then ok "8 logged out: the sign-in pages again"; else bad "8 Log out did not finish"; fi
 else bad "8 no Log out in Settings"; fi
 sleep 6
