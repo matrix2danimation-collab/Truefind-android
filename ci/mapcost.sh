@@ -19,7 +19,7 @@ waitlog() { local end=$(( $(date +%s) + $2 )); while [ "$(date +%s)" -lt $end ];
 run() {
   local name="$1-${3//,/+}"
   adb shell am force-stop $PKG; sleep 1; adb logcat -c
-  adb shell am start -W -n $PKG/.MainActivity --es tf_preview secret-map --ez tf_premium true --es tf_open "$2" --es tf_lite 0 --es tf_mapoff "${3#-}" > /dev/null 2>&1
+  adb shell am start -W -n $PKG/.MainActivity --es tf_preview secret-map --ez tf_premium true --es tf_open "$2" --es tf_lite 0 --es tf_mapoff "${3/#-/none}" > /dev/null 2>&1
   waitlog "preview open" 45
   sleep 9
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 1

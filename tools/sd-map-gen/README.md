@@ -27,3 +27,12 @@ On top of the web's data (`gen.mjs` → TFMAP2), `india/gen3.py` adds all of Ind
 
 Order: `match.py` (district outlines) → `towns.py` → `districts2.py` → `edges.py` → `chain.py` → `gen3.py out.bin` → `verify3.py out.bin`.
 The scripts expect the downloads in `/home/claude/mapwork` (paths at their top).
+
+## In-between levels for district and state lines (25 Nov trial) — `india/lod.py`, not in the app
+
+`lod.py chains.pkl in.bin out.bin` adds levels between the existing ones (districts 0.009°, 0.0135°, 0.03°, 0.045°;
+states 0.006°–0.02° and 0.045°), made from the same source lines in exactly gen3.py's way (the old levels come out
+identical). Tried on 25 Nov: about 10–15 % less drawing work when zoomed in (emulator), district lines a little
+smoother (under 1 dp). Not used yet — only with the owner's yes. `chains.pkl` comes from `edges.py` → `chain.py`
+(the source geojson: datta07/INDIAN-SHAPEFILES `INDIA/INDIA_DISTRICTS.geojson`).
+
