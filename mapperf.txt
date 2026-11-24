@@ -1,0 +1,13 @@
+scene          (times per frame on the emulator, ms; lower is better · finger = frames while a finger drags the map)
+india-drag finger frames   58 | whole frame p50  538.0 p90  745.4 p99 1022.6 ms | over 33 ms 100% | record p50  30.0 p90  58.1 | issue p50 123.7 p90 170.1 | gpu p50  87.9 p90 102.2
+india-drag other frames   33 | whole frame p50  350.2 p90  450.4 p99  468.6 ms | over 33 ms 100% | record p50   8.8 p90  32.6 | issue p50  18.8 p90 122.9 | gpu p50  78.8 p90  97.3
+india-still    frames   69 | whole frame p50  273.3 p90  300.1 p99  316.9 ms | over 33 ms 100% | record p50   0.5 p90   5.5 | issue p50  12.2 p90  30.6 | gpu p50  80.1 p90  92.4
+north-drag finger frames   52 | whole frame p50  589.7 p90  833.5 p99 1098.7 ms | over 33 ms 100% | record p50  27.1 p90  80.5 | issue p50  77.8 p90 139.6 | gpu p50 133.9 p90 158.2
+north-drag other frames   29 | whole frame p50  439.3 p90  550.2 p99  552.8 ms | over 33 ms 100% | record p50  16.5 p90  48.1 | issue p50  22.9 p90  97.1 | gpu p50 102.9 p90 166.1
+north-still    frames   65 | whole frame p50  283.9 p90  315.7 p99  336.5 ms | over 33 ms 100% | record p50   0.6 p90   5.4 | issue p50  13.5 p90  25.9 | gpu p50  85.9 p90 102.6
+up-drag finger frames   52 | whole frame p50  597.0 p90  767.5 p99  850.6 ms | over 33 ms 100% | record p50  31.7 p90  58.1 | issue p50  68.6 p90  96.0 | gpu p50 161.4 p90 193.2
+up-drag other  frames   26 | whole frame p50  485.0 p90  627.1 p99  637.4 ms | over 33 ms 100% | record p50  20.2 p90  45.4 | issue p50  18.7 p90  67.9 | gpu p50 172.8 p90 194.8
+up-still       frames   65 | whole frame p50  288.0 p90  307.9 p99  317.2 ms | over 33 ms 100% | record p50   0.6 p90   6.6 | issue p50  11.6 p90  26.9 | gpu p50  85.9 p90 100.6
+city-drag finger frames   54 | whole frame p50  556.0 p90  717.2 p99  821.2 ms | over 33 ms 100% | record p50  18.4 p90  45.1 | issue p50  51.7 p90  62.6 | gpu p50 171.2 p90 197.5
+city-drag other frames   30 | whole frame p50  407.1 p90  537.5 p99  584.4 ms | over 33 ms 100% | record p50  10.6 p90  47.3 | issue p50  11.2 p90  42.3 | gpu p50  88.9 p90 193.5
+city-still     frames   72 | whole frame p50  256.4 p90  269.7 p99  316.4 ms | over 33 ms 100% | record p50   0.4 p90   5.8 | issue p50   7.1 p90  16.1 | gpu p50  84.8 p90  95.5
