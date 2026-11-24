@@ -12,6 +12,10 @@ timeout 240 "$ADB" install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
 adb shell settings put global hide_error_dialogs 1
 read -r W H <<< "$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1 | tr 'x' ' ')"; W=${W:-1080}; H=${H:-2400}
+# like a normal phone: animations on (the emulator starts with them off, which the map reads as "reduce motion") and
+# the full look (tf_lite 0), not the light one for phones with little memory / few cores
+for k in animator_duration_scale transition_animation_scale window_animation_scale; do adb shell settings put global $k 1; done
+LOOK="${MAPPERF_LOOK:-0}"
 waitlog() { local end=$(( $(date +%s) + $2 )); while [ "$(date +%s)" -lt $end ]; do adb logcat -d -s TFDBG:I | grep -q "$1" && return 0; sleep 1; done; return 1; }
 
 # per-frame times from "dumpsys gfxinfo … framestats": total, the app's own thread (input + layout + drawing the
@@ -41,7 +45,7 @@ PY
 # scene <name> <tf_open>: the full-screen map at a zoom, 10 drags across it, then 6 s without touching it
 scene() {
   adb shell am force-stop $PKG; sleep 1; adb logcat -c
-  adb shell am start -W -n $PKG/.MainActivity --es tf_preview secret-map --ez tf_premium true --es tf_open "$2" >> "$OUT/start.txt" 2>&1
+  adb shell am start -W -n $PKG/.MainActivity --es tf_preview secret-map --ez tf_premium true --es tf_open "$2" --es tf_lite "$LOOK" >> "$OUT/start.txt" 2>&1
   waitlog "preview open" 45 || echo "($1: no 'preview open')" >> "$OUT/start.txt"
   sleep 9   # the first flight to the place ends
   adb shell dumpsys gfxinfo $PKG reset > /dev/null
