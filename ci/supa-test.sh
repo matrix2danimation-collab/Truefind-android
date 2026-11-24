@@ -76,6 +76,11 @@ keep() {
 adb logcat -c
 ( timeout 1800 "$ADB" logcat -v time -s TFDBG:I TFAuth:W TFLive:W TFLogin:W TFApi:W AndroidRuntime:E ActivityManager:I lowmemorykiller:I > "$OUT/live-log.txt" 2>&1 & )
 ( timeout 1800 "$ADB" logcat -v time "*:E" > "$OUT/errors.txt" 2>&1 & )
+# the app's memory and the phone's busiest processes every 3 s (what led up to the phone going away, if it does)
+( end=$(( $(date +%s) + 1500 )); while [ "$(date +%s)" -lt $end ]; do
+    echo "== $(date +%H:%M:%S)"; timeout 8 "$ADB" shell dumpsys meminfo -s $PKG 2>/dev/null | grep -E "TOTAL|Java Heap|Native Heap|Graphics" | head -5
+    timeout 8 "$ADB" shell top -b -n 1 -m 6 -o PID,RES,%CPU,ARGS 2>/dev/null | tail -7; sleep 3
+  done > "$OUT/memory.txt" 2>&1 & )
 phone_ok() { [ "$(timeout 10 "$ADB" get-state 2>/dev/null)" = device ]; }
 gone() { phone_ok && return 1; bad "the test phone (emulator) went away: the rest is not checked"; cp "$OUT/live-log.txt" "$OUT/app-log.txt" 2>/dev/null; ls -la "$OUT"; exit 0; }
 
