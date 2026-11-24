@@ -249,7 +249,7 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
                     "full-ne" -> doubleArrayOf(92.6, 25.6, 8.5); "full-south" -> doubleArrayOf(78.0, 12.6, 7.5)
                     "full-ladakh" -> doubleArrayOf(76.2, 33.6, 7.0); else -> doubleArrayOf(80.5, 22.6, 3.4)
                 }
-                globe.postDelayed({ globe.showAt(at[0], at[1], at[2]) }, 700)
+                globe.postDelayed({ globe.showAt(at[0], at[1], at[2]) }, 1400)
             }
         }
     }

@@ -1,7 +1,7 @@
 import math,re,unicodedata,json,sys
 sys.path.insert(0,'/home/claude/mapwork/scripts')
 from bin import read
-import os; D=read(os.environ.get('SDBIN','/home/claude/truefind-android/app/src/main/assets/sd-map.bin'))
+import os; D=read(os.environ.get('SDBIN','/home/claude/mapwork/sd-map2.bin'))
 def norm(t):
     t=unicodedata.normalize('NFKD',(t or '').lower()); t=re.sub('[̀-ͯ]','',t).replace('&',' and '); return re.sub('[^a-z0-9]+',' ',t).strip()
 COORDS={k:(x,y) for k,x,y in D['coords']}; EXTRA={k:(x,y) for k,x,y in D['extra']}; AL=dict(D['aliases']); SP={k:(x,y) for k,x,y in D['statePlaces']}; ES={k:(x,y) for k,x,y in D['extraStates']}

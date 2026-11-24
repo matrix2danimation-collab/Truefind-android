@@ -5,14 +5,20 @@ from shapely.geometry import Point
 from shapely.ops import unary_union
 from shapely import prepared, STRtree
 from bin import read
-B=read('/home/claude/truefind-android/app/src/main/assets/sd-map.bin')
+B=read('/home/claude/mapwork/sd-map2.bin')
 st=pickle.load(open('states.pkl','rb'))
 india=unary_union(list(st.values())).buffer(0.03); ip=prepared.prep(india)
 km=lambda a,b: 111.2*math.hypot((a[0]-b[0])*math.cos(math.radians((a[1]+b[1])/2)),a[1]-b[1])
 T=[]  # dict n,lng,lat,pop(thousands),kind,src
 for n,x,y,p in B['cities']: T.append(dict(n=n,lng=x,lat=y,pop=p,kind=0,src='web'))
+WEBPOP={}
+for t in T: WEBPOP.setdefault(norm(t['n']),[]).append((t['lng'],t['lat'],t['pop']))
+def misplaced(c):
+    # GeoNames now and then gives a big city's people to a village of the same name far away (Gorakhpur, Haryana)
+    p=c.get('pop',0)/1000
+    return p>=100 and any(km((x,y),(c['lon'],c['lat']))>50 and abs(wp-p)/max(wp,p)<0.05 for x,y,wp in WEBPOP.get(norm(c['name']),[]))
 for c in json.load(open('in-cities.json')):
-    if c['name'] and ip.contains(Point(c['lon'],c['lat'])): T.append(dict(n=c['name'],lng=c['lon'],lat=c['lat'],pop=max(1,round(c.get('pop',0)/1000)),kind=1 if c.get('fc') in ('PPLA2',) else 0,src='gn',fc=c.get('fc')))
+    if c['name'] and ip.contains(Point(c['lon'],c['lat'])) and not misplaced(c): T.append(dict(n=c['name'],lng=c['lon'],lat=c['lat'],pop=max(1,round(c.get('pop',0)/1000)),kind=1 if c.get('fc') in ('PPLA2',) else 0,src='gn',fc=c.get('fc')))
 def title(s):
     s=s.strip()
     return s.title() if s.isupper() or s.islower() else s

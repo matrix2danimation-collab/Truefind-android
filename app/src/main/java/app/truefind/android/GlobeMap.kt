@@ -882,9 +882,9 @@ class GlobeMap(
             if (nb + 4 > boxes.size) boxes = boxes.copyOf(boxes.size * 2)
             boxes[nb] = x0; boxes[nb + 1] = y0; boxes[nb + 2] = x1; boxes[nb + 3] = y1; nb += 4
         }
-        private fun free(x0: Double, y0: Double, x1: Double, y1: Double): Boolean {
+        private fun free(x0: Double, y0: Double, x1: Double, y1: Double, from: Int = 0): Boolean {
             val pad = 2.0
-            var i = 0
+            var i = from
             while (i < nb) { if (x0 < boxes[i + 2] + pad && x1 > boxes[i] - pad && y0 < boxes[i + 3] + pad && y1 > boxes[i + 1] - pad) return false; i += 4 }
             return true
         }
@@ -941,11 +941,13 @@ class GlobeMap(
                 box(pn.x - 28 * ps, pn.y - 70 * ps, pn.x + 28 * ps, pn.y + 9 * ps)
                 if (pn.label.isNotEmpty()) { val lw = (tagWidth(pn.label) + 16) * ps; box(pn.x - lw / 2, pn.y + 9 * ps, pn.x + lw / 2, pn.y + 30 * ps) }
             }
+            // (state names and the stars of capitals may lie under a pin: they look past the pins' boxes, which come first)
+            val pinEnd = nb
             box(10.0, 8.0, 236.0, 58.0); box(w - 62, h / 2 - 44, w - 8, h / 2 + 62); box(6.0, h - 66, 62.0, h - 8); box(w - 62, h - 66, w - 6, h - 8); box(w / 2 - 130, h - 16, w / 2 + 130, h)
 
             // ── place names: most important first, each only where it fits ──
             placed.clear()
-            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean): Boolean {
+            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean, from: Int = 0): Boolean {
                 if (placed.containsKey(key)) return true
                 P.at(lng, lat, o)
                 if (o[2] < 0.25 || o[0] < -60 || o[0] > w + 60 || o[1] < -30 || o[1] > h + 30) return false
@@ -956,7 +958,7 @@ class GlobeMap(
                     val sp = nameSprite(kind, text, side)
                     val x0 = px - sp.ax; val y0 = py - sp.ay
                     if (x0 < -4 || y0 < -4 || x0 + sp.w > w + 4 || y0 + sp.h > h + 4) continue
-                    if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)) continue
+                    if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2, from)) continue
                     box(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)
                     placed[key] = Placed(kind, text, lng, lat, side)
                     return true
@@ -977,13 +979,13 @@ class GlobeMap(
                     val ct = cs[ix]
                     if (!seen(ct.lng, ct.lat)) continue
                     val kind = if (ct.kind == 3) "nc" else "cap"
-                    if (!tryPlace(cityKeys[ix], kind, ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true)) tryPlace(cityKeys[ix], "${kind}0", "", ct.lng.toDouble(), ct.lat.toDouble(), false)
+                    if (!tryPlace(cityKeys[ix], kind, ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true)) tryPlace(cityKeys[ix], "${kind}0", "", ct.lng.toDouble(), ct.lat.toDouble(), false, pinEnd)
                 }
                 // states: all of them, the big ones first (smaller letters while the map shows all of India)
                 if (ppd >= 3.5 && ppd < 70) {
                     val minA = if (ppd < 6) 2400f else if (ppd < 10) 700f else if (ppd < 16) 120f else 0f
                     val kind = if (ppd < 11) "st2" else "st"
-                    for (j in statesBySize) { val s = SdMapData.states[j]; if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], kind, s.n, s.lng.toDouble(), s.lat.toDouble(), false) }
+                    for (j in statesBySize) { val s = SdMapData.states[j]; if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], kind, s.n, s.lng.toDouble(), s.lat.toDouble(), false, pinEnd) }
                 }
                 // big cities, neighbours and seas, then every other town (district headquarters before others), then landscapes
                 val minPop = minPopFor(ppd)

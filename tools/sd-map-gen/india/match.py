@@ -17,7 +17,7 @@ for x in polys:
 st={k:unary_union(v) for k,v in bys.items()}
 import pickle; pickle.dump(polys and [(x['d'],x['s'],x['g']) for x in polys],open('/home/claude/mapwork/polys.pkl','wb')); pickle.dump(st,open('/home/claude/mapwork/states.pkl','wb'))
 from bin import read
-B=read('/home/claude/truefind-android/app/src/main/assets/sd-map.bin')
+B=read('/home/claude/mapwork/sd-map2.bin')
 for n,a,lng,lat in B['states']:
     k=n.upper().replace('&','AND')
     g=st.get(k)

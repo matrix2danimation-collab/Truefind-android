@@ -5,7 +5,7 @@ from bin import read
 from place import norm
 from shapely.geometry import LineString
 from shapely.ops import polylabel
-SRC='/home/claude/truefind-android/app/src/main/assets/sd-map.bin'
+SRC='/home/claude/mapwork/sd-map2.bin'
 OUT=sys.argv[1]
 B=read(SRC); assert B['magic']=='TFMAP2'
 towns=pickle.load(open('towns.pkl','rb')); chains=pickle.load(open('chains.pkl','rb')); dplace=pickle.load(open('dplace.pkl','rb'))
