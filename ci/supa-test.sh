@@ -113,6 +113,8 @@ sleep 4; shot x04-home
 if waitlog "live: joined Call" 30; then ok "3 live updates connected (Supabase Realtime: Call)"; else gone; bad "3 live updates did not connect"; fi
 sleep 6; unblock
 shot x04b-home
+# (a new member's Daily Free Coins pop-up covers every page: closed with its ×, the coins are not claimed)
+tap "Close" 15 && sleep 2
 
 # ── 4. pages filled from Supabase ──
 gone
@@ -156,6 +158,7 @@ shot x10-reopened
 gone
 # ── 8. log out ──
 link "/profile?settings=1"; sleep 6
+for i in 1 2 3; do adb shell input swipe $((W / 2)) $((H * 3 / 4)) $((W / 2)) $((H / 4)) 300; sleep 1; done
 if tap "Log out" 30; then
   sleep 2
   tap "Log out" 20   # the "Log out?" box

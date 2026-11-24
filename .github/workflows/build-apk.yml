@@ -247,8 +247,9 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          # (set "supa": the live test on the other software GPU, SwiftShader through ANGLE)
-          emulator-options: -no-window ${{ matrix.set == 'supa' && '-gpu swangle_indirect' || '-gpu swiftshader_indirect' }} -noaudio -no-boot-anim -camera-back none
+          # (the live test against the server, sets "supa…": SwiftShader through ANGLE — the plain SwiftShader GPU stops the
+          # emulator itself as soon as the signed-in Home draws, seen 3 times on 24 Nov; other sets as before)
+          emulator-options: -no-window ${{ startsWith(matrix.set, 'supa') && '-gpu swangle_indirect' || '-gpu swiftshader_indirect' }} -noaudio -no-boot-anim -camera-back none
           script: bash ci/screens.sh TrueFind-emu.apk shots ${{ matrix.set }}
       # the computer under the test phone: did it stop the emulator (out of memory, a crash)?
       - name: Host log (was the emulator stopped?)
