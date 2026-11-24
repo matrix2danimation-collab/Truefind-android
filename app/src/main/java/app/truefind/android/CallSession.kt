@@ -371,9 +371,13 @@ class CallSession(
         }
     }
 
-    private fun tick() {
+    private val tickAgain = Runnable { if (!disposed && status == "active") tick(again = true) }
+    private fun tick(again: Boolean = false) {
         Api.invoke("endCall", JSONObject().put("call_id", callId).put("action", "tick")) { r ->
-            if (disposed || status != "active" || !r.ok) return@invoke
+            if (disposed || status != "active") return@invoke
+            // a keep-alive lost to a busy server is sent again soon, not 15 s later (24 Nov: missed keep-alives for
+            // 90 s let a running call count as over)
+            if (!r.ok) { if (!again && CallRules.retryStart(r.status)) main.postDelayed(tickAgain, 4000); return@invoke }
             val d = r.data
             if (d.optBoolean("ended")) {
                 if (d.optBoolean("ran_out")) ranOut = true

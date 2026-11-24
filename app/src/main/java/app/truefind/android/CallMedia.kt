@@ -180,8 +180,12 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
                 if (code.startsWith("AGORA_")) { done(null, code); return@invoke }
                 if (r.status in listOf(401, 403, 404, 410)) { done(null, "PASS_${r.status}"); return@invoke }
             }
-            if (i >= 3) { done(null, "PASS_NETWORK"); return@invoke }
-            main.postDelayed({ if (!dead) pass(i + 1, done) }, 1200L * (i + 1))
+            // a busy server / no reply: asked again for up to ~30 s (24 Nov: 4 tries in ~7 s ended calls with "Could not
+            // connect the call service" during a busy moment)
+            val again = CallRules.retryStart(r.status) || r.ok
+            if (i >= (if (again) 9 else 3)) { done(null, "PASS_NETWORK"); return@invoke }
+            val said = if (r.data.has("retry_after")) r.data.optDouble("retry_after") else null
+            main.postDelayed({ if (!dead) pass(i + 1, done) }, if (said != null && !said.isNaN()) CallRules.startWaitMs(i, said).coerceAtMost(6000L) else minOf(1200L * (i + 1), 4000L))
         }
     }
 
@@ -323,7 +327,7 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
 
     /** a new pass before the old one runs out (a few tries: one network blip must not cut the call) */
     private fun renew(i: Int) {
-        if (dead || i >= 4) return
+        if (dead || i >= 12) return // (a minute of tries: a busy moment must not cut a running call)
         Api.invoke("callToken", JSONObject().put("call_id", callId)) { r ->
             if (dead) return@invoke
             val t = r.data.optString("token")

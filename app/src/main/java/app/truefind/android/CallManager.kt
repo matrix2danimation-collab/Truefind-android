@@ -422,9 +422,19 @@ class CallManager(private val act: ComponentActivity, private val root: FrameLay
             CallEnder.decline(id) { _ -> if (Tf.s(incoming, "id") == id) clearIncoming(id); done() }
             return
         }
+        // Answer met a busy server / no reply: asked again (same answer — the server says "answered already" when the
+        // first one went through) for up to 25 s while it still rings, never "Couldn't answer" at the first busy moment
+        val answerAt = System.currentTimeMillis()
+        var tries = 0
         fun send() {
+            tries++
             Api.invoke("respondCall", JSONObject().put("call_id", id).put("action", action)) { r ->
                 if (Tf.s(incoming, "id") != id) { done(); return@invoke }
+                if (!r.ok && CallRules.retryStart(r.status) && System.currentTimeMillis() - answerAt < 25_000) {
+                    val said = if (r.data.has("retry_after")) r.data.optDouble("retry_after") else null
+                    main.postDelayed({ send() }, CallRules.startWaitMs(tries - 1, said).coerceAtMost(5000L))
+                    return@invoke
+                }
                 if (r.ok) {
                     if (action == "accept") {
                         ringer.stop()
