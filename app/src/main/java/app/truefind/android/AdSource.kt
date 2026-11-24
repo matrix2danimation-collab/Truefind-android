@@ -38,7 +38,8 @@ object AdNet : AdSrc {
         val q = StringBuilder("?q=").append(java.net.URLEncoder.encode(query.toString(), "UTF-8"))
         q.append("&limit=").append(if (limit > 0) limit else 100)
         if (sort != null) q.append("&sort=").append(java.net.URLEncoder.encode(sort, "UTF-8"))
-        Api.async({ Api.request("GET", "/entities/$entity/v2/list$q", null, null) }, done)
+        // (the plain list address: the same rows Base44's ".../v2/list" gave; Supabase's api answers this one)
+        Api.async({ Api.request("GET", "/entities/$entity$q", null, null) }, done)
     }
     override fun get(entity: String, id: String, done: (Api.Result) -> Unit) = Api.get(entity, id, done)
     override fun update(entity: String, id: String, patch: JSONObject, done: (Api.Result) -> Unit) {

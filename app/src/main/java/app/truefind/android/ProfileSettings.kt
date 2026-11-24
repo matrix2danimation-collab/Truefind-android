@@ -583,7 +583,7 @@ class PApply(ctx: Context, ps: ProfileScreen) : PPanel(ctx, ps) {
         val seen = HashSet<String>(); var secs = 0.0; var left = 2; var failed = false
         fun one(field: String) {
             val q = JSONObject().put(field, uid); if (only != null) q.put("type", only)
-            val path = "/entities/Call/v2/list?q=" + java.net.URLEncoder.encode(q.toString(), "UTF-8") + "&limit=1000&fields=" + java.net.URLEncoder.encode("id,duration_seconds,started_at,ended_at", "UTF-8")
+            val path = "/entities/Call?q=" + java.net.URLEncoder.encode(q.toString(), "UTF-8") + "&limit=1000&fields=" + java.net.URLEncoder.encode("id,duration_seconds,started_at,ended_at", "UTF-8")
             Api.async({ if (Demo.on) Demo.filter("Call", q) else Api.request("GET", path, null, null) }) { r ->
                 if (!r.ok) failed = true
                 else for (c in PR.list(r)) {

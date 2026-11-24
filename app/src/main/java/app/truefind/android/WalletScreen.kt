@@ -62,7 +62,7 @@ object WalletNet : WalletSource {
             val id = u?.optString("id").orEmpty()
             if (id.isNotEmpty()) {
                 val q = URLEncoder.encode(JSONObject().put("created_by_id", id).toString(), "UTF-8")
-                val r = get("/entities/UserProfile/v2/list?q=$q&limit=1")
+                val r = get("/entities/UserProfile?q=$q&limit=1")
                 if (r == null) ok = false else prof = r.optJSONArray("items")?.optJSONObject(0)
             }
             main.post { PageFx.whenStill { done(u, prof, ok) } }

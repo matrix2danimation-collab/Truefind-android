@@ -758,7 +758,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         av.setOnClickListener { avatarSheet() }
         // hold: the photo big, like Instagram (owner, 21 Nov); when the finger lifts, the pencil shows as before
         // (owner, 19 Nov). No photo yet: the pencil at once, as before.
-        PhotoPeek.attach(av, avatarRaws, { face.bitmap }, this@ProfileScreen, .97f, onEmpty = { showPencil(av) }, onClosed = { showPencil(av) })
+        // (no approved photo yet: the main photo still in review shows big on the hold — it is the member's own photo; owner, 25 Nov)
+        val peekRaws = avatarRaws.ifEmpty { listOfNotNull(photos.firstOrNull { it.pending }?.ref?.takeIf { it.isNotBlank() }) }
+        PhotoPeek.attach(av, peekRaws, { face.bitmap }, this@ProfileScreen, .97f, onEmpty = { showPencil(av) }, onClosed = { showPencil(av) })
         sec.addView(av, LinearLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(84f)).apply { rightMargin = Ui.dpi(16f) })
         val who = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
         val nameRow = ShrinkRow(ctx, Ui.dpi(6f))
