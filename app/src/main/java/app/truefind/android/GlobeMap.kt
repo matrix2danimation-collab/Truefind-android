@@ -169,6 +169,8 @@ class GlobeMap(
     private fun radius(k: Double) = max(60.0, min(bw, bh) / 2 - 18) * k
     private fun cx() = bw / 2
     private fun cy() = bh / 2
+    /** the Earth covers the whole box: even the box's corners are inside it (paintGlobe then paints the sea edge to edge) */
+    private fun earthFills() = bw > 0 && hypot(cx(), cy()) <= radius(view.k)
 
     /** which rotation puts place g at screen point (sx, sy) at zoom k */
     private fun aim(g: DoubleArray, k: Double, sx: Double, sy: Double): V {
@@ -186,9 +188,10 @@ class GlobeMap(
     }
     /** the place under a screen point (null: space) */
     private fun grab(x: Double, y: Double): DoubleArray? = unProj(x, y, view.lon, view.lat, radius(view.k), cx(), cy())
-    /** the patch of the Earth on screen (lon/lat box with a margin) — null when the whole globe shows */
+    /** the patch of the Earth on screen (lon/lat box with a margin) — null when the whole globe shows. (The margin was
+     *  0.3 of the screen on every side: the map then worked out and drew about three screens of lines it never showed.) */
     private fun geoBox(v: V): DoubleArray? {
-        val r = radius(v.k); val ex = max(bw, bh) * 0.3
+        val r = radius(v.k); val ex = max(bw, bh) * 0.06
         var a = 1e9; var s = 1e9; var e = -1e9; var n = -1e9
         for (i in 0..8) for (j in 0..8) {
             if (i in 1..7 && j in 1..7) continue
@@ -781,6 +784,10 @@ class GlobeMap(
             }
         }
         override fun onDraw(c: Canvas) {
+            // the Earth fills the whole map (its sea is drawn edge to edge, solid): no sky shows, so none is drawn and
+            // the stars rest — before, four screens of sky were painted under it on every frame, and kept the phone
+            // drawing all the time. They come back as soon as the Earth is small enough for the sky to show.
+            if (earthFills()) return
             c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bg)
             c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glow)
             val a = tileA ?: tile(26, 260, 11, true).also { tileA = it }
@@ -954,12 +961,14 @@ class GlobeMap(
                 val px = o[0]; val py = o[1]
                 val first = if (twoSides) (lbl[key]?.side?.takeIf { it != 0 } ?: 1) else 0
                 // a state's name may move a line or two up or down to find room (its own spot first; the spot it had last time first of all)
-                val tries = if (nudge) doubleArrayOf(0.0, -1.3, 1.3, -2.6, 2.6) else doubleArrayOf(0.0)
+                val tries = if (nudge) NUDGES else NO_NUDGE
                 val had = lbl[key]?.let { e -> if (e.on) e.dy else null }
                 val order = if (had != null && had != 0.0) doubleArrayOf(had) + tries.filter { it != had } else tries
                 for (dyk in order) for (k in 0 until (if (twoSides) 2 else 1)) {
                     val side = if (k == 0) first else -first
-                    val sp = nameSprite(kind, text, side)
+                    // (only the name's size here: its picture is made once it gets a place — making pictures for every
+                    // town that was tried, most of them never shown, overflowed the picture store and redid them all on every frame)
+                    val sp = nameBox(kind, text, side)
                     val x0 = px - sp.ax; val y0 = py - sp.ay + dyk * sp.h
                     if (x0 < -4 || y0 < -4 || x0 + sp.w > w + 4 || y0 + sp.h > h + 4) continue
                     if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2, from)) continue
@@ -1166,6 +1175,26 @@ class GlobeMap(
         "rg" to Ls(11f, true, Color.argb(128, 214, 198, 255), 1.4f),
         "wt" to Ls(10.5f, true, Color.argb(168, 160, 196, 255), 0.4f),
     )
+    /** where a name's picture would sit, without making the picture: its size (dp, as the picture comes out) and its
+     *  anchor — the same numbers nameSprite works out. Kept for every name (kind → text → side: no new objects per look-up). */
+    private class NameBox(val w: Float, val h: Float, val ax: Float, val ay: Float)
+    private val nameBoxes = HashMap<String, HashMap<String, Array<NameBox?>>>()
+    private val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private fun nameBox(kind: String, text: String, side: Int): NameBox {
+        val byText = nameBoxes.getOrPut(kind) { HashMap() }
+        val sides = byText[text] ?: arrayOfNulls<NameBox>(3).also { byText[text] = it }
+        sides[side + 1]?.let { return it }
+        val st = LS[kind] ?: LS.getValue("ct")
+        val t = if (st.upper) text.uppercase() else text
+        val tw = if (t.isEmpty()) 0f else boxPaint.run { typeface = if (st.italic) Ui.boldItalic else Ui.bold; textSize = st.size; letterSpacing = st.spacing / st.size; measureText(t) }
+        val dot = if (st.dot != 0) st.r * 2 + 5 else 0f
+        val w = if (t.isEmpty()) ceil(st.r * 2 + 8) else ceil(tw + dot + 8); val h = max(ceil(st.size * 1.45f + 6), ceil(st.r * 2 + 8))
+        var dx = 0f
+        if (st.dot != 0) { dx = if (t.isEmpty()) w / 2 else if (side >= 0) 4 + st.r else w - 4 - st.r }
+        val bwPx = ceil(w * dens).toInt().coerceAtLeast(1); val bhPx = ceil(h * dens).toInt().coerceAtLeast(1)
+        val ax = if (t.isEmpty()) dx else if (st.dot != 0) dx else w / 2
+        return NameBox(bwPx / dens, bhPx / dens, ax, h / 2).also { sides[side + 1] = it }
+    }
     /** side: 1 = name right of the dot, -1 = left of it, 0 = centred (no dot) */
     private fun nameSprite(kind: String, text: String, side: Int): NameSprite {
         val key = "$kind|$side|$text"
@@ -1330,6 +1359,9 @@ class GlobeMap(
         private val SEA_FLAT = Ui.c("#1d1258")
         private val TOP_COLORS = intArrayOf(Ui.c("#4e28a6"), Ui.c("#2f1470"), Ui.c("#1c0a48"))
         private val TOP_STOPS = floatArrayOf(0f, .5f, 1f)
+        /** where a state's name may try to sit: its own line, then a line or two up or down */
+        private val NUDGES = doubleArrayOf(0.0, -1.3, 1.3, -2.6, 2.6)
+        private val NO_NUDGE = doubleArrayOf(0.0)
         /** the 360° Earth spin plays once each time the app is opened, not on every visit to the map */
         var introDone = false
         /** lighter drawing on budget phones (few cores / little memory) or when the phone asks for less motion */
@@ -1426,7 +1458,8 @@ private fun clipRing(r: FloatArray, q: DoubleArray): FloatArray {
     return pts
 }
 
-/** the runs of a line inside the box q (with one point before and after, so it reaches the edge) */
+/** the runs of a line inside the box q (with one point before and after, so it reaches the edge); a long piece
+ *  that crosses the box with both its ends outside it is a run of its own (else it would be missing on screen) */
 private inline fun runsInside(r: FloatArray, q: DoubleArray, run: (FloatArray, Int, Int) -> Unit) {
     val n = r.size / 2
     var start = -1
@@ -1436,6 +1469,10 @@ private inline fun runsInside(r: FloatArray, q: DoubleArray, run: (FloatArray, I
         val ins = x >= q[0] && x <= q[2] && y >= q[1] && y <= q[3]
         if (ins) { if (start < 0) start = if (i > 0) i - 1 else 0 }
         else if (start >= 0) { run(r, start, i + 1); start = -1 }
+        else if (i > 0) {
+            val px = r[2 * i - 2]; val py = r[2 * i - 1]
+            if (min(px, x) <= q[2] && max(px, x) >= q[0] && min(py, y) <= q[3] && max(py, y) >= q[1]) run(r, i - 1, i + 1)
+        }
         i++
     }
     if (start >= 0 && n - start > 1) run(r, start, n)
