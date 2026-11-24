@@ -51,8 +51,8 @@ jobs:
 
       - name: Deploy api
         working-directory: tf
-        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
 
       - name: Deploy send-sms
         working-directory: tf
-        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
