@@ -399,7 +399,6 @@ shot m05-full-up open --es tf_preview secret-map --ez tf_premium true --es tf_op
 shot m06-full-close open --es tf_preview secret-map --ez tf_premium true --es tf_open full-close
 shot m07-full-ne open --es tf_preview secret-map --ez tf_premium true --es tf_open full-ne
 shot m08-full-south open --es tf_preview secret-map --ez tf_premium true --es tf_open full-south
-shot m09-full-ladakh open --es tf_preview secret-map --ez tf_premium true --es tf_open full-ladakh
 shot m10-map-default home --es tf_preview secret-map --ez tf_premium true
 fi
 if [ "$SET" = rose ]; then

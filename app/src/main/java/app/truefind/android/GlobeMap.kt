@@ -114,7 +114,7 @@ class GlobeMap(
     private var ghosts = ArrayList<Ghost>()
     private var firstFrame = true
     /** a place name on screen (or fading out): its kind, text, place, which side of its dot, how visible */
-    private class Lbl(var kind: String, var text: String, var lng: Double, var lat: Double, var side: Int, var a: Double, var on: Boolean)
+    private class Lbl(var kind: String, var text: String, var lng: Double, var lat: Double, var side: Int, var a: Double, var on: Boolean, var dy: Double = 0.0)
     private val lbl = LinkedHashMap<String, Lbl>()
     /** the pins drawn last (tap boxes), the rings under people online */
     private class Drawn(val c: Cl, val x0: Double, val x1: Double, val y0: Double, val y1: Double)
@@ -825,7 +825,7 @@ class GlobeMap(
     private class Sprite(val bmp: Bitmap, val l: Float, val t: Float, val w: Float, val h: Float)
     /** a name: its picture and where its anchor is inside it (the dot for towns, the middle for other names) */
     private class NameSprite(val bmp: Bitmap, val w: Float, val h: Float, val ax: Float, val ay: Float)
-    private class Placed(val kind: String, val text: String, val lng: Double, val lat: Double, val side: Int)
+    private class Placed(val kind: String, val text: String, val lng: Double, val lat: Double, val side: Int, val dy: Double = 0.0)
     private class Pin(val c: Cl, val x: Double, val y: Double, val a: Double, val label: String, val ghost: Boolean)
 
     private fun regroup(now: Double, sppd: Double, withLabels: Boolean, stp: Int) {
@@ -947,20 +947,24 @@ class GlobeMap(
 
             // ── place names: most important first, each only where it fits ──
             placed.clear()
-            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean, from: Int = 0): Boolean {
+            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean, from: Int = 0, nudge: Boolean = false): Boolean {
                 if (placed.containsKey(key)) return true
                 P.at(lng, lat, o)
                 if (o[2] < 0.25 || o[0] < -60 || o[0] > w + 60 || o[1] < -30 || o[1] > h + 30) return false
                 val px = o[0]; val py = o[1]
                 val first = if (twoSides) (lbl[key]?.side?.takeIf { it != 0 } ?: 1) else 0
-                for (k in 0 until (if (twoSides) 2 else 1)) {
+                // a state's name may move a line or two up or down to find room (its own spot first; the spot it had last time first of all)
+                val tries = if (nudge) doubleArrayOf(0.0, -1.3, 1.3, -2.6, 2.6) else doubleArrayOf(0.0)
+                val had = lbl[key]?.let { e -> if (e.on) e.dy else null }
+                val order = if (had != null && had != 0.0) doubleArrayOf(had) + tries.filter { it != had } else tries
+                for (dyk in order) for (k in 0 until (if (twoSides) 2 else 1)) {
                     val side = if (k == 0) first else -first
                     val sp = nameSprite(kind, text, side)
-                    val x0 = px - sp.ax; val y0 = py - sp.ay
+                    val x0 = px - sp.ax; val y0 = py - sp.ay + dyk * sp.h
                     if (x0 < -4 || y0 < -4 || x0 + sp.w > w + 4 || y0 + sp.h > h + 4) continue
                     if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2, from)) continue
                     box(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)
-                    placed[key] = Placed(kind, text, lng, lat, side)
+                    placed[key] = Placed(kind, text, lng, lat, side, dyk)
                     return true
                 }
                 return false
@@ -985,7 +989,7 @@ class GlobeMap(
                 if (ppd >= 3.5 && ppd < 70) {
                     val minA = if (ppd < 6) 2400f else if (ppd < 10) 700f else if (ppd < 16) 120f else 0f
                     val kind = if (ppd < 11) "st2" else "st"
-                    for (j in statesBySize) { val s = SdMapData.states[j]; if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], kind, s.n, s.lng.toDouble(), s.lat.toDouble(), false, pinEnd) }
+                    for (j in statesBySize) { val s = SdMapData.states[j]; if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], kind, s.n, s.lng.toDouble(), s.lat.toDouble(), false, pinEnd, nudge = true) }
                 }
                 // big cities, neighbours and seas, then every other town (district headquarters before others), then landscapes
                 val minPop = minPopFor(ppd)
@@ -1003,8 +1007,8 @@ class GlobeMap(
             val fadeStep = dt / 170
             for ((key, pl) in placed) {
                 val e = lbl[key]
-                if (e != null) { e.side = pl.side; e.on = true; e.kind = pl.kind; e.text = pl.text; e.lng = pl.lng; e.lat = pl.lat }
-                else lbl[key] = Lbl(pl.kind, pl.text, pl.lng, pl.lat, pl.side, if (firstFrame) 1.0 else 0.0, true)
+                if (e != null) { e.side = pl.side; e.on = true; e.kind = pl.kind; e.text = pl.text; e.lng = pl.lng; e.lat = pl.lat; e.dy = pl.dy }
+                else lbl[key] = Lbl(pl.kind, pl.text, pl.lng, pl.lat, pl.side, if (firstFrame) 1.0 else 0.0, true, pl.dy)
             }
             val it = lbl.entries.iterator()
             while (it.hasNext()) {
@@ -1020,7 +1024,7 @@ class GlobeMap(
                 val al = (e.a * zf * 255).toInt()
                 if (al <= 0) continue
                 bp.alpha = al
-                val x0 = (o[0] - sp.ax).toFloat(); val y0 = (o[1] - sp.ay).toFloat()
+                val x0 = (o[0] - sp.ax).toFloat(); val y0 = (o[1] - sp.ay + e.dy * sp.h).toFloat()
                 dst.set(x0, y0, x0 + sp.w, y0 + sp.h)
                 c.drawBitmap(sp.bmp, null, dst, bp)
             }
