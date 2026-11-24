@@ -1,0 +1,58 @@
+# Deploys True Find's backend (Supabase Edge Functions "api" and "send-sms") from the private Truefind repo.
+# Lives in this public repo only to use its free GitHub Actions minutes; the backend code itself stays private:
+# it is checked out with a read-only token (TRUEFIND_CODE_TOKEN) just for the deploy and never printed.
+# Runs on a push to this branch (supabase-deploy) or by hand. Never touches the app or its Update button.
+name: Supabase deploy
+
+on:
+  push:
+    branches: [supabase-deploy]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PROJECT_REF: ltffzgmnhjeqoguquovf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Get the backend code (private Truefind repo, read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: matrix2danimation-collab/Truefind
+          ref: main
+          token: ${{ secrets.TRUEFIND_CODE_TOKEN }}
+          path: tf
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Build the api function from base44/
+        working-directory: tf
+        run: python3 supabase/tools/prepare_api.py
+
+      - name: Check that every import resolves
+        working-directory: tf/supabase/functions/api
+        run: deno info index.ts > /dev/null
+
+      - name: Deploy api
+        working-directory: tf
+        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+
+      - name: Deploy send-sms
+        working-directory: tf
+        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
