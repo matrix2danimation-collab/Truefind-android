@@ -31,6 +31,7 @@ scene() {
   sleep 9   # the first flight to the place ends
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 1
   echo "$1 before: $(front)" >> "$OUT/focus.txt"
+  timeout 40 "$ADB" exec-out screencap -p > "$OUT/$1-start.png"   # the map at rest before any finger (to compare two versions' look)
   adb shell dumpsys gfxinfo $PKG reset > /dev/null
   : > "$OUT/$1-drag.txt"
   for i in 1 2 3 4 5; do
@@ -47,6 +48,12 @@ scene() {
   adb shell dumpsys gfxinfo $PKG framestats > "$OUT/$1-still.txt"
   python3 "$HERE/fstats.py" "$1-drag" "$OUT/$1-drag.txt" "$1-still" "$OUT/$1-still.txt" >> "$OUT/mapperf.txt"
 }
+
+# the sky with its stars still shows while the Earth is small (the first second of the opening spin)
+adb shell am force-stop $PKG; sleep 1; adb logcat -c
+adb shell am start -n $PKG/.MainActivity --es tf_preview secret-map --ez tf_premium true --es tf_open full --es tf_lite "$LOOK" > /dev/null 2>&1
+waitlog "preview open" 45; sleep 1.5
+timeout 40 "$ADB" exec-out screencap -p > "$OUT/sky.png"
 
 echo "scene          (times per frame on the emulator, ms; lower is better · finger = frames while a finger drags the map)" > "$OUT/mapperf.txt"
 scene india full-india

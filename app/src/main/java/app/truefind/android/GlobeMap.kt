@@ -114,7 +114,10 @@ class GlobeMap(
     private var ghosts = ArrayList<Ghost>()
     private var firstFrame = true
     /** a place name on screen (or fading out): its kind, text, place, which side of its dot, how visible */
-    private class Lbl(var kind: String, var text: String, var lng: Double, var lat: Double, var side: Int, var a: Double, var on: Boolean, var dy: Double = 0.0)
+    private class Lbl(var kind: String, var text: String, var lng: Double, var lat: Double, var side: Int, var a: Double, var on: Boolean, var dy: Double = 0.0) {
+        /** its picture, kept while it stays the same name on the same side (no look-up on every frame) */
+        var sprite: NameSprite? = null
+    }
     private val lbl = LinkedHashMap<String, Lbl>()
     /** the pins drawn last (tap boxes), the rings under people online */
     private class Drawn(val c: Cl, val x0: Double, val x1: Double, val y0: Double, val y1: Double)
@@ -1016,7 +1019,10 @@ class GlobeMap(
             val fadeStep = dt / 170
             for ((key, pl) in placed) {
                 val e = lbl[key]
-                if (e != null) { e.side = pl.side; e.on = true; e.kind = pl.kind; e.text = pl.text; e.lng = pl.lng; e.lat = pl.lat; e.dy = pl.dy }
+                if (e != null) {
+                    if (e.side != pl.side || e.kind != pl.kind || e.text != pl.text) e.sprite = null
+                    e.side = pl.side; e.on = true; e.kind = pl.kind; e.text = pl.text; e.lng = pl.lng; e.lat = pl.lat; e.dy = pl.dy
+                }
                 else lbl[key] = Lbl(pl.kind, pl.text, pl.lng, pl.lat, pl.side, if (firstFrame) 1.0 else 0.0, true, pl.dy)
             }
             val it = lbl.entries.iterator()
@@ -1028,7 +1034,7 @@ class GlobeMap(
                 if (!e.on && e.a <= 0) { it.remove(); continue }
                 P.at(e.lng, e.lat, o)
                 if (o[2] < 0.2) { if (!e.on) it.remove(); continue }
-                val sp = nameSprite(e.kind, e.text, e.side)
+                val sp = e.sprite ?: nameSprite(e.kind, e.text, e.side).also { e.sprite = it }
                 val zf = if (o[2] < 0.45) ((o[2] - 0.2) / 0.25).coerceIn(0.0, 1.0) else 1.0
                 val al = (e.a * zf * 255).toInt()
                 if (al <= 0) continue
