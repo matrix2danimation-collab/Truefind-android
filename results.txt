@@ -1,0 +1,6 @@
+OK   1 fresh install opens the sign-in pages (no web page)
+OK   2 Supabase Auth sent the OTP (test number)
+OK   3 the OTP made the sign-in (Supabase Auth)
+OK   3 checkPhoneLogin: a finished profile
+OK   3 Home opened
+FAIL the test phone (emulator) went away: the rest is not checked

@@ -1,0 +1,44 @@
+--------- beginning of system
+11-24 16:40:50.577 I/ActivityManager(  516): Start proc 4532:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-24 16:40:50.633 W/ActivityManager(  516): Slow operation: 82ms so far, now at startProcess: done updating pids map
+11-24 16:40:51.111 W/ActivityManager(  516): Slow operation: 92ms so far, now at finishAttachApplicationInner: after mServices.attachApplicationLocked
+11-24 16:40:51.111 W/ActivityManager(  516): Slow operation: 93ms so far, now at finishAttachApplicationInner: after dispatching broadcasts
+11-24 16:40:51.685 I/ActivityManager(  516): Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 4532
+--------- beginning of main
+11-24 16:40:52.654 I/TFDBG   ( 4532): mode: start: no sign-in on this phone, the sign-in pages open
+11-24 16:40:52.743 I/TFDBG   ( 4532): mode: sign-in page shown
+11-24 16:40:58.867 I/ActivityManager(  516): Start proc 4788:com.google.android.googlequicksearchbox/u0a131 for broadcast {com.google.android.googlequicksearchbox/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver}
+11-24 16:40:59.000 W/ActivityManager(  516): Receiver with filter android.content.IntentFilter@3dca47a already registered for pid 4788, callerPackage is com.google.android.googlequicksearchbox
+11-24 16:40:59.255 I/ActivityManager(  516): Flag disabled. Ignoring finishAttachApplication from uid: 10131. pid: 4788
+11-24 16:40:59.383 W/ActivityManager(  516): Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+11-24 16:40:59.473 W/ActivityManager(  516): Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+11-24 16:40:59.595 I/ActivityManager(  516): Background started FGS: Allowed [callingPackage: com.google.android.googlequicksearchbox; callingUid: 10131; uidState: BFGS; uidBFSL: [BFSL]; intent: Intent { cmp=com.google.android.googlequicksearchbox/com.google.android.libraries.mdi.download.foreground.sting.ForegroundDownloadService (has extras) }; code:ACTIVITY_STARTER; tempAllowListReason:<d0a620d android.intent.action.BOOT_COMPLETED/u0,reasonCode:BOOT_COMPLETED,duration:20000,callingUid:1000>; targetSdkVersion:31; callerTargetSdkVersion:31; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+11-24 16:41:01.975 W/ActivityManager(  516): Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+11-24 16:41:03.463 I/ActivityManager(  516): Start proc 4942:com.google.android.apps.messaging:rcs/u0a129 for service {com.google.android.apps.messaging/com.google.android.ims.service.JibeService}
+11-24 16:41:03.745 I/ActivityManager(  516): Flag disabled. Ignoring finishAttachApplication from uid: 10129. pid: 4942
+11-24 16:41:04.904 W/ActivityManager(  516): Unable to start service Intent { cmp=com.google.android.apps.tachyon/.clientapi.ClientApiService } U=0: not found
+11-24 16:41:05.347 W/ActivityManager(  516): Unable to start service Intent { act=com.google.android.play.core.splitinstall.BIND_SPLIT_INSTALL_SERVICE pkg=com.android.vending } U=0: not found
+11-24 16:41:07.379 I/ActivityManager(  516): Start proc 5078:com.google.android.webview/u0a134 for broadcast {com.google.android.webview/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver}
+11-24 16:41:07.507 I/ActivityManager(  516): Flag disabled. Ignoring finishAttachApplication from uid: 10134. pid: 5078
+11-24 16:41:10.262 W/ActivityManager(  516): Unable to start service Intent { act=android.settings.hats.START_SERVICE pkg=com.google.android.settings.intelligence (has extras) } U=0: not found
+11-24 16:41:10.317 E/ActivityManager(  516): Unable to freeze binder for 4043: -11
+11-24 16:41:10.321 I/ActivityManager(  516): Killing 4043:com.google.android.settings.intelligence/u0a118 (adj 0): change com.google.android.settings.intelligence
+11-24 16:41:10.334 W/ActivityManager(  516): Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.PruneDatabaseJobService in 1000ms for connection
+11-24 16:41:10.337 W/ActivityManager(  516): Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.RoutinesJobIntentService in 10997ms for connection
+11-24 16:41:10.345 W/ActivityManager(  516): Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.routines.impl.ComputeNewInferencesJobService in 20989ms for connection
+11-24 16:41:10.345 W/ActivityManager(  516): Scheduling restart of crashed service com.google.android.settings.intelligence/.modules.appsearchindexing.impl.AppSearchIndexUpdateJobService in 30988ms for connection
+11-24 16:41:10.726 I/ActivityManager(  516): Background started FGS: Allowed [callingPackage: com.google.android.inputmethod.latin; callingUid: 10143; uidState: BFGS; uidBFSL: [BFSL]; intent: Intent { cmp=com.google.android.inputmethod.latin/com.google.android.apps.inputmethod.libs.dataservice.superpacks.SuperpacksForegroundTaskService }; code:UID_VISIBLE; tempAllowListReason:<null>; targetSdkVersion:33; callerTargetSdkVersion:33; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+11-24 16:41:11.374 I/ActivityManager(  516): Start proc 5161:com.google.android.settings.intelligence/u0a118 for service {com.google.android.settings.intelligence/com.google.android.settings.intelligence.modules.routines.impl.PruneDatabaseJobService}
+11-24 16:41:11.721 I/ActivityManager(  516): Flag disabled. Ignoring finishAttachApplication from uid: 10118. pid: 5161
+11-24 16:41:13.639 I/TFDBG   ( 4532): login: otp sent 200
+11-24 16:41:18.955 I/TFDBG   ( 4532): login: otp checked 200 signed in
+11-24 16:41:19.083 I/lowmemorykiller(  134): lmkd data connection established
+11-24 16:41:19.108 I/lowmemorykiller(  134): Using psi monitors for memory pressure detection
+11-24 16:41:19.108 I/lowmemorykiller(  134): Properties reinitilized
+11-24 16:41:19.108 I/lowmemorykiller( 5343): lmkd updated properties successfully
+11-24 16:41:19.108 I/lowmemorykiller(  134): lmkd data connection dropped
+11-24 16:41:19.108 I/lowmemorykiller(  134): closing lmkd data connection
+11-24 16:41:22.679 I/TFDBG   ( 4532): login: next 200 ok
+11-24 16:41:22.681 I/TFDBG   ( 4532): mode: signed in: the app's own pages take over
+11-24 16:41:22.705 I/TFDBG   ( 4532): mode: sign-in page hidden
+11-24 16:41:22.709 I/TFDBG   ( 4532): mode: native at /

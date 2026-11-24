@@ -1,0 +1,1128 @@
+--------- beginning of main
+11-24 16:40:51.980 E/kuk     ( 1631): Non-success http response code 404 for: https://gstatic.com/webref-ondevice/aiai/19071200_pir/2/en-us/superpacks_manifest.zip
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): Error reading snapshot for 10132 from disk
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): java.io.FileNotFoundException: /data/system/recoverablekeystore/snapshots/10132.xml: open failed: ENOENT (No such file or directory)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at java.io.FileInputStream.<init>(FileInputStream.java:160)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.readFromDisk(RecoverySnapshotStorage.java:152)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.get(RecoverySnapshotStorage.java:104)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.RecoverableKeyStoreManager.getKeyChainSnapshot(RecoverableKeyStoreManager.java:369)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.LockSettingsService.getKeyChainSnapshot(LockSettingsService.java:2494)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at com.android.internal.widget.ILockSettings$Stub.onTransact(ILockSettings.java:838)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at libcore.io.Linux.open(Native Method)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-24 16:40:51.996 E/RecoverySnapshotStorage(  516): 	... 8 more
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): Error reading snapshot for 10132 from disk
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): java.io.FileNotFoundException: /data/system/recoverablekeystore/snapshots/10132.xml: open failed: ENOENT (No such file or directory)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at java.io.FileInputStream.<init>(FileInputStream.java:160)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.readFromDisk(RecoverySnapshotStorage.java:152)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.get(RecoverySnapshotStorage.java:104)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.RecoverableKeyStoreManager.getKeyChainSnapshot(RecoverableKeyStoreManager.java:369)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.LockSettingsService.getKeyChainSnapshot(LockSettingsService.java:2494)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at com.android.internal.widget.ILockSettings$Stub.onTransact(ILockSettings.java:838)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at libcore.io.Linux.open(Native Method)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-24 16:40:52.249 E/RecoverySnapshotStorage(  516): 	... 8 more
+--------- beginning of system
+11-24 16:40:52.258 E/keystore2(  159): system/security/keystore2/src/error.rs:180 - system/security/keystore2/src/security_level.rs:684
+11-24 16:40:52.258 E/keystore2(  159): 
+11-24 16:40:52.258 E/keystore2(  159): Caused by:
+11-24 16:40:52.258 E/keystore2(  159):     0: system/security/keystore2/src/security_level.rs:199
+11-24 16:40:52.258 E/keystore2(  159):     1: system/security/keystore2/src/security_level.rs:176: Failed to handle super encryption.
+11-24 16:40:52.258 E/keystore2(  159):     2: system/security/keystore2/src/super_key.rs:762: User ECDH key missing.
+11-24 16:40:52.258 E/keystore2(  159):     3: Error::Rc(r#SYSTEM_ERROR)
+11-24 16:40:52.275 E/Vision  ( 1454): Couldn't read checkbot setting: android.provider.Settings$SettingNotFoundException: multi_cb
+11-24 16:40:53.552 E/TaskPersister(  516): File error accessing recents directory (directory doesn't exist?).
+11-24 16:40:53.730 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:40:53.745 E/SP.Service.AiAi( 1631): captions_i18n_v0_en-US is opened by other clients. It will stay open until all clients close it.
+11-24 16:40:53.797 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:40:54.129 E/SurfaceSyncGroup( 4532): Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(wmsSync-VRI[MainActivity]#0) as ready
+11-24 16:40:54.129 E/SurfaceSyncGroup( 4532): Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(VRI[MainActivity]#1) as ready
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): *~*~*~ Channel {0} was not shutdown properly!!! ~*~*~*
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085):     Make sure to call shutdown()/shutdownNow() and wait until awaitTermination() returns true.
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): java.lang.RuntimeException: ManagedChannel allocation site
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at io.grpc.internal.y1.<init>(Unknown Source:20)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at io.grpc.internal.z1.<init>(Unknown Source:9)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at io.grpc.binder.d.a(Unknown Source:211)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.google.android.apps.nexuslauncher.allapps.N0.d(Unknown Source:88)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.google.android.apps.nexuslauncher.allapps.N0.c(Unknown Source:0)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.google.android.apps.nexuslauncher.allapps.A0.run(Unknown Source:22)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.android.launcher3.util.LooperExecutor.execute(Unknown Source:12)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.google.android.apps.nexuslauncher.allapps.y0.apply(Unknown Source:34)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at java.util.concurrent.CompletableFuture.uniExceptionally(CompletableFuture.java:966)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at java.util.concurrent.CompletableFuture$UniExceptionally.tryFire(CompletableFuture.java:950)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:486)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at java.util.concurrent.CompletableFuture.completeExceptionally(CompletableFuture.java:2138)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at com.google.android.apps.nexuslauncher.allapps.H0.onResult(Unknown Source:59)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.app.appsearch.SearchSessionUtil$1.lambda$onResult$0(SearchSessionUtil.java:129)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.app.appsearch.SearchSessionUtil$1.$r8$lambda$_nlk9WiPjSfaAsqKYmp0aPvSRC0(SearchSessionUtil.java:1)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.app.appsearch.SearchSessionUtil$1$$ExternalSyntheticLambda0.run(R8$$SyntheticClass:13)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.os.Handler.handleCallback(Handler.java:958)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:40:54.426 E/io.grpc.internal.z1( 1085): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f0806ce.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f140b31.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f0806cc.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f140af3.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f0806d0.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f140c3f.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f0806ca.
+11-24 16:40:54.446 E/system_server(  516): No package ID 7f found for resource ID 0x7f140422.
+11-24 16:40:54.828 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:40:54.844 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:40:54.882 E/MDM     ( 1454): [222] aywf.a: No Google accounts; deferring server state update.
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): Error reading snapshot for 10132 from disk
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): java.io.FileNotFoundException: /data/system/recoverablekeystore/snapshots/10132.xml: open failed: ENOENT (No such file or directory)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at java.io.FileInputStream.<init>(FileInputStream.java:160)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.readFromDisk(RecoverySnapshotStorage.java:152)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.get(RecoverySnapshotStorage.java:104)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.RecoverableKeyStoreManager.getKeyChainSnapshot(RecoverableKeyStoreManager.java:369)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.LockSettingsService.getKeyChainSnapshot(LockSettingsService.java:2494)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at com.android.internal.widget.ILockSettings$Stub.onTransact(ILockSettings.java:838)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at libcore.io.Linux.open(Native Method)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-24 16:40:55.027 E/RecoverySnapshotStorage(  516): 	... 8 more
+11-24 16:40:55.037 E/keystore2(  159): system/security/keystore2/src/error.rs:180 - system/security/keystore2/src/security_level.rs:684
+11-24 16:40:55.037 E/keystore2(  159): 
+11-24 16:40:55.037 E/keystore2(  159): Caused by:
+11-24 16:40:55.037 E/keystore2(  159):     0: system/security/keystore2/src/security_level.rs:199
+11-24 16:40:55.037 E/keystore2(  159):     1: system/security/keystore2/src/security_level.rs:176: Failed to handle super encryption.
+11-24 16:40:55.037 E/keystore2(  159):     2: system/security/keystore2/src/super_key.rs:762: User ECDH key missing.
+11-24 16:40:55.037 E/keystore2(  159):     3: Error::Rc(r#SYSTEM_ERROR)
+11-24 16:40:55.106 E/system_server(  516): No package ID 7f found for resource ID 0x7f08038b.
+11-24 16:40:55.106 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be5.
+11-24 16:40:55.106 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be5.
+11-24 16:40:55.106 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be4.
+11-24 16:40:55.128 E/system_server(  516): No package ID 7f found for resource ID 0x7f080577.
+11-24 16:40:55.128 E/system_server(  516): No package ID 7f found for resource ID 0x7f140ba2.
+11-24 16:40:55.128 E/system_server(  516): No package ID 7f found for resource ID 0x7f080606.
+11-24 16:40:55.128 E/system_server(  516): No package ID 7f found for resource ID 0x7f141fd7.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f0202f5.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f041721.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f0202f4.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f040768.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f0202f3.
+11-24 16:40:55.353 E/system_server(  516): No package ID 7f found for resource ID 0x7f040f6f.
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): Could not parse manufactured year from serial.
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): java.lang.NumberFormatException: For input string: "E"
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.parseInt(Integer.java:797)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.valueOf(Integer.java:1128)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.google.android.settings.deviceinfo.hardwareinfo.HardwareInfoFeatureProviderGoogleImpl.getManufacturedYear(HardwareInfoFeatureProviderGoogleImpl.kt:22)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.deviceinfo.hardwareinfo.ManufacturedYearPreferenceController.<init>(ManufacturedYearPreferenceController.kt:26)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.core.BasePreferenceController.createInstance(BasePreferenceController.java:143)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SliceBuilderUtils.getPreferenceController(SliceBuilderUtils.java:354)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceDataFromXML(SliceDataConverter.java:204)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceDataFromProvider(SliceDataConverter.java:149)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceData(SliceDataConverter.java:119)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SlicesIndexer.getSliceData(SlicesIndexer.java:94)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SlicesIndexer.indexSliceData(SlicesIndexer.java:75)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SlicesFeatureProviderImpl.indexSliceData(SlicesFeatureProviderImpl.java:63)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SlicesDatabaseAccessor.getSliceUris(SlicesDatabaseAccessor.java:96)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.slices.SettingsSliceProvider.onGetSliceDescendants(SettingsSliceProvider.java:337)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at androidx.slice.compat.SliceProviderWrapperContainer$SliceProviderWrapper.onGetSliceDescendants(SliceProviderWrapperContainer.java:166)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.app.slice.SliceProvider.handleGetDescendants(SliceProvider.java:425)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.app.slice.SliceProvider.call(SliceProvider.java:406)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at androidx.slice.compat.SliceProviderWrapperContainer$SliceProviderWrapper.call(SliceProviderWrapperContainer.java:123)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider.call(ContentProvider.java:2679)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider$Transport.call(ContentProvider.java:628)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:307)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:55.384 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): No service published for: ethernet
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:166)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry$139.createService(SystemServiceRegistry.java:1872)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1971)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1645)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2212)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:934)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.content.Context.getSystemService(Context.java:4420)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.network.EthernetTetherPreferenceController.<init>(EthernetTetherPreferenceController.java:48)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.core.BasePreferenceController.createInstance(BasePreferenceController.java:143)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SliceBuilderUtils.getPreferenceController(SliceBuilderUtils.java:354)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceDataFromXML(SliceDataConverter.java:204)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceDataFromProvider(SliceDataConverter.java:149)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SliceDataConverter.getSliceData(SliceDataConverter.java:119)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SlicesIndexer.getSliceData(SlicesIndexer.java:94)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SlicesIndexer.indexSliceData(SlicesIndexer.java:75)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SlicesFeatureProviderImpl.indexSliceData(SlicesFeatureProviderImpl.java:63)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SlicesDatabaseAccessor.verifyIndexing(SlicesDatabaseAccessor.java:194)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SlicesDatabaseAccessor.getSliceUris(SlicesDatabaseAccessor.java:96)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at com.android.settings.slices.SettingsSliceProvider.onGetSliceDescendants(SettingsSliceProvider.java:337)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at androidx.slice.compat.SliceProviderWrapperContainer$SliceProviderWrapper.onGetSliceDescendants(SliceProviderWrapperContainer.java:166)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.slice.SliceProvider.handleGetDescendants(SliceProvider.java:425)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.app.slice.SliceProvider.call(SliceProvider.java:406)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at androidx.slice.compat.SliceProviderWrapperContainer$SliceProviderWrapper.call(SliceProviderWrapperContainer.java:123)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.content.ContentProvider.call(ContentProvider.java:2679)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.content.ContentProvider$Transport.call(ContentProvider.java:628)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:307)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:55.594 E/SystemServiceRegistry( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): UID for network attribution might be misset for tag 805307399 [CONTEXT service_id=39 ]
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): dhwp: FULL
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at d.N(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aobf.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzt.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.d(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at apiy.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):51)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at apit.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): UID for network attribution might be misset for tag 805307399 [CONTEXT service_id=39 ]
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): dhwp: FULL
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at d.N(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aobf.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzt.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.d(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at apiy.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):51)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at apit.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:55.598 E/GmsConnectionFactory( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:55.640 E/ScreenResolutionController( 1043): No support
+11-24 16:40:55.701 E/IPCThreadState( 1454): Binder transaction failure: 290148/29201/-28
+11-24 16:40:55.701 E/JavaBinder( 1454): !!! FAILED BINDER TRANSACTION !!!  (parcel size = 1056768)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): Error reading snapshot for 10132 from disk
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): java.io.FileNotFoundException: /data/system/recoverablekeystore/snapshots/10132.xml: open failed: ENOENT (No such file or directory)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at java.io.FileInputStream.<init>(FileInputStream.java:160)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.readFromDisk(RecoverySnapshotStorage.java:152)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.storage.RecoverySnapshotStorage.get(RecoverySnapshotStorage.java:104)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.recoverablekeystore.RecoverableKeyStoreManager.getKeyChainSnapshot(RecoverableKeyStoreManager.java:369)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at com.android.server.locksettings.LockSettingsService.getKeyChainSnapshot(LockSettingsService.java:2494)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at com.android.internal.widget.ILockSettings$Stub.onTransact(ILockSettings.java:838)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at libcore.io.Linux.open(Native Method)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-24 16:40:55.707 E/RecoverySnapshotStorage(  516): 	... 8 more
+11-24 16:40:55.733 E/keystore2(  159): system/security/keystore2/src/error.rs:180 - system/security/keystore2/src/security_level.rs:684
+11-24 16:40:55.733 E/keystore2(  159): 
+11-24 16:40:55.733 E/keystore2(  159): Caused by:
+11-24 16:40:55.733 E/keystore2(  159):     0: system/security/keystore2/src/security_level.rs:199
+11-24 16:40:55.733 E/keystore2(  159):     1: system/security/keystore2/src/security_level.rs:176: Failed to handle super encryption.
+11-24 16:40:55.733 E/keystore2(  159):     2: system/security/keystore2/src/super_key.rs:762: User ECDH key missing.
+11-24 16:40:55.733 E/keystore2(  159):     3: Error::Rc(r#SYSTEM_ERROR)
+11-24 16:40:56.700 E/enyj    ( 1454): *~*~*~ Previous channel {0} was not shutdown properly!!! ~*~*~*
+11-24 16:40:56.700 E/enyj    ( 1454):     Make sure to call shutdown()/shutdownNow() and wait until awaitTermination() returns true.
+11-24 16:40:56.700 E/enyj    ( 1454): java.lang.RuntimeException: ManagedChannel allocation site
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyi.<init>(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyj.<init>(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyh.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):21)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enqe.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at abxw.H(:com.google.android.gms@231818047@23.18.18 (190800-535401451):22)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at abxw.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdbp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdav.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdav.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at zcr.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:56.700 E/enyj    ( 1454): *~*~*~ Previous channel {0} was not shutdown properly!!! ~*~*~*
+11-24 16:40:56.700 E/enyj    ( 1454):     Make sure to call shutdown()/shutdownNow() and wait until awaitTermination() returns true.
+11-24 16:40:56.700 E/enyj    ( 1454): java.lang.RuntimeException: ManagedChannel allocation site
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyi.<init>(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyj.<init>(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enyh.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):21)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at enqe.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at abxw.H(:com.google.android.gms@231818047@23.18.18 (190800-535401451):22)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at abxw.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdbp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdav.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at cdav.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at zcr.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:56.700 E/enyj    ( 1454): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:57.053 E/WifiService(  516): Attempt to retrieve passpoint with invalid scanResult List
+11-24 16:40:57.122 E/WifiScanner( 1043): listener does not exist
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): Retrieving snapshot for com.google.android.gms.playlog.uploader failed
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): java.util.concurrent.TimeoutException: Timed out waiting for Task
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at cfsz.o(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at bwch.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at bwch.j(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at bwch.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at com.google.android.gms.clearcut.init.ClearcutInitChimeraIntentService.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at zdm.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at com.google.android.gms.clearcut.init.DefaultPriorityClearcutInitChimeraIntentService.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at com.google.android.chimera.IntentOperation.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at zhv.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at hjm.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at hjl.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):11)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:57.756 E/PhenotypeFlagCommitter( 1454): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.165 E/Pay     ( 1454): [Migration operation] Active tapandpay account not found! [CONTEXT service_id=198 ]
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): Exception in upload method
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): com.google.android.apps.gsa.shared.r.d: Error code: 262182
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.ab.bk.d(PG:5)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.libraries.gsa.c.a.ar.d(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.libraries.gsa.c.a.bo.b(PG:5)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.libraries.gsa.c.a.e.a(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.libraries.gsa.c.a.a.run(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.bf.execute(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.i(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:12)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.j.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.j.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.j.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.j.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.c.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.bu.cancel(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:17)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.staticplugins.bk.b.h.run(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.bf.execute(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.i(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:12)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.j.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.util.c.aj.a(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.m(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.c.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.l(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.common.util.concurrent.d.cancel(PG:8)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.s3.o.c(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.s3.r.a(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.staticplugins.dc.a.c.e(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.staticplugins.dc.a.c.c(PG:3)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.staticplugins.dc.a.e.a(PG:5)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.s3.n.hh(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.cd.g.a.f.e(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:22)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.speech.k.a.g.ks(PG:6)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.s3.o.e(PG:14)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.s3.p.run(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.e.run(PG:2)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.390 E/cr_CronetUrlRequestContext( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.l.run(PG:5)
+11-24 16:40:58.392 E/A       ( 1849): onError
+11-24 16:40:58.392 E/A       ( 1849): com.google.android.apps.gsa.shared.speech.a.m: errorCode: 65561, engine: 2
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.staticplugins.dc.a.e.a(PG:3)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.s3.n.hh(PG:1)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.cd.g.a.f.e(PG:2)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:22)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.speech.k.a.g.ks(PG:6)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.s3.o.e(PG:14)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.s3.p.run(PG:1)
+11-24 16:40:58.392 E/A       ( 1849): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+11-24 16:40:58.392 E/A       ( 1849): 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.e.run(PG:2)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-24 16:40:58.392 E/A       ( 1849): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:58.392 E/A       ( 1849): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:58.392 E/A       ( 1849): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.shared.util.c.a.l.run(PG:5)
+11-24 16:40:58.392 E/A       ( 1849): Caused by: com.google.android.apps.gsa.shared.speech.a.o: errorCode: 65586, engine: 2
+11-24 16:40:58.392 E/A       ( 1849): 	... 15 more
+11-24 16:40:58.392 E/A       ( 1849): Caused by: com.google.android.apps.gsa.shared.speech.a.k: errorCode: 401, engine: 2
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.assistant.shared.n.h.a(PG:5)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.s3.producers.j.hE(PG:2)
+11-24 16:40:58.392 E/A       ( 1849): 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:16)
+11-24 16:40:58.392 E/A       ( 1849): 	... 12 more
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): Retrieving snapshot for com.google.lighter.android#com.google.android.gms failed
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): java.util.concurrent.TimeoutException: Timed out waiting for Task
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at cfsz.o(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at bwch.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at bwch.j(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at bwch.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at crqn.apply(:com.google.android.gms@231818047@23.18.18 (190800-535401451):10)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlny.d(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlnz.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):9)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlpk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlnv.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlnv.l(:com.google.android.gms@231818047@23.18.18 (190800-535401451):10)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlnv.o(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlrs.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlqs.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at dlrt.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at crqq.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at crri.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.718 E/PhenotypeFlagCommitter( 1454): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.744 E/StorageManager( 1642): Failed to set extended attributes for /storage/emulated/0/Android to set project id.: Operation not permitted
+11-24 16:40:58.755 E/StorageManager( 1642): Failed to set extended attributes for /storage/emulated/0/Android/media to set project id.: Operation not permitted
+11-24 16:40:58.835 E/GooglePartnerSetup( 1706): Phenotype client.register: true
+11-24 16:40:58.849 E/bwfc    ( 1403): Phenotype API error. Event # edax@a7b382cf, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:40:58.849 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.apps.dynamite.device#com.google.android.gm(change count changed - expected 1  but was 0)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.849 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.850 E/bwfc    ( 1403): Phenotype API error. Event # edax@d77657e2, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:40:58.850 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.libraries.communications.conference.device#com.google.android.gm(change count changed - expected 1  but was 0)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:58.850 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:58.905 E/equicksearchbox( 4788): Not starting debugger since process cannot load the jdwp agent.
+11-24 16:40:59.029 E/bwfc    ( 1403): Phenotype API error. Event # edax@9a7d34c8, EventCode: 32 [CONTEXT service_id=51 ]
+11-24 16:40:59.029 E/bwfc    ( 1403): bwdx: 29503
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at bwgv.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:40:59.029 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:40:59.297 E/A       ( 1635): Calling getConfiguration() before NgaConfigurationManager is initialized.
+11-24 16:40:59.297 E/A       ( 1635): com.google.common.f.s: MEDIUM
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.nga.engine.h.a.aq.b(PG:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.nga.engine.h.a.m.get(Unknown Source:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.nga.shared.v.a.o.b(PG:1)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.nga.shared.v.f.a.d.apply(Unknown Source:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at j$.util.Optional.map(Unknown Source:16)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.nga.shared.v.f.a.g.a(PG:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.staticplugins.opa.aj.c.b.p.apply(Unknown Source:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at j$.util.Optional.map(Unknown Source:16)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.staticplugins.opa.aj.c.b.q.b(PG:10)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.staticplugins.opa.aj.c.b.c.run(PG:17)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.libraries.gsa.k.a.h.run(PG:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.shared.util.c.a.cf.b(PG:1)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.apps.gsa.shared.util.c.a.ci.run(PG:1)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.common.util.concurrent.dn.run(PG:1)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.common.util.concurrent.do.run(PG:4)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.libraries.i.ae.run(PG:1)
+11-24 16:40:59.297 E/A       ( 1635): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:40:59.297 E/A       ( 1635): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.libraries.i.k.run(PG:2)
+11-24 16:40:59.297 E/A       ( 1635): 	at com.google.android.libraries.i.p.run(PG:4)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): Error locating SCO method
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): java.lang.NoSuchMethodException: android.bluetooth.BluetoothHeadset.startScoUsingVirtualVoiceCall [class android.bluetooth.BluetoothDevice]
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at java.lang.Class.getMethod(Class.java:2937)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at java.lang.Class.getMethod(Class.java:2449)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at com.google.android.apps.gsa.speech.audio.a.l.<clinit>(PG:1)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at com.google.android.apps.gsa.speech.audio.a.i.onServiceConnected(PG:1)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at android.bluetooth.BluetoothProfileConnector$3.handleMessage(BluetoothProfileConnector.java:234)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-24 16:40:59.566 E/VS.BluetoothShim( 1635): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-24 16:40:59.610 E/HotwordModelPopulator( 1849): Failed to add hotword file group for 'hotword_model_en-US_okg' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data
+11-24 16:40:59.628 E/BistoWorker( 1849): Couldn't get logged in Google account.
+11-24 16:40:59.643 E/BistoWorker( 1849): Couldn't get logged in Google account.
+11-24 16:40:59.691 E/HotwordModelPopulator( 1849): Failed to add hotword file group for 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data
+11-24 16:40:59.701 E/HotwordModelPopulator( 1849): Failed to add hotword file group for 'hotword_model_en-US_okhey' from location: https://www.gstatic.com/android-search/hotword/x_google/975058821313279e27b2c3f04de0beef/hotword.data
+11-24 16:40:59.722 E/MicroModelsUtil( 1849): Hotword file group is null with group name: hotword_model_en-US_okg, locale: en-US
+11-24 16:40:59.739 E/GsaVoiceInteractionSrv( 1635): modelLocation is null: true isAlwaysOnEnabled is false: true isFromAnyScreenEnabled is false: true
+11-24 16:40:59.752 E/HwDetectorWithState( 1635): a: 3
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): UID for network attribution might be misset for tag 805307399 [CONTEXT service_id=39 ]
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): dhwp: FULL
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at d.N(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aobf.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzt.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzk.d(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzk.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at apiy.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):51)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at apit.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.073 E/GmsConnectionFactory( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): UID for network attribution might be misset for tag 805307399 [CONTEXT service_id=39 ]
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): dhwp: FULL
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at d.N(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aobf.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzt.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzk.d(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzp.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzk.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aqzk.execute(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at apiy.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):51)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at apit.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):7)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.086 E/GmsConnectionFactory( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:02.694 E/bwfc    ( 1403): Phenotype API error. Event # edax@4e539ee, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:02.694 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 2  but was 1)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:02.694 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:02.697 E/A       ( 1849): Failed to commit flags to Phenotype. Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 2  but was 1) (29501)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): Error when converting version: messages.android_20230529_03_RC01_alldpi.x86_64.phone
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): java.lang.NumberFormatException: For input string: "messages"
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at java.lang.Long.parseLong(Long.java:751)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at java.lang.Long.parseLong(Long.java:876)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.apps.gsa.staticplugins.ad.h.c(PG:3)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.apps.gsa.staticplugins.ad.h.g(PG:3)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.apps.gsa.staticplugins.ad.h.d(PG:267)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.apps.gsa.staticplugins.ad.h.a(PG:38)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.apps.gsa.staticplugins.ad.p.a(PG:1)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.libraries.gsa.k.a.f.a(PG:2)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.common.util.concurrent.dx.a(PG:1)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.common.util.concurrent.cv.run(PG:4)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.common.util.concurrent.dz.run(PG:1)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.libraries.i.ae.run(PG:1)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.libraries.i.k.run(PG:2)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at com.google.android.libraries.i.p.run(PG:4)
+11-24 16:41:02.744 E/ApplicationPropertiesBu( 1849): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:02.748 E/ApplicationPropertiesBu( 1849): Date 2021-12-06T00:00:00Z is out of expected range.
+11-24 16:41:02.748 E/ApplicationPropertiesBu( 1849): Date 2022-02-15T00:00:00Z is out of expected range.
+11-24 16:41:02.748 E/ApplicationPropertiesBu( 1849): Date 2022-02-22T00:00:00Z is out of expected range.
+11-24 16:41:03.392 E/WorkSourceUtil( 1454): Could not find package: com.google.android.gms.westworld
+11-24 16:41:03.494 E/s.messaging:rcs( 4942): Not starting debugger since process cannot load the jdwp agent.
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): [2] JibeService.onDestroy: JibeService: onDestroy() unregister factory exception: java.lang.IllegalArgumentException: Receiver not registered: com.google.android.ims.receiver.sip.DebugOptionsReceiver@dc49cc0
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:1662)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1872)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:820)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at com.google.android.ims.receiver.sip.DebugOptionsReceiver.b(PG:1)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at com.google.android.ims.service.JibeService.onDestroy(PG:10)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.handleStopService(ActivityThread.java:4851)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.-$$Nest$mhandleStopService(Unknown Source:0)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2297)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-24 16:41:04.302 E/BugleRcsEngine( 4942): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-24 16:41:04.303 E/ActivityThread( 4942): Service com.google.android.ims.service.JibeService has leaked IntentReceiver bsch@f96df9 that was originally registered here. Are you missing a call to unregisterReceiver()?
+11-24 16:41:04.303 E/ActivityThread( 4942): android.app.IntentReceiverLeaked: Service com.google.android.ims.service.JibeService has leaked IntentReceiver bsch@f96df9 that was originally registered here. Are you missing a call to unregisterReceiver()?
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.LoadedApk$ReceiverDispatcher.<init>(LoadedApk.java:1839)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.LoadedApk.getReceiverDispatcher(LoadedApk.java:1601)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.ContextImpl.registerReceiverInternal(ContextImpl.java:1840)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.ContextImpl.registerReceiver(ContextImpl.java:1792)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.ContextImpl.registerReceiver(ContextImpl.java:1780)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.content.ContextWrapper.registerReceiver(ContextWrapper.java:755)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at bsch.a(PG:3)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at bqcs.a(PG:13)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at bscr.run(PG:23)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Handler.handleCallback(Handler.java:958)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-24 16:41:04.303 E/ActivityThread( 4942): Service com.google.android.ims.service.JibeService has leaked IntentReceiver com.google.android.ims.receiver.sip.DebugOptionsReceiver@dc49cc0 that was originally registered here. Are you missing a call to unregisterReceiver()?
+11-24 16:41:04.303 E/ActivityThread( 4942): android.app.IntentReceiverLeaked: Service com.google.android.ims.service.JibeService has leaked IntentReceiver com.google.android.ims.receiver.sip.DebugOptionsReceiver@dc49cc0 that was originally registered here. Are you missing a call to unregisterReceiver()?
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.LoadedApk$ReceiverDispatcher.<init>(LoadedApk.java:1839)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.LoadedApk.getReceiverDispatcher(LoadedApk.java:1601)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.ContextImpl.registerReceiverInternal(ContextImpl.java:1840)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.app.ContextImpl.registerReceiver(ContextImpl.java:1799)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.content.ContextWrapper.registerReceiver(ContextWrapper.java:774)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at hkn.a(PG:1)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at hko.e(PG:2)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at hko.d(PG:1)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at com.google.android.ims.receiver.sip.DebugOptionsReceiver.a(PG:2)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at bqcs.a(PG:12)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at bscr.run(PG:23)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Handler.handleCallback(Handler.java:958)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:04.303 E/ActivityThread( 4942): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-24 16:41:04.479 E/bwfc    ( 1403): Phenotype API error. Event # edax@5440cd37, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:04.479 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.apps.messaging#com.google.android.apps.messaging(change count changed - expected 2  but was 1)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.479 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:04.537 E/bwfc    ( 1403): Phenotype API error. Event # edax@28f513f7, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:04.537 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.libraries.consentverifier#com.google.android.googlequicksearchbox(change count changed - expected 3  but was 2)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.537 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:04.549 E/bwfc    ( 1403): Phenotype API error. Event # edax@3b24148a, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:04.549 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.apps.messaging.auto#com.google.android.apps.messaging(change count changed - expected 2  but was 1)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.549 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:04.551 E/bwfc    ( 1403): Phenotype API error. Event # edax@6ad7351a, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:04.551 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.libraries.performance.primes#com.google.android.apps.messaging(change count changed - expected 2  but was 0)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.551 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:04.561 E/bwfc    ( 1403): Phenotype API error. Event # edax@857a557b, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:04.561 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 3  but was 2)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:04.561 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:04.563 E/A       ( 1849): Failed to commit flags to Phenotype. Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 3  but was 2) (29501)
+11-24 16:41:04.734 E/SettingsToPropertiesMapper(  516): key=persist.device_config.storage_native_boot.transcode_compat_manifest value=com.yelp.android,0,com.yy.biu,0,com.groupme.android,0,air.tv.douyu.android,0,com.baidu.mbaby,0,com.vlocker.locker,0,com.znxh.hyhuo,0,com.yixia.xiaokaxiu,0 exceeds system property max length.
+11-24 16:41:04.754 E/AppOps  (  516): Bad call made by uid 1000. Package "android" does not belong to uid 10181.
+11-24 16:41:04.767 E/AppOps  (  516): Cannot noteOperation
+11-24 16:41:04.767 E/AppOps  (  516): java.lang.SecurityException: Specified package "android" under uid 10181 but it is not
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3886)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3746)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.noteOperationUnchecked(AppOpsService.java:2629)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.noteOperationImpl(AppOpsService.java:2617)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.-$$Nest$mnoteOperationImpl(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.$r8$lambda$-zO2p3wazaltMFolMcvKOcU7eN4(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher$$ExternalSyntheticLambda3.apply(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.policy.AppOpsPolicy.noteOperation(AppOpsPolicy.java:235)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.noteOperation(AppOpsService.java:6434)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.noteOperation(AppOpsService.java:2598)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.AppOpsManager.noteOpNoThrow(AppOpsManager.java:8420)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.wm.ActivityTaskManagerService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:1076)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.wm.ActivityTaskManagerService$LocalService.hasSystemAlertWindowPermission(ActivityTaskManagerService.java:7006)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundNoBindingCheckLocked(ActiveServices.java:7910)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundWithBindingCheckLocked(ActiveServices.java:7795)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.setFgsRestrictionLocked(ActiveServices.java:7474)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.bindServiceLocked(ActiveServices.java:3744)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceCommon(ContextImpl.java:2127)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceAsUser(ContextImpl.java:2040)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.bindService(ExplicitHealthCheckController.java:345)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.prepareServiceLocked(ExplicitHealthCheckController.java:450)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.getRequestedPackages(ExplicitHealthCheckController.java:268)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$syncRequests$3(ExplicitHealthCheckController.java:153)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$e0trryK6lMIa0Oyq_R_L8I9fbPU(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda0.accept(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$getSupportedPackages$4(ExplicitHealthCheckController.java:251)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$SRa9fw8RTJfzefVJ1-zsa9_9yG0(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda1.onResult(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback.sendResult(RemoteCallback.java:75)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback$1.sendResult(RemoteCallback.java:52)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.IRemoteCallback$Stub.onTransact(IRemoteCallback.java:87)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:04.767 E/AppOps  (  516): Bad call made by uid 1000. Package "android" does not belong to uid 10181.
+11-24 16:41:04.767 E/AppOps  (  516): Cannot checkOperation
+11-24 16:41:04.767 E/AppOps  (  516): java.lang.SecurityException: Specified package "android" under uid 10181 but it is not
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3886)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3746)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3738)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationUnchecked(AppOpsService.java:2417)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationImpl(AppOpsService.java:2400)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.-$$Nest$mcheckOperationImpl(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.$r8$lambda$fx57Sum-uA3sXo7NCFwrI3iq4WM(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher$$ExternalSyntheticLambda9.apply(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.policy.AppOpsPolicy.checkOperation(AppOpsPolicy.java:221)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.checkOperation(AppOpsService.java:6389)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperation(AppOpsService.java:2385)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.AppOpsManager.checkOpNoThrow(AppOpsManager.java:8681)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundNoBindingCheckLocked(ActiveServices.java:7965)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundWithBindingCheckLocked(ActiveServices.java:7795)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.setFgsRestrictionLocked(ActiveServices.java:7474)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.bindServiceLocked(ActiveServices.java:3744)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceCommon(ContextImpl.java:2127)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceAsUser(ContextImpl.java:2040)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.bindService(ExplicitHealthCheckController.java:345)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.prepareServiceLocked(ExplicitHealthCheckController.java:450)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.getRequestedPackages(ExplicitHealthCheckController.java:268)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$syncRequests$3(ExplicitHealthCheckController.java:153)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$e0trryK6lMIa0Oyq_R_L8I9fbPU(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda0.accept(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$getSupportedPackages$4(ExplicitHealthCheckController.java:251)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$SRa9fw8RTJfzefVJ1-zsa9_9yG0(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda1.onResult(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback.sendResult(RemoteCallback.java:75)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback$1.sendResult(RemoteCallback.java:52)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.IRemoteCallback$Stub.onTransact(IRemoteCallback.java:87)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:04.767 E/AppOps  (  516): Bad call made by uid 1000. Package "android" does not belong to uid 10181.
+11-24 16:41:04.767 E/AppOps  (  516): Cannot checkOperation
+11-24 16:41:04.767 E/AppOps  (  516): java.lang.SecurityException: Specified package "android" under uid 10181 but it is not
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3886)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3746)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3738)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationUnchecked(AppOpsService.java:2417)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationImpl(AppOpsService.java:2400)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.-$$Nest$mcheckOperationImpl(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.$r8$lambda$fx57Sum-uA3sXo7NCFwrI3iq4WM(AppOpsService.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher$$ExternalSyntheticLambda9.apply(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.policy.AppOpsPolicy.checkOperation(AppOpsPolicy.java:221)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.checkOperation(AppOpsService.java:6389)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperation(AppOpsService.java:2385)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.AppOpsManager.checkOpNoThrow(AppOpsManager.java:8681)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundNoBindingCheckLocked(ActiveServices.java:7974)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundWithBindingCheckLocked(ActiveServices.java:7795)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.setFgsRestrictionLocked(ActiveServices.java:7474)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.bindServiceLocked(ActiveServices.java:3744)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceCommon(ContextImpl.java:2127)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceAsUser(ContextImpl.java:2040)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.bindService(ExplicitHealthCheckController.java:345)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.prepareServiceLocked(ExplicitHealthCheckController.java:450)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.getRequestedPackages(ExplicitHealthCheckController.java:268)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$syncRequests$3(ExplicitHealthCheckController.java:153)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$e0trryK6lMIa0Oyq_R_L8I9fbPU(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda0.accept(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$getSupportedPackages$4(ExplicitHealthCheckController.java:251)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$SRa9fw8RTJfzefVJ1-zsa9_9yG0(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda1.onResult(R8$$SyntheticClass:0)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback.sendResult(RemoteCallback.java:75)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.RemoteCallback$1.sendResult(RemoteCallback.java:52)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.IRemoteCallback$Stub.onTransact(IRemoteCallback.java:87)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-24 16:41:04.767 E/AppOps  (  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:04.767 E/AppOps  (  516): Bad call made by uid 1000. Package "android" does not belong to uid 10181.
+11-24 16:41:04.768 E/AppOps  (  516): Cannot checkOperation
+11-24 16:41:04.768 E/AppOps  (  516): java.lang.SecurityException: Specified package "android" under uid 10181 but it is not
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3886)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3746)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.verifyAndGetBypass(AppOpsService.java:3738)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationUnchecked(AppOpsService.java:2417)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperationImpl(AppOpsService.java:2400)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.-$$Nest$mcheckOperationImpl(AppOpsService.java:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.$r8$lambda$fx57Sum-uA3sXo7NCFwrI3iq4WM(AppOpsService.java:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher$$ExternalSyntheticLambda9.apply(R8$$SyntheticClass:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.policy.AppOpsPolicy.checkOperation(AppOpsPolicy.java:221)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService$CheckOpsDelegateDispatcher.checkOperation(AppOpsService.java:6389)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.appop.AppOpsService.checkOperation(AppOpsService.java:2385)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.app.AppOpsManager.checkOpNoThrow(AppOpsManager.java:8681)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundNoBindingCheckLocked(ActiveServices.java:7977)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.shouldAllowFgsStartForegroundWithBindingCheckLocked(ActiveServices.java:7795)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.setFgsRestrictionLocked(ActiveServices.java:7474)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActiveServices.bindServiceLocked(ActiveServices.java:3744)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13404)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.am.ActivityManagerService.bindServiceInstance(ActivityManagerService.java:13368)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceCommon(ContextImpl.java:2127)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.app.ContextImpl.bindServiceAsUser(ContextImpl.java:2040)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.bindService(ExplicitHealthCheckController.java:345)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.prepareServiceLocked(ExplicitHealthCheckController.java:450)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.getRequestedPackages(ExplicitHealthCheckController.java:268)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$syncRequests$3(ExplicitHealthCheckController.java:153)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$e0trryK6lMIa0Oyq_R_L8I9fbPU(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda0.accept(R8$$SyntheticClass:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.lambda$getSupportedPackages$4(ExplicitHealthCheckController.java:251)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController.$r8$lambda$SRa9fw8RTJfzefVJ1-zsa9_9yG0(ExplicitHealthCheckController.java:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at com.android.server.ExplicitHealthCheckController$$ExternalSyntheticLambda1.onResult(R8$$SyntheticClass:0)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.os.RemoteCallback.sendResult(RemoteCallback.java:75)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.os.RemoteCallback$1.sendResult(RemoteCallback.java:52)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.os.IRemoteCallback$Stub.onTransact(IRemoteCallback.java:87)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-24 16:41:04.768 E/AppOps  (  516): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:05.120 E/ModelDnldProcssHelpr( 1849): pending download info for pending_hotword_model_download_info is null
+11-24 16:41:05.120 E/ModelDnldProcssHelpr( 1849): pending download info for pending_xgoogle_hotword_model_download_info is null
+11-24 16:41:05.124 E/DownloadManagerWrapper( 1849): Can't find downloadId=2
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): [2] JibeService.onDestroy: JibeService: onDestroy() unregister factory exception: java.lang.IllegalArgumentException: Receiver not registered: com.google.android.ims.receiver.sip.DebugOptionsReceiver@dc49cc0
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.LoadedApk.forgetReceiverDispatcher(LoadedApk.java:1662)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.ContextImpl.unregisterReceiver(ContextImpl.java:1872)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.content.ContextWrapper.unregisterReceiver(ContextWrapper.java:820)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at com.google.android.ims.receiver.sip.DebugOptionsReceiver.b(PG:1)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at com.google.android.ims.service.JibeService.onDestroy(PG:10)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.handleStopService(ActivityThread.java:4851)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.-$$Nest$mhandleStopService(Unknown Source:0)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2297)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.os.Handler.dispatchMessage(Handler.java:106)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-24 16:41:05.163 E/BugleRcsEngine( 4942): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-24 16:41:05.593 E/ModelDnldProcssHelpr( 1849): pending download info for pending_hotword_model_download_info is null
+11-24 16:41:05.593 E/ModelDnldProcssHelpr( 1849): pending download info for pending_xgoogle_hotword_model_download_info is null
+11-24 16:41:05.596 E/MDDMetricsProcessor( 1547): MDDMetricsProcessor.processDownloadSuccess():87 nebulae-lc-artifacts is not requested
+11-24 16:41:05.598 E/DownloadManagerWrapper( 1849): Can't find downloadId=1
+11-24 16:41:05.723 E/bwfc    ( 1403): Phenotype API error. Event # edax@ab67529b, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:05.723 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.inputmethod.latin#com.google.android.inputmethod.latin(change count changed - expected 3  but was 2)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:05.723 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:05.810 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:41:05.894 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:41:05.975 E/system_server(  516): No package ID 7f found for resource ID 0x7f08038b.
+11-24 16:41:05.975 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be5.
+11-24 16:41:05.975 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be5.
+11-24 16:41:05.975 E/system_server(  516): No package ID 7f found for resource ID 0x7f150be4.
+11-24 16:41:05.986 E/system_server(  516): No package ID 7f found for resource ID 0x7f080107.
+11-24 16:41:05.986 E/system_server(  516): No package ID 7f found for resource ID 0x7f150560.
+11-24 16:41:06.894 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:41:06.904 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:41:07.431 E/android.webview( 5078): Not starting debugger since process cannot load the jdwp agent.
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): Failed to migrate local settings data. [CONTEXT service_id=177 ]
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): java.util.concurrent.TimeoutException: Waited 2 seconds (plus 22378732 nanoseconds delay) for dlqg@27f26ba[status=PENDING, info=[delegate=[dlrt@bcc596b[status=PENDING, info=[task=[running=[NOT STARTED YET], propagating=[cwsu@d02dcc8]]]]]]]
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at dlnv.get(:com.google.android.gms@231818047@23.18.18 (190800-535401451):30)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at ukl.a(:com.google.android.gms@231818047@23.18.18 (190800-535401451):48)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at ucl.onFillRequest(:com.google.android.gms@231818047@23.18.18 (190800-535401451):23)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.service.autofill.AutofillService$1$$ExternalSyntheticLambda4.accept(Unknown Source:8)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at com.android.internal.util.function.pooled.PooledLambdaImpl.doInvoke(PooledLambdaImpl.java:310)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at com.android.internal.util.function.pooled.PooledLambdaImpl.invoke(PooledLambdaImpl.java:204)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at com.android.internal.util.function.pooled.OmniFunction.run(OmniFunction.java:87)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.os.Handler.handleCallback(Handler.java:958)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at android.app.ActivityThread.main(ActivityThread.java:8177)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-24 16:41:09.090 E/SettingsMigrationHelper( 1403): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:971)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): oxe: java.lang.reflect.InvocationTargetException
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at oxf.c(PG:3)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at onp.v(PG:2)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at onp.e(PG:10)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at onn.a(PG:2)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at hdv.a(PG:55)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at jou.f(PG:3)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at jfz.e(Unknown Source:6)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at byg.a(PG:2)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at jed.run(PG:39)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at oek.execute(Unknown Source:0)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at jgo.onPropertiesChanged(PG:3)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at android.provider.DeviceConfig.lambda$handleChange$0(DeviceConfig.java:1466)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at android.provider.DeviceConfig$$ExternalSyntheticLambda0.run(Unknown Source:4)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:307)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at dgq.run(PG:67)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): Caused by: java.lang.reflect.InvocationTargetException
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at oxf.c(PG:2)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	... 19 more
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): Caused by: java.lang.IllegalStateException: No underlying SoundTriggerModule available
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	at android.media.soundtrigger.SoundTriggerManager.deleteModel(SoundTriggerManager.java:264)
+11-24 16:41:09.582 E/AmbientMusicServiceMana( 1631): 	... 21 more
+11-24 16:41:09.594 E/AiAiEcho( 1631): Reading elements from Geller failed with cause
+11-24 16:41:09.594 E/AiAiEcho( 1631): esy: Code: UNKNOWN, Message: Geller data fetch is not enabled
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at etd.a(PG:1)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at glo.b(PG:4)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at qyc.e(PG:4)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at reo.run(PG:8)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:307)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at dgq.run(PG:67)
+11-24 16:41:09.594 E/AiAiEcho( 1631): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:10.277 E/DeviceStateAutoRotHelpr( 1043): Mismatch between number of device states and device states descriptions.
+11-24 16:41:10.317 E/ActivityManager(  516): Unable to freeze binder for 4043: -11
+11-24 16:41:10.328 E/DeviceStateAutoRotHelpr( 1043): Mismatch between number of device states and device states descriptions.
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): Could not parse manufactured year from serial.
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): java.lang.NumberFormatException: For input string: "E"
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.parseInt(Integer.java:797)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.valueOf(Integer.java:1128)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.google.android.settings.deviceinfo.hardwareinfo.HardwareInfoFeatureProviderGoogleImpl.getManufacturedYear(HardwareInfoFeatureProviderGoogleImpl.kt:22)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.deviceinfo.hardwareinfo.ManufacturedYearPreferenceController.<init>(ManufacturedYearPreferenceController.kt:26)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.core.BasePreferenceController.createInstance(BasePreferenceController.java:187)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.core.PreferenceControllerListHelper.getPreferenceControllersFromXml(PreferenceControllerListHelper.java:83)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.BaseSearchIndexProvider.getPreferenceControllers(BaseSearchIndexProvider.java:149)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.BaseSearchIndexProvider.getDynamicRawDataToIndex(BaseSearchIndexProvider.java:87)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.getDynamicSearchIndexableRawData(SettingsSearchIndexablesProvider.java:379)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.queryDynamicRawData(SettingsSearchIndexablesProvider.java:180)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.provider.SearchIndexablesProvider.query(SearchIndexablesProvider.java:133)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1596)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1692)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider$Transport.query(ContentProvider.java:292)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:107)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:41:10.331 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+--------- beginning of kernel
+11-24 16:41:10.579 E/binder  (    0): invalid inc weak node for 386604
+11-24 16:41:10.436 E/IPCThreadState(  516): Binder transaction failure: 387972/29189/-22
+11-24 16:41:10.436 E/JobServiceContext(  516): Error sending onStart message to '.modules.routines.impl.RoutinesJobIntentService' 
+11-24 16:41:10.436 E/JobServiceContext(  516): android.os.DeadObjectException
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.BinderProxy.transactNative(Native Method)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.app.job.IJobService$Stub$Proxy.startJob(IJobService.java:193)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.server.job.JobServiceContext.handleServiceBoundLocked(JobServiceContext.java:1220)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.server.job.JobServiceContext.doServiceBoundLocked(JobServiceContext.java:1129)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.server.job.JobServiceContext.onServiceConnected(JobServiceContext.java:986)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.app.LoadedApk$ServiceDispatcher.doConnected(LoadedApk.java:2198)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.app.LoadedApk$ServiceDispatcher$RunConnection.run(LoadedApk.java:2231)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.Handler.handleCallback(Handler.java:958)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.Looper.loopOnce(Looper.java:205)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at android.os.Looper.loop(Looper.java:294)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.server.SystemServer.run(SystemServer.java:970)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.server.SystemServer.main(SystemServer.java:664)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at java.lang.reflect.Method.invoke(Native Method)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:552)
+11-24 16:41:10.436 E/JobServiceContext(  516): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:949)
+11-24 16:41:10.503 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:41:10.504 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:41:10.516 E/ScreenResolutionController( 1043): No support
+11-24 16:41:10.547 E/ScreenResolutionController( 1043): No support
+11-24 16:41:10.558 E/JavaBinder( 1043): *** Uncaught remote exception! Exceptions are not yet supported across processes. Client PID 4043 UID 10118.
+11-24 16:41:10.558 E/JavaBinder( 1043): android.database.StaleDataException: Attempted to access a cursor after it has been closed.
+11-24 16:41:10.558 E/JavaBinder( 1043): 	at android.database.CursorToBulkCursorAdaptor.throwIfCursorIsClosed(CursorToBulkCursorAdaptor.java:137)
+11-24 16:41:10.558 E/JavaBinder( 1043): 	at android.database.CursorToBulkCursorAdaptor.getBulkCursorDescriptor(CursorToBulkCursorAdaptor.java:155)
+11-24 16:41:10.558 E/JavaBinder( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:117)
+11-24 16:41:10.558 E/JavaBinder( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:41:10.558 E/JavaBinder( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): Could not parse manufactured year from serial.
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): java.lang.NumberFormatException: For input string: "E"
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.parseInt(Integer.java:797)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.Integer.valueOf(Integer.java:1128)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.google.android.settings.deviceinfo.hardwareinfo.HardwareInfoFeatureProviderGoogleImpl.getManufacturedYear(HardwareInfoFeatureProviderGoogleImpl.kt:22)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.deviceinfo.hardwareinfo.ManufacturedYearPreferenceController.<init>(ManufacturedYearPreferenceController.kt:26)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.core.BasePreferenceController.createInstance(BasePreferenceController.java:187)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.core.PreferenceControllerListHelper.getPreferenceControllersFromXml(PreferenceControllerListHelper.java:83)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.BaseSearchIndexProvider.getPreferenceControllers(BaseSearchIndexProvider.java:149)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.BaseSearchIndexProvider.getNonIndexableKeys(BaseSearchIndexProvider.java:114)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.getNonIndexableKeysFromProvider(SettingsSearchIndexablesProvider.java:284)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.queryNonIndexableKeys(SettingsSearchIndexablesProvider.java:157)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.provider.SearchIndexablesProvider.query(SearchIndexablesProvider.java:127)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1596)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1692)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProvider$Transport.query(ContentProvider.java:292)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:107)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:41:10.726 E/HardwareInfoFeatureProviderImpl( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): No service published for: ethernet
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:166)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry$139.createService(SystemServiceRegistry.java:1872)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1971)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1645)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2212)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:934)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.Context.getSystemService(Context.java:4420)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at com.android.settings.network.tether.TetherSettings$2.getNonIndexableKeys(TetherSettings.java:662)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.getNonIndexableKeysFromProvider(SettingsSearchIndexablesProvider.java:284)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at com.android.settings.search.SettingsSearchIndexablesProvider.queryNonIndexableKeys(SettingsSearchIndexablesProvider.java:157)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.provider.SearchIndexablesProvider.query(SearchIndexablesProvider.java:127)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1596)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.ContentProvider.query(ContentProvider.java:1692)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.ContentProvider$Transport.query(ContentProvider.java:292)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:107)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:41:10.884 E/SystemServiceRegistry( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:10.946 E/ScreenResolutionController( 1043): No support
+11-24 16:41:11.407 E/gs.intelligence( 5161): Not starting debugger since process cannot load the jdwp agent.
+11-24 16:41:11.758 E/PhoneInterfaceManager( 1042): isVoNrEnabled: CommandException: com.android.internal.telephony.CommandException: REQUEST_NOT_SUPPORTED
+11-24 16:41:11.758 E/PhoneInterfaceManager( 1042): isVoNrEnabled: CommandException: com.android.internal.telephony.CommandException: REQUEST_NOT_SUPPORTED
+11-24 16:41:12.259 E/ScreenResolutionController( 1043): No support
+11-24 16:41:12.748 E/JavaBinder( 1043): *** Uncaught remote exception! Exceptions are not yet supported across processes. Client PID 4043 UID 10118.
+11-24 16:41:12.748 E/JavaBinder( 1043): android.database.StaleDataException: Attempted to access a cursor after it has been closed.
+11-24 16:41:12.748 E/JavaBinder( 1043): 	at android.database.CursorToBulkCursorAdaptor.throwIfCursorIsClosed(CursorToBulkCursorAdaptor.java:137)
+11-24 16:41:12.748 E/JavaBinder( 1043): 	at android.database.CursorToBulkCursorAdaptor.getBulkCursorDescriptor(CursorToBulkCursorAdaptor.java:155)
+11-24 16:41:12.748 E/JavaBinder( 1043): 	at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:117)
+11-24 16:41:12.748 E/JavaBinder( 1043): 	at android.os.Binder.execTransactInternal(Binder.java:1339)
+11-24 16:41:12.748 E/JavaBinder( 1043): 	at android.os.Binder.execTransact(Binder.java:1275)
+11-24 16:41:12.874 E/bwfc    ( 1403): Phenotype API error. Event # edax@624333c9, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:12.874 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 5  but was 4)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:12.874 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:12.882 E/A       ( 1849): Failed to commit flags to Phenotype. Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 5  but was 4) (29501)
+11-24 16:41:17.037 E/PhenotypeModule( 1547): PhenotypeModule.handlePhenotypeConfigurationUpdates():268 Get empty configurations.
+11-24 16:41:17.143 E/PhenotypeModule( 1547): PhenotypeModule.handlePhenotypeConfigurationUpdates():268 Get empty configurations.
+11-24 16:41:18.677 E/PhenotypeModule( 1547): PhenotypeModule.handlePhenotypeConfigurationUpdates():268 Get empty configurations.
+11-24 16:41:19.419 E/BugleRcsEngine( 4275): [110] brfg.a: DroidGuardLogger: Could not create DroidGuard token creation event
+11-24 16:41:19.658 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:41:19.659 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:41:19.758 E/system_server(  516): No package ID 7f found for resource ID 0x7f080107.
+11-24 16:41:19.758 E/system_server(  516): No package ID 7f found for resource ID 0x7f150560.
+11-24 16:41:19.864 E/bwfc    ( 1403): Phenotype API error. Event # edax@ad45edc5, EventCode: 5 [CONTEXT service_id=51 ]
+11-24 16:41:19.864 E/bwfc    ( 1403): bwdx: 29501: Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 6  but was 5)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at bwfg.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):16)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at bwff.g(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at bwfc.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at bwfc.f(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at avsy.eo(:com.google.android.gms@231818047@23.18.18 (190800-535401451):1)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at avtf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):14)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at aced.c(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at aced.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):8)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at acjn.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-24 16:41:19.864 E/bwfc    ( 1403): 	at java.lang.Thread.run(Thread.java:1012)
+11-24 16:41:19.869 E/A       ( 1849): Failed to commit flags to Phenotype. Stale snapshot for com.google.android.googlequicksearchbox(change count changed - expected 6  but was 5) (29501)
+11-24 16:41:20.832 E/DeviceConfig(  516): Parsing int failed for location_mode
+11-24 16:41:21.214 E/native  ( 1631): E0000 00:00:1795538481.213603    1653 mmap.cc:233] Error during Unmap / munmap: Invalid argument
+11-24 16:41:22.023 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-24 16:41:22.025 E/RoleControllerServiceImpl(  830): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-24 16:41:22.049 E/system_server(  516): No package ID 7f found for resource ID 0x7f080107.
+11-24 16:41:22.049 E/system_server(  516): No package ID 7f found for resource ID 0x7f150560.
+11-24 16:41:23.300 E/NanoAppLogging( 1403): Failed to begin contexthub communication
+11-24 16:41:23.995 E/MDD     ( 1454): FileGroupManager: Trying to add expired group enpromo-state-config.
