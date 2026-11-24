@@ -189,6 +189,7 @@ object Realtime {
                 if (joinRefs[entity] != m.optString("ref")) return
                 if (payload.optString("status") == "ok") {
                     joinedRooms.add(entity); tries = 0; fails.remove(entity)
+                    android.util.Log.i("TFDBG", "live: joined $entity")
                     setJoined(true)
                 } else {
                     android.util.Log.w("TFLive", "join $entity refused: ${payload.optJSONObject("response")}")
@@ -221,6 +222,8 @@ object Realtime {
         val type = when (d.optString("type").uppercase()) { "INSERT" -> "create"; "UPDATE" -> "update"; "DELETE" -> "delete"; else -> return }
         val row = if (type == "delete") d.optJSONObject("old_record") else d.optJSONObject("record")
         val ev = Event(type, row, row?.optString("id").orEmpty())
+        // (one line per change, no data: the test phone's check that live updates arrive)
+        android.util.Log.i("TFDBG", "live: $entity $type")
         for (cb in rooms[entity]?.toList() ?: return) try { cb(ev) } catch (e: Exception) { /* one screen's error */ }
     }
 

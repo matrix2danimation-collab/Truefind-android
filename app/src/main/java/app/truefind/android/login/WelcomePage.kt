@@ -186,6 +186,7 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
         LoginApi.fn("checkPhoneLogin", JSONObject()) { r ->
             if (my != seq) return@fn
             val st = r.data.optString("status")
+            android.util.Log.i("TFDBG", "login: next ${r.status} ${st.ifEmpty { "-" }}")
             when {
                 r.ok && st == "ok" -> {
                     if (r.data.optBoolean("banned")) { done(directLoginMessage("banned")); return@fn }
@@ -255,6 +256,7 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
         net.execute {
             val r = app.truefind.android.Supa.auth("POST", "otp", JSONObject().put("phone", "+91$p"))
             main.post {
+                android.util.Log.i("TFDBG", "login: otp sent ${r.status}")
                 if (!r.ok) { done(sendError(r)); return@post }
                 otpSent = true
                 demoOtp = ""
@@ -280,6 +282,7 @@ internal class WelcomePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) 
             val r = app.truefind.android.Supa.auth("POST", "verify", JSONObject().put("type", "sms").put("phone", "+91$p").put("token", code))
             val signed = r.ok && app.truefind.android.Auth.take(context, r.data)
             main.post {
+                android.util.Log.i("TFDBG", "login: otp checked ${r.status} ${if (signed) "signed in" else "not signed in"}")
                 if (!r.ok) { done(verifyError(r)); return@post }
                 if (!signed) { done("Could not sign you in right now. Please try again."); return@post }
                 done("")
