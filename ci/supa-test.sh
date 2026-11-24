@@ -72,8 +72,14 @@ keep() {
   [ -s "$OUT/crash.txt" ] || rm -f "$OUT/crash.txt"
 }
 
-# ── 1. fresh install ──
+# the app's own lines and every error, written down as they come (kept even when the test phone goes away)
 adb logcat -c
+( timeout 1800 "$ADB" logcat -v time -s TFDBG:I TFAuth:W TFLive:W TFLogin:W TFApi:W AndroidRuntime:E ActivityManager:I lowmemorykiller:I > "$OUT/live-log.txt" 2>&1 & )
+( timeout 1800 "$ADB" logcat -v time "*:E" > "$OUT/errors.txt" 2>&1 & )
+phone_ok() { [ "$(timeout 10 "$ADB" get-state 2>/dev/null)" = device ]; }
+gone() { phone_ok && return 1; bad "the test phone (emulator) went away: the rest is not checked"; cp "$OUT/live-log.txt" "$OUT/app-log.txt" 2>/dev/null; ls -la "$OUT"; exit 0; }
+
+# ── 1. fresh install ──
 adb shell am start -W -n $PKG/.MainActivity >> "$OUT/start.txt" 2>&1
 sleep 6; unblock
 shot x01-get-started
@@ -96,16 +102,19 @@ adb shell input text 222222
 if waitlog "login: otp checked 200 signed in" 30; then ok "3 the OTP made the sign-in (Supabase Auth)"; else bad "3 the OTP did not sign in ($(adb logcat -d -s TFDBG:I | grep 'login: otp checked' | tail -1))"; fi
 if waitlog "login: next 200 ok" 30; then ok "3 checkPhoneLogin: a finished profile"; else bad "3 checkPhoneLogin did not say ok ($(adb logcat -d -s TFDBG:I | grep 'login: next' | tail -1))"; fi
 if waitlog "native at /" 20; then ok "3 Home opened"; else bad "3 Home did not open"; fi
-if waitlog "live: joined Call" 30; then ok "3 live updates connected (Supabase Realtime: Call)"; else bad "3 live updates did not connect"; fi
-sleep 8; unblock
-shot x04-home
+sleep 4; shot x04-home
+if waitlog "live: joined Call" 30; then ok "3 live updates connected (Supabase Realtime: Call)"; else gone; bad "3 live updates did not connect"; fi
+sleep 6; unblock
+shot x04b-home
 
 # ── 4. pages filled from Supabase ──
+gone
 link /explore; sleep 10; shot x05-explore
 link /wallet; sleep 9; shot x06-wallet
 link /profile; sleep 9; shot x07-profile
 link /; sleep 5
 
+gone
 # ── 5. Ravi calls Priya: the call comes to the phone live ──
 read -r RAVI RAVI_ID <<< "$(session 919000000001 111111)"
 read -r PRIYA PRIYA_ID <<< "$(session 919000000002 222222)"
@@ -126,6 +135,7 @@ sleep 6
 shot x09-after-call
 keep
 
+gone
 # ── 7. closed and opened again ──
 adb shell am force-stop $PKG
 adb logcat -c
@@ -134,6 +144,7 @@ if waitlog "start: sign-in kept on this phone" 20; then ok "7 reopened: still si
 sleep 9; unblock
 shot x10-reopened
 
+gone
 # ── 8. log out ──
 link "/profile?settings=1"; sleep 6
 if tap "Log out" 30; then
