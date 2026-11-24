@@ -13,7 +13,9 @@
 #  8. Settings → Log out → Get Started again                                     → x11-logged-out.png
 # Checks read the app's own log lines (TFDBG), not the screen: the sign-in pages move all the time, and the
 # phone's screen reader (uiautomator) waits for a still screen. results.txt: "OK …" / "FAIL …" per check.
-APK="$1"; OUT="$2"; PKG=app.truefind.android
+APK="$1"; OUT="$2"; WHO="${3:-priya}"; PKG=app.truefind.android
+# who signs in on the test phone: Priya (creator: Ravi's call rings for her) or Ravi (member: no call part)
+if [ "$WHO" = ravi ]; then NUM=9000000001; OTP=111111; else NUM=9000000002; OTP=222222; fi
 SB=https://ltffzgmnhjeqoguquovf.supabase.co
 KEY=sb_publishable_fQ6jdqIDFe9HrU5fbRWJqA_a9rQAPrn
 mkdir -p "$OUT"
@@ -94,7 +96,7 @@ if said "start: no sign-in on this phone" && said "sign-in page shown"; then ok 
 # Get Started: the big button at the bottom of the page (its place on the 1080 × 2400 phone: 540, 2088)
 if ! tap "Get Started" 15; then adb shell input tap $((W / 2)) $((H * 2088 / 2400)); fi
 sleep 3
-adb shell input text 9000000002
+adb shell input text $NUM
 sleep 1
 shot x02-number
 adb shell input keyevent KEYCODE_ENTER     # the number field's "Go" = Login with OTP
@@ -103,7 +105,7 @@ sleep 3
 shot x03-otp
 
 # ── 3. OTP → signed in → Home ──
-adb shell input text 222222
+adb shell input text $OTP
 if waitlog "login: otp checked 200 signed in" 30; then ok "3 the OTP made the sign-in (Supabase Auth)"; else bad "3 the OTP did not sign in ($(adb logcat -d -s TFDBG:I | grep 'login: otp checked' | tail -1))"; fi
 if waitlog "login: next 200 ok" 30; then ok "3 checkPhoneLogin: a finished profile"; else bad "3 checkPhoneLogin did not say ok ($(adb logcat -d -s TFDBG:I | grep 'login: next' | tail -1))"; fi
 if waitlog "native at /" 20; then ok "3 Home opened"; else bad "3 Home did not open"; fi
@@ -120,6 +122,7 @@ link /profile; sleep 9; shot x07-profile
 link /; sleep 5
 
 gone
+if [ "$WHO" = priya ]; then
 # ── 5. Ravi calls Priya: the call comes to the phone live ──
 read -r RAVI RAVI_ID <<< "$(session 919000000001 111111)"
 read -r PRIYA PRIYA_ID <<< "$(session 919000000002 222222)"
@@ -139,6 +142,7 @@ if waitlog "live: Call update" 15; then ok "6 the hang-up arrived live"; else ba
 sleep 6
 shot x09-after-call
 keep
+fi
 
 gone
 # ── 7. closed and opened again ──

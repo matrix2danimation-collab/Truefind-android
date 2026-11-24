@@ -247,7 +247,8 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          # (set "supa": the live test on the other software GPU, SwiftShader through ANGLE)
+          emulator-options: -no-window ${{ matrix.set == 'supa' && '-gpu swangle_indirect' || '-gpu swiftshader_indirect' }} -noaudio -no-boot-anim -camera-back none
           script: bash ci/screens.sh TrueFind-emu.apk shots ${{ matrix.set }}
       # the computer under the test phone: did it stop the emulator (out of memory, a crash)?
       - name: Host log (was the emulator stopped?)

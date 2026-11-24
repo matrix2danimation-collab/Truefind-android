@@ -179,7 +179,8 @@ if [ "$SET" = session ]; then bash ci/session-test.sh "$APK" "$OUT"; exit 0; fi
 # the native sign-in pages (their own list of screens, from the Login work)
 if [ "$SET" = login ]; then bash ci/login-screens.sh "$APK" "$OUT"; exit 0; fi
 # the app against the real Supabase server: sign in with a test number, pages, a live call, log out (ci/supa-test.sh)
-if [ "$SET" = supa ]; then bash ci/supa-test.sh "$APK" "$OUT"; exit 0; fi
+if [ "$SET" = supa ]; then bash ci/supa-test.sh "$APK" "$OUT" priya; exit 0; fi
+if [ "$SET" = supa2 ]; then bash ci/supa-test.sh "$APK" "$OUT" ravi; exit 0; fi
 if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"
