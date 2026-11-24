@@ -23,14 +23,27 @@ adb shell settings put system screen_off_timeout 600000
 adb shell settings put global hide_error_dialogs 1
 adb shell am force-stop $PKG; adb shell pm clear $PKG > /dev/null
 for p in POST_NOTIFICATIONS RECORD_AUDIO CAMERA; do adb shell pm grant $PKG android.permission.$p > /dev/null 2>&1; done
+adb shell input keyevent KEYCODE_HOME; sleep 15
 
 ok() { echo "OK   $*" | tee -a "$OUT/results.txt"; }
 bad() { echo "FAIL $*" | tee -a "$OUT/results.txt"; }
-shot() { timeout 40 "$ADB" exec-out screencap -p > "$OUT/$1.png"; [ -s "$OUT/$1.png" ] || rm -f "$OUT/$1.png"; }
+shot() { dump; timeout 40 "$ADB" exec-out screencap -p > "$OUT/$1.png"; [ -s "$OUT/$1.png" ] || rm -f "$OUT/$1.png"; }
 said() { adb logcat -d -s TFDBG:I | grep -q "$1"; }
 # waits until the app has written [1] ([2] seconds at most)
 waitlog() { local t=0; while [ $t -lt "$2" ]; do said "$1" && return 0; sleep 1; t=$((t+1)); done; return 1; }
-dump() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1; }
+dump1() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb pull /sdcard/ui.xml "$OUT/ui.xml" > /dev/null 2>&1; }
+# the test phone's own "Pixel Launcher isn't responding" box (its launcher is slow on the emulator) covers
+# everything: "Wait" closes it, then the screen is read again
+dump() {
+  local i xy
+  for i in 1 2 3 4; do
+    dump1
+    grep -q "isn&apos;t responding\|isn't responding" "$OUT/ui.xml" 2>/dev/null || return 0
+    xy=$(python3 ci/ui-find.py "$OUT/ui.xml" "Wait" 2>/dev/null) && adb shell input tap $xy
+    echo "(closed the phone's 'isn't responding' box)" >> "$OUT/start.txt"
+    sleep 2
+  done
+}
 # taps the element whose text / description is [1] (waits [2] seconds at most for it to show)
 tap() {
   local t=0 xy
