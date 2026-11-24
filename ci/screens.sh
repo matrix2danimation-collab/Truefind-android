@@ -389,6 +389,19 @@ tshot t32-map-scrolled "540 1900 540 700" --es tf_preview secret-map --ez tf_pre
 tshot t33-chats-scrolled "540 1900 540 900" --es tf_preview secret-chat --ez tf_premium true
 tshot t34-home-scrolled "540 1900 540 1300" --es tf_preview secret --ez tf_premium true
 fi
+# 24 Nov: all of India on the map — capitals (stars), every state, ~7,100 towns, district lines — at each zoom
+if [ "$SET" = india ]; then
+shot m01-page-india open --es tf_preview secret-map --ez tf_premium true --es tf_open india
+shot m02-page-city open --es tf_preview secret-map --ez tf_premium true --es tf_open india-city
+shot m03-full-india open --es tf_preview secret-map --ez tf_premium true --es tf_open full-india
+shot m04-full-north open --es tf_preview secret-map --ez tf_premium true --es tf_open full-north
+shot m05-full-up open --es tf_preview secret-map --ez tf_premium true --es tf_open full-up
+shot m06-full-close open --es tf_preview secret-map --ez tf_premium true --es tf_open full-close
+shot m07-full-ne open --es tf_preview secret-map --ez tf_premium true --es tf_open full-ne
+shot m08-full-south open --es tf_preview secret-map --ez tf_premium true --es tf_open full-south
+shot m09-full-ladakh open --es tf_preview secret-map --ez tf_premium true --es tf_open full-ladakh
+shot m10-map-default home --es tf_preview secret-map --ez tf_premium true
+fi
 if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true
 shot r02-home-free home --es tf_preview secret

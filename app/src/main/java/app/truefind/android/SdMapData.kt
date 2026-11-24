@@ -27,7 +27,8 @@ object SdMapData {
             floatArrayOf(a, b, c, d)
         }
     }
-    class City(val n: String, val lng: Float, val lat: Float, val pop: Int)
+    /** a town: name, place, size (thousands of people; 1 when not known) and kind: 0 town, 1 district headquarters, 2 state / UT capital, 3 New Delhi */
+    class City(val n: String, val lng: Float, val lat: Float, val pop: Int, val kind: Int = 0)
     class State(val n: String, val a: Float, val lng: Float, val lat: Float)
     /** a name that is not a town: continent (co), ocean or sea (oc), country (cn), region (rg), water (wt); shown between zooms z0 … z1 (pixels per degree) */
     class Name(val t: String, val lng: Float, val lat: Float, val k: String, val z0: Float, val z1: Float)
@@ -38,6 +39,8 @@ object SdMapData {
     lateinit var border: List<Rings>; private set
     lateinit var state: List<Rings>; private set
     lateinit var river: List<Rings>; private set
+    /** the lines between districts (24 Nov: every district of India, from the 2020s map) */
+    var district: List<Rings> = emptyList(); private set
     lateinit var highways: Rings; private set
     lateinit var roads: Rings; private set
     lateinit var worldLights: FloatArray; private set
@@ -73,7 +76,8 @@ object SdMapData {
 
     /** reads the whole file (no Android here: tools can read it the same way) */
     fun read(d: DataInputStream) {
-        check(d.readUTF() == "TFMAP2")
+        // TFMAP3 (24 Nov): towns carry their kind, district lines, India's states of today (Ladakh, DNH & DD)
+        val v3 = when (d.readUTF()) { "TFMAP3" -> true; "TFMAP2" -> false; else -> error("not a map file") }
         val layers = HashMap<String, Rings>()
         repeat(d.readInt()) {
             val tol = d.readFloat()
@@ -83,13 +87,13 @@ object SdMapData {
             layers[name] = Rings(tol, rings)
         }
         fun levels(prefix: String) = generateSequence(0) { it + 1 }.map { layers["$prefix$it"] }.takeWhile { it != null }.filterNotNull().toList()
-        world = levels("world"); border = levels("border"); state = levels("state"); river = levels("river")
+        world = levels("world"); border = levels("border"); state = levels("state"); river = levels("river"); district = levels("district")
         highways = layers.getValue("highways"); roads = layers.getValue("roads")
         worldLights = layers.getValue("worldLights").rings[0]
         cityGeo = layers.getValue("cityGeo").rings[0]
         val m = layers.getValue("mesh").rings
         mesh = FloatArray(m.size * 4).also { a -> for (i in m.indices) for (j in 0 until 4) a[i * 4 + j] = m[i][j] }
-        cities = List(d.readInt()) { City(d.readUTF(), d.readFloat(), d.readFloat(), d.readInt()) }
+        cities = List(d.readInt()) { City(d.readUTF(), d.readFloat(), d.readFloat(), d.readInt(), if (v3) d.readByte().toInt() else 0) }
         states = List(d.readInt()) { State(d.readUTF(), d.readFloat(), d.readFloat(), d.readFloat()) }
         names = List(d.readInt()) { Name(d.readUTF(), d.readFloat(), d.readFloat(), d.readUTF(), d.readFloat(), d.readFloat()) }
         fun table(): HashMap<String, FloatArray> { val t = HashMap<String, FloatArray>(); repeat(d.readInt()) { t[d.readUTF()] = floatArrayOf(d.readFloat(), d.readFloat()) }; return t }

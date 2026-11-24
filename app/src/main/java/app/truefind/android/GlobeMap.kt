@@ -155,7 +155,7 @@ class GlobeMap(
         addView(zoom, LayoutParams(dpi(46f), -2, Gravity.END or Gravity.CENTER_VERTICAL).apply { rightMargin = dpi(12f) })
         // translateY(-40%) of its own height: a little below the middle
         zoom.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> v.translationY = v.height * 0.1f }
-        addView(sdText(ctx, "Map: svg-maps (CC BY 4.0) · Natural Earth · GeoNames", 8.5f, Color.argb(71, 255, 255, 255), bold = false).apply { importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO },
+        addView(sdText(ctx, "Map: svg-maps (CC BY 4.0) · Natural Earth · GeoNames · INDIAN-SHAPEFILES", 7.5f, Color.argb(71, 255, 255, 255), bold = false).apply { importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO },
             LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dpi(4f) })
         describe()
         post { SdMapData.load(context) { rebuildPoints(); refresh() } }
@@ -616,8 +616,11 @@ class GlobeMap(
                 if (aRd > 0) { line(SdMapData.roads, q, P, false); stroke(c, Ui.c("#cdb8ff"), min(1.6, 0.5 + ppd / 160).toFloat(), (aRd * min(0.34, 0.14 + ppd / 700)).toFloat()) }
                 if (aHw > 0) { line(SdMapData.highways, q, P, false); stroke(c, Ui.c("#f3cf8a"), min(2.6, 0.8 + ppd / 120).toFloat(), (aHw * min(0.5, 0.22 + ppd / 520)).toFloat()) }
                 if (aRiv > 0) { line(riverRings(r), q, P, false); stroke(c, Ui.c("#9cc4ff"), min(1.8, 0.5 + ppd / 52).toFloat(), (aRiv * min(0.55, 0.22 + ppd / 105)).toFloat()) }
-                // state borders
-                line(stateRings(r), q, P, false); stroke(c, Ui.c("#f3ecff"), min(1.1, 0.5 + r / 1500).toFloat(), 0.45f)
+                // district lines (owner, 24 Nov: every district of India), faint, coming in as you zoom
+                val aDist = ramp(ppd, 15.0, 30.0)
+                if (aDist > 0 && SdMapData.district.isNotEmpty()) { line(districtRings(r), q, P, false); stroke(c, Ui.c("#d9c9ff"), min(1.1, 0.5 + ppd / 260).toFloat(), (aDist * min(0.42, 0.22 + ppd / 500)).toFloat()) }
+                // state borders (today's states: Ladakh apart from Jammu & Kashmir), a little clearer than before
+                line(stateRings(r), q, P, false); stroke(c, Ui.c("#f3ecff"), min(1.4, 0.6 + r / 1400).toFloat(), 0.6f)
                 // the network between India's big cities (zoomed out only)
                 val aMesh = 1 - ramp(ppd, 12.0, 24.0)
                 if (aMesh > 0) {
@@ -852,6 +855,9 @@ class GlobeMap(
     // the names' keys, made once (a name keeps its key while it fades in and out)
     private val cityKeys: Array<String> by lazy { Array(SdMapData.cities.size) { val c = SdMapData.cities[it]; "c-${c.n}-${c.lng}" } }
     private val stateKeys: Array<String> by lazy { Array(SdMapData.states.size) { "s-${SdMapData.states[it].n}" } }
+    /** the capitals (New Delhi first) and the states, biggest first: the order they get room in */
+    private val capitals: IntArray by lazy { SdMapData.cities.indices.filter { SdMapData.cities[it].kind >= 2 }.sortedByDescending { SdMapData.cities[it].kind * 100000 + SdMapData.cities[it].pop }.toIntArray() }
+    private val statesBySize: IntArray by lazy { SdMapData.states.indices.sortedByDescending { SdMapData.states[it].a }.toIntArray() }
     private val nameKeys: Array<String> by lazy { Array(SdMapData.names.size) { val n = SdMapData.names[it]; "x-${n.t}-${n.lng}" } }
     private fun mix(a: Disp, b: Disp, e: Double) = Disp(a.lng + lonGap(a.lng, b.lng) * e, a.lat + (b.lat - a.lat) * e)
 
@@ -939,9 +945,10 @@ class GlobeMap(
 
             // ── place names: most important first, each only where it fits ──
             placed.clear()
-            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean) {
+            fun tryPlace(key: String, kind: String, text: String, lng: Double, lat: Double, twoSides: Boolean): Boolean {
+                if (placed.containsKey(key)) return true
                 P.at(lng, lat, o)
-                if (o[2] < 0.25 || o[0] < -60 || o[0] > w + 60 || o[1] < -30 || o[1] > h + 30) return
+                if (o[2] < 0.25 || o[0] < -60 || o[0] > w + 60 || o[1] < -30 || o[1] > h + 30) return false
                 val px = o[0]; val py = o[1]
                 val first = if (twoSides) (lbl[key]?.side?.takeIf { it != 0 } ?: 1) else 0
                 for (k in 0 until (if (twoSides) 2 else 1)) {
@@ -952,27 +959,42 @@ class GlobeMap(
                     if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)) continue
                     box(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2)
                     placed[key] = Placed(kind, text, lng, lat, side)
-                    return
+                    return true
                 }
+                return false
             }
-            if (SdMapData.ready && !(LITE && moving && ppd < 6)) {
+            if (SdMapData.ready && !(LITE && moving && ppd < 3)) {
                 val names = SdMapData.names
                 fun inZ(n: SdMapData.Name) = ppd >= n.z0 && ppd < n.z1
                 fun seen(lng: Float, lat: Float) = q == null || (lng >= q[0] && lng <= q[2] && lat >= q[1] && lat <= q[3])
+                val cs = SdMapData.cities
                 // far away: continents and oceans
                 for ((j, n) in names.withIndex()) if ((n.k == "co" || n.k == "oc") && ppd < 10 && inZ(n)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
-                // states
-                if (ppd >= 12 && ppd < 60) {
-                    val minA = if (ppd < 20) 1500f else if (ppd < 32) 280f else 0f
-                    for ((j, s) in SdMapData.states.withIndex()) if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], "st", s.n, s.lng.toDouble(), s.lat.toDouble(), false)
+                // (owner, 24 Nov: every capital, every state and all of India's towns on the map)
+                // New Delhi, then every state's and union territory's capital: a star with its name — when the name has
+                // no room, the star alone (so a capital always shows where it is)
+                if (ppd >= 2.5) for (ix in capitals) {
+                    val ct = cs[ix]
+                    if (!seen(ct.lng, ct.lat)) continue
+                    val kind = if (ct.kind == 3) "nc" else "cap"
+                    if (!tryPlace(cityKeys[ix], kind, ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true)) tryPlace(cityKeys[ix], "${kind}0", "", ct.lng.toDouble(), ct.lat.toDouble(), false)
                 }
-                // big cities, neighbours and seas, then smaller towns, then landscapes
+                // states: all of them, the big ones first (smaller letters while the map shows all of India)
+                if (ppd >= 3.5 && ppd < 70) {
+                    val minA = if (ppd < 6) 2400f else if (ppd < 10) 700f else if (ppd < 16) 120f else 0f
+                    val kind = if (ppd < 11) "st2" else "st"
+                    for (j in statesBySize) { val s = SdMapData.states[j]; if (s.a > minA && seen(s.lng, s.lat)) tryPlace(stateKeys[j], kind, s.n, s.lng.toDouble(), s.lat.toDouble(), false) }
+                }
+                // big cities, neighbours and seas, then every other town (district headquarters before others), then landscapes
                 val minPop = minPopFor(ppd)
-                val cs = SdMapData.cities
                 var i = 0
-                while (i < cs.size && cs[i].pop >= 1000) { val ct = cs[i]; if (ct.pop >= minPop && seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "cb", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
+                while (i < cs.size && cs[i].pop >= 1000) { val ct = cs[i]; if (ct.kind < 2 && ct.pop >= minPop && seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "cb", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
                 for ((j, n) in names.withIndex()) if ((n.k == "cn" || (n.k == "oc" && ppd >= 10)) && inZ(n)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
-                while (i < cs.size) { val ct = cs[i]; if (ct.pop < minPop) break; if (seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "ct", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
+                if (minPop.isFinite()) {
+                    // a district headquarters counts as a town three times its size (people pick their district)
+                    for (k in i until cs.size) { val ct = cs[k]; if (ct.kind == 1 && ct.pop < minPop && ct.pop * 3 + 30 >= minPop && seen(ct.lng, ct.lat)) tryPlace(cityKeys[k], "ct", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true) }
+                    while (i < cs.size) { val ct = cs[i]; if (ct.pop < minPop) break; if (ct.kind < 2 && seen(ct.lng, ct.lat)) tryPlace(cityKeys[i], "ct", ct.n, ct.lng.toDouble(), ct.lat.toDouble(), true); i++ }
+                }
                 for ((j, n) in names.withIndex()) if ((n.k == "rg" || n.k == "wt") && inZ(n) && seen(n.lng, n.lat)) tryPlace(nameKeys[j], n.k, n.t, n.lng.toDouble(), n.lat.toDouble(), false)
             }
             // fade names in and out (never a jump)
@@ -1100,7 +1122,7 @@ class GlobeMap(
     private val widths = HashMap<String, Float>()
     /** width of a pin's town / name tag text (600 11px) */
     private fun tagWidth(t: String): Double = widths.getOrPut(t) { measure.typeface = Ui.bold; measure.textSize = 11f; measure.letterSpacing = 0f; measure.measureText(t) }.toDouble()
-    private val nameCache = object : LruCache<String, NameSprite>(10 * 1024 * 1024) { override fun sizeOf(key: String, value: NameSprite) = value.bmp.byteCount }
+    private val nameCache = object : LruCache<String, NameSprite>(18 * 1024 * 1024) { override fun sizeOf(key: String, value: NameSprite) = value.bmp.byteCount }
     private val parts = object : LruCache<String, Sprite>(6 * 1024 * 1024) { override fun sizeOf(key: String, value: Sprite) = value.bmp.byteCount }
     private val bases = arrayOfNulls<Sprite>(2)
     private val dotSprites = arrayOfNulls<Sprite>(2)
@@ -1125,7 +1147,13 @@ class GlobeMap(
     private val LS = mapOf(
         "ct" to Ls(11f, false, Color.argb(235, 238, 230, 255), dot = Ui.c("#efe6ff"), glow = Color.argb(242, 200, 170, 255), r = 2.4f),
         "cb" to Ls(12.5f, false, Color.argb(250, 255, 238, 204), dot = Ui.c("#ffe2a6"), glow = Color.argb(250, 255, 196, 104), r = 3.2f),
-        "st" to Ls(11f, false, Color.argb(143, 236, 226, 255), 1.8f, true),
+        "st" to Ls(11f, false, Color.argb(165, 236, 226, 255), 1.8f, true),
+        "st2" to Ls(8.5f, false, Color.argb(165, 236, 226, 255), 1.1f, true),
+        // capitals: a gold star (New Delhi's bigger and red-gold); "…0" is the star without its name
+        "cap" to Ls(11.5f, false, Color.argb(255, 255, 236, 196), dot = Ui.c("#ffd36b"), glow = Color.argb(250, 255, 190, 80), r = 5.2f),
+        "nc" to Ls(13f, false, Color.argb(255, 255, 240, 210), dot = Ui.c("#ffb347"), glow = Color.argb(255, 255, 120, 80), r = 6.6f),
+        "cap0" to Ls(0f, false, 0, dot = Ui.c("#ffd36b"), glow = Color.argb(250, 255, 190, 80), r = 5.2f),
+        "nc0" to Ls(0f, false, 0, dot = Ui.c("#ffb347"), glow = Color.argb(255, 255, 120, 80), r = 6.6f),
         "co" to Ls(14f, false, Color.argb(204, 246, 222, 170), 3.4f, true),
         "oc" to Ls(13f, true, Color.argb(168, 190, 170, 255), 0.5f),
         "cn" to Ls(10.5f, false, Color.argb(153, 222, 212, 255), 1.1f, true),
@@ -1139,20 +1167,32 @@ class GlobeMap(
         val st = LS[kind] ?: LS.getValue("ct")
         val t = if (st.upper) text.uppercase() else text
         val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = if (st.italic) Ui.boldItalic else Ui.bold; textSize = st.size; letterSpacing = st.spacing / st.size }
-        val tw = tp.measureText(t)
+        val star = kind.startsWith("cap") || kind.startsWith("nc")
+        val tw = if (t.isEmpty()) 0f else tp.measureText(t)
         val dot = if (st.dot != 0) st.r * 2 + 5 else 0f
-        val w = ceil(tw + dot + 8); val h = ceil(st.size * 1.45f + 6)
+        val w = if (t.isEmpty()) ceil(st.r * 2 + 8) else ceil(tw + dot + 8); val h = max(ceil(st.size * 1.45f + 6), ceil(st.r * 2 + 8))
         val (bm, cv) = canvasFor(w, h)
         val fm = tp.fontMetrics
         val ty = h / 2 + 0.5f - (fm.ascent + fm.descent) / 2
         var tx = 4f; var dx = 0f
         if (st.dot != 0) {
-            if (side >= 0) { dx = 4 + st.r; tx = 4 + dot } else { dx = w - 4 - st.r; tx = 4f }
+            if (t.isEmpty()) { dx = w / 2 } else if (side >= 0) { dx = 4 + st.r; tx = 4 + dot } else { dx = w - 4 - st.r; tx = 4f }
             val q = Paint(Paint.ANTI_ALIAS_FLAG)
-            q.color = st.glow; q.maskFilter = blur(6f); cv.drawCircle(dx, h / 2, st.r, q); q.maskFilter = null
-            q.color = st.dot; cv.drawCircle(dx, h / 2, st.r, q)
-            q.style = Paint.Style.STROKE; q.strokeWidth = 1f; q.color = Color.argb(179, 20, 8, 40); cv.drawCircle(dx, h / 2, st.r, q)
+            if (star) {
+                // a five-pointed star: the capital
+                val sp = Path(); val R = st.r * 1.25f; val ri = R * 0.45f
+                for (k in 0 until 10) { val rr = if (k % 2 == 0) R else ri; val an = -Math.PI / 2 + k * Math.PI / 5; val x = dx + (rr * cos(an)).toFloat(); val y = h / 2 + (rr * sin(an)).toFloat() + R * 0.08f; if (k == 0) sp.moveTo(x, y) else sp.lineTo(x, y) }
+                sp.close()
+                q.color = st.glow; q.maskFilter = blur(7f); cv.drawPath(sp, q); q.maskFilter = null
+                q.color = st.dot; cv.drawPath(sp, q)
+                q.style = Paint.Style.STROKE; q.strokeWidth = 1.1f; q.strokeJoin = Paint.Join.ROUND; q.color = Color.argb(204, 60, 20, 0); cv.drawPath(sp, q)
+            } else {
+                q.color = st.glow; q.maskFilter = blur(6f); cv.drawCircle(dx, h / 2, st.r, q); q.maskFilter = null
+                q.color = st.dot; cv.drawCircle(dx, h / 2, st.r, q)
+                q.style = Paint.Style.STROKE; q.strokeWidth = 1f; q.color = Color.argb(179, 20, 8, 40); cv.drawCircle(dx, h / 2, st.r, q)
+            }
         }
+        if (t.isEmpty()) { val s0 = NameSprite(bm, bm.width / dens, bm.height / dens, dx, h / 2); nameCache.put(key, s0); return s0 }
         tp.style = Paint.Style.STROKE; tp.strokeWidth = 3.2f; tp.strokeJoin = Paint.Join.ROUND; tp.color = Color.argb(224, 6, 2, 22)
         cv.drawText(t, tx, ty, tp)
         tp.style = Paint.Style.FILL; tp.color = st.color
@@ -1273,6 +1313,7 @@ class GlobeMap(
     private fun borderRings(r: Double) = pick(SdMapData.border, r, 0.9)
     private fun stateRings(r: Double) = pick(SdMapData.state, r, 1.0)
     private fun riverRings(r: Double) = pick(SdMapData.river, r, 1.2)
+    private fun districtRings(r: Double) = pick(SdMapData.district, r, 1.0)
 
     companion object {
         const val D2R = Math.PI / 180
@@ -1330,9 +1371,10 @@ fun pinScaleOf(ppd: Double) = (0.7 + 0.14 * log2(max(1.0, ppd) / 8)).coerceIn(0.
 /** from this zoom (pixels a degree) every pin carries its town's name — already when the map shows all of India */
 const val PIN_LABEL_PPD = 6.0
 /** the smallest town (people, in thousands) that gets a name at this zoom */
+// (owner, 24 Nov: all of India's towns — about 7,100 now — come in sooner as you zoom; at the closest zoom every one of them)
 fun minPopFor(ppd: Double) = when {
-    ppd < 5 -> Double.POSITIVE_INFINITY; ppd < 9 -> 5000.0; ppd < 14 -> 2500.0; ppd < 22 -> 900.0; ppd < 32 -> 300.0
-    ppd < 48 -> 120.0; ppd < 70 -> 50.0; ppd < 100 -> 20.0; ppd < 150 -> 8.0; else -> 0.0
+    ppd < 4 -> Double.POSITIVE_INFINITY; ppd < 7 -> 2500.0; ppd < 10 -> 700.0; ppd < 14 -> 250.0; ppd < 20 -> 100.0; ppd < 28 -> 45.0
+    ppd < 40 -> 20.0; ppd < 56 -> 9.0; ppd < 80 -> 3.0; else -> 0.0
 }
 /** "Gautam Buddh Nagar (Noida)" → "Noida", "Mohali (SAS Nagar)" → "Mohali": the short name people know, for the tag under a pin */
 fun shortTown(t: String): String {

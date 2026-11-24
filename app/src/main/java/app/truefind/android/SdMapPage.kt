@@ -238,6 +238,19 @@ class SdMapPage(private val h: SecretHome) : FrameLayout(h.context) {
             "zoom-haryana" -> globe.showAt(76.7, 29.1, 16.0)
             "zoom-delhi" -> globe.showAt(77.15, 28.62, 40.0)
             "zoom-south" -> globe.showAt(78.0, 14.5, 6.0)
+            // all of India (24 Nov): capitals, states, towns, districts at each zoom — on the page and full screen
+            "india" -> globe.showAt(80.5, 22.6, 2.6)
+            "india-city" -> globe.showAt(77.2, 28.6, 4.2)
+            else -> if (what.startsWith("full-")) {
+                setFull(true)
+                val at = when (what) {
+                    "full-india" -> doubleArrayOf(81.5, 22.8, 3.4); "full-north" -> doubleArrayOf(79.0, 28.0, 8.5)
+                    "full-up" -> doubleArrayOf(80.9, 26.9, 20.0); "full-close" -> doubleArrayOf(80.95, 26.85, 55.0)
+                    "full-ne" -> doubleArrayOf(92.6, 25.6, 8.5); "full-south" -> doubleArrayOf(78.0, 12.6, 7.5)
+                    "full-ladakh" -> doubleArrayOf(76.2, 33.6, 7.0); else -> doubleArrayOf(80.5, 22.6, 3.4)
+                }
+                globe.postDelayed({ globe.showAt(at[0], at[1], at[2]) }, 700)
+            }
         }
     }
 
