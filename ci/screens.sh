@@ -183,6 +183,8 @@ if [ "$SET" = supa ]; then bash ci/supa-test.sh "$APK" "$OUT" priya; exit 0; fi
 if [ "$SET" = supa2 ]; then bash ci/supa-test.sh "$APK" "$OUT" ravi; exit 0; fi
 # Secret Dating map smoothness: frame times while dragging at four zooms (ci/mapperf.sh)
 if [ "$SET" = mapperf ]; then bash ci/mapperf.sh "$APK" "$OUT"; exit 0; fi
+# what each map layer costs to draw (ci/mapcost.sh)
+if [ "$SET" = mapcost ]; then bash ci/mapcost.sh "$APK" "$OUT"; exit 0; fi
 if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"

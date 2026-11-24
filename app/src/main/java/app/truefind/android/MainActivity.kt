@@ -1295,6 +1295,8 @@ class MainActivity : ComponentActivity() {
         Demo.tfChat = intent.getBooleanExtra("tf_tfchat", false)
         if (intent.hasExtra("tf_cardfit")) SdDeck.fit = intent.getBooleanExtra("tf_cardfit", false)   // test shots: the card's two sizes
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
+        intent.getStringExtra("tf_mapoff")?.let { GlobeMap.testOff = it.split(",").filter { s -> s.isNotBlank() }.toSet() }
+        if (intent.getBooleanExtra("tf_mapcheck", false)) GlobeMap.testCheck = true
         watchFrames()
         val open = intent.getStringExtra("tf_open").orEmpty()
         // one chat (/chat/:id): the whole screen

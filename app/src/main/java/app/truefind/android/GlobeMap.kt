@@ -191,10 +191,12 @@ class GlobeMap(
     }
     /** the place under a screen point (null: space) */
     private fun grab(x: Double, y: Double): DoubleArray? = unProj(x, y, view.lon, view.lat, radius(view.k), cx(), cy())
-    /** the patch of the Earth on screen (lon/lat box with a margin) — null when the whole globe shows. (The margin was
-     *  0.3 of the screen on every side: the map then worked out and drew about three screens of lines it never showed.) */
-    private fun geoBox(v: V): DoubleArray? {
-        val r = radius(v.k); val ex = max(bw, bh) * 0.06
+    /** the patch of the Earth on screen (lon/lat box with a margin, a share of the screen on every side) — null when
+     *  the whole globe shows. (The lines and names use a small margin: with 0.3 of the screen on every side, the map
+     *  worked out and drew about three screens of lines it never showed. India's own shape keeps 0.3: its colour
+     *  gradients stretch over the part of it that is worked out, so a smaller part would change its colours.) */
+    private fun geoBox(v: V, margin: Double = 0.06): DoubleArray? {
+        val r = radius(v.k); val ex = max(bw, bh) * margin
         var a = 1e9; var s = 1e9; var e = -1e9; var n = -1e9
         for (i in 0..8) for (j in 0..8) {
             if (i in 1..7 && j in 1..7) continue
@@ -580,21 +582,23 @@ class GlobeMap(
             if (!SdMapData.ready) { if (edgeOn) drawShadeRim(c, x0, y0, r, far > r); return }
             val q = geoBox(v)
             // faint latitude / longitude lines
-            if (!(LITE && moving) && ppd < 40) { line(SdMapData.graticule, q, P, false); stroke(c, Color.argb(33, 185, 162, 255), 0.8f) }
+            if (!(LITE && moving) && ppd < 40 && !off("graticule")) { line(SdMapData.graticule, q, P, false); stroke(c, Color.argb(33, 185, 162, 255), 0.8f) }
             // the continents at night
-            fill(worldRings(r), q, P, r, x0, y0)
-            fillP.color = Color.argb(235, 42, 28, 102); c.drawPath(path, fillP)
-            stroke(c, Color.argb(97, 165, 140, 255), 0.8f)
+            if (!off("world")) {
+                fill(worldRings(r), q, P, r, x0, y0)
+                fillP.color = Color.argb(235, 42, 28, 102); c.drawPath(path, fillP)
+                stroke(c, Color.argb(97, 165, 140, 255), 0.8f)
+            }
             // India
-            fill(borderRings(r), q, P, r, x0, y0)
+            fill(borderRings(r), geoBox(v, 0.3), P, r, x0, y0)
             india.set(path)
             val indiaOn = !india.isEmpty
             // a thin channel of sea around India so it stands apart from its neighbours
-            if (indiaOn) {
+            if (indiaOn && !off("india")) {
                 strokeP.shader = seaShader; strokeP.color = SEA_FLAT; strokeP.strokeWidth = 5f; c.drawPath(india, strokeP); strokeP.shader = null
             }
             // the world's city lights
-            if (ppd < 30) {
+            if (ppd < 30 && !off("lights")) {
                 val dd = min(1.25, max(0.7, r / 520)).toFloat()
                 if (rich) dots(c, SdMapData.worldLights, P, 0.1, { it % 3 != 0 }, Color.argb(51, 255, 184, 92), 4f * dd)
                 dots(c, SdMapData.worldLights, P, 0.06, null, Color.argb(191, 255, 217, 160), 1.3f * dd)
@@ -605,30 +609,33 @@ class GlobeMap(
                 // raised, with a soft purple shadow and a gold edge. Close in only the edges show, so the shadow and the
                 // gold side are drawn as wide edge lines there instead of whole filled shapes (much less to paint).
                 val whole = ppd < 24
-                c.save(); c.translate(0f, 9 * sd)
-                if (whole) { fillP.color = Color.argb(77, 124, 58, 237); c.drawPath(india, fillP) }
-                if (rich) { strokeP.color = Color.argb(56, 139, 92, 246); strokeP.strokeWidth = 16 * sd; c.drawPath(india, strokeP) }
-                c.restore()
-                c.save(); c.translate(0f, 4 * sd)
-                m.reset(); m.setScale(1f, max(1f, bounds.height())); m.postTranslate(0f, bounds.top); side.setLocalMatrix(m)
-                if (whole) { fillP.shader = side; c.drawPath(india, fillP); fillP.shader = null }
-                else { strokeP.shader = side; strokeP.strokeWidth = 8 * sd; c.drawPath(india, strokeP); strokeP.shader = null }
-                strokeP.color = Ui.c("#6e3a10"); strokeP.strokeWidth = 1.2f * sd; c.drawPath(india, strokeP)
-                c.restore()
-                strokeP.color = Ui.c("#ffdca0"); strokeP.strokeWidth = 3 * sd; c.drawPath(india, strokeP)
-                fillP.shader = LinearGradient(bounds.left, bounds.top, bounds.right, bounds.bottom, TOP_COLORS, TOP_STOPS, Shader.TileMode.CLAMP); c.drawPath(india, fillP); fillP.shader = null
+                if (!off("india")) {
+                    c.save(); c.translate(0f, 9 * sd)
+                    if (whole) { fillP.color = Color.argb(77, 124, 58, 237); c.drawPath(india, fillP) }
+                    if (rich) { strokeP.color = Color.argb(56, 139, 92, 246); strokeP.strokeWidth = 16 * sd; c.drawPath(india, strokeP) }
+                    c.restore()
+                    c.save(); c.translate(0f, 4 * sd)
+                    m.reset(); m.setScale(1f, max(1f, bounds.height())); m.postTranslate(0f, bounds.top); side.setLocalMatrix(m)
+                    if (whole) { fillP.shader = side; c.drawPath(india, fillP); fillP.shader = null }
+                    else { strokeP.shader = side; strokeP.strokeWidth = 8 * sd; c.drawPath(india, strokeP); strokeP.shader = null }
+                    strokeP.color = Ui.c("#6e3a10"); strokeP.strokeWidth = 1.2f * sd; c.drawPath(india, strokeP)
+                    c.restore()
+                    strokeP.color = Ui.c("#ffdca0"); strokeP.strokeWidth = 3 * sd; c.drawPath(india, strokeP)
+                    fillP.shader = LinearGradient(bounds.left, bounds.top, bounds.right, bounds.bottom, TOP_COLORS, TOP_STOPS, Shader.TileMode.CLAMP); c.drawPath(india, fillP); fillP.shader = null
+                }
                 // detail that comes in as you zoom: rivers, then highways, then smaller roads
-                val aRiv = ramp(ppd, 7.0, 16.0); val aHw = ramp(ppd, 16.0, 30.0); val aRd = ramp(ppd, 30.0, 60.0)
+                val lines = !off("lines")
+                val aRiv = if (lines) ramp(ppd, 7.0, 16.0) else 0.0; val aHw = if (lines) ramp(ppd, 16.0, 30.0) else 0.0; val aRd = if (lines) ramp(ppd, 30.0, 60.0) else 0.0
                 if (aRd > 0) { line(SdMapData.roads, q, P, false); stroke(c, Ui.c("#cdb8ff"), min(1.6, 0.5 + ppd / 160).toFloat(), (aRd * min(0.34, 0.14 + ppd / 700)).toFloat()) }
                 if (aHw > 0) { line(SdMapData.highways, q, P, false); stroke(c, Ui.c("#f3cf8a"), min(2.6, 0.8 + ppd / 120).toFloat(), (aHw * min(0.5, 0.22 + ppd / 520)).toFloat()) }
                 if (aRiv > 0) { line(riverRings(r), q, P, false); stroke(c, Ui.c("#9cc4ff"), min(1.8, 0.5 + ppd / 52).toFloat(), (aRiv * min(0.55, 0.22 + ppd / 105)).toFloat()) }
                 // district lines (owner, 24 Nov: every district of India), faint, coming in as you zoom
                 val aDist = ramp(ppd, 15.0, 30.0)
-                if (aDist > 0 && SdMapData.district.isNotEmpty()) { line(districtRings(r), q, P, false); stroke(c, Ui.c("#d9c9ff"), min(1.1, 0.5 + ppd / 260).toFloat(), (aDist * min(0.42, 0.22 + ppd / 500)).toFloat()) }
+                if (aDist > 0 && SdMapData.district.isNotEmpty() && !off("districts")) { line(districtRings(r), q, P, false); stroke(c, Ui.c("#d9c9ff"), min(1.1, 0.5 + ppd / 260).toFloat(), (aDist * min(0.42, 0.22 + ppd / 500)).toFloat()) }
                 // state borders (today's states: Ladakh apart from Jammu & Kashmir), a little clearer than before
-                line(stateRings(r), q, P, false); stroke(c, Ui.c("#f3ecff"), min(1.4, 0.6 + r / 1400).toFloat(), 0.6f)
+                if (!off("states")) { line(stateRings(r), q, P, false); stroke(c, Ui.c("#f3ecff"), min(1.4, 0.6 + r / 1400).toFloat(), 0.6f) }
                 // the network between India's big cities (zoomed out only)
-                val aMesh = 1 - ramp(ppd, 12.0, 24.0)
+                val aMesh = if (off("mesh")) 0.0 else 1 - ramp(ppd, 12.0, 24.0)
                 if (aMesh > 0) {
                     path.rewind()
                     val ms = SdMapData.mesh
@@ -641,7 +648,7 @@ class GlobeMap(
                     stroke(c, Ui.c("#d9b8ff"), 0.7f, (0.32 * aMesh).toFloat())
                 }
                 // the big cities' lights (they hand over to the town names as you come closer)
-                val aLights = 1 - ramp(ppd, 20.0, 34.0)
+                val aLights = if (off("lights")) 0.0 else 1 - ramp(ppd, 20.0, 34.0)
                 if (aLights > 0) {
                     val dd = min(1.25, max(0.7, r / 520)).toFloat()
                     if (rich) dots(c, SdMapData.cityGeo, P, 0.06, null, Color.argb((0.36 * aLights * 255).toInt(), 255, 198, 107), 7f * dd)
@@ -972,6 +979,7 @@ class GlobeMap(
                     // (only the name's size here: its picture is made once it gets a place — making pictures for every
                     // town that was tried, most of them never shown, overflowed the picture store and redid them all on every frame)
                     val sp = nameBox(kind, text, side)
+                    if (testCheck) nameSprite(kind, text, side).let { s2 -> if (s2.w != sp.w || s2.h != sp.h || s2.ax != sp.ax || s2.ay != sp.ay) android.util.Log.i("TFDBG", "namebox differs $kind|$side|$text: ${sp.w} ${sp.h} ${sp.ax} ${sp.ay} vs ${s2.w} ${s2.h} ${s2.ax} ${s2.ay}") else { checked++; if (checked % 500 == 0) android.util.Log.i("TFDBG", "namebox checked $checked") } }
                     val x0 = px - sp.ax; val y0 = py - sp.ay + dyk * sp.h
                     if (x0 < -4 || y0 < -4 || x0 + sp.w > w + 4 || y0 + sp.h > h + 4) continue
                     if (!free(x0 + 2, y0 + 2, x0 + sp.w - 2, y0 + sp.h - 2, from)) continue
@@ -1373,6 +1381,12 @@ class GlobeMap(
         /** lighter drawing on budget phones (few cores / little memory) or when the phone asks for less motion */
         val LITE: Boolean by lazy { Lite.on }
         val REDUCED: Boolean get() = Lite.reducedMotion
+        /** test runs only (tf_mapoff): map layers left out, to measure what each one costs to draw — empty in the app */
+        var testOff: Set<String> = emptySet()
+        /** test runs only (tf_mapcheck): every name's box is checked against its picture (log "namebox differs") */
+        var testCheck = false
+        var checked = 0
+        private fun off(layer: String) = testOff.isNotEmpty() && layer in testOff
     }
 }
 
