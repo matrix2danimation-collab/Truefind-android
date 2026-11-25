@@ -1202,7 +1202,7 @@ class RadioDot(ctx: Context) : View(ctx) {
 /** The area chart of Room Stats (ActivityChart): the most people each hour today, or each day this week. */
 class ActivityChart(ctx: Context, private val data: List<JSONObject>, private val day: Boolean) : View(ctx) {
     private val grid = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#eee7fa"); strokeWidth = Ui.dp(1f) }
-    private val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#7a7290"); textSize = Ui.dp(10f) }
+    private val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#7a7290"); textSize = Ui.dp(10f); typeface = Ui.regular }
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#8b3cf0"); style = Paint.Style.STROKE; strokeWidth = Ui.dp(2.4f); strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
     private val area = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dotFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }

@@ -42,11 +42,11 @@ jobs:
         with:
           gradle-version: "8.14.3"
 
-      - name: Calibri look-alike font (Carlito), same as the web app
+      # the app's font (TrueFind Sans = Lato at 92%) is in the repo: app/src/main/assets/fonts/TrueFindSans-*.ttf
+      - name: App font (Lato) is there
         run: |
-          mkdir -p app/src/main/assets/fonts
           for f in Regular Bold BoldItalic; do
-            curl -fsSL -o app/src/main/assets/fonts/Carlito-$f.ttf https://github.com/google/fonts/raw/main/ofl/carlito/Carlito-$f.ttf || echo "font $f download failed, the phone's font will be used"
+            [ -s app/src/main/assets/fonts/TrueFindSans-$f.ttf ] || { echo "app/src/main/assets/fonts/TrueFindSans-$f.ttf is missing"; exit 1; }
           done
 
       # notifications while the app is closed (Firebase): the app's Firebase file comes from the repo secret
