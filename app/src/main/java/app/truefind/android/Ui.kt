@@ -20,11 +20,13 @@ object Ui {
         density = ctx.resources.displayMetrics.density
         if (ready) return
         ready = true
-        // The app's font: Lato (owner, 25 Nov; was Carlito, the Calibri look-alike), the same as the website.
-        // The files are in assets/fonts (kept in the repo); if one could not be read the phone's font is used.
-        regular = load(ctx, "fonts/Lato-Regular.ttf") ?: Typeface.SANS_SERIF
-        bold = load(ctx, "fonts/Lato-Bold.ttf") ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        boldItalic = load(ctx, "fonts/Lato-BoldItalic.ttf") ?: Typeface.create(bold, Typeface.BOLD_ITALIC)
+        // The app's font: Lato (owner, 25 Nov; was Carlito, the Calibri look-alike), as on the website. The files
+        // (assets/fonts/TrueFindSans-*, kept in the repo) are Lato drawn at 92% with Carlito's line height: Lato's
+        // letters are about 9% wider, so at the old sizes words were cut off (e.g. Expert Talk's "No-show refund");
+        // this way every screen keeps its layout on every phone width. If a file can't be read the phone's font is used.
+        regular = load(ctx, "fonts/TrueFindSans-Regular.ttf") ?: Typeface.SANS_SERIF
+        bold = load(ctx, "fonts/TrueFindSans-Bold.ttf") ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+        boldItalic = load(ctx, "fonts/TrueFindSans-BoldItalic.ttf") ?: Typeface.create(bold, Typeface.BOLD_ITALIC)
     }
 
     private fun load(ctx: Context, path: String): Typeface? = try {
