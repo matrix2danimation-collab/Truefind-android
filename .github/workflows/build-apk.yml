@@ -117,29 +117,74 @@ jobs:
           if grep -l 'ACCESS_FINE_LOCATION\|ACCESS_COARSE_LOCATION' $rel; then echo "the Play build still asks for location (no screen uses it)"; exit 1; fi
           echo "OK: Play build without the install permission, test build still with it, call service in both"
 
-      # The file for Google Play (.aab), signed with the upload key from the repo secrets
-      # PLAY_UPLOAD_KEYSTORE_B64 (the key file in base64), PLAY_UPLOAD_STORE_PASSWORD, PLAY_UPLOAD_KEY_ALIAS and
-      # PLAY_UPLOAD_KEY_PASSWORD. Without these secrets this step is skipped. Made only on main or when run by hand.
+      # The file for Google Play (.aab), signed with the upload key. The simple way (25 Nov): ONE repo secret,
+      # PLAY_UPLOAD_PASSWORD — a password the owner makes up himself (it is never in this repo or in a chat). The
+      # first time, this step makes the upload key itself, locked with that password, and keeps it on the branch
+      # "play-key" (useless without the password; that branch must never be deleted); every later build signs with
+      # that same key. (The older four secrets PLAY_UPLOAD_KEYSTORE_B64 … still work if they are set.)
+      # Made only on main or when run by hand; the .aab goes to the Releases page "play-build".
       - name: Play Store bundle (.aab)
         if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
         env:
           KS: ${{ secrets.PLAY_UPLOAD_KEYSTORE_B64 }}
-          TF_UPLOAD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
-          TF_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
-          TF_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          PW: ${{ secrets.PLAY_UPLOAD_PASSWORD }}
+          OLD_STORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_STORE_PASSWORD }}
+          OLD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          OLD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          GH: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
         run: |
-          if [ -z "$KS" ]; then echo "No PLAY_UPLOAD_KEYSTORE_B64 secret yet: Play bundle skipped"; exit 0; fi
-          printf '%s' "$KS" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          export TF_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload.jks"
+          set -e
+          K="$RUNNER_TEMP/upload.p12"
+          if [ -n "$KS" ]; then
+            printf '%s' "$KS" | base64 -d > "$K"
+            export TF_UPLOAD_STORE_PASSWORD="$OLD_STORE_PASSWORD" TF_UPLOAD_KEY_ALIAS="$OLD_KEY_ALIAS" TF_UPLOAD_KEY_PASSWORD="$OLD_KEY_PASSWORD"
+          elif [ -n "$PW" ]; then
+            D="$RUNNER_TEMP/play-key"; rm -rf "$D"
+            if git ls-remote --exit-code "$GH" refs/heads/play-key > /dev/null 2>&1; then
+              git clone -q --depth 1 -b play-key "$GH" "$D"
+            else
+              # first time: a new upload key (RSA 4096, valid 27 years), locked with PLAY_UPLOAD_PASSWORD
+              mkdir -p "$D"
+              ( cd "$D" && git init -q && git checkout -q -b play-key \
+                && keytool -genkeypair -storetype PKCS12 -keystore upload.p12 -alias upload -keyalg RSA -keysize 4096 \
+                     -validity 10000 -storepass:env PW -keypass:env PW -dname "CN=True Find, O=True Find, C=IN" \
+                && echo "True Find's Google Play upload key, locked with the repo secret PLAY_UPLOAD_PASSWORD. Never delete this branch." > README.txt \
+                && git add upload.p12 README.txt \
+                && git -c user.name=ci -c user.email=ci@truefind.local commit -q -m "Google Play upload key" )
+              if ! ( cd "$D" && git push -q "$GH" play-key ); then
+                # another build made it a moment earlier: that one is the key
+                rm -rf "$D"; git clone -q --depth 1 -b play-key "$GH" "$D"
+              fi
+            fi
+            cp "$D/upload.p12" "$K"; rm -rf "$D"
+            export TF_UPLOAD_STORE_PASSWORD="$PW" TF_UPLOAD_KEY_ALIAS=upload TF_UPLOAD_KEY_PASSWORD="$PW"
+          else
+            echo "No PLAY_UPLOAD_PASSWORD secret yet: Play bundle skipped"; exit 0
+          fi
+          # the key's fingerprints (public: Play Console shows the same under App integrity → Upload key certificate)
+          keytool -list -v -keystore "$K" -storepass:env TF_UPLOAD_STORE_PASSWORD | grep -E "SHA1:|SHA256:" || true
+          export TF_UPLOAD_STORE_FILE="$K"
           gradle bundleRelease -PtfStore=true --no-daemon -q
           cp app/build/outputs/bundle/release/app-release.aab TrueFind-play.aab
-          rm -f "$RUNNER_TEMP/upload.jks"
+          rm -f "$K"
           ls -la TrueFind-play.aab
       - uses: actions/upload-artifact@v4
         if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && hashFiles('TrueFind-play.aab') != ''
         with:
           name: TrueFind-play-aab
           path: TrueFind-play.aab
+      # the same file on the Releases page (one tap to download it on the phone, then upload it in Play Console)
+      - name: Put the Play Store bundle on the Releases page
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && hashFiles('TrueFind-play.aab') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: play-build
+          name: Google Play build
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: "The file for Google Play (version code ${{ github.run_number }}), built from commit ${{ github.sha }}. Play Console → Test and release → Testing → Internal testing → Create new release → upload TrueFind-play.aab."
+          files: TrueFind-play.aab
 
       - name: Name the file (+ version.json for the app's Update button)
         run: |

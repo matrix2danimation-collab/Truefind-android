@@ -1867,7 +1867,8 @@ class WalletScreen(
                 card.addView(WV.row(ctx, "Amount paid", "₹${wRupees(f.pack.price)}"))
                 card.addView(WV.row(ctx, "Payment mode", WData.methodName(f.method)))
                 card.addView(WV.row(ctx, "Date", wDate(f.at)))
-                if (f.ref.isNotEmpty()) card.addView(WV.row(ctx, "Reference", f.ref.takeLast(12).uppercase()))
+                // Google Play: its whole order number (GPA.…), the one Play Console and Google's receipt email show
+                if (f.ref.isNotEmpty()) card.addView(WV.row(ctx, "Reference", if (f.ref.startsWith("GPA.")) f.ref else f.ref.takeLast(12).uppercase()))
                 card.addView(WV.row(ctx, "New balance", "${wRupees(coins)} coins", last = true, valueColor = WC.green))
                 col.addView(card, WV.lp(WV.MATCH, WV.WRAP, t = 18f))
                 col.addView(WV.primary(ctx, "Done").apply { setOnClickListener { closeFlow() } }, WV.lp(WV.MATCH, Ui.dpi(50f), t = 18f))
