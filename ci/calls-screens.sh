@@ -13,6 +13,8 @@ adb shell settings put global hide_error_dialogs 1 || true
 on_top() { adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | grep -q "$PKG"; }
 shot() {
   local name="${1:?}"; local wait="$2"; shift 2
+  # ONLY=<start of names>: just those pictures (a quick check of one change)
+  if [ -n "$ONLY" ] && [[ "$name" != $ONLY* ]]; then return 0; fi
   adb shell am force-stop $PKG
   adb logcat -c
   adb shell am start -W -n $PKG/.MainActivity "$@" > /dev/null

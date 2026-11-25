@@ -167,6 +167,8 @@ fi
 if [ "$SET" = wallet ]; then bash ci/wallet-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native calls (their own list of screens, from the calls work)
 if [ "$SET" = calls ]; then bash ci/calls-screens.sh "$APK" "$OUT"; exit 0; fi
+# only the microphone-off pictures of the calls (owner, 25 Nov)
+if [ "$SET" = callmute ]; then ONLY=c22 bash ci/calls-screens.sh "$APK" "$OUT"; exit 0; fi
 # the native Expert Talk, My Dashboard and Secret Dating Earning (their own list, from the expert-dash work)
 if [ "$SET" = et ] || [ "$SET" = etx ]; then bash ci/expert-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # the native games (their own list of screens, from the Games work)
