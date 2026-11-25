@@ -510,6 +510,15 @@ class AdIssues(a: AdminScreen) : AdTab(a) {
             val e = old ?: AdErrors(a).also { old = it; it.build() }
             (e.root.parent as? android.view.ViewGroup)?.removeView(e.root)
             root.addView(e.root, AU.lp(-1, -2))
+            // a crash on purpose: shows that crash reports arrive (here, and in Firebase Crashlytics, which needs a first crash)
+            root.addView(AU.btn(ctx, "Send a test crash", "light", small = true, icon = AdIc.Zap) {
+                AdConfirm(a, "Close the app with a test crash?",
+                    "Only to check that crash reports work. True Find closes now — open it again: the test crash shows here in a few minutes (and in Firebase → Crashlytics).",
+                    "Crash now", danger = true) { done ->
+                    done(true)
+                    root.postDelayed({ throw RuntimeException("Test crash from the Control Center (not a real problem)") }, 400)
+                }.open()
+            }, AU.lp(-2, -2, t = 14f))
             return
         }
         root.addView(AU.filters(ctx, AH.RANGES, range) { range = it; render(); load.load() })
