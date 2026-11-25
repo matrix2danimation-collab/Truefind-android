@@ -219,14 +219,17 @@ class AdHealth(a: AdminScreen) : AdTab(a) {
         // payments
         root.addView(AU.section(ctx, "Payments (Google Play)"))
         root.addView(AU.card(ctx).apply {
-            addView(AU.rows(ctx, 0f,
+            val rows = mutableListOf(
                 AH.line(ctx, "Paid", AF.n(m, "paid"), text = "${AF.nf(AF.n(m, "paid"))} · ${AH.rupees(AF.n(m, "revenue_inr"))}"),
                 AH.line(ctx, "Waiting (pending)", AF.n(m, "pending")),
                 AH.line(ctx, "Stuck over 15 min", p("payment_stuck").coerceAtLeast(AF.n(m, "stuck")), true) { a.openIssues(kind = "payment_stuck", range = range) },
                 AH.line(ctx, "Paid but not added", p("payment_not_added"), true) { a.openIssues(kind = "payment_not_added", range = range) },
                 AH.line(ctx, "Failed", AF.n(m, "failed").coerceAtLeast(p("payment_failed")), true) { a.openIssues(areas = "payment", range = range) },
                 AH.line(ctx, "Refunded", AF.n(m, "refunded"), text = "${AF.nf(AF.n(m, "refunded"))} · ${AH.rupees(AF.n(m, "refunded_inr"))}"),
-            ))
+            )
+            // Google Play licence testers' buys: no money, so kept out of "Paid"
+            if (AF.n(m, "test_paid") > 0) rows.add(1, AH.line(ctx, "Test purchases (no money)", AF.n(m, "test_paid")))
+            addView(AU.rows(ctx, 0f, *rows.toTypedArray()))
         })
 
         // the app itself
@@ -759,12 +762,14 @@ object AdMemberHealth {
         sec("payments", "Payments")
         val buys = AF.list(h, "purchases")
         b.addView(AU.card(ctx).apply {
-            addView(AU.rows(ctx, 3f,
+            val rows = mutableListOf(
                 AU.kv(ctx, "Paid", "${AF.nf(AF.n(pt, "paid"))} · ${AH.rupees(AF.n(pt, "paid_inr"))}", true),
                 AU.kv(ctx, "Pending", AF.nf(AF.n(pt, "pending")), valueColor = if (AF.n(pt, "pending") > 0) AK.amber else AK.ink),
                 AU.kv(ctx, "Failed", AF.nf(AF.n(pt, "failed")), valueColor = if (AF.n(pt, "failed") > 0) AK.red else AK.ink),
                 AU.kv(ctx, "Refunded", "${AF.nf(AF.n(pt, "refunded"))} · ${AH.rupees(AF.n(pt, "refunded_inr"))}"),
-            ))
+            )
+            if (AF.n(pt, "test_paid") > 0) rows.add(1, AU.kv(ctx, "Test purchases", "${AF.nf(AF.n(pt, "test_paid"))} (no money)"))
+            addView(AU.rows(ctx, 3f, *rows.toTypedArray()))
         })
         if (buys.isNotEmpty()) b.addView(AU.listCard(ctx, buys.take(30).map { x ->
             AU.row(ctx).apply {
@@ -776,12 +781,15 @@ object AdMemberHealth {
                 val rr = AU.col(ctx).apply { gravity = Gravity.END }
                 rr.addView(AU.t(ctx, AH.rupees(AF.n(x, "amount_inr")), 13f, AK.ink, true).apply { gravity = Gravity.END })
                 val st = AF.s(x, "status")
-                rr.addView(when (st) {
+                rr.addView(when {
+                    st == "succeeded" && AF.b(x, "test") -> AU.pill(ctx, "x", "Test · no money", AK.amberBg, AK.amber)
+                    else -> when (st) {
                     "succeeded" -> AU.pill(ctx, "paid")
                     "pending" -> AU.pill(ctx, "pending")
                     "failed" -> AU.pill(ctx, "x", "Failed", AK.redBg, AK.red)
                     "refunded" -> AU.pill(ctx, "x", "Refunded", AK.blueBg, AK.blue)
                     else -> AU.pill(ctx, "x", st)
+                    }
                 }, AU.lp(-2, -2, t = 3f))
                 addView(rr)
             }

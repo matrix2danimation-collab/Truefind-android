@@ -241,7 +241,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         return when (a) {
             "health" -> JSONObject().put("range", rg)
                 .put("users", JSONObject().put("total", 18452).put("new", n(236)).put("active", n(4210)).put("with_usage", n(3890)).put("opens", n(12480)).put("seconds", n(3890) * 1260))
-                .put("money", JSONObject().put("revenue_inr", n(48210)).put("paid", n(412)).put("buyers", n(356)).put("pending", 6).put("stuck", 2).put("failed", n(9)).put("refunded", 3).put("refunded_inr", 597))
+                .put("money", JSONObject().put("revenue_inr", n(48210)).put("paid", n(412)).put("buyers", n(356)).put("test_paid", 2).put("pending", 6).put("stuck", 2).put("failed", n(9)).put("refunded", 3).put("refunded_inr", 597))
                 .put("calls", JSONObject().put("total", n(2840)).put("voice", n(2210)).put("video", n(630)).put("connected", n(2164)).put("minutes", n(21840)).put("not_answered", n(402)).put("declined", n(188)).put("not_started", n(6)).put("billing_problems", 1))
                 .put("messages", JSONObject().put("sent", n(18230)).put("senders", n(2104)))
                 .put("problems", JSONObject().put("call_dropped", n(12)).put("call_failed", n(7)).put("call_no_audio", n(4)).put("call_no_video", n(2)).put("msg_failed", n(9)).put("msg_slow", n(14))
@@ -297,8 +297,9 @@ class AdDemo(private val ctx: Context) : AdSrc {
             JSONObject().put("plan_name", "259 coins").put("amount_inr", 259).put("status", "succeeded").put("provider_ref", "GPA.3312-8841-2290-41775").put("app", "truefind").put("created_date", iso(300.0)),
             JSONObject().put("plan_name", "Starter · 1 week").put("amount_inr", 39).put("status", "pending").put("provider_ref", "GPA.3398-1123-7712-90021").put("app", "secret").put("created_date", iso(40.0)),
             JSONObject().put("plan_name", "49 coins").put("amount_inr", 49).put("status", "failed").put("provider_ref", "").put("app", "truefind").put("created_date", iso(2900.0)),
+            JSONObject().put("plan_name", "99 coins").put("amount_inr", 99).put("status", "succeeded").put("test", true).put("provider_ref", "GPA.3310-0042-5521-70013").put("app", "truefind").put("created_date", iso(5200.0)),
             JSONObject().put("plan_name", "99 coins").put("amount_inr", 99).put("status", "refunded").put("provider_ref", "GPA.3301-2211-0091-11220").put("app", "truefind").put("created_date", iso(9000.0))))
-        .put("purchase_totals", JSONObject().put("paid", 6).put("paid_inr", 1123).put("pending", 1).put("failed", 1).put("refunded", 1).put("refunded_inr", 99))
+        .put("purchase_totals", JSONObject().put("paid", 6).put("paid_inr", 1123).put("test_paid", 1).put("pending", 1).put("failed", 1).put("refunded", 1).put("refunded_inr", 99))
         .put("calls", JSONObject().put("made", 12).put("received", 131).put("connected", 118).put("voice", 74).put("video", 44).put("voice_minutes", 612.5).put("video_minutes", 388.0)
             .put("not_answered", 19).put("declined", 6).put("not_started", 1).put("coins_charged", 220).put("creator_earned", 2310.5))
         .put("coins", JSONObject().put("spent", 412).put("spent_calls", 220).put("spent_chat", 61).put("spent_gifts_games", 131).put("bought", 1250).put("free", 140))

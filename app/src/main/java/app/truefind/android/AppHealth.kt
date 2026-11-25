@@ -281,9 +281,13 @@ object AppHealth {
         if (!on || name !in PAY_FUNCTIONS || r.ok) return
         // "may I buy" refused for a reason (offer used, payments not open yet): only real failures count
         if (name == "checkPlayPurchase" && r.status in 400..499 && r.status != 408 && r.status != 429) return
-        val err = r.data.optString("code").ifEmpty { r.data.optString("error_code") }.take(40)
+        // the server's short reason (payments_not_ready, google_busy, cancelled …), never its sentence
+        val err = r.data.optString("code").ifEmpty { r.data.optString("error_code") }
+            .ifEmpty { r.data.optString("error").takeIf { Regex("^[a-z][a-z_]{2,39}$").matches(it) }.orEmpty() }.take(40)
         val code = (if (r.status == 0) "NO_CONNECTION" else "HTTP_${r.status}") + (if (err.isNotEmpty()) " $err" else "")
-        if (name == "verifyPlayPurchase")
+        if (name == "verifyPlayPurchase" && r.status == 409)
+            issue("payment", "payment_failed", code = code, detail = "Google says this payment was cancelled: ${r.error.orEmpty().take(160)}", now = true)
+        else if (name == "verifyPlayPurchase")
             issue("payment", "payment_not_added", code = code, detail = "Paid at Google, but the server could not add it yet: ${r.error.orEmpty().take(160)}", now = true)
         else
             issue("payment", "payment_start_failed", code = code, detail = "The payment could not start: ${r.error.orEmpty().take(160)}", now = true)
@@ -433,8 +437,9 @@ object AppHealth {
     // ═════════════ the phone and its network ═════════════
     private fun day(wall: Long): Day = days.getOrPut(dayOf(wall)) { Day() }
     private fun pageAcc(wall: Long, name: String): Page = pages.getOrPut(dayOf(wall) + "|" + name) { Page() }
-    private val dayFmt = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("Asia/Kolkata") } }
-    private fun dayOf(wall: Long): String = dayFmt.get()!!.format(Date(wall))
+    // (one formatter, used under its own lock: ThreadLocal.withInitial needs Android 8, the app runs from Android 7)
+    private val dayFmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("Asia/Kolkata") }
+    private fun dayOf(wall: Long): String = synchronized(dayFmt) { dayFmt.format(Date(wall)) }
 
     @Volatile private var modelName = ""
     private fun device() { model() }
