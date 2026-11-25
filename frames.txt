@@ -1,0 +1,437 @@
+== r01-recent
+Total frames rendered: 3
+Janky frames: 3 (100.00%)
+Janky frames (legacy): 3 (100.00%)
+50th percentile: 1950ms
+90th percentile: 2000ms
+95th percentile: 2000ms
+99th percentile: 2000ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 3
+Number Frame deadline missed: 3
+Number Frame deadline missed (legacy): 3
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r12-recent-end
+Total frames rendered: 4
+Janky frames: 4 (100.00%)
+Janky frames (legacy): 4 (100.00%)
+50th percentile: 1300ms
+90th percentile: 1650ms
+95th percentile: 1650ms
+99th percentile: 1650ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 4
+Number Frame deadline missed: 4
+Number Frame deadline missed (legacy): 4
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r13-recent-empty
+Total frames rendered: 3
+Janky frames: 3 (100.00%)
+Janky frames (legacy): 3 (100.00%)
+50th percentile: 1300ms
+90th percentile: 1500ms
+95th percentile: 1500ms
+99th percentile: 1500ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 3
+Number Frame deadline missed: 3
+Number Frame deadline missed (legacy): 3
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r14-recent-error
+Total frames rendered: 3
+Janky frames: 3 (100.00%)
+Janky frames (legacy): 3 (100.00%)
+50th percentile: 800ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 2
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 3
+Number Frame deadline missed: 3
+Number Frame deadline missed (legacy): 3
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r15-recent-loading
+Total frames rendered: 3
+Janky frames: 3 (100.00%)
+Janky frames (legacy): 3 (100.00%)
+50th percentile: 1350ms
+90th percentile: 1500ms
+95th percentile: 1500ms
+99th percentile: 1500ms
+Number Missed Vsync: 2
+Number High input latency: 0
+Number Slow UI thread: 2
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 3
+Number Frame deadline missed: 3
+Number Frame deadline missed (legacy): 3
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== d01-picked-row
+Total frames rendered: 4
+Janky frames: 4 (100.00%)
+Janky frames (legacy): 4 (100.00%)
+50th percentile: 900ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 4
+Number Frame deadline missed: 4
+Number Frame deadline missed (legacy): 4
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== d02-sheet-only
+Total frames rendered: 5
+Janky frames: 5 (100.00%)
+Janky frames (legacy): 5 (100.00%)
+50th percentile: 650ms
+90th percentile: 1350ms
+95th percentile: 1350ms
+99th percentile: 1350ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 5
+Number Frame deadline missed (legacy): 5
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== d03-card-plain
+Total frames rendered: 5
+Janky frames: 5 (100.00%)
+Janky frames (legacy): 5 (100.00%)
+50th percentile: 850ms
+90th percentile: 1600ms
+95th percentile: 1600ms
+99th percentile: 1600ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 5
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 5
+Number Frame deadline missed (legacy): 5
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== d04-card-ready
+Total frames rendered: 5
+Janky frames: 5 (100.00%)
+Janky frames (legacy): 5 (100.00%)
+50th percentile: 650ms
+90th percentile: 1350ms
+95th percentile: 1350ms
+99th percentile: 1350ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 5
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 5
+Number Frame deadline missed (legacy): 5
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r02-recent-card
+Total frames rendered: 6
+Janky frames: 5 (83.33%)
+Janky frames (legacy): 6 (100.00%)
+50th percentile: 600ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 4
+Number High input latency: 1
+Number Slow UI thread: 4
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 5
+Number Frame deadline missed (legacy): 6
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r03-recent-card-busy
+Total frames rendered: 6
+Janky frames: 6 (100.00%)
+Janky frames (legacy): 6 (100.00%)
+50th percentile: 650ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 5
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 2
+Number Slow issue draw commands: 6
+Number Frame deadline missed: 6
+Number Frame deadline missed (legacy): 6
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r16-recent-card-error
+Total frames rendered: 6
+Janky frames: 6 (100.00%)
+Janky frames (legacy): 6 (100.00%)
+50th percentile: 650ms
+90th percentile: 1450ms
+95th percentile: 1450ms
+99th percentile: 1450ms
+Number Missed Vsync: 4
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 6
+Number Frame deadline missed: 6
+Number Frame deadline missed (legacy): 6
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r04-recent-full
+Total frames rendered: 8
+Janky frames: 8 (100.00%)
+Janky frames (legacy): 8 (100.00%)
+50th percentile: 300ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 6
+Number High input latency: 0
+Number Slow UI thread: 7
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 8
+Number Frame deadline missed: 8
+Number Frame deadline missed (legacy): 8
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r05-recent-full-end
+Total frames rendered: 9
+Janky frames: 9 (100.00%)
+Janky frames (legacy): 9 (100.00%)
+50th percentile: 250ms
+90th percentile: 1300ms
+95th percentile: 1300ms
+99th percentile: 1300ms
+Number Missed Vsync: 6
+Number High input latency: 0
+Number Slow UI thread: 8
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 9
+Number Frame deadline missed: 9
+Number Frame deadline missed (legacy): 9
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r06-recent-photo
+Total frames rendered: 9
+Janky frames: 9 (100.00%)
+Janky frames (legacy): 9 (100.00%)
+50th percentile: 250ms
+90th percentile: 1350ms
+95th percentile: 1350ms
+99th percentile: 1350ms
+Number Missed Vsync: 7
+Number High input latency: 0
+Number Slow UI thread: 7
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 9
+Number Frame deadline missed: 9
+Number Frame deadline missed (legacy): 9
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r07-recent-coins
+Total frames rendered: 5
+Janky frames: 5 (100.00%)
+Janky frames (legacy): 5 (100.00%)
+50th percentile: 650ms
+90th percentile: 1200ms
+95th percentile: 1200ms
+99th percentile: 1200ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 5
+Number Frame deadline missed (legacy): 5
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r08-recent-busy
+Total frames rendered: 7
+Janky frames: 7 (100.00%)
+Janky frames (legacy): 7 (100.00%)
+50th percentile: 500ms
+90th percentile: 1450ms
+95th percentile: 1450ms
+99th percentile: 1450ms
+Number Missed Vsync: 4
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 3
+Number Slow issue draw commands: 7
+Number Frame deadline missed: 7
+Number Frame deadline missed (legacy): 7
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r09-recent-unfollow
+Total frames rendered: 7
+Janky frames: 7 (100.00%)
+Janky frames (legacy): 7 (100.00%)
+50th percentile: 250ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 4
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 7
+Number Frame deadline missed: 7
+Number Frame deadline missed (legacy): 7
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r10-recent-follow-toast
+Total frames rendered: 8
+Janky frames: 8 (100.00%)
+Janky frames (legacy): 8 (100.00%)
+50th percentile: 300ms
+90th percentile: 1400ms
+95th percentile: 1400ms
+99th percentile: 1400ms
+Number Missed Vsync: 4
+Number High input latency: 0
+Number Slow UI thread: 7
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 8
+Number Frame deadline missed: 8
+Number Frame deadline missed (legacy): 8
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r17-recent-back-full
+Total frames rendered: 9
+Janky frames: 9 (100.00%)
+Janky frames (legacy): 9 (100.00%)
+50th percentile: 250ms
+90th percentile: 1300ms
+95th percentile: 1300ms
+99th percentile: 1300ms
+Number Missed Vsync: 6
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 9
+Number Frame deadline missed: 9
+Number Frame deadline missed (legacy): 9
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r18-recent-back-twice
+Total frames rendered: 10
+Janky frames: 10 (100.00%)
+Janky frames (legacy): 10 (100.00%)
+50th percentile: 450ms
+90th percentile: 1450ms
+95th percentile: 1450ms
+99th percentile: 1450ms
+Number Missed Vsync: 7
+Number High input latency: 0
+Number Slow UI thread: 7
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 10
+Number Frame deadline missed: 10
+Number Frame deadline missed (legacy): 10
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r19-recent-back-message
+Total frames rendered: 6
+Janky frames: 6 (100.00%)
+Janky frames (legacy): 6 (100.00%)
+50th percentile: 700ms
+90th percentile: 1300ms
+95th percentile: 1300ms
+99th percentile: 1300ms
+Number Missed Vsync: 3
+Number High input latency: 0
+Number Slow UI thread: 3
+Number Slow bitmap uploads: 0
+Number Slow issue draw commands: 6
+Number Frame deadline missed: 6
+Number Frame deadline missed (legacy): 6
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
+== r20-recent-back-photo
+Total frames rendered: 10
+Janky frames: 10 (100.00%)
+Janky frames (legacy): 10 (100.00%)
+50th percentile: 250ms
+90th percentile: 1450ms
+95th percentile: 1450ms
+99th percentile: 1450ms
+Number Missed Vsync: 6
+Number High input latency: 0
+Number Slow UI thread: 6
+Number Slow bitmap uploads: 1
+Number Slow issue draw commands: 10
+Number Frame deadline missed: 10
+Number Frame deadline missed (legacy): 10
+50th gpu percentile: 4950ms
+90th gpu percentile: 4950ms
+95th gpu percentile: 4950ms
+99th gpu percentile: 4950ms
