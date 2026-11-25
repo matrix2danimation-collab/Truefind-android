@@ -370,6 +370,8 @@ class MainActivity : ComponentActivity() {
         notify.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking || rules.open }
         rules.busyElsewhere = { fxTest || pages.layer.open || pages.dailySheet != null || (cover && !native) || status.blocking }
         CrashNote.install(this)
+        // App Health (25 Nov): app use, pages and problems for the Control Center (AppHealth.kt)
+        AppHealth.init(this)
         // native Live Rooms (/live …)
         live = LiveRoomsScreen(this, object : LiveRoomsScreen.Nav {
             override fun go(path: String) = navigate(path)
@@ -540,6 +542,7 @@ class MainActivity : ComponentActivity() {
 
     /** The sign-in pages lead from [target] (/welcome …): signed out, or a sign-in page opened from the app. */
     private fun showLogin(target: String) {
+        AppHealth.page(pathOnly(target))
         native = false; leaving = false; signingOut = false
         main.removeCallbacks(leaveTimeout); showBusy(false)
         // (signed in on a sign-in page — Finish profile —: calls still reach this phone)
@@ -787,9 +790,9 @@ class MainActivity : ComponentActivity() {
             return
         }
         // on the sign-in pages: only another sign-in page opens (the app's pages need the sign-in first)
-        if (!native) { if (LoginLayer.isLoginPath(pathOnly(full))) login.go(full, replace); return }
+        if (!native) { if (LoginLayer.isLoginPath(pathOnly(full))) { AppHealth.page(pathOnly(full)); login.go(full, replace) }; return }
         if (leaving) return
-        if (openCallPage(full, state)) return
+        if (openCallPage(full, state)) { AppHealth.page(pathOnly(full)); return }
         // a sign-in page (finish the profile, sign in again …): the sign-in layer takes over
         if (LoginLayer.isLoginPath(pathOnly(full))) { enterLogin(full, replace); return }
         val t = guard(full)
@@ -841,6 +844,7 @@ class MainActivity : ComponentActivity() {
         path = e.path; search = e.search
         routeIdx = router.idx
         Perf.page(e.path, e.search)
+        AppHealth.page(e.path, e.search)
         pages.setRoute(e.path, e.search, e.state, router.idx)
         moveHint = move
         lastMove = move
@@ -980,6 +984,8 @@ class MainActivity : ComponentActivity() {
     /** the pages that stay ready while hidden (KeepPage) */
     private fun keptPages(): List<KeepPage> = listOf(pages.home, explore, pages.recent, wallet, secret, pages.profile)
     override fun onStop() {
+        // (App Health: the screen time ends first, so the going-away heartbeat carries it)
+        AppHealth.foreground(false)
         // off the screen: Explore is told "offline" at once (as the web page did when it was hidden)
         if (::work.isInitialized) work.onVisible(false)
         // Android drops every drawing while the app is away: hidden pages are drawn again one by one after
@@ -989,6 +995,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onStart() {
         super.onStart()
+        AppHealth.foreground(true)
         if (::work.isInitialized) work.onVisible(true)
         if (!::wallet.isInitialized) return
         var i = 0

@@ -695,6 +695,14 @@ class AdSheet(private val layer: TfLayer, title: String, private val onClose: ()
     }
 
     fun title(s: String) { titleView.text = s }
+    /** brings a part of the body to the top of the sheet (test pictures) */
+    fun scrollToChild(v: View) {
+        scroll.postDelayed({
+            var y = 0; var c: View? = v
+            while (c != null && c !== body) { y += c.top; c = c.parent as? View }
+            scroll.smoothScrollTo(0, maxOf(0, y - Ui.dpi(4f)))
+        }, 300)
+    }
 
     /** puts the sheet on screen (after the body is filled) */
     fun show(): AdSheet {

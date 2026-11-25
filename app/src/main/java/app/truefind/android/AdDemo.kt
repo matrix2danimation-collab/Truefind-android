@@ -91,6 +91,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         val r: JSONObject = when (name) {
             "adminOps" -> ops(a, body)
             "adminUsers" -> users(a, body)
+            "adminHealth" -> health(a, body)
             "adminPayouts" -> payouts(a)
             "support" -> support(a)
             "expertTalk" -> experts()
@@ -179,6 +180,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
                 .put("same_device_accounts", arr(JSONObject().put("user_id", "u-b5").put("name", "Karan Malhotra").put("gender", "male").put("city", "Delhi")))
                 .put("admin_actions", arr(JSONObject().put("id", "aa1").put("action", "creator_approved").put("details", "Live video checked").put("created_date", iso(2000.0)).put("admin_email", "owner@truefindapp.com")))
                 .put("payouts", arr(JSONObject().put("id", "py1").put("net", 1340).put("status", "paid").put("decided_at", iso(50.0))))
+                .put("health", memberHealth())
         }
         "reports" -> JSONObject().put("reports", arr(
             JSONObject().put("id", "rep1").put("kind", "profile").put("status", "open").put("reason", "Asking for money").put("details", "She asked me to send money on GPay before talking.").put("match_id", "m1").put("call_id", "call9")
@@ -192,6 +194,117 @@ class AdDemo(private val ctx: Context) : AdSrc {
             JSONObject().put("id", "mm3").put("from", "u-b2").put("from_name", "Vikas Yadav").put("text", "That's not okay. Reporting.").put("at", iso(57.0))))
         else -> JSONObject().put("ok", true)
     }
+
+    // ── App Health (25 Nov): made-up numbers for the test pictures only ──
+    private fun dayAgo(n: Int): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("Asia/Kolkata") }.format(Date(System.currentTimeMillis() - n * 86_400_000L))
+    private fun issue(id: String, area: String, kind: String, code: String, detail: String, user: String, min: Double, n: Int = 1, page: String = "", device: String = "Xiaomi 23021RAAEG",
+                      android: String = "13 (33)", net: String = "mobile", op: String = "Jio", status: String = "open", ref: String = "", source: String = "app") =
+        JSONObject().put("id", id).put("area", area).put("kind", kind).put("code", code).put("detail", detail).put("user_id", user).put("count", n).put("page", page)
+            .put("device", device).put("android", android).put("app_version", "0.1.252").put("network", net).put("operator", op).put("status", status).put("ref_id", ref)
+            .put("source", source).put("first_at", iso(min + 20)).put("last_at", iso(min))
+    private fun people(): JSONObject = JSONObject().apply {
+        for (i in 0..7) put("u-g$i", card(i, true))
+        for (i in 0..5) put("u-b$i", card(i, false))
+    }
+    private val demoIssues: List<JSONObject> by lazy { listOf(
+        issue("i1", "payment", "payment_stuck", "google_play", "259 coins · ₹259 · truefind", "u-b0", 6.0, ref = "pt-81", source = "server", device = "", android = "", net = "", op = ""),
+        issue("i2", "call", "call_dropped", "PEER_DROPPED", "Video call · The other phone's connection dropped", "u-g1", 9.0, ref = "call-71"),
+        issue("i3", "crash", "crash", "IllegalStateException", "java.lang.IllegalStateException: The specified child already has a parent · at ExploreScreen.bubble", "u-b2", 14.0, 2, "Explore", "Samsung SM-A155F", "14 (34)", "mobile", "Airtel"),
+        issue("i4", "call", "call_failed", "PASS_NETWORK", "Voice call · Could not connect the call service. Please end the call and try again.", "u-b3", 21.0, ref = "call-64", device = "Realme RMX3830", op = "Vi"),
+        issue("i5", "message", "msg_failed", "NO_CONNECTION", "Message did not send (no connection)", "u-g4", 26.0, 3, "Chat room"),
+        issue("i6", "hang", "hang", "FROZE", "The app froze for 3.4 s", "u-b1", 33.0, 1, "Secret Dating", "Vivo V2250", "13 (33)", "wifi", "Jio"),
+        issue("i7", "call", "call_no_audio", "NO_SOUND_15S", "Voice call · No sound from the other phone for 15 s", "u-g2", 41.0, ref = "call-58", op = "Airtel"),
+        issue("i8", "page", "page_slow", "OPEN_SLOW", "Took 3.6 s to appear", "u-b4", 52.0, 1, "Explore", "Redmi 220333QAI", "12 (31)"),
+        issue("i9", "server", "server_timeout", "getOnlineNow", "No answer in 30 s", "u-g5", 66.0, 4, "Home"),
+        issue("i10", "call", "call_dropped", "NET_LOST_14", "Voice call · This phone lost the call's connection", "u-b5", 80.0, ref = "call-41", device = "OnePlus CPH2491", net = "mobile", op = "Jio"),
+        issue("i11", "server", "server_error", "getWallet · 500", "Something went wrong. Please try again. · 412 ms", "u-g6", 95.0, source = "server", device = "", android = "", net = "", op = ""),
+        issue("i12", "crash", "anr", "ANR", "The app froze and Android closed it", "u-g3", 130.0, 1, "Live Rooms", "Oppo CPH2387", "12 (31)", status = "resolved"),
+    ) }
+    private val demoPages: JSONArray by lazy {
+        val rows = listOf(
+            listOf("Home", 18230, 3980, 412_000, 41, 2, 380, "Redmi 220333QAI"), listOf("Explore", 9120, 3010, 388_500, 96, 5, 910, "Xiaomi 23021RAAEG"),
+            listOf("Call Back", 6420, 2240, 96_300, 12, 0, 340, ""), listOf("Wallet", 4310, 1870, 61_200, 9, 0, 520, ""), listOf("Profile", 3880, 1950, 70_500, 4, 0, 300, ""),
+            listOf("Secret Dating", 3120, 1340, 240_800, 22, 3, 760, "Vivo V2250"), listOf("Chat room", 2950, 880, 301_100, 6, 1, 280, ""),
+            listOf("Live Rooms", 1210, 640, 158_400, 15, 1, 830, "Oppo CPH2387"), listOf("Games", 980, 520, 88_900, 3, 0, 450, ""), listOf("Dashboard", 410, 220, 9_800, 0, 0, 260, ""),
+            listOf("Edit profile", 380, 300, 21_400, 1, 0, 330, ""), listOf("Expert Talk", 160, 120, 12_100, 0, 0, 410, ""),
+        )
+        JSONArray().also { a -> for (r in rows) a.put(JSONObject().put("page", r[0]).put("opens", r[1]).put("members", r[2]).put("seconds", r[3]).put("slow", r[4]).put("hangs", r[5]).put("avg_open_ms", r[6])
+            .put("max_open_ms", (r[6] as Int) * 5).put("bad_devices", if ((r[7] as String).isEmpty()) JSONArray() else arr(JSONObject().put("device", r[7]).put("slow", r[4]).put("hangs", r[5])))) }
+    }
+    private fun health(a: String, body: JSONObject): JSONObject {
+        val range = body.optString("range").ifEmpty { "today" }
+        val week = range == "week" || range == "30d"
+        val f = if (week) 6.4 else 1.0
+        fun n(v: Int) = Math.round(v * f).toInt()
+        val rg = JSONObject().put("key", range).put("label", if (week) "Last 7 days" else "Today").put("when", if (week) "in the last 7 days" else "today")
+            .put("from", dayAgo(if (week) 6 else 0)).put("to", dayAgo(0))
+        return when (a) {
+            "health" -> JSONObject().put("range", rg)
+                .put("users", JSONObject().put("total", 18452).put("new", n(236)).put("active", n(4210)).put("with_usage", n(3890)).put("opens", n(12480)).put("seconds", n(3890) * 1260))
+                .put("money", JSONObject().put("revenue_inr", n(48210)).put("paid", n(412)).put("buyers", n(356)).put("pending", 6).put("stuck", 2).put("failed", n(9)).put("refunded", 3).put("refunded_inr", 597))
+                .put("calls", JSONObject().put("total", n(2840)).put("voice", n(2210)).put("video", n(630)).put("connected", n(2164)).put("minutes", n(21840)).put("not_answered", n(402)).put("declined", n(188)).put("not_started", n(6)).put("billing_problems", 1))
+                .put("messages", JSONObject().put("sent", n(18230)).put("senders", n(2104)))
+                .put("problems", JSONObject().put("call_dropped", n(12)).put("call_failed", n(7)).put("call_no_audio", n(4)).put("call_no_video", n(2)).put("msg_failed", n(9)).put("msg_slow", n(14))
+                    .put("payment_stuck", 2).put("payment_not_added", 1).put("crash", n(3)).put("anr", 1).put("hang", n(11)).put("page_slow", n(6)).put("server_error", n(5)).put("server_timeout", n(8)).put("no_internet", n(41)))
+                .put("pages", JSONObject().put("slow_opens", n(87)).put("hangs", n(11)).put("opens", n(51230)))
+                .put("top", arr(
+                    JSONObject().put("kind", "payment_stuck").put("area", "payment").put("n", 2).put("members", 2).put("line", "2 payments are stuck (money may be taken, coins / plans not given yet) ${rg.optString("when")}").put("hint", "2 members · Google Play"),
+                    JSONObject().put("kind", "call_dropped").put("area", "call").put("n", n(12)).put("members", n(11)).put("line", "${n(12)} calls dropped in the middle ${rg.optString("when")}").put("hint", "Mostly on Jio (${n(9)}) · ${n(11)} members · Xiaomi 23021RAAEG (${n(4)}) · app 0.1.252"),
+                    JSONObject().put("kind", "crash").put("area", "crash").put("n", n(3)).put("members", n(3)).put("line", "${n(3)} app crashes ${rg.optString("when")}").put("hint", "Mostly on Airtel (${n(2)}) · ${n(3)} members · Samsung SM-A155F (${n(2)}) · page Explore · app 0.1.252"),
+                    JSONObject().put("kind", "call_failed").put("area", "call").put("n", n(7)).put("members", n(6)).put("line", "${n(7)} calls could not connect ${rg.optString("when")}").put("hint", "Mostly on Vi (${n(4)}) · ${n(6)} members · Realme RMX3830 (${n(3)})"),
+                    JSONObject().put("kind", "msg_failed").put("area", "message").put("n", n(9)).put("members", n(5)).put("line", "${n(9)} messages did not send ${rg.optString("when")}").put("hint", "Mostly on Jio (${n(6)}) · ${n(5)} members · page Chat room"),
+                    JSONObject().put("kind", "hang").put("area", "hang").put("n", n(11)).put("members", n(8)).put("line", "${n(11)} times the app froze for a few seconds ${rg.optString("when")}").put("hint", "Mostly on Wi-Fi (${n(5)}) · ${n(8)} members · Vivo V2250 (${n(4)}) · page Secret Dating"),
+                ))
+                .put("slow_pages", arr(JSONObject().put("page", "Explore").put("slow", n(96)).put("hangs", n(5)), JSONObject().put("page", "Home").put("slow", n(41)).put("hangs", n(2)), JSONObject().put("page", "Secret Dating").put("slow", n(22)).put("hangs", n(3))))
+                .put("days", if (!week) JSONArray() else JSONArray().also { d -> for (i in 6 downTo 0) d.put(JSONObject().put("day", dayAgo(i)).put("active", 3700 + i * 83).put("new", 210 + i * 7).put("revenue_inr", 6100 + i * 420)
+                    .put("calls", 2700 + i * 31).put("connected", 2080 + i * 25).put("call_problems", 20 + (i * 3) % 9).put("crashes", i % 3).put("messages", 17500 + i * 130)) })
+                .put("alerts", JSONObject().put("enabled", true).put("push_ready", true).put("last", arr(JSONObject().put("title", "⚠️ 6 call problems in 10 min").put("body", "Mostly on Jio (5)").put("created_date", iso(95.0)))))
+            "pages" -> JSONObject().put("range", rg).put("pages", demoPages).put("members", n(3980))
+            "page_detail" -> JSONObject().put("range", rg).put("page", body.optString("page")).put("people", people())
+                .put("devices", arr(
+                    JSONObject().put("device", "Xiaomi 23021RAAEG").put("opens", 2410).put("members", 790).put("slow", 51).put("hangs", 3).put("avg_open_ms", 1340),
+                    JSONObject().put("device", "Samsung SM-A155F").put("opens", 1980).put("members", 640).put("slow", 12).put("hangs", 1).put("avg_open_ms", 720),
+                    JSONObject().put("device", "Vivo V2250").put("opens", 1320).put("members", 470).put("slow", 21).put("hangs", 1).put("avg_open_ms", 980),
+                    JSONObject().put("device", "OnePlus CPH2491").put("opens", 860).put("members", 300).put("slow", 0).put("hangs", 0).put("avg_open_ms", 410)))
+                .put("members", arr(
+                    JSONObject().put("user_id", "u-b0").put("opens", 96).put("seconds", 7420).put("slow", 4).put("hangs", 0),
+                    JSONObject().put("user_id", "u-g1").put("opens", 81).put("seconds", 6110).put("slow", 0).put("hangs", 1),
+                    JSONObject().put("user_id", "u-b2").put("opens", 77).put("seconds", 5300).put("slow", 0).put("hangs", 0),
+                    JSONObject().put("user_id", "u-g3").put("opens", 64).put("seconds", 4980).put("slow", 2).put("hangs", 0)))
+                .put("days", JSONArray().also { d -> for (i in 6 downTo 0) d.put(JSONObject().put("day", dayAgo(i)).put("opens", 1250 + i * 17).put("members", 420 + i * 5).put("slow", 12 + i % 4).put("hangs", i % 2)) })
+                .put("issues", arr(demoIssues[2], demoIssues[7]))
+            "issues" -> {
+                val areas = body.optJSONArray("areas")?.let { x -> (0 until x.length()).map { x.optString(it) } }.orEmpty()
+                val st = body.optString("status")
+                val list = demoIssues.filter { (areas.isEmpty() || it.optString("area") in areas) && (st == "all" || st.isEmpty() || it.optString("status") == st) }
+                JSONObject().put("range", rg).put("issues", JSONArray(list)).put("people", people())
+                    .put("counts", JSONObject().put("call", 4).put("message", 3).put("payment", 1).put("crash", 3).put("hang", 1).put("page", 1).put("server", 5))
+            }
+            "alerts_get" -> JSONObject().put("enabled", true).put("push_ready", true).put("admin_phones", 2)
+                .put("rules", JSONObject().put("calls", JSONObject().put("on", true).put("n", 5).put("min", 10)).put("payments", JSONObject().put("on", true).put("n", 1).put("min", 30))
+                    .put("crashes", JSONObject().put("on", true).put("n", 5).put("min", 15)).put("server", JSONObject().put("on", true).put("n", 20).put("min", 10)).put("messages", JSONObject().put("on", false).put("n", 10).put("min", 10)))
+                .put("last", arr(JSONObject().put("title", "⚠️ 6 call problems in 10 min").put("body", "Calls failing, dropping or without sound / picture · 5 members · mostly on Jio (5) · Tap to open App Health.").put("sent_to", 2).put("created_date", iso(95.0)),
+                    JSONObject().put("title", "⚠️ 1 payment problem in 30 min").put("body", "Stuck, failed, or paid without coins added — please check · 1 member · Tap to open App Health.").put("sent_to", 2).put("created_date", iso(1440.0))))
+            else -> JSONObject().put("ok", true).put("resolved", 1)
+        }
+    }
+    private fun memberHealth(): JSONObject = JSONObject()
+        .put("usage", JSONObject().put("opens", 214).put("seconds", 151_200).put("opens_7d", 38).put("seconds_7d", 25_400).put("days_used", 41).put("days_used_30d", 24).put("first_at", iso(60.0 * 24 * 52)).put("last_at", iso(1.0)))
+        .put("phone", JSONObject().put("device", "Xiaomi 23021RAAEG").put("android", "13 (33)").put("app_version", "0.1.252").put("network", "mobile").put("operator", "Jio"))
+        .put("pages", arr(JSONObject().put("page", "Home").put("opens", 96).put("seconds", 7420).put("slow", 2).put("hangs", 0), JSONObject().put("page", "Call Back").put("opens", 61).put("seconds", 3100).put("slow", 0).put("hangs", 0),
+            JSONObject().put("page", "Explore").put("opens", 44).put("seconds", 5200).put("slow", 6).put("hangs", 1), JSONObject().put("page", "Wallet").put("opens", 12).put("seconds", 640).put("slow", 0).put("hangs", 0)))
+        .put("purchases", arr(
+            JSONObject().put("plan_name", "259 coins").put("amount_inr", 259).put("status", "succeeded").put("provider_ref", "GPA.3312-8841-2290-41775").put("app", "truefind").put("created_date", iso(300.0)),
+            JSONObject().put("plan_name", "Starter · 1 week").put("amount_inr", 39).put("status", "pending").put("provider_ref", "GPA.3398-1123-7712-90021").put("app", "secret").put("created_date", iso(40.0)),
+            JSONObject().put("plan_name", "49 coins").put("amount_inr", 49).put("status", "failed").put("provider_ref", "").put("app", "truefind").put("created_date", iso(2900.0)),
+            JSONObject().put("plan_name", "99 coins").put("amount_inr", 99).put("status", "refunded").put("provider_ref", "GPA.3301-2211-0091-11220").put("app", "truefind").put("created_date", iso(9000.0))))
+        .put("purchase_totals", JSONObject().put("paid", 6).put("paid_inr", 1123).put("pending", 1).put("failed", 1).put("refunded", 1).put("refunded_inr", 99))
+        .put("calls", JSONObject().put("made", 12).put("received", 131).put("connected", 118).put("voice", 74).put("video", 44).put("voice_minutes", 612.5).put("video_minutes", 388.0)
+            .put("not_answered", 19).put("declined", 6).put("not_started", 1).put("coins_charged", 220).put("creator_earned", 2310.5))
+        .put("coins", JSONObject().put("spent", 412).put("spent_calls", 220).put("spent_chat", 61).put("spent_gifts_games", 131).put("bought", 1250).put("free", 140))
+        .put("messages", JSONObject().put("sent", 1820).put("received", 2045).put("sent_7d", 214))
+        .put("issues", arr(demoIssues[1], demoIssues[4]))
+        .put("issue_counts", JSONObject().put("call", 1).put("message", 3))
 
     private fun payouts(a: String): JSONObject = when (a) {
         "list" -> JSONObject().put("pending", arr(

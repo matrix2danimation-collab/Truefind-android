@@ -3,6 +3,7 @@
 # Control Center and the status screens in test mode (made-up data, no login). Output: $2/*.png
 #   set "misc":  maintenance, announcement, blocked account, error screens, "Never miss a call"
 #   set "admin": every Control Center section and its pop-ups
+#   set "health": App Health only (Health, Pages, Issues, the member sheet's new parts)
 APK="$1"; OUT="$2"; SET="${3:-misc}"
 PKG=app.truefind.android
 mkdir -p "$OUT"
@@ -126,6 +127,44 @@ if [ "$SET" = admin ]; then
   shot a34-system 3 admin-system
   shot a35-system-jobs 3 admin-system details
   shot a36-system-end 3 admin-system scrollend
+  # App Health (25 Nov): Health, Pages, Issues and the member sheet's new parts
+  shot a37-health 4 admin-health
+  shot a38-health-more 3 admin-health scroll
+  shot a39-health-end 3 admin-health scrollend
+  shot a40-health-week 4 admin-health week
+  shot a41-health-alerts 4 admin-health alerts
+  shot a42-pages 4 admin-pages
+  shot a43-pages-more 3 admin-pages scroll
+  shot a44-page-detail 4 admin-pages page
+  shot a45-issues-calls 4 admin-errors calls
+  shot a46-issue-details 4 admin-errors details
+  shot a47-crash-groups 4 admin-errors crashes
+  shot a48-member-use 5 admin-members member:use
+  shot a49-member-payments 5 admin-members member:payments
+  shot a50-member-calls 5 admin-members member:calls
+  shot a51-member-problems 5 admin-members member:problems
+fi
+
+# App Health only (its work branch): the new sections, the old Errors (now Issues) and Overview
+if [ "$SET" = health ]; then
+  shot a01-overview 3 admin-overview
+  # App Health (25 Nov): Health, Pages, Issues and the member sheet's new parts
+  shot a37-health 4 admin-health
+  shot a38-health-more 3 admin-health scroll
+  shot a39-health-end 3 admin-health scrollend
+  shot a40-health-week 4 admin-health week
+  shot a41-health-alerts 4 admin-health alerts
+  shot a42-pages 4 admin-pages
+  shot a43-pages-more 3 admin-pages scroll
+  shot a44-page-detail 4 admin-pages page
+  shot a45-issues-calls 4 admin-errors calls
+  shot a46-issue-details 4 admin-errors details
+  shot a47-crash-groups 4 admin-errors crashes
+  shot a48-member-use 5 admin-members member:use
+  shot a49-member-payments 5 admin-members member:payments
+  shot a50-member-calls 5 admin-members member:calls
+  shot a51-member-problems 5 admin-members member:problems
+  shot a29-issues 3 admin-errors
 fi
 
 adb logcat -d > "$OUT/logcat-last.txt"

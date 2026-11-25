@@ -591,6 +591,8 @@ object CrashNote {
                     .put("page", lastPath).put("thread", t.name).put("at", System.currentTimeMillis())
                 java.io.File(app.filesDir, FILE).writeText(o.toString())
             } catch (x: Throwable) { }
+            // (App Health: the numbers not yet saved are written before the app closes)
+            try { AppHealth.saveNow() } catch (x: Throwable) { }
             prev?.uncaughtException(t, e)
         }
     }
@@ -600,6 +602,8 @@ object CrashNote {
         if (!f.exists() || !Api.ready || Demo.on) return
         val o = try { JSONObject(f.readText()) } catch (e: Exception) { f.delete(); return }
         f.delete()
+        // App Health: the crash with the phone, Android, app version and network (Control Center → Issues)
+        AppHealth.crash(o)
         val v = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
         Api.invoke("logClientError", JSONObject().put("message", o.optString("message")).put("stack", o.optString("stack")).put("source", "manual")
             .put("page", o.optString("page")).put("version", "android-$v")) { }

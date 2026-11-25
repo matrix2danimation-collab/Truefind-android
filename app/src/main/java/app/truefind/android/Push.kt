@@ -44,6 +44,8 @@ object Push {
     private const val CH_CALL = "tf_calls"
     private const val CH_MSG = "tf_messages"
     private const val CH_INFO = "tf_info"
+    /** App Health (25 Nov): the owner's alerts (admins only) — loud, like a message */
+    private const val CH_ALERT = "tf_admin_alerts"
     private const val PREFS = "tf_push"
     private const val RING_MS = 45000L
     /**
@@ -172,6 +174,15 @@ object Push {
         })
         if (nm.getNotificationChannel(CH_INFO) == null) nm.createNotificationChannel(NotificationChannel(CH_INFO, "Coins, likes and offers", NotificationManager.IMPORTANCE_DEFAULT))
     }
+    /** the admins' alert channel: made only on an admin's phone, when the first alert comes (members never see it) */
+    private fun alertChannel(ctx: Context) {
+        if (Build.VERSION.SDK_INT < 26) return
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        if (nm.getNotificationChannel(CH_ALERT) == null) nm.createNotificationChannel(NotificationChannel(CH_ALERT, "Admin alerts", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Control Center: when many calls, payments or messages fail, or the app crashes (admins only)"
+            enableVibration(true); vibrationPattern = longArrayOf(0, 300, 150, 300, 150, 300)
+        })
+    }
 
     private fun open(ctx: Context, req: Int, url: String, call: String = "", act: String = ""): PendingIntent {
         val i = Intent(ctx, MainActivity::class.java).apply {
@@ -205,7 +216,7 @@ object Push {
         channels(ctx)
         val t = d["t"].orEmpty()
         // the app is on screen: it rings / shows calls and messages itself (offers and tests still show)
-        if (visible && t != "test" && t != "offer") {
+        if (visible && t != "test" && t != "offer" && t != "alert") {
             android.util.Log.i("TFDBG", "push in app t=$t")
             if (t == "call") onCall?.invoke(d["call_id"].orEmpty()) else onMessage?.invoke(t)
             return
@@ -271,7 +282,8 @@ object Push {
             }
             // "missed call": the ringing one goes first
             if (t == "missed" && callId.isNotEmpty()) nm.cancel(callTag(callId), 1)
-            val ch = if (t == "msg" || t == "missed") CH_MSG else CH_INFO
+            if (t == "alert") alertChannel(ctx)
+            val ch = if (t == "alert") CH_ALERT else if (t == "msg" || t == "missed") CH_MSG else CH_INFO
             val tag = d["tag"].orEmpty().ifEmpty { "tf-$t" }
             val id = if (d["tag"].isNullOrEmpty()) req else 2
             val n = NotificationCompat.Builder(ctx, ch)
@@ -281,7 +293,7 @@ object Push {
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setLargeIcon(big)
                 .setAutoCancel(true)
-                .setPriority(if (ch == CH_MSG) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
+                .setPriority(if (ch == CH_MSG || ch == CH_ALERT) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
                 .setCategory(if (t == "msg") NotificationCompat.CATEGORY_MESSAGE else if (t == "missed") NotificationCompat.CATEGORY_MISSED_CALL else NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setContentIntent(open(ctx, req, url))
                 .setGroup(GROUP)

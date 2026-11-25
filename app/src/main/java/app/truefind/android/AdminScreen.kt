@@ -25,8 +25,8 @@ import org.json.JSONObject
 /**
  * The Control Center (pages/AdminPanel.jsx), drawn by the phone: admin only, shown whenever
  * the web app's address is /admin (Profile → Settings → Control Center, or the "Maintenance
- * is ON" pill). Black top with the section tabs (Overview · Growth · Verify · Members ·
- * Reports · Experts · Live · Payouts · Support · Errors · Settings · System), white page,
+ * is ON" pill). Black top with the section tabs (Overview · Health · Pages · Growth · Verify · Members ·
+ * Reports · Experts · Live · Payouts · Support · Issues · Settings · System), white page,
  * the member sheet and every pop-up of the web version, with the same server calls.
  * Every server action checks the admin role again on its own.
  */
@@ -41,11 +41,14 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
     companion object {
         const val FETCH_LIMIT = 500
         val TABS = listOf(
-            Triple("overview", "Overview", AdIc.LayoutDashboard), Triple("growth", "Growth", AdIc.TrendingUp),
+            Triple("overview", "Overview", AdIc.LayoutDashboard),
+            // App Health (25 Nov): Health, Pages; Errors became Issues (every problem members met; the old grouped crash list inside)
+            Triple("health", "Health", AdIc.Activity), Triple("pages", "Pages", AdIc.LayoutList),
+            Triple("growth", "Growth", AdIc.TrendingUp),
             Triple("verify", "Verify", AdIc.ShieldCheck), Triple("members", "Members", AdIc.Users),
             Triple("reports", "Reports", AdIc.Flag), Triple("experts", "Experts", AdIc.Headphones),
             Triple("live", "Live", AdIc.Radio), Triple("payouts", "Payouts", AdIc.IndianRupee),
-            Triple("support", "Support", AdIc.LifeBuoy), Triple("errors", "Errors", AdIc.Bug),
+            Triple("support", "Support", AdIc.LifeBuoy), Triple("errors", "Issues", AdIc.Bug),
             Triple("settings", "Settings", AdIc.Settings), Triple("system", "System", AdIc.Cpu),
         )
     }
@@ -401,7 +404,9 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
             "live" -> AdLive(this)
             "payouts" -> AdPayouts(this)
             "support" -> AdSupport(this)
-            "errors" -> AdErrors(this)
+            "errors" -> AdIssues(this)
+            "health" -> AdHealth(this)
+            "pages" -> AdPages(this)
             "settings" -> AdSettings(this)
             "system" -> AdSystem(this)
             else -> AdOverview(this)
@@ -414,6 +419,15 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
         tb.root.animate().alpha(1f).setDuration(160).start()
         scroll.scrollTo(0, 0)
     }
+
+    /** Issues opened from Health, a page or the member sheet: only one kind / area / member, for a time range */
+    private var issuesPreset: JSONObject? = null
+    fun openIssues(kind: String = "", areas: String = "", range: String = "today", userId: String = "", name: String = "") {
+        issuesPreset = JSONObject().put("kind", kind).put("range", range).put("user_id", userId).put("name", name).apply { if (areas.isNotEmpty()) put("areas", areas) }
+        layer.closeAll()
+        if (tab == "errors") openTab("errors", false) else setTab("errors")
+    }
+    fun takeIssuesPreset(): JSONObject? = issuesPreset.also { issuesPreset = null }
 
     /** the red "could not load members" line of Verify / Members, with Retry */
     fun profilesErrorLine(): View = AU.errorLine(act, profError) { loadProfiles() }
@@ -573,6 +587,7 @@ class AdminScreen(private val act: ComponentActivity, private val nav: Nav) : Fr
         when {
             action == "scroll" -> scroll.smoothScrollTo(0, body.height / 2)
             action == "scrollend" -> scroll.smoothScrollTo(0, body.height)
+            action.startsWith("member:") -> AdMemberSheet(this, "u-g1", "").also { it.focus = action.substringAfter(':') }.open()
             action.startsWith("member") -> openMember("u-g1")
             else -> cur?.previewOpen(action)
         }

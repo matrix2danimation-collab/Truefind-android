@@ -53,7 +53,9 @@ object Api {
     /** the same as [invoke], on the front lane: for the page the member is looking at and waiting for */
     fun invokeFront(name: String, payload: JSONObject = JSONObject(), timeoutMs: Int = 30000, done: (Result) -> Unit) =
         invokeOn(frontPool, name, payload, timeoutMs, done)
-    private fun invokeOn(ex: java.util.concurrent.ExecutorService, name: String, payload: JSONObject, timeoutMs: Int, done: (Result) -> Unit) {
+    private fun invokeOn(ex: java.util.concurrent.ExecutorService, name: String, payload: JSONObject, timeoutMs: Int, done0: (Result) -> Unit) {
+        // (App Health: the final answer of the Google Play steps tells whether a payment got stuck — AppHealth.answer)
+        val done: (Result) -> Unit = { r -> AppHealth.answer(name, r); done0(r) }
         // reading something (getWallet, getOnlineNow, getChats …) is safe to ask again
         if (name.startsWith("get")) { readWithRetry({ call(name, payload, timeoutMs) }, done, 0, ex); return }
         if (name in NOT_AGAIN) { ex.execute { val r = call(name, payload, timeoutMs); main.post { done(r) } }; return }
@@ -157,6 +159,7 @@ object Api {
 
     private fun requestOnce(method: String, path: String, body: ByteArray?, contentType: String?, timeoutMs: Int): Result {
         count(method, path)
+        val t0 = android.os.SystemClock.elapsedRealtime()
         var conn: HttpURLConnection? = null
         return try {
             val bearer = Auth.fresh()
@@ -186,8 +189,10 @@ object Api {
                 (json.optString("error").takeIf { it.isNotBlank() } ?: json.optString("message").takeIf { it.isNotBlank() }
                     ?: ("Something went wrong. Please try again." + tag(code, path)))
             if (code !in 200..299) { note(method, path, code, text); signal(code, json) }
+            AppHealth.http(path, code, android.os.SystemClock.elapsedRealtime() - t0, null, json)
             Result(code, json, err)
         } catch (e: Exception) {
+            AppHealth.http(path, 0, android.os.SystemClock.elapsedRealtime() - t0, e, null)
             Result(0, JSONObject(), "Please check your internet and try again.")
         } finally {
             conn?.disconnect()

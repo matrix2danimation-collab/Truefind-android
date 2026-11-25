@@ -163,6 +163,8 @@ class AdMembers(a: AdminScreen, initialQ: String) : AdTab(a) {
 /** MemberSheet.jsx: one member — actions, details, wallets, history, calls, reports, payouts, phones, admin actions. */
 class AdMemberSheet(private val a: AdminScreen, private val userId: String, private val ticketId: String) {
     private val ctx = a.context
+    /** test pictures: the App Health part to bring to the top ("use" | "payments" | "calls" | "problems") */
+    var focus = ""
     private val src get() = a.src
     private var d: JSONObject? = null
     private var err = ""
@@ -264,6 +266,10 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
                 AU.kv(ctx, "Blocked by", "${AF.nf(AF.n(counts, "blocked_by"))} people"),
                 idRow))
         })
+
+        // App Health (25 Nov): app use, payments, calls & coins, messages counted, pages, problems met
+        val anchors = AdMemberHealth.addTo(a, b, d, userId, AF.s(c, "name"))
+        if (focus.isNotEmpty()) anchors[focus]?.let { sheet.scrollToChild(it) }
 
         // wallets
         b.addView(AU.section(ctx, "Wallets"))

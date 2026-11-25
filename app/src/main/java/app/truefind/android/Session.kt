@@ -218,8 +218,11 @@ class SessionWork(private val ctx: Context, private val host: Host) {
         said = "online"
         val body = JSONObject()
         if (!deviceSent) { Session.deviceId(ctx).takeIf { it.isNotEmpty() }?.let { body.put("device_id", it) }; deviceSent = true }
+        // App Health (25 Nov): about every 5 minutes the phone's numbers go along (no extra request)
+        val stats = AppHealth.takeBatch(false)
+        if (stats != null) body.put("stats", stats)
         // (a blocked account: the answer is 403 "banned" — Api tells the "blocked" screen)
-        Api.invoke("updatePresence", body) { }
+        Api.invoke("updatePresence", body) { r -> if (stats != null) AppHealth.ack(stats, r.ok) }
     }
 
     private fun startBeating() {
@@ -243,7 +246,11 @@ class SessionWork(private val ctx: Context, private val host: Host) {
         if (said == "offline" || Api.token.isEmpty()) { done(); return }
         said = "offline"
         offlineAt = System.currentTimeMillis()
-        Api.invoke("updatePresence", JSONObject().put("state", "offline"), 1500) { done() }
+        // (App Health: everything waiting goes with it; what doesn't arrive goes with the next heartbeat)
+        val body = JSONObject().put("state", "offline")
+        val stats = AppHealth.takeBatch(true)
+        if (stats != null) body.put("stats", stats)
+        Api.invoke("updatePresence", body, 1500) { r -> if (stats != null) AppHealth.ack(stats, r.ok); done() }
     }
 
     private var netCb: ConnectivityManager.NetworkCallback? = null

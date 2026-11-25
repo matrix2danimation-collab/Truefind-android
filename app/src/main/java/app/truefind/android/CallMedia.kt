@@ -113,26 +113,28 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
         private val handler = object : IRtcEngineEventHandler() {
             override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) { post { it.joinedOk() } }
             override fun onUserJoined(uid: Int, elapsed: Int) { post { it.peerIn(uid) } }
-            override fun onUserOffline(uid: Int, reason: Int) { post { it.l.onPeerLeft() } }
+            override fun onUserOffline(uid: Int, reason: Int) { post { it.peerGone(reason); it.l.onPeerLeft() } }
             override fun onRemoteVideoStateChanged(uid: Int, state: Int, reason: Int, elapsed: Int) {
                 val on = state == Constants.REMOTE_VIDEO_STATE_STARTING || state == Constants.REMOTE_VIDEO_STATE_DECODING
                 val off = state == Constants.REMOTE_VIDEO_STATE_STOPPED || state == Constants.REMOTE_VIDEO_STATE_FAILED
                 if (on || off) post { it.remoteVideo(uid, on) }
+                post { it.videoHealth(state, reason) }
             }
-            override fun onFirstRemoteVideoFrame(uid: Int, width: Int, height: Int, elapsed: Int) { post { it.remoteVideo(uid, true) } }
+            override fun onFirstRemoteVideoFrame(uid: Int, width: Int, height: Int, elapsed: Int) { post { it.peerPicture = true; it.remoteVideo(uid, true) } }
             @Deprecated("Deprecated in Java")
-            override fun onUserMuteVideo(uid: Int, muted: Boolean) { post { it.remoteVideo(uid, !muted) } }
+            override fun onUserMuteVideo(uid: Int, muted: Boolean) { post { if (muted) it.peerCamOff = true; it.remoteVideo(uid, !muted) } }
             // the other person's mute button (Agora tells the other phone when someone stops / starts sending sound)
             @Deprecated("Deprecated in Java")
             override fun onUserMuteAudio(uid: Int, muted: Boolean) { if (uid != 0) post { it.l.onPeerMuted(muted) } }
             override fun onRemoteAudioStateChanged(uid: Int, state: Int, reason: Int, elapsed: Int) {
                 if (uid == 0) return
+                post { it.audioHealth(state, reason) }
                 if (reason == Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED) post { it.l.onPeerMuted(true) }
                 else if (reason == Constants.REMOTE_AUDIO_REASON_REMOTE_UNMUTED) post { it.l.onPeerMuted(false) }
             }
             override fun onConnectionStateChanged(state: Int, reason: Int) {
                 val s = when (state) { 1 -> "DISCONNECTED"; 2 -> "CONNECTING"; 3 -> "CONNECTED"; 4 -> "RECONNECTING"; 5 -> "FAILED"; else -> "" }
-                post { it.l.onNet(s) }
+                post { it.netHealth(state, reason); it.l.onNet(s) }
             }
             override fun onTokenPrivilegeWillExpire(token: String?) { post { it.renew(0) } }
             override fun onRequestToken() { post { it.renew(0) } }
@@ -173,6 +175,7 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
 
     private fun fail(msg: String, detail: String) {
         if (dead) return
+        AppHealth.call(if (joined) "call_dropped" else "call_failed", callId, video, detail, msg)
         leaveEngine()
         l.onMediaState("failed")
         l.onMediaError(msg, detail)
@@ -311,7 +314,46 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
         l.onMediaState("ready")
     }
 
+    // ── App Health (25 Nov): problems of this call for the Control Center (AppHealth.call) ──
+    /** sound / picture seen from the other phone, or turned off by them on purpose */
+    private var peerSound = false
+    private var peerMutedSelf = false
+    var peerPicture = false
+    var peerCamOff = false
+    private var noted = HashSet<String>()
+    private fun note(kind: String, code: String, detail: String) { if (noted.add(kind)) AppHealth.call(kind, callId, video, code, detail) }
+    /** 15 s after the other phone joined: no sound (and, on a video call, no picture) arrived from it */
+    private val mediaCheck = Runnable {
+        if (dead || !joined) return@Runnable
+        if (!peerSound && !peerMutedSelf) note("call_no_audio", "NO_SOUND_15S", "No sound from the other phone for 15 s")
+        if (video && !peerPicture && !peerCamOff) note("call_no_video", "NO_PICTURE_15S", "No picture from the other phone for 15 s")
+    }
+    fun audioHealth(state: Int, reason: Int) {
+        if (state == Constants.REMOTE_AUDIO_STATE_STARTING || state == Constants.REMOTE_AUDIO_STATE_DECODING) peerSound = true
+        if (reason == Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED || reason == Constants.REMOTE_AUDIO_REASON_REMOTE_OFFLINE) peerMutedSelf = true
+        if (state == Constants.REMOTE_AUDIO_STATE_FAILED) note("call_no_audio", "REMOTE_AUDIO_FAILED_$reason", "The other phone's sound failed")
+    }
+    fun videoHealth(state: Int, reason: Int) {
+        if (!video) return
+        if (state == Constants.REMOTE_VIDEO_STATE_DECODING) peerPicture = true
+        if (reason == Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED || reason == Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_OFFLINE) peerCamOff = true
+        if (state == Constants.REMOTE_VIDEO_STATE_FAILED) note("call_no_video", "REMOTE_VIDEO_FAILED_$reason", "The other phone's picture failed")
+    }
+    /** Agora's link: lost for good while the call was on (the member did not end it) */
+    fun netHealth(state: Int, reason: Int) {
+        if (dead) return
+        // 5 = left the channel (the call ended normally)
+        if (state == Constants.CONNECTION_STATE_FAILED) note(if (joined) "call_dropped" else "call_failed", "NET_FAILED_$reason", "This phone's connection to the call failed")
+        else if (state == Constants.CONNECTION_STATE_DISCONNECTED && reason != Constants.CONNECTION_CHANGED_LEAVE_CHANNEL && joined)
+            note("call_dropped", "NET_LOST_$reason", "This phone lost the call's connection")
+    }
+    /** the other phone left: reason 1 = its connection dropped (not "End call") */
+    fun peerGone(reason: Int) {
+        if (!dead && reason == Constants.USER_OFFLINE_DROPPED) note("call_dropped", "PEER_DROPPED", "The other phone's connection dropped")
+    }
+
     private fun peerIn(uid: Int) {
+        main.removeCallbacks(mediaCheck); main.postDelayed(mediaCheck, 15_000)
         if (uid != 0) peerUid = uid
         if (video && remoteUid == 0) bindRemote(uid)
         l.onPeerJoined()

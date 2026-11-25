@@ -665,7 +665,9 @@ class ChatRoom(
         // carries it, so the server finds the copy it may already have saved instead of saving a second one
         payload.put("client_key", key)
         if (again) payload.put("retry", true)
-        deliverTry(payload, price, 0, done)
+        // App Health (25 Nov): a message that did not send (after its own retries) or took long — only that, never its words
+        val t0 = android.os.SystemClock.elapsedRealtime()
+        deliverTry(payload, price, 0) { r -> AppHealth.message(r, android.os.SystemClock.elapsedRealtime() - t0, payload.optString("kind")); done(r) }
     }
     private fun newKey() = "m" + java.util.UUID.randomUUID().toString().replace("-", "")
     /** the message that did not send (its words are back in the box): "tap to try again" sends it as the same message */
