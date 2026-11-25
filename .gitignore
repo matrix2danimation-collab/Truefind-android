@@ -5,4 +5,6 @@ local.properties
 *.iml
 .idea/
 app/src/main/assets/fonts/*.ttf
+# the app's font (Lato, SIL Open Font License: assets/fonts/OFL-Lato.txt) is kept in the repo
+!app/src/main/assets/fonts/Lato-*.ttf
 app/google-services.json
