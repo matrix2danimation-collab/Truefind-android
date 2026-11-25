@@ -1451,6 +1451,8 @@ class MainActivity : ComponentActivity() {
         calls.onAppVisible(true)
         // a call's "call in progress" service the phone refused while True Find was away starts now (CallService)
         CallService.refresh(this)
+        // a Google Play payment that finished while True Find was away (UPI confirmed later): the server adds it now
+        if (!Demo.on && Auth.has(this)) PlayBilling.recover(this)
         explore.onAppVisible(true)
         secret.onAppVisible(true)
         pages.onAppVisible(true)

@@ -9,6 +9,8 @@ adb install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
 shot() {
   local name="$1"; local wait="$2"; shift 2
+  # ONLY=<start of a name>: just those pictures (a quick set)
+  [ -n "$ONLY" ] && [ "${name#$ONLY}" = "$name" ] && return 0
   adb shell am force-stop $PKG
   adb logcat -c
   adb shell am start -W -n $PKG/.MainActivity "$@" > /dev/null
@@ -50,5 +52,16 @@ shot 23-secret-credits-hang-4s 4 --es tf_wallet secret-credhang
 shot 24-secret-credits-hang-15s 15 --es tf_wallet secret-credhang
 shot 25-secret-fail 6 --es tf_wallet secret-fail
 shot 26-secret-both-hang-15s 15 --es tf_wallet secret-wallethang-credhang
+# Google Play payments (25 Nov): the Pay button while Google's screen opens, then the app's own screens after it
+# (Google's payment screen itself can't show on the test phone)
+shot g01-pay-opening 9 --es tf_wallet tf --es tf_open gopening
+shot g02-processing 8 --es tf_wallet tf --es tf_open gprocessing
+shot g03-success 9 --es tf_wallet tf --es tf_open gdone
+shot g04-pending 8 --es tf_wallet tf --es tf_open gpending
+shot g05-failed 8 --es tf_wallet tf --es tf_open gfailed
+shot g06-coming-soon 8 --es tf_wallet tf --es tf_open soon
+shot g07-coming-soon-admin 8 --es tf_wallet tf-admin --es tf_open gsoon-admin
+shot g08-plan-done 9 --es tf_wallet secret-plan --es tf_open gplan-done
+shot g09-plan-pending 9 --es tf_wallet secret-plan --es tf_open gplan-pending
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"

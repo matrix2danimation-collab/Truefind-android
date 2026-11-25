@@ -120,8 +120,9 @@ class WalletScreen(
         val profileId: String?, val rate: Double, val firstOffer: Boolean,
     )
 
-    /** The buy-coins steps: "pack" | "method" | "processing" | "done" | "failed" | "soon" */
-    private class Flow(var step: String, var pack: WPack, var method: String = "upi", var at: Long = 0L, var ref: String = "", var error: String = "")
+    /** The buy-coins steps: "pack" | "method" | "opening" | "processing" | "done" | "pending" | "failed" | "soon".
+     *  coins: what the server added (-1 = the pack's own number). */
+    private class Flow(var step: String, var pack: WPack, var method: String = "upi", var at: Long = 0L, var ref: String = "", var error: String = "", var coins: Long = -1L)
 
     private val main = Handler(Looper.getMainLooper())
     private val PAY_GREEN = WC.payGreen
@@ -1611,7 +1612,8 @@ class WalletScreen(
 
     private fun renderPayBar() {
         val t = T
-        val show = (!loading || secret) && coinsView && flow == null && txOpen == null && (if (secret) planPicked != null else picked != null)
+        val opening = flow?.step == "opening"
+        val show = (!loading || secret) && coinsView && (flow == null || opening) && txOpen == null && (if (secret) planPicked != null else picked != null)
         if (!show) {
             payBar?.let { payHost.removeView(it) }
             payBar = null; payKey = ""
@@ -1619,7 +1621,7 @@ class WalletScreen(
         }
         // like the web's key={…}: a new pack / plan slides in again; other changes just redraw it
         val identity = if (secret) "plan:${planPicked!!.key}" else "pack:${picked!!.id}"
-        val key = "$identity:$buyingCredits:$sdMustVerify:${sdPlan?.opt("active") == true}"
+        val key = "$identity:${buyingCredits || opening}:$sdMustVerify:${sdPlan?.opt("active") == true}"
         if (key == payKey && payBar != null) return
         val animate = payBar == null || payKey.substringBeforeLast(':').substringBeforeLast(':').substringBeforeLast(':') != identity
         payBar?.let { payHost.removeView(it) }
@@ -1638,14 +1640,15 @@ class WalletScreen(
             bar.setOnClickListener { if (!off) buyPlan(p.key) }
         } else {
             val p = picked!!
-            bar = WV.button(ctx, "Pay ₹${wRupees(p.price)} · Get ${wRupees(p.coins)} coins", Color.TRANSPARENT, Ui.c("#05301A"), 56f, 16f, 18f)
+            bar = WV.button(ctx, "Pay ₹${wRupees(p.price)} · Get ${wRupees(p.coins)} coins", Color.TRANSPARENT, Ui.c("#05301A"), 56f, 16f, 18f,
+                if (opening) WSpinner(ctx, 18f, Ui.c("#05301A")) else null)
             bar.background = PayGreenDrawable(16f)
             bar.elevation = Ui.dp(10f)
             bar.outlineSpotShadowColorCompat(Color.argb(115, 34, 212, 107))
             bar.outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.dp(16f)) }
             }
-            bar.setOnClickListener { openBuy(p) }
+            bar.setOnClickListener { if (!opening) openBuy(p) }
         }
         val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(32f), Ui.dpi(448f))
         payHost.addView(bar, LayoutParams(w, Ui.dpi(56f), Gravity.CENTER_HORIZONTAL))
@@ -1658,11 +1661,73 @@ class WalletScreen(
 
     // ═════════════════ buying ═════════════════
 
-    /** No real payment gateway yet: only the admin's demo top-up works; others see "Coming soon". */
+    /** Buying coins (25 Nov): the Pay button opens Google Play's own payment screen straight away (owner: no list of
+     *  payment apps of ours — Google's screen has UPI with Google Pay, PhonePe, Paytm, and cards). "Add coins" first
+     *  lets the member choose a pack. While Google Play payments are not set up yet: "Coming soon", as before (the
+     *  admin can still add demo coins from there). The emulator pictures (made-up data) keep the old steps. */
     private fun openBuy(pack: WPack?) {
-        val p = pack ?: WData.findPack(WData.DEFAULT_PACK)!!
-        flow = if (isAdmin) Flow(if (pack != null) "method" else "pack", p, "upi") else Flow("soon", p)
-        showFlow()
+        val live = source === WalletNet
+        if (pack == null) { flow = if (live || isAdmin) Flow("pack", WData.findPack(WData.DEFAULT_PACK)!!) else Flow("soon", WData.findPack(WData.DEFAULT_PACK)!!); showFlow(); return }
+        if (!live) { flow = if (isAdmin) Flow("method", pack, "upi") else Flow("soon", pack); showFlow(); return }
+        buyWithPlay(pack)
+    }
+
+    /** Google Play: check with the server → Google's payment screen → the server gives the coins → Payment successful. */
+    private fun buyWithPlay(pack: WPack) {
+        if (topUpBusy) return
+        topUpBusy = true
+        val forApp = app
+        val startedAt = System.currentTimeMillis()
+        flow = Flow("opening", pack, "gplay")
+        note = ""
+        renderPayBar()
+        PlayBilling.buy(context, PlayBilling.productFor(pack.id), forApp, paid = {
+            // Google's screen closed, paid: the server is adding the coins
+            if (app == forApp) flow?.let { it.step = "processing"; showFlow() }
+        }) { o ->
+            topUpBusy = false
+            if (app != forApp) return@buy
+            val f = flow ?: Flow("opening", pack, "gplay").also { flow = it }
+            when (o) {
+                is PlayBilling.Outcome.Done -> {
+                    val d = o.data
+                    d.optJSONObject("wallet")?.let { wallet = it; drawnFrom.remove(forApp) }
+                    sel = null // after a first purchase the offer card goes away (load() checks with the server)
+                    load { _ ->
+                        val wait = Math.max(0L, 900L - (System.currentTimeMillis() - startedAt))
+                        main.postDelayed({
+                            val cur = flow ?: return@postDelayed
+                            cur.step = "done"; cur.at = System.currentTimeMillis(); cur.ref = d.str("order"); cur.method = "gplay"
+                            cur.coins = if (d.has("added") && d.optLong("added") > 0) d.optLong("added") else -1L
+                            showFlow()
+                        }, wait)
+                    }
+                }
+                PlayBilling.Outcome.Pending -> { f.step = "pending"; showFlow() }
+                PlayBilling.Outcome.Cancelled -> closeFlow()
+                is PlayBilling.Outcome.NotReady -> { f.step = "soon"; f.error = o.message; showFlow() }
+                is PlayBilling.Outcome.Failed -> {
+                    if (o.code == "offer_used") { sel = null; load() }
+                    f.step = "failed"; f.error = o.message; showFlow()
+                }
+            }
+        }
+    }
+
+    /** A payment that finished while the Wallet was away (UPI confirmed later, a lost connection): it is in now. */
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (source !== WalletNet) return
+        PlayBilling.onRecovered = { d ->
+            note = if (d.str("kind") == "plan") "Your earlier payment went through — your Secret Dating plan is active!" else "Your earlier payment went through — the coins are in your wallet."
+            load()
+            if (app == "secret") loadCredits { }
+        }
+        PlayBilling.recover(context)
+    }
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        PlayBilling.onRecovered = null
     }
 
     private fun closeFlow() {
@@ -1688,6 +1753,12 @@ class WalletScreen(
                     14f, WC.sub, false, 21f).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 6f))
                 s.content.addView(c, WV.lp(WV.MATCH, WV.WRAP))
                 s.content.addView(WV.primary(ctx, "OK").apply { setOnClickListener { closeFlow() } }, WV.lp(WV.MATCH, Ui.dpi(50f), t = 14f))
+                // the admin can still add demo coins (no money) while Google Play payments are being set up
+                if (isAdmin) s.content.addView(WV.text(ctx, "Admin: demo top-up (no money)", 14f, WC.vivid, true).apply {
+                    gravity = Gravity.CENTER
+                    isClickable = true
+                    setOnClickListener { f.step = "method"; f.method = "upi"; showFlow() }
+                }, WV.lp(WV.MATCH, Ui.dpi(44f), t = 6f))
                 sheetUi = s; s.show()
             }
             "pack" -> {
@@ -1698,7 +1769,7 @@ class WalletScreen(
                     val r = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
                         setPadding(0, Ui.dpi(8f), 0, Ui.dpi(8f))
                         isClickable = true
-                        setOnClickListener { f.pack = p; f.step = "method"; showFlow() }
+                        setOnClickListener { if (source === WalletNet) { closeFlow(); buyWithPlay(p) } else { f.pack = p; f.step = "method"; showFlow() } }
                         WV.press(this)
                         contentDescription = "${wRupees(p.coins)} coins for ₹${wRupees(p.price)}"
                     }
@@ -1756,7 +1827,8 @@ class WalletScreen(
                     WV.lp(WV.MATCH, WV.WRAP, t = 10f))
                 sheetUi = s; s.show()
             }
-            "processing", "done", "failed" -> showResult(f)
+            "processing", "done", "pending", "failed" -> showResult(f)
+            "opening" -> {} // Google Play's payment screen is opening on top
         }
     }
 
@@ -1764,6 +1836,7 @@ class WalletScreen(
     private fun showResult(f: Flow) {
         val ctx = context
         val done = f.step == "done"
+        val coinsAdded = if (f.coins >= 0) f.coins else f.pack.coins.toLong()
         val layer = FrameLayout(ctx).apply {
             setBackgroundColor(if (done) Color.WHITE else WC.head)
             isClickable = true
@@ -1787,7 +1860,7 @@ class WalletScreen(
                 col.addView(WV.text(ctx, "Payment successful", 24f, WC.deep, true).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 20f))
                 val r = WV.box(ctx, false, Gravity.CENTER)
                 r.addView(WCoins.flat(ctx, 34f))
-                r.addView(WV.text(ctx, wRupees(f.pack.coins), 40f, WC.ink, true), WV.lp(WV.WRAP, WV.WRAP, l = 8f))
+                r.addView(WV.text(ctx, wRupees(coinsAdded), 40f, WC.ink, true), WV.lp(WV.WRAP, WV.WRAP, l = 8f))
                 col.addView(r, WV.lp(WV.MATCH, WV.WRAP, t = 6f))
                 col.addView(WV.text(ctx, "coins added to your ${if (secret) "Secret Dating" else "True Find"} wallet", 14f, WC.sub).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 2f))
                 val card = WV.card(ctx, 16f, 4f)
@@ -1799,6 +1872,17 @@ class WalletScreen(
                 col.addView(card, WV.lp(WV.MATCH, WV.WRAP, t = 18f))
                 col.addView(WV.primary(ctx, "Done").apply { setOnClickListener { closeFlow() } }, WV.lp(WV.MATCH, Ui.dpi(50f), t = 18f))
             }
+            "pending" -> {
+                // paid at Google, not confirmed yet (a UPI payment can take a few minutes): the coins come by themselves
+                val circle = FrameLayout(ctx).apply { background = WV.oval(Color.argb(41, 255, 255, 255)) }
+                circle.addView(WIcons.view(ctx, WIcons.CLOCK, Color.WHITE, 50f).apply { layoutParams = LayoutParams(Ui.dpi(50f), Ui.dpi(50f), Gravity.CENTER) })
+                col.addView(circle, WV.lp(Ui.dpi(88f), Ui.dpi(88f)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+                popIn(circle)
+                col.addView(WV.text(ctx, "Payment pending", 24f, fg, true).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 20f))
+                col.addView(WV.text(ctx, "Your ${wRupees(f.pack.coins)} coins will be added as soon as Google confirms the payment. UPI can take a few minutes — you can close this screen.",
+                    14f, fg, false, 20f).apply { gravity = Gravity.CENTER; alpha = 0.88f }, WV.lp(WV.MATCH, WV.WRAP, t = 8f))
+                col.addView(WV.primary(ctx, "Back to wallet", bg = Color.WHITE, fg = WC.deep).apply { setOnClickListener { closeFlow() } }, WV.lp(WV.MATCH, Ui.dpi(50f), t = 22f))
+            }
             else -> {
                 val circle = FrameLayout(ctx).apply { background = WV.oval(Color.argb(41, 255, 255, 255)) }
                 circle.addView(WIcons.view(ctx, WIcons.CIRCLE_X, Ui.c("#FECACA"), 52f).apply { layoutParams = LayoutParams(Ui.dpi(52f), Ui.dpi(52f), Gravity.CENTER) })
@@ -1806,7 +1890,8 @@ class WalletScreen(
                 popIn(circle)
                 col.addView(WV.text(ctx, "Payment failed", 24f, fg, true).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 20f))
                 col.addView(WV.text(ctx, f.error, 14f, fg, false, 20f).apply { gravity = Gravity.CENTER; alpha = 0.88f }, WV.lp(WV.MATCH, WV.WRAP, t = 8f))
-                col.addView(WV.text(ctx, "If money was debited, your bank returns it in 3–5 working days.", 12.5f, fg, false, 18f).apply { gravity = Gravity.CENTER; alpha = 0.7f },
+                col.addView(WV.text(ctx, if (f.method == "gplay") "If money was taken, your coins are added by themselves — open the Wallet again in a little while."
+                    else "If money was debited, your bank returns it in 3–5 working days.", 12.5f, fg, false, 18f).apply { gravity = Gravity.CENTER; alpha = 0.7f },
                     WV.lp(WV.MATCH, WV.WRAP, t = 6f))
                 col.addView(WV.primary(ctx, "Back to wallet", bg = Color.WHITE, fg = WC.deep).apply { setOnClickListener { closeFlow() } }, WV.lp(WV.MATCH, Ui.dpi(50f), t = 22f))
                 col.addView(WV.text(ctx, "Get help", 14f, Color.WHITE, true).apply {
@@ -1868,12 +1953,31 @@ class WalletScreen(
         }
     }
 
-    /** Secret Dating plan: opens the payment page (Daily ₹12 · Starter ₹39 · Pro ₹79 · Elite ₹169). */
+    /** Secret Dating plan (Daily ₹12 · Starter ₹39 · Pro ₹79 · Elite ₹169): Google Play's payment screen (25 Nov),
+     *  then the server gives the plan's days and credits. (The emulator pictures keep the old checkout call.) */
     private fun buyPlan(planKey: String) {
         if (buyingCredits) return
         buyingCredits = true
         note = ""
         renderBody(); renderPayBar()
+        if (source === WalletNet) {
+            PlayBilling.buy(context, PlayBilling.productForPlan(planKey), "secret", paid = {
+                note = "Payment received — adding your plan…"; renderBody()
+            }) { o ->
+                buyingCredits = false
+                note = when (o) {
+                    is PlayBilling.Outcome.Done -> "Payment received — your Secret Dating plan is active!"
+                    PlayBilling.Outcome.Pending -> "Payment pending — your plan starts as soon as Google confirms the payment."
+                    PlayBilling.Outcome.Cancelled -> ""
+                    is PlayBilling.Outcome.NotReady -> "Online payments are coming soon."
+                    is PlayBilling.Outcome.Failed ->
+                        if (o.code == "verify_first") "Complete your Creator verification first — then Secret Dating is free for you." else o.message
+                }
+                if (o is PlayBilling.Outcome.Done) { load(); loadCredits { renderBody() } }
+                renderBody(); renderPayBar()
+            }
+            return
+        }
         source.fn("createPremiumCheckout", JSONObject().put("app", "secret").put("plan", planKey)) { r ->
             val url = if (r.ok) r.data.str("url") else ""
             if (url.isNotEmpty()) {
@@ -2051,6 +2155,15 @@ class WalletScreen(
             "processing" -> { flow = Flow("processing", WData.findPack("p259")!!, "gpay"); showFlow() }
             "done" -> { flow = Flow("done", WData.findPack("p259")!!, "phonepe", System.currentTimeMillis(), "tx_demo_9f8e7d6c5b4a"); showFlow() }
             "failed" -> { flow = Flow("failed", WData.findPack("p259")!!, "upi", error = "Top-up is not available yet."); showFlow() }
+            // Google Play (25 Nov)
+            "gopening" -> { pick("p259"); main.postDelayed({ flow = Flow("opening", WData.findPack("p259")!!, "gplay"); renderPayBar() }, 700) }
+            "gprocessing" -> { flow = Flow("processing", WData.findPack("p259")!!, "gplay"); showFlow() }
+            "gdone" -> { flow = Flow("done", WData.findPack("p259")!!, "gplay", System.currentTimeMillis(), "GPA.3384-1290-5521-77142"); showFlow() }
+            "gpending" -> { flow = Flow("pending", WData.findPack("p259")!!, "gplay"); showFlow() }
+            "gfailed" -> { flow = Flow("failed", WData.findPack("p259")!!, "gplay", error = "Google Play is not reachable right now. Check your internet and try again."); showFlow() }
+            "gsoon-admin" -> { isAdmin = true; flow = Flow("soon", WData.findPack("p259")!!); showFlow() }
+            "gplan-done" -> { pickPlan("starter"); note = "Payment received — your Secret Dating plan is active!"; renderBody(); renderPayBar() }
+            "gplan-pending" -> { pickPlan("starter"); note = "Payment pending — your plan starts as soon as Google confirms the payment."; renderBody(); renderPayBar() }
             "tx" -> transactions.firstOrNull()?.let { openTx(it) }
             "help" -> { faqOpen.clear(); faqOpen.add(0); renderBody(); goToHelp() }
             "earnings" -> setTab("earnings")

@@ -78,7 +78,7 @@ object WData {
 
     // Payment apps shown on the "Select payment method" screen.
     val PAY_APPS = listOf("upi" to "UPI", "gpay" to "Google Pay", "phonepe" to "PhonePe", "paytm" to "Paytm")
-    fun methodName(k: String?): String = (PAY_APPS.find { it.first == k } ?: PAY_APPS[0]).second
+    fun methodName(k: String?): String = if (k == "gplay") "Google Play" else (PAY_APPS.find { it.first == k } ?: PAY_APPS[0]).second
 
     // ───────── Creator earnings / withdraw (change the numbers here if your CA advises) ─────────
     const val MIN_WITHDRAW = 100
