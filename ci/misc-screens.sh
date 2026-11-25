@@ -11,60 +11,100 @@ adb install -r "$APK" || exit 1
 adb shell settings put system screen_off_timeout 600000
 adb shell settings put global hide_error_dialogs 1
 
+# every phone command has a time limit, and a phone (emulator) that stopped is started again (25 Nov: the test
+# phone sometimes drops off for good — "waiting for device" — and the job then waited until its time ran out)
+T() { timeout "$@"; }
+SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+RESTARTS=0
+alive() { [ "$(T 10 adb get-state 2>/dev/null | tr -d '\r')" = device ]; }
+restart() {
+  RESTARTS=$((RESTARTS+1))
+  { echo "== $1: the phone stopped ($(date +%T)) — starting it again (#$RESTARTS)"; free -m | head -2
+    sudo dmesg 2>/dev/null | grep -iE "oom|killed process|out of memory|qemu|segfault|general protection|emulator" | tail -15; } >> "$OUT/problems.txt"
+  [ $RESTARTS -gt 4 ] && { echo "too many stops: the rest is skipped" >> "$OUT/problems.txt"; return 1; }
+  pkill -9 -f qemu-system 2>/dev/null; pkill -9 -f "emulator/emulator" 2>/dev/null; sleep 3
+  T 20 adb kill-server > /dev/null 2>&1; T 20 adb start-server > /dev/null 2>&1
+  nohup "$SDK/emulator/emulator" -port 5554 -avd test -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot > "$OUT/emulator-$RESTARTS.log" 2>&1 &
+  T 240 adb wait-for-device || return 1
+  local t=0
+  while [ $t -lt 300 ]; do [ "$(T 10 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ] && break; sleep 3; t=$((t+3)); done
+  sleep 5
+  for k in window_animation_scale transition_animation_scale animator_duration_scale; do T 15 adb shell settings put global $k 0; done
+  T 15 adb shell input keyevent 82
+  T 15 adb shell settings put system screen_off_timeout 600000
+  T 15 adb shell settings put global hide_error_dialogs 1
+  T 240 adb install -r "$APK" > /dev/null || return 1
+  echo "   phone back at $(date +%T)" >> "$OUT/problems.txt"
+}
+
 waitlog() {
   local t=0
-  while [ $t -lt "$2" ]; do adb logcat -d -s TFDBG:I | grep -q "$1" && return 0; sleep 1; t=$((t+1)); done
+  while [ $t -lt "$2" ]; do T 10 adb logcat -d -s TFDBG:I 2>/dev/null | grep -q "$1" && return 0; alive || return 1; sleep 1; t=$((t+1)); done
   echo "  (no '$1' after $2 s)" >> "$OUT/start.txt"
 }
 # open the app on one test scene (and, if given, one of its pop-ups)
 launch() {
   local scene="$1" open="$2"
   if [ -n "$open" ]; then
-    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" --es tf_open "$open" >> "$OUT/start.txt" 2>&1
+    T 90 adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" --es tf_open "$open" >> "$OUT/start.txt" 2>&1
   else
-    adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" >> "$OUT/start.txt" 2>&1
+    T 90 adb shell am start -W -n $PKG/.MainActivity --es tf_misc "$scene" >> "$OUT/start.txt" 2>&1
   fi
 }
-ontop() { adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG"; }
-# shot NAME WAIT SCENE [OPEN]
+ontop() { T 20 adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" | grep -q "$PKG"; }
+# shot NAME WAIT SCENE [OPEN] — taken once more if the phone stopped while it was open
 shot() {
+  [ $RESTARTS -gt 4 ] && return 0
+  alive || restart "$1" || return 0
+  shot1 "$@"
+  if ! alive; then
+    echo "$1: the phone stopped while this screen was open" >> "$OUT/problems.txt"
+    rm -f "$OUT/$1.png"
+    restart "$1" && shot1 "$@"
+  fi
+  return 0
+}
+shot1() {
   local name="$1" wait="$2" scene="$3" open="$4"
-  adb shell am force-stop $PKG
-  adb shell pm clear $PKG > /dev/null
+  T 30 adb shell am force-stop $PKG
+  T 30 adb shell pm clear $PKG > /dev/null
   sleep 1
-  adb logcat -c
+  T 15 adb logcat -c
   echo "== $name" >> "$OUT/start.txt"
   launch "$scene" "$open"
-  waitlog "preview open" 60
+  waitlog "preview open" 60 || return 0
   sleep "$wait"
-  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+  T 15 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
   # the app must be the screen on top; if it is not (it closed, or the phone showed something else), write down why and open it once more
   if ! ontop; then
-    { echo "== $name: app not on top"; adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity";
-      adb logcat -d -b main,system,crash | grep -iE "truefind|FATAL|Fatal signal|ANR in|lowmemorykiller|Killing|has died|backtrace|TFDBG" | tail -80; } > "$OUT/$name.why.txt"
-    adb shell am force-stop $PKG
+    { echo "== $name: app not on top"; T 20 adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity";
+      T 20 adb logcat -d -b main,system,crash | grep -iE "truefind|FATAL|Fatal signal|ANR in|lowmemorykiller|Killing|has died|backtrace|TFDBG" | tail -80; } > "$OUT/$name.why.txt"
+    T 30 adb shell am force-stop $PKG
     sleep 1
-    adb logcat -c
+    T 15 adb logcat -c
     echo "  (opened again)" >> "$OUT/start.txt"
     launch "$scene" "$open"
-    waitlog "preview open" 60
+    waitlog "preview open" 60 || return 0
     sleep "$wait"
-    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
+    T 15 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1
   fi
-  adb exec-out screencap -p > "$OUT/$name.png"
-  adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
+  T 60 adb exec-out screencap -p > "$OUT/$name.png"
+  [ -s "$OUT/$name.png" ] || rm -f "$OUT/$name.png"
+  T 20 adb logcat -d -s AndroidRuntime:E | grep -A40 "Process: $PKG" > "$OUT/$name.crash.txt"
   [ -s "$OUT/$name.crash.txt" ] || rm -f "$OUT/$name.crash.txt"
-  { echo "== $name"; adb logcat -d | grep -E "TFApi|TFDBG|AndroidRuntime" | tail -20; } >> "$OUT/debug.txt"
-  { echo "== $name"; adb logcat -d -s TFDBG:I | grep tabbar | tail -12; } >> "$OUT/tabbar.txt"
+  { echo "== $name"; T 20 adb logcat -d | grep -E "TFApi|TFDBG|AndroidRuntime" | tail -20; } >> "$OUT/debug.txt"
+  { echo "== $name"; T 20 adb logcat -d -s TFDBG:I | grep tabbar | tail -12; } >> "$OUT/tabbar.txt"
+  return 0
 }
 
 # warm-up: the very first start after installing is much slower on the test phone (its web view and
 # the app's code are prepared then); one start that is not photographed, so every picture gets a normal start
-adb logcat -c
+T 15 adb logcat -c
 echo "== warm-up" >> "$OUT/start.txt"
 launch maint ""
 waitlog "preview open" 90
-{ echo "== warm-up"; ontop && echo "on top" || echo "NOT on top"; adb logcat -d -b main,system,crash | grep -iE "FATAL|Fatal signal|ANR in|lowmemorykiller|has died|TFDBG" | tail -40; } >> "$OUT/warmup.txt"
+{ echo "== warm-up"; ontop && echo "on top" || echo "NOT on top"; T 20 adb logcat -d -b main,system,crash | grep -iE "FATAL|Fatal signal|ANR in|lowmemorykiller|has died|TFDBG" | tail -40; } >> "$OUT/warmup.txt"
+alive || restart warm-up
 
 if [ "$SET" = misc ]; then
   shot m01-maintenance 3 maint
@@ -167,5 +207,5 @@ if [ "$SET" = health ]; then
   shot a29-issues 3 admin-errors
 fi
 
-adb logcat -d > "$OUT/logcat-last.txt"
+T 60 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"
