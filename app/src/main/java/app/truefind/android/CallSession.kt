@@ -77,6 +77,8 @@ class CallSession(
     private var tickAt = 0L
     var ranOut = false; private set
     var peerVideoOn = false; private set
+    /** the other person has their microphone off (both phones show a small notice, like WhatsApp) */
+    var peerMuted = false; private set
     var netState = ""; private set
     var rateAsk = false; private set
     private var rateAskRef = false
@@ -354,6 +356,7 @@ class CallSession(
         override fun onPeerJoined() { if (!disposed && !peerConnected) { peerConnected = true; emit() } }
         override fun onPeerLeft() { if (!disposed) hangUp() }
         override fun onPeerVideo(on: Boolean) { if (!disposed && peerVideoOn != on) { peerVideoOn = on; emit() } }
+        override fun onPeerMuted(muted: Boolean) { if (!disposed && peerMuted != muted) { peerMuted = muted; if (muted) peerSpeaking = false; emit() } }
         override fun onNet(state: String) { if (!disposed && netState != state) { netState = state; emit() } }
         override fun onLevels(me: Boolean?, peer: Boolean?) {
             val now = SystemClock.elapsedRealtime()
@@ -729,6 +732,7 @@ class CallSession(
                 peerSpeaking = talk.contains("p")
                 meSpeaking = talk.contains("m")
                 if (scene.contains("muted")) { muted = true; meSpeaking = false }
+                if (scene.contains("peermute")) { peerMuted = true; peerSpeaking = false }
                 if (scene.contains("speaker")) speakerOn = true
                 if (scene.contains("liked")) practiceLiked = true
                 if (scene.contains("theyliked")) practiceTheyLiked = true

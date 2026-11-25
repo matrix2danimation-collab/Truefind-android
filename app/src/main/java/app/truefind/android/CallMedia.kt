@@ -42,6 +42,8 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
         fun onPeerJoined()
         fun onPeerLeft()
         fun onPeerVideo(on: Boolean)
+        /** the other person turned their microphone off (true) or on again (false) */
+        fun onPeerMuted(muted: Boolean)
         /** "" | CONNECTING | CONNECTED | RECONNECTING | DISCONNECTED | FAILED */
         fun onNet(state: String)
         /** a sound level report: me / the other person loud right now (null = this report is not about them) */
@@ -120,6 +122,14 @@ class CallMedia(private val ctx: Context, private val callId: String, video0: Bo
             override fun onFirstRemoteVideoFrame(uid: Int, width: Int, height: Int, elapsed: Int) { post { it.remoteVideo(uid, true) } }
             @Deprecated("Deprecated in Java")
             override fun onUserMuteVideo(uid: Int, muted: Boolean) { post { it.remoteVideo(uid, !muted) } }
+            // the other person's mute button (Agora tells the other phone when someone stops / starts sending sound)
+            @Deprecated("Deprecated in Java")
+            override fun onUserMuteAudio(uid: Int, muted: Boolean) { if (uid != 0) post { it.l.onPeerMuted(muted) } }
+            override fun onRemoteAudioStateChanged(uid: Int, state: Int, reason: Int, elapsed: Int) {
+                if (uid == 0) return
+                if (reason == Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED) post { it.l.onPeerMuted(true) }
+                else if (reason == Constants.REMOTE_AUDIO_REASON_REMOTE_UNMUTED) post { it.l.onPeerMuted(false) }
+            }
             override fun onConnectionStateChanged(state: Int, reason: Int) {
                 val s = when (state) { 1 -> "DISCONNECTED"; 2 -> "CONNECTING"; 3 -> "CONNECTED"; 4 -> "RECONNECTING"; 5 -> "FAILED"; else -> "" }
                 post { it.l.onNet(s) }

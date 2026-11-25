@@ -50,6 +50,8 @@ shot c14-connect-error 11 $C stage-error
 shot c20-voice-she-talks 12 $C voice-talkp
 shot c21-voice-both-talk 12 $C voice-talkmp
 shot c22-voice-muted-speaker 12 $C voice-talkp-muted-speaker
+shot c22b-voice-she-muted 12 $C voice-talkm-peermute
+shot c22c-video-both-muted 12 $C video-muted-peermute
 shot c23-voice-heart-sent 13 $C voice-liked-talkp --es tf_open toast
 shot c24-voice-she-liked-you 13 $C voice-theyliked-talkm --es tf_open liketoast
 shot c25-voice-low-balance 12 $C voice-low-talkp

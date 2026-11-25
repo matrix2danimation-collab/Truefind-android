@@ -435,6 +435,7 @@ class CallView(
         private val meHeart = HeartBadge(ctx, "liked you for a date")
         private val peerHeart = HeartBadge(ctx, "You liked them for a date")
         private val muteBadge = FrameLayout(ctx)
+        private val peerMuteBadge = FrameLayout(ctx)
         private lateinit var peopleRow: LinearLayout
         private lateinit var meCol: View
         private lateinit var peerCol: View
@@ -615,6 +616,10 @@ class CallView(
             muteBadge.addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.MIC, 16f, Color.WHITE)) }, LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
             muteBadge.contentDescription = "Muted"
             meFace.badge(muteBadge, 32f, 32f, rightDp = 0f, bottomDp = 2f)
+            peerMuteBadge.background = Tf.circle(CallKit.RED)
+            peerMuteBadge.addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.MIC, 16f, Color.WHITE)) }, LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
+            peerMuteBadge.contentDescription = "Their mic is off"
+            peerFace.badge(peerMuteBadge, 32f, 32f, rightDp = 0f, bottomDp = 2f)
             peerFace.badge(peerHeart, 34f, 34f, rightDp = 0f, topDp = 0f)
             meCol = column(meFace, you, meBars)
             peerCol = column(peerFace, peerLabel, peerBars)
@@ -905,6 +910,7 @@ class CallView(
                 badge(meHeart, s.theyLiked)
                 badge(peerHeart, liked)
                 muteBadge.visibility = if (s.muted) VISIBLE else GONE
+                peerMuteBadge.visibility = if (s.peerMuted && !ended) VISIBLE else GONE
                 dateTitle.text = "Date $peerName?"
                 dateAsk.visibility = if (liked) INVISIBLE else VISIBLE
                 dateSent.visibility = if (liked) VISIBLE else INVISIBLE
@@ -1025,7 +1031,8 @@ class CallView(
         private fun bindPills(ctx: Context, s: CallSession, hidden: Boolean) {
             val left0 = s.secsLeft
             val low0 = s.isCaller && left0 != null && left0 <= 30 && (s.mode != CallSession.Mode.PRACTICE || s.previewLow)
-            val key = if (hidden || s.settled != null) "" else "${if (low0) left0 else -1}|${s.netState == "RECONNECTING"}|${s.error}"
+            val talking = (s.status == "active" || s.practice) && s.settled == null && !s.ended && !s.practiceEnded
+            val key = if (hidden || s.settled != null) "" else "${if (low0) left0 else -1}|${s.netState == "RECONNECTING"}|${s.error}|${talking && s.muted}|${talking && s.peerMuted}|${s.otherName}"
             if (key == pillsKey) return
             pillsKey = key
             pills.removeAllViews()
@@ -1051,6 +1058,16 @@ class CallView(
                 p.addView(b, Tf.ll(Tf.W, Ui.dpi(36f), t = 8f))
                 pills.addView(p, Tf.ll(b = 8f))
             }
+            // microphone off (owner, 25 Nov): a small note at the top on both phones, like WhatsApp — "Your mic is off"
+            // on mine, "Priya's mic is off" on hers; it stays while the mic is off
+            fun micNote(text: String) {
+                val p = Tf.row(ctx, Gravity.CENTER).apply { background = Tf.box(CallKit.INK, 999f); setPadding(Ui.dpi(12f), Ui.dpi(6f), Ui.dpi(14f), Ui.dpi(6f)); elevation = Ui.dp(8f) }
+                p.addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.MIC, 14f, Color.WHITE)) }, Tf.ll(Ui.dpi(14f), Ui.dpi(14f), r = 6f))
+                p.addView(CallKit.t(ctx, text, 13f, Color.WHITE, 600).apply { maxLines = 1 })
+                pills.addView(p, Tf.ll(Tf.W, Tf.W, b = 8f))
+            }
+            if (talking && s.muted) micNote("Your mic is off")
+            if (talking && s.peerMuted) micNote("${CallKit.firstName(s.otherName).ifEmpty { "Their" }}${if (CallKit.firstName(s.otherName).isEmpty()) " mic is off" else "'s mic is off"}")
             if (s.netState == "RECONNECTING") {
                 val p = Tf.row(ctx).apply { background = Tf.box(CallKit.INK, 16f); setPadding(Ui.dpi(16f), Ui.dpi(10f), Ui.dpi(16f), Ui.dpi(10f)); elevation = Ui.dp(8f) }
                 p.addView(TfLoader(ctx, 16f, Color.WHITE), Tf.ll(Ui.dpi(16f), Ui.dpi(16f), r = 6f))
