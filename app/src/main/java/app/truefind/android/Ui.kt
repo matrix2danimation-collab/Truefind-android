@@ -20,7 +20,7 @@ object Ui {
         density = ctx.resources.displayMetrics.density
         if (ready) return
         ready = true
-        // The app's font: Inter (preview, 26 Nov), drawn at 87% with the old line height so every screen keeps its layout;
+        // Test branch only: app font sample #201 (hind) for the owner, 26 Nov, drawn to the old letter width;
         // bold = Inter SemiBold. (assets/fonts/TrueFindSans-*, based on Inter, OFL.) If a file can't be read the phone's font is used.
         regular = load(ctx, "fonts/TrueFindSans-Regular.ttf") ?: Typeface.SANS_SERIF
         bold = load(ctx, "fonts/TrueFindSans-Bold.ttf") ?: Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
