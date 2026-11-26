@@ -57,7 +57,7 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
                 """<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9L3.5 9.7l5.9-.8z" fill="rgba(255,255,255,0.8)"/>""" to "HD voice & video",
                 """<circle cx="12" cy="12" r="8.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><path d="M12 7.5v9M9.5 9.5h3.2a1.6 1.6 0 0 1 0 3.2H9.5h3.6a1.6 1.6 0 0 1 0 3.2H9.5" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" stroke-linecap="round"/>""" to "Pay per minute",
             )),
-            Words("#FCD34D", "Nearby", "Find Your Match Nearby", "See who is online around you on the live India map.", listOf(
+            Words("#FCD34D", "Nearby", "Find People Nearby", "See who is online around you on the live India map.", listOf(
                 """<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6L13 13c1.1 1.6 2.3 2.6 4.3 2.6H20M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M20 8.4h-2.7c-1.4 0-2.4.5-3.2 1.3M17.5 5.5L20 8.4l-2.5 2.9M17.5 12.7l2.5 2.9-2.5 2.9" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>""" to "Random match",
                 """<path d="M4 6c3-1.5 13-1.5 16 0v5c0 5-4 8-8 8s-8-3-8-8z" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="9" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="15" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/>""" to "Reconnect",
             )),

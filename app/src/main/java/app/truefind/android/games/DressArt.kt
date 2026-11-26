@@ -201,7 +201,7 @@ object DressArt {
             Wish("Saree ya Lehenga", "🥻", listOf("saree", "lehenga")) { has(it, "saree") || has(it, "lehenga") },
             Wish("Jhumke", "💎", listOf("jhumka")) { has(it, "jhumka") },
             Wish("Kuch Super Premium", "👑", emptyList()) { l -> l.values.any { byId[it.id]?.tier == "s" } })),
-        Theme("college", "College Date", "☕", "College date hai, kuch cool pehnao! ☕", listOf(
+        Theme("college", "College Day", "☕", "College ka din hai, kuch cool pehnao! ☕", listOf(
             Wish("Top + Jeans/Skirt", "👚", listOf("jeans", "skirt")) { it.containsKey("top") && (has(it, "jeans") || has(it, "skirt")) },
             Wish("Sneakers", "👟", listOf("sneakers")) { has(it, "sneakers") },
             Wish("Sling bag ya phone", "📱", listOf("sling", "phone")) { has(it, "sling") || has(it, "phone") })),
@@ -221,7 +221,7 @@ object DressArt {
             Wish("Blazer ya Shirt", "🧥", listOf("formal")) { it.containsKey("top") && has(it, "formal") },
             Wish("Trousers", "👖", listOf("trousers")) { has(it, "trousers") },
             Wish("Watch", "⌚", listOf("watch")) { it.containsKey("watch") })),
-        Theme("rain", "Baarish Date", "☔", "Baarish ho rahi hai ☔ umbrella mat bhoolna!", listOf(
+        Theme("rain", "Baarish Day", "☔", "Baarish ho rahi hai ☔ umbrella mat bhoolna!", listOf(
             Wish("Umbrella", "☂️", listOf("umbrella")) { has(it, "umbrella") },
             Wish("Ankle Boots", "🥾", listOf("boots")) { has(it, "boots") },
             Wish("Palazzo ya Skirt", "💃", listOf("palazzo", "skirt")) { has(it, "palazzo") || has(it, "skirt") })),

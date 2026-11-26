@@ -411,7 +411,7 @@ internal class GenderStep(ctx: Context, private val page: WelcomePage) : Welcome
         sheet.addView(cta, LK.lp(-1, -2, t = 22f))
         val why = LK.col(ctx).apply { background = CssBox(LK.tint, 14f); setPadding(Ui.dpi(14f), Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f)) }
         why.addView(LK.t(ctx, "Why we ask", 12.5f, LK.ink, true, 1.4f))
-        why.addView(LK.t(ctx, "We use it to show you the right people for calls and matches.", 12.5f, LK.sub, false, 1.4f), LK.lp(t = 2f))
+        why.addView(LK.t(ctx, "We use it to show you the right people to talk to.", 12.5f, LK.sub, false, 1.4f), LK.lp(t = 2f))
         sheet.addView(why, LK.lp(-1, -2, t = 18f))
         sheet.addView(LK.grow(ctx, 16f))
         sheet.addView(WK.iconLine(ctx, WK.LOCK, "Your details are private and safe with us.", 12f, true), LK.lp(-1, -2))
@@ -569,7 +569,7 @@ internal class ProfileStep(ctx: Context, private val page: WelcomePage) : Welcom
         val av = FrameLayout(ctx).apply { background = CssBox(Color.WHITE, 46f, shadows = listOf(Sh(0f, 6f, 16f, 0f, LK.ca("#1F1235", 0.18f)))) }
         av.addView(avatar, LayoutParams(Ui.dpi(82f), Ui.dpi(82f), Gravity.CENTER))
         holder.addView(av, LK.flp(Ui.dpi(92f), Ui.dpi(92f), Gravity.TOP or Gravity.END, r = 24f).apply { topMargin = -Ui.dpi(46f) })
-        addView(WK.page(ctx, WK.head(ctx, 4, "Complete Your Profile", "Add details to get better matches", null, true) { page.goBack("profile") }, holder), LayoutParams(-1, -1))
+        addView(WK.page(ctx, WK.head(ctx, 4, "Complete Your Profile", "Add details so people know you better", null, true) { page.goBack("profile") }, holder), LayoutParams(-1, -1))
 
         nameIn.put(page.fName); dobIn.put(page.fDob)
         nameIn.onText = { v -> page.fName = v; draw() }

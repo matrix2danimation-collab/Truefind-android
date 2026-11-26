@@ -648,7 +648,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             bold(txt, "I agree to the guidelines")
             txt.setSpan(ForegroundColorSpan(MC.ink), 0, txt.length, 0)
             txt.setSpan(android.text.style.AbsoluteSizeSpan(G.dpi(MC.MD)), 0, txt.length, 0) // <b> is 14 px, the rest 12.5
-            txt.append("\nI’m okay sharing my mood with my match and joining a live voice call.")
+            txt.append("\nI’m okay sharing my mood with my game partner and joining a live voice call.")
             fun paint() {
                 row.background = if (agreed) G.round(G.c("#FBF8FF"), 16f, G.c("#CDB2F7"), 1f) else G.round(Color.WHITE, 16f, MC.line, 1f)
                 box.removeAllViews()
@@ -975,7 +975,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         val pm = s.obj("partner").obj("mood")
         val sc = screen()
         sc.bar({ openLeave() })
-        sc.body.addView(MC.h1(ctx, "Mood match found", true), G.lp(G.MATCH, G.WRAP).m(t = 6f))
+        sc.body.addView(MC.h1(ctx, "Mood partner found", true), G.lp(G.MATCH, G.WRAP).m(t = 6f))
         sc.body.addView(pairView(G.c(McData.moodOf(mine.str("mood")).tint), G.c(McData.moodOf(pm.str("mood")).tint)), G.lp(G.MATCH, G.WRAP).m(t = 8f, b = 16f))
         val cards = G.hbox(ctx, 10f, Gravity.TOP)
         cards.addView(moodCard("Your mood", mine), G.lpw(1f))

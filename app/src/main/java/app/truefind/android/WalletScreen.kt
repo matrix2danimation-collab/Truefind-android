@@ -1027,7 +1027,7 @@ class WalletScreen(
             setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
         }
         val items = listOf(
-            WIcons.MESSAGE to (if (sdGirl) "Chat is free for verified girls" else "Unlimited chat with your matches"),
+            WIcons.MESSAGE to (if (sdGirl) "Chat is free for verified girls" else "Unlimited chat on Reconnect"),
             WIcons.SEND to "Send requests — 1 credit each",
             WIcons.CIRCLE_DOT to "Post and watch nearby Stories",
         )
