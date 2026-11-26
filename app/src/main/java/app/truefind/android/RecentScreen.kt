@@ -78,7 +78,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     private var closeDialog: (() -> Unit)? = null
 
     init {
-        setBackgroundColor(Ui.c("#FCFAFF"))
+        setBackgroundColor(Ui.c("#F6F3FB"))
         clipChildren = false
         addView(backdrop, LayoutParams(-1, -1))
         scroll.isVerticalScrollBarEnabled = false
@@ -91,22 +91,26 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         scroll.addView(content, LayoutParams(-1, -2))
         column.clipChildren = false; column.clipToPadding = false
         // the web's padding: 18 above (in the first line's margin), 14 at the sides, 120 under the list (the bar sits over the page)
-        column.setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), Ui.dpi(120f))
+        // (26 Nov: no side padding on the column — the purple top runs edge to edge; the list keeps its 14 at the sides)
+        column.setPadding(0, 0, 0, Ui.dpi(120f))
         content.addView(column, LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL))
 
-        // (clock) Call Back — 27, line-height 1.1. The page's name is "Call Back" and the "True Find" word above it
-        // is gone (owner, 20 Nov); the title takes the first line's place (18 from the top)
-        val h1 = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        h1.addView(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.Clock, RC.purple, 24f, 2.2f)) }, LinearLayout.LayoutParams(Ui.dpi(24f), Ui.dpi(24f)).apply { rightMargin = Ui.dpi(8f) })
-        val h1t = Tf.t(ctx, "Call Back", 27f, RC.ink)
-        h1.addView(h1t, LinearLayout.LayoutParams(-2, -2))
-        h1.contentDescription = "Call Back"
-        column.addView(h1, LinearLayout.LayoutParams(-2, -2).apply { val h = RC.half(h1t, 29.7f); topMargin = Ui.dpi(18f) + h; bottomMargin = h })
-        val subT = Tf.t(ctx, "Your recent voice and video calls", 14.5f, RC.sub, false)
-        column.addView(subT, RC.line(subT, 21.75f, topDp = 4f))
+        // 26 Nov (owner's templates): a purple top like Profile / Wallet — "Call Back" in white with the small line
+        // under it, one flat purple, round bottom corners (the clock icon before the title is gone)
+        val top = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Ui.c("#4C1D95")); val r = Ui.dp(28f); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, r, r, r, r)
+            }
+            setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(22f))
+            contentDescription = "Call Back"
+        }
+        top.addView(Tf.t(ctx, "Call Back", 20f, Color.WHITE), LinearLayout.LayoutParams(-2, -2))
+        top.addView(Tf.t(ctx, "Your recent voice and video calls", 13.5f, Ui.c("#DCCFF5"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
+        column.addView(top, LinearLayout.LayoutParams(-1, -2))
         listBox.orientation = LinearLayout.VERTICAL
         listBox.clipChildren = false; listBox.clipToPadding = false
-        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f) })
+        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f); leftMargin = Ui.dpi(14f); rightMargin = Ui.dpi(14f) })
 
         // pull down at the top: the list loads again (five-dot True Find loader)
         spinner.elevation = Ui.dp(20f)

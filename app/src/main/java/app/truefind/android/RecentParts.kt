@@ -41,14 +41,16 @@ import kotlin.math.sqrt
  */
 object RC {
     // pages/Chats.jsx C (the True Find Home colours)
-    val ink = Ui.c("#3B0764"); val purple = Ui.c("#6C04CB"); val sub = Ui.c("#674A96"); val gray = Ui.c("#7C7594")
-    val card = Ui.c("#F9F6FD"); val line = Ui.c("#E8E1F1"); val soft = Ui.c("#F1E8FE"); val softInk = Ui.c("#5B12B8")
+    // 26 Nov (owner's templates): the same colours as Profile / Wallet — dark ink, the template's button purple,
+    // light lavender chips and the thin lavender card line
+    val ink = Ui.c("#1E1433"); val purple = Ui.c("#6C2BD9"); val sub = Ui.c("#5F5673"); val gray = Ui.c("#7C7594")
+    val card = Ui.c("#FFFFFF"); val line = Ui.c("#E6DCFB"); val soft = Ui.c("#F1EAFF"); val softInk = Ui.c("#4C1D95")
     val burgundy = Ui.c("#A3154F"); val green = Ui.c("#16A34A"); val red = Ui.c("#DC2626")
     val softLine = Ui.c("#E3D3FB")
 
-    /** linear-gradient(180deg, #7A0AD7 0%, #5806A3 100%) — the filled purple button */
+    /** the filled purple button: one flat purple, as in the templates (26 Nov; was a #7A0AD7 → #5806A3 gradient) */
     fun btn(radiusDp: Float): GradientDrawable =
-        GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#7A0AD7"), Ui.c("#5806A3"))).apply { cornerRadius = Ui.dp(radiusDp) }
+        GradientDrawable().apply { setColor(Ui.c("#6C2BD9")); cornerRadius = Ui.dp(radiusDp) }
 
     // Lucide icons (lucide-react 0.475.0, the web's version) that the rest of the app did not need yet
     const val PHONE = "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/>"
@@ -352,7 +354,7 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         super.onSizeChanged(w, h, ow, oh)
-        fill = if (video) LinearGradient(0f, 0f, 0f, h.toFloat(), Ui.c("#7A0AD7"), Ui.c("#5806A3"), Shader.TileMode.CLAMP) else null
+        fill = if (video) LinearGradient(0f, 0f, 0f, h.toFloat(), Ui.c("#6C2BD9"), Ui.c("#6C2BD9"), Shader.TileMode.CLAMP) else null
         if (video) {
             // box-shadow: 0 8px 16px -10px rgba(88,6,163,.8): a circle of radius 11, 8 lower, blurred (σ 8)
             val cols = IntArray(GLOW.size) { i -> Color.argb((GLOW[i] * 255).roundToInt().coerceIn(0, 255), 88, 6, 163) }
@@ -390,14 +392,10 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
         if (video) {
-            // the glow only shows outside the button
-            c.save()
-            if (android.os.Build.VERSION.SDK_INT >= 26) c.clipOutPath(hole) else @Suppress("DEPRECATION") c.clipPath(hole, android.graphics.Region.Op.DIFFERENCE)
-            c.drawCircle(w / 2f, h / 2f + Ui.dp(8f), Ui.dp(GLOW_REACH), glowPaint)
-            c.restore()
+            // flat, no glow under it (26 Nov, the owner's templates)
             p.shader = fill; c.drawCircle(w / 2f, h / 2f, w / 2f, p); p.shader = null
         } else {
-            p.color = RC.softLine; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
+            p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
             p.color = RC.soft; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
         }
     }
