@@ -1,0 +1,30 @@
+# One-time helper (26 Nov): copies the login logo from Base44's file storage into this repo
+# (branch logo-file), so the app can carry it inside instead of loading it from Base44.
+name: Copy the login logo from Base44 (one time)
+
+on:
+  push:
+    branches: [fetch-logo]
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the logo and keep it on branch logo-file
+        run: |
+          set -e
+          mkdir w && cd w
+          curl -fsSL --retry 3 -o login-logo.png "https://media.base44.com/images/public/6ac9c4c6f75fbeb2364dff2b/63d63af70_generated_image.png"
+          file login-logo.png
+          ls -la login-logo.png
+          sha256sum login-logo.png
+          git init -q
+          git checkout -q -b logo-file
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add login-logo.png
+          git commit -q -m "Login logo, copied from Base44 file storage"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" logo-file
