@@ -172,7 +172,8 @@ object Push {
         if (nm.getNotificationChannel(CH_MSG) == null) nm.createNotificationChannel(NotificationChannel(CH_MSG, "Messages and missed calls", NotificationManager.IMPORTANCE_HIGH).apply {
             enableVibration(true); vibrationPattern = longArrayOf(0, 120, 80, 120)
         })
-        if (nm.getNotificationChannel(CH_INFO) == null) nm.createNotificationChannel(NotificationChannel(CH_INFO, "Coins, likes and offers", NotificationManager.IMPORTANCE_DEFAULT))
+        // (made again each time: Android keeps the member's own settings and only takes the new name — 26 Nov: no likes any more)
+        nm.createNotificationChannel(NotificationChannel(CH_INFO, "Coins and offers", NotificationManager.IMPORTANCE_DEFAULT))
     }
     /** the admins' alert channel: made only on an admin's phone, when the first alert comes (members never see it) */
     private fun alertChannel(ctx: Context) {
