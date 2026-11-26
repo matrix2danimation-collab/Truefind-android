@@ -396,14 +396,14 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             if (r.verified) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, RC.purple, 16f, 2.2f)) }, 5f, Ui.dpi(16f), Ui.dpi(16f))
             col.addView(l1, LayoutParams(-1, Ui.dpi(24.75f)))
             // Outgoing / Incoming / Missed / No answer / Declined / You declined
-            // 26 Nov (owner): these two lines 40 % smaller (13.5 → 8.1, 12.5 → 7.5)
-            val kindT = Tf.t(ctx, k.text, 8.1f, if (k.color == RC.red) RC.red else RC.sub, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
+            // 26 Nov (owner): these two lines smaller — first 40 % (13.5 → 8.1, 12.5 → 7.5), then 15 % back up (→ 9.3, 8.6)
+            val kindT = Tf.t(ctx, k.text, 9.3f, if (k.color == RC.red) RC.red else RC.sub, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
             val l2 = RecentLine(ctx, Ui.dpi(20.25f))
-                .add(ImageView(ctx).apply { setImageDrawable(Tf.lu(k.icon, k.color, 14f, 2.3f)) }, 0f, Ui.dpi(14f), Ui.dpi(14f))
+                .add(ImageView(ctx).apply { setImageDrawable(Tf.lu(k.icon, k.color, 10f, 2.3f)) }, 0f, Ui.dpi(10f), Ui.dpi(10f))   // (26 Nov: 14 → 10, to go with the smaller words)
                 .add(kindT, 4f, shrinks = true)
             col.addView(l2, LayoutParams(-1, Ui.dpi(20.25f)).apply { topMargin = Ui.dpi(2f) })
             // the time of the call (no "Online · Free" / "Offline · …" before it)
-            val timeT = Tf.t(ctx, timeText(r.time), 7.5f, RC.gray, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
+            val timeT = Tf.t(ctx, timeText(r.time), 8.6f, RC.gray, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
             val l3 = RecentLine(ctx, Ui.dpi(19.5f))
                 .add(timeT, 0f, shrinks = true)
             col.addView(l3, LayoutParams(-1, Ui.dpi(19.5f)).apply { topMargin = Ui.dpi(3f) })
