@@ -1,0 +1,12 @@
+== dmesg
+[Thu Nov 26 12:22:35 2026] audit: type=1400 audit(1795695755.257:69): apparmor="STATUS" operation="profile_load" profile="unconfined" name="mmdebstrap" pid=493 comm="apparmor_parser"
+== memory
+               total        used        free      shared  buff/cache   available
+Mem:           15983        1000        9865          52        5513       14982
+Swap:           3071           0        3071
+== emulator crash data
+total 16
+drwxr--r--  4 runner runner 4096 Nov 26 12:24 .
+drwxrwxrwt 13 root   root   4096 Nov 26 13:09 ..
+drwx------  6 runner runner 4096 Nov 26 12:24 emu-crash-37.3.10.db
+drwxr-xr-x  2 runner runner 4096 Nov 26 12:36 netsimd
