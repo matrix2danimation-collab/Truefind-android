@@ -1,0 +1,490 @@
+--------- beginning of system
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 W ActivityTaskManager: callingPackage for (uid=2000, pid=14997) has no WPC
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 265464455; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 265452344; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 266124927; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 265451093; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 265456536; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 255940284; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 236283604; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 263959004; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 264304459; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 264301586; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 254631730; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 273509367; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 263259275; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10192; state: DISABLED
+11-26 06:18:26.975   518   593 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10192; state: ENABLED
+11-26 06:18:26.976   828   862 W Looper  : Drained
+11-26 06:18:26.977   518   593 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10192; state: DISABLED
+11-26 06:18:26.977   518   593 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10192; state: DISABLED
+11-26 06:18:26.977   518   593 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+11-26 06:18:26.978   518   593 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10192; state: ENABLED
+11-26 06:18:26.980   828   862 V WindowManagerShell: Transition requested: android.os.BinderProxy@4a30a23 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=61 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=934396 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@942b20} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{efa4cd9 app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 06:18:26.981   518   593 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=app.truefind.android/.MainActivity (has extras)} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+11-26 06:18:26.982   518   540 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10192; state: DISABLED
+--------- beginning of main
+11-26 06:18:26.983   828   888 D SplashScreenView: Build android.window.SplashScreenView{cd3069e V.E...... ......ID 0,0-0,0}
+11-26 06:18:26.983   828   888 D SplashScreenView: Icon: view: android.widget.ImageView{e12257f V.ED..... ......I. 0,0-0,0 #10204f0 android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@460d94c size: 420
+11-26 06:18:26.983   828   888 D SplashScreenView: Branding: view: android.view.View{c39dd95 G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-26 06:18:26.984   518   549 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10192; state: ENABLED
+11-26 06:18:26.987   518   533 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10192; state: DISABLED
+11-26 06:18:26.987   518   533 D CompatibilityChangeReporter: Compat change id reported: 273564678; UID 10192; state: DISABLED
+11-26 06:18:26.994   335   335 D Zygote  : Forked child process 15000
+11-26 06:18:27.010   518   549 I ActivityManager: Start proc 15000:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-26 06:18:27.011   518   534 D CoreBackPreview: Window{6274b21 u0 Splash Screen app.truefind.android}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b158234, mPriority=0, mIsAnimationCallback=false}
+11-26 06:18:27.089   400   400 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+11-26 06:18:27.091   518   604 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10192; state: ENABLED
+11-26 06:18:27.191   828   894 E OpenGLRenderer: Unable to match the desired swap behavior.
+11-26 06:18:27.212  1084  1943 D EGL_emulation: app_time_stats: avg=286.76ms min=31.99ms max=738.02ms count=5
+11-26 06:18:27.386 15000 15000 I ruefind.android: Late-enabling -Xcheck:jni
+11-26 06:18:27.396   518   534 W ActivityTaskManager: takeTaskSnapshot: taskId=61 not found or not visible
+11-26 06:18:27.405 15000 15000 I ruefind.android: Using CollectorTypeCC GC.
+11-26 06:18:27.416 15000 15000 W ruefind.android: Unexpected CPU variant for x86: x86_64.
+11-26 06:18:27.416 15000 15000 W ruefind.android: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-26 06:18:27.551   418   428 I adbd    : jdwp connection from 15000
+11-26 06:18:27.615   828   862 V WindowManagerShell: onTransitionReady android.os.BinderProxy@4a30a23: {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@d456c6f} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xc8a902 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@a732d7c} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x27ac213 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:27.616   828   862 V WindowManagerShell: Playing animation for (#113)android.os.BinderProxy@4a30a23@0
+11-26 06:18:27.617   828   862 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@92609d2
+11-26 06:18:27.617   518   537 V WindowManager: Sent Transition #113 createdAt=11-26 06:18:26.976 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=61 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=934396 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{4db5615 Task{5cfb9a5 #61 type=standard A=10192:app.truefind.android}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{edc3d2a app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 06:18:27.617   828   862 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@69c5aa3
+11-26 06:18:27.617   828   862 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@14271a0
+11-26 06:18:27.617   828   862 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@9a95159
+11-26 06:18:27.617   828   862 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+11-26 06:18:27.617   828   862 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@7b6f11e
+11-26 06:18:27.618   828   862 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@18ffdff
+11-26 06:18:27.618   828   862 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@bed07cc
+11-26 06:18:27.618   828   862 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@d456c6f} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xc8a902 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@a732d7c} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x27ac213 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:27.618   828   862 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@10d1662, appThread = android.app.IApplicationThread$Stub$Proxy@13093f3, debugName = LauncherToDream }}
+11-26 06:18:27.618   828   862 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@fb538b0, appThread = android.app.IApplicationThread$Stub$Proxy@f8ef329, debugName = QuickstepLaunchHome }}
+11-26 06:18:27.618   828   862 V WindowManagerShell:  Delegate animation for #113 to null
+11-26 06:18:27.619   828   862 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@14aa15
+11-26 06:18:27.619   828   862 V WindowManagerShell: start default transition animation, info = {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@d456c6f} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xc8a902 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@a732d7c} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x27ac213 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:27.620   828   862 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@6ee565a animAttr=0x13 type=OPEN isEntrance=false
+11-26 06:18:27.620   828   862 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@b2b7e26 animAttr=0x12 type=OPEN isEntrance=true
+11-26 06:18:27.620   828   862 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@14aa15
+11-26 06:18:27.621   518   537 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+11-26 06:18:27.622   518   537 V WindowManager:     info={id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{4db5615 Task{5cfb9a5 #61 type=standard A=10192:app.truefind.android}}} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xe0c785d sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{5d2a801 Task{6724c3f #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x3ec64bc sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:27.622   828   862 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#113)android.os.BinderProxy@4a30a23@0
+11-26 06:18:27.630   518   537 V WindowManager: Finish Transition #113: created at 11-26 06:18:26.976 collect-started=0.015ms request-sent=4.487ms started=11.929ms ready=515.878ms sent=631.177ms finished=653.996ms
+11-26 06:18:27.634   828   862 V WindowManagerShell: Track 0 became idle
+11-26 06:18:27.634   828   862 V WindowManagerShell: All active transition animations finished
+11-26 06:18:27.635 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+11-26 06:18:27.635 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+11-26 06:18:27.642   518  1902 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10192; state: ENABLED
+11-26 06:18:27.644 15000 15000 W ziparchive: Unable to open '/data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/base.dm': No such file or directory
+11-26 06:18:27.644 15000 15000 W ziparchive: Unable to open '/data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/base.dm': No such file or directory
+11-26 06:18:27.795   828   828 D StatusBarIconController: ignoring old pipeline callback because the new wifi icon is enabled
+11-26 06:18:27.801   828   894 D EGL_emulation: app_time_stats: avg=743.70ms min=123.89ms max=1363.51ms count=2
+11-26 06:18:27.946   828   894 D EGL_emulation: app_time_stats: avg=1265.36ms min=1265.36ms max=1265.36ms count=1
+11-26 06:18:27.991 15000 15000 D nativeloader: Configuring clns-6 for other apk /data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/lib/x86_64:/data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/app.truefind.android
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment: Currently set values for:
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment: ANGLE GameManagerService for app.truefind.android: false
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment: app.truefind.android is not listed in per-application setting
+11-26 06:18:28.001 15000 15000 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-26 06:18:28.011 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10192; state: ENABLED
+11-26 06:18:28.018 15000 15000 D SessionsDependencies: Dependency to CRASHLYTICS added.
+11-26 06:18:28.022 15000 15000 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+11-26 06:18:28.025 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 3400644; UID 10192; state: ENABLED
+11-26 06:18:28.026 15000 15000 I FirebaseCrashlytics: Initializing Firebase Crashlytics 19.4.4 for app.truefind.android
+11-26 06:18:28.035 15000 15000 D SessionsDependencies: Subscriber CRASHLYTICS registered.
+11-26 06:18:28.047 15000 15020 D CompatibilityChangeReporter: Compat change id reported: 247079863; UID 10192; state: ENABLED
+11-26 06:18:28.056 15000 15000 D FirebaseSessions: Initializing Firebase Sessions SDK.
+11-26 06:18:28.062 15000 15000 I FirebaseInitProvider: FirebaseApp initialization successful
+11-26 06:18:28.066   518   534 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 15000
+11-26 06:18:28.071   334 15033 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10192 0}
+11-26 06:18:28.071   334 15034 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-26 06:18:28.072   334 15034 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cc25fc18890
+11-26 06:18:28.072   334 15034 I resolv  : doQuery: rcode=0, ancount=1, return value=79
+11-26 06:18:28.072   334 15035 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-26 06:18:28.072   334 15035 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cc37fc16c10
+11-26 06:18:28.073   334 15035 I resolv  : doQuery: rcode=0, ancount=1, return value=67
+11-26 06:18:28.073 15000 15020 D TrafficStats: tagSocket(80) with statsTag=0xffffffff, statsUid=-1
+11-26 06:18:28.083 15000 15027 I FirebaseCrashlytics: No version control information found
+11-26 06:18:28.110   334 15040 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10192 0}
+11-26 06:18:28.111   334 15045 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-26 06:18:28.111   334 15045 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cc43fc122d0
+11-26 06:18:28.111   334 15045 I resolv  : doQuery: rcode=0, ancount=8, return value=182
+11-26 06:18:28.113   334 15044 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-26 06:18:28.113   334 15044 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7cc45fc16f90
+11-26 06:18:28.113   334 15044 I resolv  : doQuery: rcode=0, ancount=8, return value=278
+11-26 06:18:28.115 15000 15023 D TrafficStats: tagSocket(88) with statsTag=0x8001, statsUid=-1
+11-26 06:18:28.121 15000 15039 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-26 06:18:28.122 15000 15039 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-26 06:18:28.123 15000 15039 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-26 06:18:28.143 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+11-26 06:18:28.151 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+11-26 06:18:28.249 15000 15048 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:28.249 15000 15048 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:28.251 15000 15048 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:28.251 15000 15048 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:28.313 15000 15000 W PathParser: Points are too far apart 4.000000000000002
+11-26 06:18:28.332 15000 15000 W PathParser: Points are too far apart 4.000003365909959
+11-26 06:18:28.443 15000 15026 D SessionConfigFetcher: Fetching settings from server.
+11-26 06:18:28.447 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeInternal(ConscryptEngineSocket.java:704)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.write(ConscryptEngineSocket.java:699)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$1.write(Okio.java:78)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$1.write(AsyncTimeout.java:157)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSink.flush(RealBufferedSink.java:222)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.finishRequest(Http1xStream.java:163)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:748)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.447 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.452 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at java.net.SocketOutputStream.socketWrite(SocketOutputStream.java:115)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at java.net.SocketOutputStream.write(SocketOutputStream.java:156)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeToSocket(ConscryptEngineSocket.java:762)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeInternal(ConscryptEngineSocket.java:736)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.write(ConscryptEngineSocket.java:699)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$1.write(Okio.java:78)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$1.write(AsyncTimeout.java:157)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSink.flush(RealBufferedSink.java:222)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.finishRequest(Http1xStream.java:163)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:748)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.452 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.456 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.456 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.460 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at java.net.SocketInputStream.read(SocketInputStream.java:172)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at java.net.SocketInputStream.read(SocketInputStream.java:143)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readFromSocket(ConscryptEngineSocket.java:983)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:947)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.460 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.475 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.request(RealBufferedSource.java:72)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.require(RealBufferedSource.java:65)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readHexadecimalUnsignedLong(RealBufferedSource.java:271)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.readChunkSize(Http1xStream.java:456)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.read(Http1xStream.java:437)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.read(RealBufferedSource.java:51)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.exhausted(RealBufferedSource.java:61)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.InflaterSource.refill(InflaterSource.java:103)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.InflaterSource.read(InflaterSource.java:64)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.GzipSource.read(GzipSource.java:82)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource$1.read(RealBufferedSource.java:372)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:291)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:355)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:181)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.io.InputStreamReader.read(InputStreamReader.java:180)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.io.BufferedReader.fill(BufferedReader.java:172)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:337)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:403)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:66)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.475 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.477 15000 15000 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+11-26 06:18:28.477 15000 15000 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-26 06:18:28.479 15000 15026 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.request(RealBufferedSource.java:72)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.require(RealBufferedSource.java:65)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readHexadecimalUnsignedLong(RealBufferedSource.java:271)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.readChunkSize(Http1xStream.java:456)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.read(Http1xStream.java:437)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.read(RealBufferedSource.java:51)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.exhausted(RealBufferedSource.java:61)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.GzipSource.read(GzipSource.java:101)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource$1.read(RealBufferedSource.java:372)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:291)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:355)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:181)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.io.InputStreamReader.read(InputStreamReader.java:180)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.io.BufferedReader.fill(BufferedReader.java:172)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:337)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:403)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:66)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:28.479 15000 15026 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:28.480 15000 15000 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+11-26 06:18:28.483 15000 15000 W OpenGLRenderer: Unknown dataspace 0
+11-26 06:18:28.484 15000 15026 D SessionConfigFetcher: Fetched settings: {"settings_version":3,"cache_duration":151302,"features":{"collect_logged_exceptions":true,"collect_reports":true,"collect_analytics":false,"prompt_enabled":false,"push_enabled":false,"firebase_crashlytics_enabled":false,"collect_anrs":true,"collect_metric_kit":false,"collect_build_ids":true},"app":{"status":"activated","update_required":false,"report_upload_variant":2,"native_report_upload_variant":2},"fabric":{"org_id":"6b06b0baab2fea99f4a5189a","bundle_id":"app.truefind.android"},"on_demand_upload_rate_per_minute":10,"on_demand_backoff_base":1.2,"on_demand_backoff_step_duration_seconds":60,"app_quality":{"sessions_enabled":true,"sampling_rate":1,"session_timeout_seconds":1800},"on_demand_thread_recording_suspension_enabled":true}
+11-26 06:18:28.524   828   862 W Looper  : Slow delivery took 31ms wmshell.main h=android.os.Handler c=android.window.TaskOrganizer$1$$ExternalSyntheticLambda3@1f3b980 m=0
+11-26 06:18:28.528   518   534 D CoreBackPreview: Window{9862a94 u0 app.truefind.android/app.truefind.android.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@468f283, mPriority=0, mIsAnimationCallback=false}
+11-26 06:18:28.548 15000 15036 W OpenGLRenderer: Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+11-26 06:18:28.548 15000 15036 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-26 06:18:28.623   135   135 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-26 06:18:28.623 15000 15036 I Gralloc4: mapper 4.x is not supported
+--------- beginning of kernel
+11-26 06:18:28.811     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-26 06:18:28.626 15000 15027 D LifecycleServiceBinder: Binding service to application.
+11-26 06:18:28.629 15000 15027 D SessionLifecycleClient: Queued message 1. Queue size 1
+11-26 06:18:28.672 15000 15036 E OpenGLRenderer: Unable to match the desired swap behavior.
+11-26 06:18:28.696   828   862 W Looper  : Drained
+11-26 06:18:28.699   518  1902 D ConnectivityService: requestNetwork for uid/pid:10192/15000 activeRequest: null callbackRequest: 262 [NetworkRequest [ REQUEST id=263, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-26 06:18:28.701   518   760 D ConnectivityService: NetReassign [263 : null → 100] [c 0] [a 1] [i 0]
+11-26 06:18:28.701   518   753 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=263, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:28.701   518   753 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=263, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:28.701   518   753 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=263, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:28.702   518   753 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=263, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:28.702   518   537 W ziparchive: Unable to open '/data/app/~~0w0R01pho-A9-z-EgmqoDQ==/app.truefind.android-coCC0kEFT_SqqLgsrk2l0A==/base.dm': No such file or directory
+11-26 06:18:28.703   518   537 I ActivityTaskManager: Displayed app.truefind.android/.MainActivity for user 0: +1s721ms
+11-26 06:18:28.711 15000 15000 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-26 06:18:28.724 15000 15060 I TFDBG   : slow frame #1 total=631ms anim=0 layout=185 draw=1 sync=0 issue=6 swap=3 gpu=19
+11-26 06:18:28.802   828   887 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda17@c683e38
+11-26 06:18:28.803   518   593 D CoreBackPreview: Window{6274b21 u0 Splash Screen app.truefind.android EXITING}: Setting back callback null
+11-26 06:18:28.803   518   593 W InputManager-JNI: Input channel object '6274b21 Splash Screen app.truefind.android (client)' was disposed without first being removed with the input manager!
+11-26 06:18:28.809  1084  1121 I ImeTracker: com.google.android.apps.nexuslauncher:53a78f97: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-26 06:18:28.809   518   533 I ImeTracker: com.google.android.apps.nexuslauncher:53a78f97: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 06:18:28.813 15000 15000 D SessionLifecycleService: Service created on process 15000
+11-26 06:18:28.813 15000 15000 D SessionLifecycleService: Service bound to new client on process 15000
+11-26 06:18:28.815  1847  3052 I PBSessionCacheImpl: Deleted sessionId[8124987579016282] from persistence.
+11-26 06:18:28.829  1847  2669 I A       : Using proto config with mendel
+11-26 06:18:28.829  1847  2669 I A       : Using proto config with mendel
+11-26 06:18:28.830  1084  2133 D OneSearchSuggestProvider: Shut down the binder channel
+11-26 06:18:28.832  1847  2669 W SearchServiceCore: Abort, client detached.
+11-26 06:18:28.832  1847  2669 I MicroDetectionState: Should stop hotword detection immediately - true
+11-26 06:18:28.832  1847  2669 I A       : Using proto config with mendel
+11-26 06:18:28.833  1847  2669 I A       : Using proto config with mendel
+11-26 06:18:28.856   518   534 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10192; state: ENABLED
+11-26 06:18:28.856   518   534 I ImeTracker: app.truefind.android:ad8366ed: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-26 06:18:28.856   518   534 I ImeTracker: app.truefind.android:ad8366ed: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 06:18:29.048     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15069 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:28.879  1084  2104 I IPCThreadState: oneway function results for code 2 on binder at 0x72c010672140 will be dropped but finished with status UNKNOWN_TRANSACTION
+11-26 06:18:28.881 15000 15068 D SessionLifecycleService: App has not yet foregrounded. Using previously stored session.
+11-26 06:18:28.884  1492  1492 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3227 
+11-26 06:18:28.884 15000 15068 D SessionLifecycleService: Client android.os.Messenger@6628488 bound at 936233. Clients: 1
+11-26 06:18:28.884  1492  1492 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 0, unlocked = true
+11-26 06:18:28.885  1492  1492 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=app.truefind.android fieldId=0 fieldName=null extras=null}, false)
+11-26 06:18:28.885  1492  1492 I GoogleInputMethodService: GoogleInputMethodService.shouldHideHeaderOnInitialState():4008 ShouldHideHeaderOnInitialState = false
+11-26 06:18:28.885  1492  1492 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 2, unlocked = true
+11-26 06:18:29.015 15000 15000 D SessionLifecycleClient: Connected to SessionLifecycleService. Queue size 1
+11-26 06:18:29.040 15000 15027 D SessionLifecycleClient: Sending lifecycle 1 to service
+11-26 06:18:29.041 15000 15068 D SessionLifecycleService: Activity foregrounding at 936457.
+11-26 06:18:29.041 15000 15068 D SessionLifecycleService: Cold start detected.
+11-26 06:18:29.042 15000 15068 D SessionLifecycleService: Generated new session.
+11-26 06:18:29.042 15000 15068 D SessionLifecycleService: Broadcasting new session
+11-26 06:18:29.043 15000 15026 D SessionFirelogPublisher: Data Collection is enabled for at least one Subscriber
+11-26 06:18:29.078 15000 15060 I TFDBG   : slow frame #2 total=501ms anim=0 layout=2 draw=1 sync=2 issue=286 swap=0 gpu=25
+11-26 06:18:29.098 15000 15019 D EventGDTLogger: Session Event Type: SESSION_START
+11-26 06:18:29.099 15000 15019 D SessionFirelogPublisher: Successfully logged Session Start event.
+11-26 06:18:29.119 15000 15024 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-26 06:18:29.119 15000 15024 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-26 06:18:29.120   518   534 D CompatibilityChangeReporter: Compat change id reported: 271850009; UID 10192; state: ENABLED
+11-26 06:18:29.120   518   534 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-26 06:18:29.120   518   534 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-26 06:18:29.177 15000 15000 D SessionLifecycleClient: Session update received.
+11-26 06:18:29.179 15000 15026 D SessionLifecycleClient: Notified CRASHLYTICS of new session 32df64f89f784cbeadb6a88909253229
+11-26 06:18:29.179   828   894 D EGL_emulation: app_time_stats: avg=688.52ms min=84.18ms max=1292.86ms count=2
+11-26 06:18:29.248  1015  1329 D BtGatt.ScanManager: uid 10128 isForeground true scanMode -1
+11-26 06:18:29.248  1015  1329 D BtGatt.ScanManager: uid 10128 isForeground true scanMode -1
+11-26 06:18:29.259 15000 15060 I TFDBG   : slow frame #3 total=383ms anim=0 layout=2 draw=0 sync=34 issue=0 swap=27 gpu=70
+11-26 06:18:29.306 15000 15060 I TFDBG   : slow frame #4 total=276ms anim=0 layout=34 draw=7 sync=0 issue=126 swap=0 gpu=38
+11-26 06:18:29.512   518  3266 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-26 06:18:30.083     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15083 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:30.506 15000 15000 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 631ms)
+11-26 06:18:31.098     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15086 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:30.918   828   828 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-26 06:18:32.113     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15089 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:32.211 15000 15000 I TFDBG   : preview open pending
+11-26 06:18:32.231 15000 15036 D EGL_emulation: app_time_stats: avg=879.51ms min=36.51ms max=2971.05ms count=4
+11-26 06:18:32.506 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:33.128     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15092 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:33.618   828   828 D StatusBarIconController: ignoring old pipeline callback because the new wifi icon is enabled
+11-26 06:18:34.362 15000 15095 D ProfileInstaller: Installing profile for app.truefind.android
+11-26 06:18:34.506 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:34.914   518   537 I GnssLocationProvider: WakeLock acquired by handleDownloadPsdsData()
+11-26 06:18:34.915   518 15096 E GnssPsdsDownloader: No Long-Term PSDS servers were specified in the GnssConfiguration
+11-26 06:18:35.572   518   611 D ActivityManager: freezing 1939 com.google.process.gapps
+11-26 06:18:35.572   518   611 D ActivityManager: freezing 2764 com.google.android.tts
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 1789 com.google.android.apps.youtube.music
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 4901 com.google.android.googlequicksearchbox
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 4074 com.google.android.gm
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 1857 com.google.android.youtube
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 4031 com.google.android.projection.gearhead:shared
+11-26 06:18:35.573   518   611 D ActivityManager: freezing 5893 com.google.android.gms.ui
+11-26 06:18:35.574   518   611 D ActivityManager: freezing 3002 com.google.android.gms.unstable
+11-26 06:18:35.574   518   611 D ActivityManager: freezing 1628 com.google.process.gservices
+11-26 06:18:35.844  5654  5654 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.phenotype.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+11-26 06:18:35.857 12441 12441 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+11-26 06:18:35.934   157 14972 I keystore2: system/security/keystore2/src/watchdog.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+11-26 06:18:36.023   518   611 D ActivityManager: freezing 2906 com.android.chrome
+11-26 06:18:36.026   518   611 D ActivityManager: freezing 2212 com.google.android.documentsui
+11-26 06:18:36.121   518   611 D ActivityManager: freezing 829 com.google.android.permissioncontroller
+11-26 06:18:36.506 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:38.506 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:40.507 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:40.918   828   828 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-26 06:18:42.507 15000 15000 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 631ms)
+11-26 06:18:42.957   518  1746 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+11-26 06:18:42.957   518  1746 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+11-26 06:18:42.957   518   537 D AutofillManagerService: Close system dialogs
+11-26 06:18:42.958   828   828 I vol.VolumeDialogImpl: mDialog.dismiss() reason: volume_controller from: com.android.systemui.volume.VolumeDialogImpl$7.onDismissRequested:3
+11-26 06:18:42.959   518   537 I ActivityManager: Broadcast completed: result=0
+11-26 06:18:43.010 15104 15104 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+11-26 06:18:43.011 15104 15104 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-26 06:18:43.041   135   135 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-26 06:18:43.041 15104 15105 I Gralloc4: mapper 4.x is not supported
+11-26 06:18:43.229     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-26 06:18:43.376     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15106 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:43.389     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15109 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:43.402     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15112 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:43.226   518  1746 D ActivityManager: freezer override set to true
+11-26 06:18:43.226   518  1746 D ActivityManager: sync unfroze 1939 com.google.process.gapps for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 2764 com.google.android.tts for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 1789 com.google.android.apps.youtube.music for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 4901 com.google.android.googlequicksearchbox for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 4074 com.google.android.gm for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 1857 com.google.android.youtube for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 4031 com.google.android.projection.gearhead:shared for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 5893 com.google.android.gms.ui for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 3002 com.google.android.gms.unstable for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 1628 com.google.process.gservices for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 2212 com.google.android.documentsui for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 2906 com.android.chrome for 19
+11-26 06:18:43.227   518  1746 D ActivityManager: sync unfroze 829 com.google.android.permissioncontroller for 19
+11-26 06:18:43.239   518  1746 D ActivityManager: freezer override set to false
