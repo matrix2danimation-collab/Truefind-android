@@ -1,0 +1,519 @@
+--------- beginning of main
+11-26 06:18:34.194  5982  6015 D SharedPreferencesImpl: Time required to fsync /data/user/0/com.google.android.gms/shared_prefs/AppDataSearch-main-icing-settings.xml: [<1: 20, <2: 59, <4: 25, <8: 49, <16: 61, <32: 26, <64: 17, <128: 24, <256: 20, <512: 4, <1024: 0, <2048: 0, <4096: 0, <8192: 0, <16384: 0, >=16384: 0]
+--------- beginning of system
+11-26 06:18:34.244   520  2411 W ActivityTaskManager: callingPackage for (uid=2000, pid=14887) has no WPC
+11-26 06:18:34.245   520  2411 D CompatibilityChangeReporter: Compat change id reported: 265464455; UID 10192; state: DISABLED
+11-26 06:18:34.245   520  2411 D CompatibilityChangeReporter: Compat change id reported: 265452344; UID 10192; state: DISABLED
+11-26 06:18:34.246   520  2411 D CompatibilityChangeReporter: Compat change id reported: 266124927; UID 10192; state: DISABLED
+11-26 06:18:34.246   520  2411 D CompatibilityChangeReporter: Compat change id reported: 265451093; UID 10192; state: DISABLED
+11-26 06:18:34.246   520  2411 D CompatibilityChangeReporter: Compat change id reported: 265456536; UID 10192; state: DISABLED
+11-26 06:18:34.246   520  2411 D CompatibilityChangeReporter: Compat change id reported: 255940284; UID 10192; state: DISABLED
+11-26 06:18:34.246   520  2411 D CompatibilityChangeReporter: Compat change id reported: 236283604; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 263959004; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 264304459; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 264301586; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 254631730; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 273509367; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 263259275; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10192; state: DISABLED
+11-26 06:18:34.247   520  2411 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10192; state: DISABLED
+11-26 06:18:34.248   520  2411 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10192; state: ENABLED
+11-26 06:18:34.256   520  2411 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10192; state: DISABLED
+11-26 06:18:34.256   520  2411 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10192; state: DISABLED
+11-26 06:18:34.256   520  2411 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+11-26 06:18:34.257   520  2411 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10192; state: ENABLED
+11-26 06:18:34.260   832   866 V WindowManagerShell: Transition requested: android.os.BinderProxy@3431f7a TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=61 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=981392 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@987c32b} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{a876388 app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 06:18:34.260   520  2411 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=app.truefind.android/.MainActivity (has extras)} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+11-26 06:18:34.261   520   541 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10192; state: DISABLED
+11-26 06:18:34.269   520   604 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10192; state: ENABLED
+11-26 06:18:34.278   520   550 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10192; state: ENABLED
+11-26 06:18:34.285   336   336 D Zygote  : Forked child process 14890
+11-26 06:18:34.288   520   550 I ActivityManager: Start proc 14890:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-26 06:18:34.289   832   874 D SplashScreenView: Build android.window.SplashScreenView{8772582 V.E...... ......ID 0,0-0,0}
+11-26 06:18:34.289   832   874 D SplashScreenView: Icon: view: android.widget.ImageView{cb4c493 V.ED..... ......I. 0,0-0,0 #10204f0 android:id/splashscreen_icon_view} drawable: com.android.wm.shell.startingsurface.SplashscreenIconDrawableFactory$ImmobileIconDrawable@98eacd0 size: 420
+11-26 06:18:34.289   832   874 D SplashScreenView: Branding: view: android.view.View{34724c9 G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-26 06:18:34.299   520  1776 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10192; state: DISABLED
+11-26 06:18:34.299   520  1776 D CompatibilityChangeReporter: Compat change id reported: 273564678; UID 10192; state: DISABLED
+11-26 06:18:34.314 14890 14890 I ruefind.android: Late-enabling -Xcheck:jni
+11-26 06:18:34.323   520  1776 D CoreBackPreview: Window{403b220 u0 Splash Screen app.truefind.android}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ac7659e, mPriority=0, mIsAnimationCallback=false}
+11-26 06:18:34.336 14890 14890 I ruefind.android: Using CollectorTypeCC GC.
+11-26 06:18:34.394   832   899 E OpenGLRenderer: Unable to match the desired swap behavior.
+11-26 06:18:34.396   399   399 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+11-26 06:18:34.397 14890 14890 W ruefind.android: Unexpected CPU variant for x86: x86_64.
+11-26 06:18:34.397 14890 14890 W ruefind.android: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-26 06:18:34.438  1084  1084 D SearchTargetUtil:  query= size=15
+11-26 06:18:34.439  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=cleveland cavaliers vs knicks,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=cleveland cavaliers vs knicks searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: b1bb2b5c-12ed-4f5a-90cb-bfce950c4344
+11-26 06:18:34.439  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=british airways flight ba239,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=british airways flight ba239 searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 3c176a99-e4db-4b1b-94b6-f644c494c5e7
+11-26 06:18:34.439  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=macy thanksgiving day parade,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=macy thanksgiving day parade searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 64e189ab-5d4c-4780-b745-937f36344f8e
+11-26 06:18:34.439  1084  1084 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=nollywood actor pete edochie,group_id=web350613,respo
+11-26 06:18:34.440  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=nasa dart mission,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=nasa dart mission searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: f7139652-391d-4c46-86b1-fcbff91c28dc
+11-26 06:18:34.440  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=hollow knight silksong dlc,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=hollow knight silksong dlc searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: baf00d9d-b2e5-4236-8017-a7cd8c7292b6
+11-26 06:18:34.440  1084  1084 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIAHwAfAMBIgACEQEDEQH/xAAbAAABBQEBAAAAAAAAAAAAAAAFAgMEBgcBAP/EAD0QAAIBAwIEAwUGBAQHAQAAAAECAwAEEQUhBhIxQRNRYRQicZGhByMyQoHwUpLB4RWCsfE0NUNicrLRJP/EABgBAAMBAQAAAAAAAAAAAAAAAAECAwAE/8QAIhEAAgICAgIDAQEAAAAAAAAAAAECEQMhEjFRYSIyQRME/9oADAMBAAIRAxEAPwC2olSESuolPItKE4qU4qUoLQbivVLjS9P8SwEclyTtExGSMbkDI6bVjCOK9W/wqyRll8IyNgyBQzADsoIPvHoNj8KyTiLiLUNUUQtLOlsQCYWmMmW33JwPkNqJ32rX2tKY9Q5gCdhnAH7wPnQeZYoJmCjmfl2PYE9PlilGoGxsN4m5gpcMFHUH99+telhZLgBkCr0Kn8uaLwi35FaOPxZCMB32APn/AK164MSzoWIMYUZY9z1zTGIccOJGiAx4bc2/l6/vtRbSdTudPvhJA5XA2DZYDpt174H7AodHOjTSlAcy8oZsYCqNyfia7NJGPBWHOC2+D1H7FAxpekcUrczwrMpUS4BBPc9OX/c1agAy8ykEHuKxuMloAqPupymDjft8Mb/Orhwk08nETXMqKsc0Dqq/mGCuPjsDn+1AFFzZKaZKllabZawCE6U00e/SprLTRTesYmItOqK4opYpjCJ3EUTMT0FZPxLey394PGYHwyQu+y59a0TiJnFswTO43xWYzMPbVtwTyg4Pakb3Q8UqsitzcyogZtsEknPxqZBpEMhDT5fv5U6IU8bmXcseuc7UVhhLAZ2FTnL8OnFivbIiafZgqBCpwNhXJdFsXyTEVY9wd6NQWq53B+NPta8y7KfialyZ0/yj4Kg+iWnZnI8iajTaLGDzRscjtVrls8E5qJPblBkCmU2JLFHwVVY7iCblGwbYFVq18N6iyXCRwy8jcvIrMF9OmSPI+fTG2aFz24lVoyNzup8jQ28ke3dHbDP6D+nerRlZx5IcWbNZSeLGSWJIOCG6rt0NPkVW+DtRefTea7kBMYUBy3MSDnAJ/T47DJNWQsvLzZHLjOaYkNstNlacMsZ/MO316V5uXPUfOtZqHxSlpIpYphQLxTN7Np0koGWxgVlU0je3JJ/EK1rieJZNGuCRnC5FY/cE+LGRkk+79anL7lobgG7Qc0q5/ho9aIdthig2npmVB+lWe2SLYBgT3OahLZ3Q0iRbxryjp8qfZfd/+U7FCAAacEWx5iABQRWwTcxnOdqHXMexovdXdoj8hmTn8hvQy5uYGDLznH8QG1ahXJFenUqxYUG1VvGQYJyRjbzqwygNkGq7fxlGxtjm79s1WBy5laNB4LhefhmItIgJc4ct72ATsaNNp0vLgOo3yTmhnDtk54ZsxEEJf3/dAwev13og8F9ycoLnc5BbtQmlfRzxeuyS9u7sULJhlTO++1RX0uc4+8UnAySe9PXMEzzcyRnGFyc+WOlM+Ff9mYf56Dir2mFP2FVurc/9eL+cVIXBGRuKzXhPh/S73iLiGG4tEeC3nVIkJOEGO1aVEixoqIMKowB6V0kSBxF/ya6/8DWKzSct1GAuT1x51sHGExi0ScL1YYrNNRsI+Wzbw1IaPxFIG5GOhqcvsXxp8GRLO7vr9Y/ZvAWF8AswPXuOu9WSKzlWMC61a1jJ7DKf1NRtHt4/Be12R/F8SPGxKny+BzRa20O0ZlV/vCpzzeJuT5k0raLKLo795pNt7Ul2bmFd3SM55R57/valni7TLu15bWaRpTsF5CDnyprXGis7SS3gwZJ18MYNMXFtDFpNskUC5t+Vo9tyR2/Xeh8f0b5q0mPKII8SXsMKdyWLFh67VFmuornP+G3NqcdFYEGi8KxXcSzp95Gw2OMkDyNNS2Nrzf8ADKADkYXp60OQeDeyqe1XcVwEuI1y7gBVRm93J5m28sfWouqpkM6Sq5O3hgEP/L1q0SQReO7ghhHGUyPMnP8AT60IuLT2i9h5SeYPkEdcDr9KdNeCUovyWnhRZTwxaxxliVkclQd1B33+dGJJr0oFIY5znC9BQa00j2u2ZYdRubHOWaWBgCwU479t6rumQ6tq3EZg0bXdQm0y1Ye0XUrDDsDuq4G/lWUeW7JZFwlRfJ2mWaQxCTnLgBiPdC7VHae+TCqp/l9aOUk0Xjfkny9A/Q9Bj0m+1G7jmeRr6XxHDAe6fIUaFJFKFUFKn9oplTTI3jOF58NVUM0VxoMUoPvWqiNh33Lf2q+cY2LX+iyon4l94fpWaaMA73NpJnlmTB+IP96jPUjqwu4tBzSViurWOOSNZAOgYZo/FpdqI88jL6iRh/WqroMpiRc/h5iPrVtS4DW1I+zqxqLjsFarbW8bDwEAYr+Jjk9fM1Iu7YiwQqytnpgiot6ntcu65A657UsQQ/h5soBjeQn6ZopX2F66E2kcRdiqoSQDhCVJ89x3okthYzwFihJx+GRiw+tD4Ymg99MHB7dqnrIVUqOpoOwriC71VhXljwE8gMCoOkOP8UQyjEYQkMegNTLpWk5i22Ki6YCHm5V5yRgL3J36UYk5/Yn6po2qa1pctto14lvEz8shbO6kZKjHrin9E0ninSYLazifSVtIiAwSNgxHf9atemW3sllHEww+Mv8AE0+avFUjgyy5SbEmk0o1yiIPClCkilCiY5KoeJlPQisW1DxbDV5/CJRkkODitrqgfaNpscUMV1GuCW96p5FasrilUqAmhPz28jHfDcxqy7AKyn3SN6pugXPhTtEx2cYo8LkxciN+Ht61D2dkXoelhnlfLO2PJOlKS3DADmc/5sVJgujy8wTO2DTwZiOYIB+tFMpYPjtisoKlx685oha+8eaQ/hHU96jzTuTjAGPSmo5i8vhKcHHvGt2K2OT4McjnABbb4U5wZpwmvH1BxtECi58zgn+lDtWuBHH4Snc7Yq0cFKF0QEdTKxPx2p8a2c/+h6DppBpZpJq5xiTSaUaTWMPClCkClCsEVQPjGy9t0WZQMso5hRykTIJInRhkEEVntGTpmFQcyzgLswO1WOOdbmzGRhxv+tDnteXiGe3QZCM5x6CiMUJgcgg8pP1rmSO2/wBCFnNhFJU83mO9EEvHwFMLk9iBnah1mxjOM49O1EUkYgMWOaYybI12xcFhGwPckYpi1YJkge951JuC0mevxpsJgYAzmhRgdJGZpmc7BdhtUnT+I5eHTbtdqH0q4maKQhfehfAIYeYIzkem3kZbW3JEEAJY/Wo3GGnC14TmilGHXEjejZG3ywKfH2TzaiaCkiSxrJEyujgMrKcgg9CK8ayngDjVdMRNK1Zv/wAefuZuvhZ7H/t/0+HTU4pY54llhkWSNhlXRsgj0NWao5TppJpRpNAI4KVzBQSxAA3JPamZ3MUEki4yqkjNYbxDxRq2uSyR3lxy26uVEEXupse47/rmilZjUNY4/wBD0wtHHM17MPy22CoPqx2+Wapmrfajqs2V0+2t7RfNsyN8zgfSqISaak64p+KBZceAbua94qNxcuZpWjYsW/MSRmr3q+meyyCWJSYJPw+np+lZ59mu3EcAH5kcH9/pW6xQRTW6pKgdJBhlPQ1OcLKY8nFlAjh3BH+1TlgwNjtUrU7KKz1GSCItyKduY716Ldgp6YqB1JXtEXwRnJHxpUUPMwwuT2GO9Lc/ecvb
+11-26 06:18:34.450  1084  1084 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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
+11-26 06:18:34.450  1084  1084 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/png;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=colorado buffaloes football,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=Colorado Buffaloes football searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 1f3c0fe2-e22d-4984-9847-164e6b37ae6f
+11-26 06:18:34.460  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=mario kart world update,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=mario kart world update searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 7c2eec46-5deb-4cd0-aa06-5ec9183029c9
+11-26 06:18:34.462  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=cia cybersecurity breach,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=cia cybersecurity breach searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 311c37d0-d3c3-4948-9f81-3f7986749b1a
+11-26 06:18:34.462  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=tim mcgraw faith hill parenting,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=tim mcgraw faith hill parenting searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: f644888a-b3e4-422c-9434-c4a07d0f4395
+11-26 06:18:34.466  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=israel iran war,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=israel iran war searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 27e4dfc0-3c9a-4c14-98d9-aab5056afbce
+11-26 06:18:34.466  1084  1084 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=wendys class action lawsuit,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=wendys class action lawsuit searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 6e4cd8ff-d5ee-4287-94d9-7a42b1f59a12
+11-26 06:18:34.467  1084  1084 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=martha firestone ford,group_id=web350613,response_id=b68b7e73-0fff-47a6-be1a-e2d808d0c66a,support_query_builder=false,} searchAction=Martha Firestone Ford searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_actio
+11-26 06:18:34.488   520   530 I system_server: NativeAlloc concurrent copying GC freed 337753(11MB) AllocSpace objects, 58(1672KB) LOS objects, 48% free, 25MB/49MB, paused 53us,66us total 325.856ms
+11-26 06:18:34.489   414   429 I adbd    : jdwp connection from 14890
+11-26 06:18:34.528  5982  6015 I Icing   : Usage reports ok 0, Failed Usage reports 0, indexed 0, rejected 0
+11-26 06:18:34.541  1084  2205 D EGL_emulation: app_time_stats: avg=359.31ms min=304.68ms max=468.11ms count=4
+11-26 06:18:34.545   520  1776 W ActivityTaskManager: takeTaskSnapshot: taskId=61 not found or not visible
+11-26 06:18:34.602 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+11-26 06:18:34.602 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+11-26 06:18:34.611   520  1891 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10192; state: ENABLED
+11-26 06:18:34.618 14890 14890 W ziparchive: Unable to open '/data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/base.dm': No such file or directory
+11-26 06:18:34.618 14890 14890 W ziparchive: Unable to open '/data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/base.dm': No such file or directory
+11-26 06:18:34.801   832   866 V WindowManagerShell: onTransitionReady android.os.BinderProxy@3431f7a: {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@bd2d894} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xad9a401 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@d3b7f3d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x86952a6 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:34.804   832   866 V WindowManagerShell: Playing animation for (#113)android.os.BinderProxy@3431f7a@0
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@62565fc
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@fe76485
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@a0482da
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@266530b
+11-26 06:18:34.804   832   866 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@860e5e8
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@bec401
+11-26 06:18:34.804   832   866 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@ab7f2a6
+11-26 06:18:34.804   832   866 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@bd2d894} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xad9a401 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@d3b7f3d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x86952a6 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:34.805   832   866 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@d3da717, appThread = android.app.IApplicationThread$Stub$Proxy@ef35704, debugName = LauncherToDream }}
+11-26 06:18:34.805   832   866 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@33774ed, appThread = android.app.IApplicationThread$Stub$Proxy@8b2f22, debugName = QuickstepLaunchHome }}
+11-26 06:18:34.805   832   866 V WindowManagerShell:  Delegate animation for #113 to null
+11-26 06:18:34.805   832   866 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@ea514e7
+11-26 06:18:34.805   832   866 V WindowManagerShell: start default transition animation, info = {id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@bd2d894} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xad9a401 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@d3b7f3d} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x86952a6 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:34.805   832   866 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@a67f883 animAttr=0x13 type=OPEN isEntrance=false
+11-26 06:18:34.809   832   866 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@8a799df animAttr=0x12 type=OPEN isEntrance=true
+11-26 06:18:34.810   832   866 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@ea514e7
+11-26 06:18:34.810   520   538 V WindowManager: Sent Transition #113 createdAt=11-26 06:18:34.248 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=61 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} topActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=1 lastActiveTime=981392 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{b5ed802 Task{4e93f87 #61 type=standard A=10192:app.truefind.android}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{bec513 app.truefind.android.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 06:18:34.810   520   538 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+11-26 06:18:34.810   520   538 V WindowManager:     info={id=113 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{b5ed802 Task{4e93f87 #61 type=standard A=10192:app.truefind.android}}} m=OPEN f=NONE leash=Surface(name=Task=61)/@0xc27dce4 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{8523ee3 Task{9cc9f76 #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x6ca9e33 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-26 06:18:34.812   832   866 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#113)android.os.BinderProxy@3431f7a@0
+11-26 06:18:34.820   520   538 V WindowManager: Finish Transition #113: created at 11-26 06:18:34.248 collect-started=0.021ms request-sent=10.848ms started=22.489ms ready=312.381ms sent=551.806ms finished=571.925ms
+11-26 06:18:34.824   832   866 V WindowManagerShell: Track 0 became idle
+11-26 06:18:34.824   832   866 V WindowManagerShell: All active transition animations finished
+11-26 06:18:35.316   832   899 D EGL_emulation: app_time_stats: avg=951.71ms min=377.49ms max=1525.93ms count=2
+11-26 06:18:35.321 14890 14890 D nativeloader: Configuring clns-6 for other apk /data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/lib/x86_64:/data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/app.truefind.android
+11-26 06:18:35.328 14890 14890 V GraphicsEnvironment: Currently set values for:
+11-26 06:18:35.330 14890 14890 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-26 06:18:35.377 14890 14890 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-26 06:18:35.378 14890 14890 V GraphicsEnvironment: ANGLE GameManagerService for app.truefind.android: false
+11-26 06:18:35.378 14890 14890 V GraphicsEnvironment: app.truefind.android is not listed in per-application setting
+11-26 06:18:35.378 14890 14890 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-26 06:18:35.407   832   899 D EGL_emulation: app_time_stats: avg=1325.42ms min=1325.42ms max=1325.42ms count=1
+11-26 06:18:35.411 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10192; state: ENABLED
+11-26 06:18:35.423 14890 14890 D SessionsDependencies: Dependency to CRASHLYTICS added.
+11-26 06:18:35.433 14890 14890 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+11-26 06:18:35.444 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 3400644; UID 10192; state: ENABLED
+11-26 06:18:35.446 14890 14890 I FirebaseCrashlytics: Initializing Firebase Crashlytics 19.4.4 for app.truefind.android
+11-26 06:18:35.459 14890 14890 D SessionsDependencies: Subscriber CRASHLYTICS registered.
+11-26 06:18:35.516 14890 14890 D FirebaseSessions: Initializing Firebase Sessions SDK.
+11-26 06:18:35.525 14890 14890 I FirebaseInitProvider: FirebaseApp initialization successful
+11-26 06:18:35.526 14890 14913 D CompatibilityChangeReporter: Compat change id reported: 247079863; UID 10192; state: ENABLED
+11-26 06:18:35.536   520   820 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 14890
+11-26 06:18:35.543   335 14926 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10192 0}
+11-26 06:18:35.543   335 14927 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-26 06:18:35.543   335 14927 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7c8474287610
+11-26 06:18:35.543   335 14927 I resolv  : doQuery: rcode=0, ancount=1, return value=79
+11-26 06:18:35.550   335 14928 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-26 06:18:35.550   335 14928 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7c83c4288fd0
+11-26 06:18:35.550   335 14928 I resolv  : doQuery: rcode=0, ancount=1, return value=67
+11-26 06:18:35.554 14890 14925 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-26 06:18:35.555 14890 14925 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-26 06:18:35.557 14890 14925 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-26 06:18:35.588 14890 14919 I FirebaseCrashlytics: No version control information found
+11-26 06:18:35.590 14890 14913 D TrafficStats: tagSocket(88) with statsTag=0xffffffff, statsUid=-1
+11-26 06:18:35.591   335 14930 I resolv  : GetAddrInfoHandler::run: {100 100 100 983140 10192 0}
+11-26 06:18:35.591   335 14932 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+11-26 06:18:35.591   335 14932 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7c849428ba90
+11-26 06:18:35.591   335 14932 I resolv  : doQuery: rcode=0, ancount=8, return value=278
+11-26 06:18:35.595   335 14933 I resolv  : res_nmkquery: (QUERY, IN, A)
+11-26 06:18:35.595   335 14933 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7c8464281030
+11-26 06:18:35.595   335 14933 I resolv  : doQuery: rcode=0, ancount=8, return value=182
+11-26 06:18:35.596 14890 14921 D TrafficStats: tagSocket(86) with statsTag=0x8001, statsUid=-1
+11-26 06:18:35.626 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+11-26 06:18:35.637 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+11-26 06:18:35.774 14890 14935 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:35.775 14890 14935 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:35.776 14890 14935 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:35.777 14890 14935 W PathParser: Points are too far apart 4.010396595255705
+11-26 06:18:35.884 14890 14890 W PathParser: Points are too far apart 4.000000000000002
+11-26 06:18:35.908 14890 14890 W PathParser: Points are too far apart 4.000003365909959
+11-26 06:18:36.083 14890 14890 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+11-26 06:18:36.083 14890 14890 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-26 06:18:36.087 14890 14890 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+11-26 06:18:36.089 14890 14890 W OpenGLRenderer: Unknown dataspace 0
+11-26 06:18:36.093 14890 14890 I Choreographer: Skipped 32 frames!  The application may be doing too much work on its main thread.
+11-26 06:18:36.140   520   820 D CoreBackPreview: Window{a14a57b u0 app.truefind.android/app.truefind.android.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e327bd6, mPriority=0, mIsAnimationCallback=false}
+11-26 06:18:36.237 14890 14923 W OpenGLRenderer: Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+11-26 06:18:36.237 14890 14923 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+--------- beginning of kernel
+11-26 06:18:36.497     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-26 06:18:36.334   135   135 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-26 06:18:36.334 14890 14923 I Gralloc4: mapper 4.x is not supported
+11-26 06:18:36.393 14890 14923 E OpenGLRenderer: Unable to match the desired swap behavior.
+11-26 06:18:36.420   520   538 W ziparchive: Unable to open '/data/app/~~0vUSD0HXaWJCbqPGlTTxjA==/app.truefind.android-DjUTyT--f6PkcEQlTZ4DOg==/base.dm': No such file or directory
+11-26 06:18:36.421   520   538 I ActivityTaskManager: Displayed app.truefind.android/.MainActivity for user 0: +2s174ms
+11-26 06:18:36.462   520  2411 D ConnectivityService: requestNetwork for uid/pid:10192/14890 activeRequest: null callbackRequest: 268 [NetworkRequest [ REQUEST id=269, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-26 06:18:36.464   520   766 D ConnectivityService: NetReassign [269 : null → 100] [c 1] [a 0] [i 1]
+11-26 06:18:36.464   520   759 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=269, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:36.464   520   759 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=269, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:36.464   520   759 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=269, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:36.464   520   759 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=269, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-26 06:18:36.626     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14956 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:36.483 14890 14917 D SessionConfigFetcher: Fetching settings from server.
+11-26 06:18:36.504   832   873 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda17@d79c5fc
+11-26 06:18:36.507 14890 14890 I TFDBG   : secret render premium=false access=null map=null profile=false missing=[] deck=0 act=false
+11-26 06:18:36.507   520  2411 D CoreBackPreview: Window{403b220 u0 Splash Screen app.truefind.android EXITING}: Setting back callback null
+11-26 06:18:36.509   520  1891 W InputManager-JNI: Input channel object '403b220 Splash Screen app.truefind.android (client)' was disposed without first being removed with the input manager!
+11-26 06:18:36.516 14890 14903 I OpenGLRenderer: Davey! duration=907ms; Flags=1, FrameTimelineVsyncId=53119, IntendedVsync=982678735854, Vsync=983212069166, InputEventId=0, HandleInputStart=983226758836, AnimationStart=983226762140, PerformTraversalsStart=983226837020, DrawStart=983528868816, FrameDeadline=982695402520, FrameInterval=983226500929, FrameStartTime=16666666, SyncQueued=983531603814, SyncStart=983533889895, IssueDrawCommandsStart=983534164883, SwapBuffers=983545453239, FrameCompleted=983588641812, DequeueBufferDuration=3706, QueueBufferDuration=267407, GpuCompleted=983588641812, SwapBuffersCompleted=983549813509, DisplayPresentTime=0, CommandSubmissionCompleted=983545453239, 
+11-26 06:18:36.516 14890 14947 I TFDBG   : slow frame #1 total=909ms anim=0 layout=302 draw=2 sync=0 issue=11 swap=4 gpu=43
+11-26 06:18:36.520 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeInternal(ConscryptEngineSocket.java:704)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.write(ConscryptEngineSocket.java:699)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$1.write(Okio.java:78)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$1.write(AsyncTimeout.java:157)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSink.flush(RealBufferedSink.java:222)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.finishRequest(Http1xStream.java:163)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:748)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.520 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.526 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at java.net.SocketOutputStream.socketWrite(SocketOutputStream.java:115)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at java.net.SocketOutputStream.write(SocketOutputStream.java:156)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeToSocket(ConscryptEngineSocket.java:762)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.writeInternal(ConscryptEngineSocket.java:736)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLOutputStream.write(ConscryptEngineSocket.java:699)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$1.write(Okio.java:78)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$1.write(AsyncTimeout.java:157)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSink.flush(RealBufferedSink.java:222)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.finishRequest(Http1xStream.java:163)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:748)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.526 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.537 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.537 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.556 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at java.net.SocketInputStream.read(SocketInputStream.java:172)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at java.net.SocketInputStream.read(SocketInputStream.java:143)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readFromSocket(ConscryptEngineSocket.java:983)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:947)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:307)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.indexOf(RealBufferedSource.java:301)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.java:197)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponse(Http1xStream.java:188)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream.readResponseHeaders(Http1xStream.java:129)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:750)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:60)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.556 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.562 14890 14907 W ruefind.android: Long monitor contention with owner TAG (14915) at com.google.android.gms.tasks.Task com.google.firebase.messaging.RequestDeduplicator.getOrStartGetTokenRequest(java.lang.String, com.google.firebase.messaging.RequestDeduplicator$GetTokenRequest)(RequestDeduplicator.java:77) waiters=0 in com.google.android.gms.tasks.Task com.google.firebase.messaging.RequestDeduplicator.getOrStartGetTokenRequest(java.lang.String, com.google.firebase.messaging.RequestDeduplicator$GetTokenRequest) for 960ms
+11-26 06:18:36.582   520  1891 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10192; state: ENABLED
+11-26 06:18:36.582   520  1891 I ImeTracker: app.truefind.android:26f658f7: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-26 06:18:36.582   520  1891 I ImeTracker: app.truefind.android:26f658f7: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 06:18:36.585  1084  1136 I ImeTracker: com.google.android.apps.nexuslauncher:845e28d9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-26 06:18:36.586  1549  1549 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3227 
+11-26 06:18:36.586  1084  2520 D OneSearchSuggestProvider: Shut down the binder channel
+11-26 06:18:36.589  1084  3403 I IPCThreadState: oneway function results for code 2 on binder at 0x7649ac9f6f70 will be dropped but finished with status UNKNOWN_TRANSACTION
+11-26 06:18:36.591  1549  1549 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 0, unlocked = true
+11-26 06:18:36.591  1549  1549 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=app.truefind.android fieldId=0 fieldName=null extras=null}, false)
+11-26 06:18:36.591  1549  1549 I GoogleInputMethodService: GoogleInputMethodService.shouldHideHeaderOnInitialState():4008 ShouldHideHeaderOnInitialState = false
+11-26 06:18:36.592 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.request(RealBufferedSource.java:72)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.require(RealBufferedSource.java:65)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readHexadecimalUnsignedLong(RealBufferedSource.java:271)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.readChunkSize(Http1xStream.java:456)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.read(Http1xStream.java:437)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.read(RealBufferedSource.java:51)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.exhausted(RealBufferedSource.java:61)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.InflaterSource.refill(InflaterSource.java:103)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.InflaterSource.read(InflaterSource.java:64)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.GzipSource.read(GzipSource.java:82)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource$1.read(RealBufferedSource.java:372)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:291)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:355)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:181)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.io.InputStreamReader.read(InputStreamReader.java:180)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.io.BufferedReader.fill(BufferedReader.java:172)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:337)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:403)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:66)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.592 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.592  1549  1549 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 2, unlocked = true
+11-26 06:18:36.600   520   594 W InputMethodManagerService: Ignoring hideSoftInput of uid 10169 : com.android.internal.inputmethod.IInputMethodClient$Stub$Proxy@fd25c3f
+11-26 06:18:36.600   520   594 I ImeTracker: com.google.android.apps.nexuslauncher:845e28d9: onCancelled at PHASE_SERVER_CLIENT_FOCUSED
+11-26 06:18:36.667  1782 14460 I PBSessionCacheImpl: Deleted sessionId[7839114555763159] from persistence.
+11-26 06:18:36.670  1782  2788 I A       : Using proto config with mendel
+11-26 06:18:36.673  1782  2788 I A       : Using proto config with mendel
+11-26 06:18:36.674  1782  2788 W SearchServiceCore: Abort, client detached.
+11-26 06:18:36.674  1782  2788 I MicroDetectionState: Should stop hotword detection immediately - true
+11-26 06:18:36.674  1782  2788 I A       : Using proto config with mendel
+11-26 06:18:36.675  1782  2788 I A       : Using proto config with mendel
+11-26 06:18:36.737   832   899 D EGL_emulation: app_time_stats: avg=704.33ms min=1.94ms max=1406.72ms count=2
+11-26 06:18:36.750 14890 14917 D StrictMode: StrictMode policy violation: android.os.strictmode.NetworkViolation
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at android.os.StrictMode$AndroidBlockGuardPolicy.onNetwork(StrictMode.java:1680)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.org.conscrypt.Platform.blockGuardOnNetwork(Platform.java:436)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:874)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readUntilDataAvailable(ConscryptEngineSocket.java:862)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.read(ConscryptEngineSocket.java:835)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.Okio$2.read(Okio.java:138)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.AsyncTimeout$2.read(AsyncTimeout.java:213)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.request(RealBufferedSource.java:72)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.require(RealBufferedSource.java:65)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.readHexadecimalUnsignedLong(RealBufferedSource.java:271)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.readChunkSize(Http1xStream.java:456)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.internal.http.Http1xStream$ChunkedSource.read(Http1xStream.java:437)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.read(RealBufferedSource.java:51)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource.exhausted(RealBufferedSource.java:61)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.GzipSource.read(GzipSource.java:101)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.android.okhttp.okio.RealBufferedSource$1.read(RealBufferedSource.java:372)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:291)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:355)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:181)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.io.InputStreamReader.read(InputStreamReader.java:180)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.io.BufferedReader.fill(BufferedReader.java:172)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:337)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.io.BufferedReader.readLine(BufferedReader.java:403)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invokeSuspend(RemoteSettingsFetcher.kt:66)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:8)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher$doConfigFetch$2.invoke(Unknown Source:4)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:78)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:167)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:1)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettingsFetcher.doConfigFetch(RemoteSettingsFetcher.kt:53)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings.updateSettings(RemoteSettings.kt:101)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.sessions.settings.RemoteSettings$updateSettings$1.invokeSuspend(Unknown Source:14)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory.lambda$newThread$0$com-google-firebase-concurrent-CustomThreadFactory(CustomThreadFactory.java:47)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at com.google.firebase.concurrent.CustomThreadFactory$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+11-26 06:18:36.750 14890 14917 D StrictMode: 	at java.lang.Thread.run(Thread.java:1012)
+11-26 06:18:36.756 14890 14917 D SessionConfigFetcher: Fetched settings: {"settings_version":3,"cache_duration":185940,"features":{"collect_logged_exceptions":true,"collect_reports":true,"collect_analytics":false,"prompt_enabled":false,"push_enabled":false,"firebase_crashlytics_enabled":false,"collect_anrs":true,"collect_metric_kit":false,"collect_build_ids":true},"app":{"status":"activated","update_required":false,"report_upload_variant":2,"native_report_upload_variant":2},"fabric":{"org_id":"6b06b0baab2fea99f4a5189a","bundle_id":"app.truefind.android"},"on_demand_upload_rate_per_minute":10,"on_demand_backoff_base":1.2,"on_demand_backoff_step_duration_seconds":60,"app_quality":{"sessions_enabled":true,"sampling_rate":1,"session_timeout_seconds":1800},"on_demand_thread_recording_suspension_enabled":true}
+11-26 06:18:36.812   520  3267 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-26 06:18:36.973 14890 14904 I OpenGLRenderer: Davey! duration=794ms; Flags=0, FrameTimelineVsyncId=53180, IntendedVsync=983295402496, Vsync=983662069148, InputEventId=0, HandleInputStart=983673365561, AnimationStart=983673370149, PerformTraversalsStart=983673515405, DrawStart=983682676785, FrameDeadline=983612069150, FrameInterval=983670417888, FrameStartTime=16666666, SyncQueued=983685299872, SyncStart=983685330492, IssueDrawCommandsStart=983685855716, SwapBuffers=984056975323, FrameCompleted=984090353303, DequeueBufferDuration=7073, QueueBufferDuration=640668, GpuCompleted=984090353303, SwapBuffersCompleted=984059414742, DisplayPresentTime=0, CommandSubmissionCompleted=984056975323, 
+11-26 06:18:36.975 14890 14947 I TFDBG   : slow frame #2 total=794ms anim=0 layout=9 draw=2 sync=0 issue=371 swap=2 gpu=33
+11-26 06:18:36.975 14890 14920 D LifecycleServiceBinder: Binding service to application.
+11-26 06:18:36.989 14890 14920 D SessionLifecycleClient: Queued message 1. Queue size 1
+11-26 06:18:37.067 14890 14890 D SessionLifecycleService: Service created on process 14890
+11-26 06:18:37.067 14890 14890 D SessionLifecycleService: Service bound to new client on process 14890
+11-26 06:18:37.069 14890 14890 D SessionLifecycleClient: Connected to SessionLifecycleService. Queue size 1
+11-26 06:18:37.070 14890 14919 D SessionLifecycleClient: Sending lifecycle 1 to service
+11-26 06:18:37.075 14890 14965 D SessionLifecycleService: App has not yet foregrounded. Using previously stored session.
+11-26 06:18:37.086 14890 14965 D SessionLifecycleService: Client android.os.Messenger@8d282d3 bound at 984201. Clients: 1
+11-26 06:18:37.086 14890 14965 D SessionLifecycleService: Activity foregrounding at 984204.
+11-26 06:18:37.089 14890 14965 D SessionLifecycleService: Cold start detected.
+11-26 06:18:37.101 14890 14965 D SessionLifecycleService: Generated new session.
+11-26 06:18:37.101 14890 14965 D SessionLifecycleService: Broadcasting new session
+11-26 06:18:37.102 14890 14890 D SessionLifecycleClient: Session update received.
+11-26 06:18:37.108 14890 14917 D SessionLifecycleClient: Notified CRASHLYTICS of new session 0655ee0506c544baa7e67319e6ec9100
+11-26 06:18:37.128 14890 14919 D SessionFirelogPublisher: Data Collection is enabled for at least one Subscriber
+11-26 06:18:37.143  1022  1324 D BtGatt.ScanManager: uid 10128 isForeground true scanMode -1
+11-26 06:18:37.144  1022  1324 D BtGatt.ScanManager: uid 10128 isForeground true scanMode -1
+11-26 06:18:37.179 14890 14919 D EventGDTLogger: Session Event Type: SESSION_START
+11-26 06:18:37.180 14890 14919 D SessionFirelogPublisher: Successfully logged Session Start event.
+11-26 06:18:37.195 14890 14918 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-26 06:18:37.196 14890 14918 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-26 06:18:37.196   520  1776 D CompatibilityChangeReporter: Compat change id reported: 271850009; UID 10192; state: ENABLED
+11-26 06:18:37.197   520  1776 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-26 06:18:37.197   520  1776 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-26 06:18:37.229 14890 14947 I TFDBG   : slow frame #3 total=499ms anim=0 layout=0 draw=0 sync=49 issue=56 swap=28 gpu=29
+11-26 06:18:37.282 14890 14947 I TFDBG   : slow frame #4 total=345ms anim=0 layout=22 draw=6 sync=2 issue=164 swap=0 gpu=45
+11-26 06:18:37.679     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14973 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:38.112 14890 14890 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 909ms)
+11-26 06:18:38.523 14357 14359 I AidlLazyServiceRegistrar: Process has 0 (of 1 available) client(s) in use after notification artd has clients: 0
+11-26 06:18:38.523 14357 14359 I AidlLazyServiceRegistrar: Trying to shut down the service. No clients in use for any service in process.
+11-26 06:18:38.525 14357 14359 I AidlLazyServiceRegistrar: Unregistered all clients and exiting
+11-26 06:18:38.691     0     0 I servicemanager: Notifying artd they don't (previously: do) have clients when we now have no record of a client
+11-26 06:18:38.693     0     0 I servicemanager: Unregistering artd
+11-26 06:18:38.694     0     0 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+11-26 06:18:38.696     0     0 I init    : Service 'artd' (pid 14357) exited with status 0 oneshot service took 54.608002 seconds in background
+11-26 06:18:38.698     0     0 I init    : Sending signal 9 to service 'artd' (pid 14357) process group...
+11-26 06:18:38.699     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14976 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:38.699     0     0 I libprocessgroup: Successfully killed process cgroup uid 1082 pid 14357 in 0ms
+11-26 06:18:39.722     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14979 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:40.007 14890 14890 I TFDBG   : preview open pending
+11-26 06:18:40.032 14890 14923 D EGL_emulation: app_time_stats: avg=904.12ms min=115.22ms max=2803.43ms count=4
+11-26 06:18:40.113 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:40.742     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14982 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:41.343   832   832 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-26 06:18:42.078 14890 14985 D ProfileInstaller: Installing profile for app.truefind.android
+11-26 06:18:42.113 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:42.648   520   611 D ActivityManager: freezing 4072 com.google.android.gm
+11-26 06:18:42.649   520   611 D ActivityManager: freezing 1785 com.google.android.youtube
+11-26 06:18:42.649   520   611 D ActivityManager: freezing 1780 com.google.android.as.oss
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 1978 com.google.process.gapps
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 4013 com.google.android.rkpdapp
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 3989 com.google.android.projection.gearhead:shared
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 5355 com.google.android.googlequicksearchbox
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 6097 com.google.android.gms.ui
+11-26 06:18:42.650   520   611 D ActivityManager: freezing 12010 com.google.android.gms.unstable
+11-26 06:18:42.651   520   611 D ActivityManager: freezing 14674 com.google.android.configupdater
+11-26 06:18:42.651   520   611 D ActivityManager: freezing 1695 com.google.process.gservices
+11-26 06:18:42.984   157 14859 I keystore2: system/security/keystore2/src/watchdog.rs:319 - Watchdog thread idle -> terminating. Have a great day.
+11-26 06:18:42.992   832   832 D StatusBarIconController: ignoring old pipeline callback because the new wifi icon is enabled
+11-26 06:18:43.061   520   611 D ActivityManager: freezing 2694 com.android.chrome
+11-26 06:18:43.064   520   611 D ActivityManager: freezing 2214 com.google.android.documentsui
+11-26 06:18:43.077   520   611 D ActivityManager: freezing 834 com.google.android.permissioncontroller
+11-26 06:18:44.113 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:46.114 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:47.954   520  1776 D WifiNl80211Manager: Scan result ready event
+11-26 06:18:47.954   520  1776 D WifiNative: Scan result ready event
+11-26 06:18:48.115 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:48.361  5982  5982 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.feedback.internal.IFeedbackService dat=chimera-action:/... cmp=com.google.android.gms/.chimera.GmsBoundBrokerService }
+11-26 06:18:50.115 14890 14890 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 909ms)
+11-26 06:18:50.599   520  2414 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+11-26 06:18:50.600   520  2414 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+11-26 06:18:50.601   520   538 D AutofillManagerService: Close system dialogs
+11-26 06:18:50.603   832   832 I vol.VolumeDialogImpl: mDialog.dismiss() reason: volume_controller from: com.android.systemui.volume.VolumeDialogImpl$7.onDismissRequested:3
+11-26 06:18:50.605   520   538 I ActivityManager: Broadcast completed: result=0
+11-26 06:18:50.678 14993 14993 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+11-26 06:18:50.678 14993 14993 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-26 06:18:50.878     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-26 06:18:50.710   135   135 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-26 06:18:50.710 14993 14994 I Gralloc4: mapper 4.x is not supported
+11-26 06:18:51.043     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14995 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:51.059     0     0 I logd    : logdr: UID=2000 GID=2000 PID=14998 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:51.075     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15001 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-26 06:18:50.925   520  2414 D ActivityManager: freezer override set to true
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 4072 com.google.android.gm for 19
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 1785 com.google.android.youtube for 19
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 1780 com.google.android.as.oss for 19
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 1978 com.google.process.gapps for 19
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 4013 com.google.android.rkpdapp for 19
+11-26 06:18:50.925   520  2414 D ActivityManager: sync unfroze 3989 com.google.android.projection.gearhead:shared for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 5355 com.google.android.googlequicksearchbox for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 6097 com.google.android.gms.ui for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 12010 com.google.android.gms.unstable for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 14674 com.google.android.configupdater for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 1695 com.google.process.gservices for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 2214 com.google.android.documentsui for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 2694 com.android.chrome for 19
+11-26 06:18:50.926   520  2414 D ActivityManager: sync unfroze 834 com.google.android.permissioncontroller for 19
+11-26 06:18:50.935   520  2414 D ActivityManager: freezer override set to false
+11-26 06:18:51.129     0     0 I logd    : logdr: UID=2000 GID=2000 PID=15010 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
