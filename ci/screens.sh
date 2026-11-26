@@ -69,7 +69,7 @@ shot() {
 # the native Control Center and status screens (their own list, from the misc-admin-native work)
 if [ "$SET" = misc ] || [ "$SET" = admin ] || [ "$SET" = health ] || [ "$SET" = cc ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
-if [ "$SET" = recent ]; then
+if [ "$SET" = recent ] || [ "$SET" = homeq ]; then
 R="--es tf_preview recent"
 T() { timeout "$@"; }   # every phone command has a time limit: one stuck command can't hold up the rest
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
@@ -134,6 +134,19 @@ rshot() {
   [ $bad = 1 ] || rm -f "$OUT/$name.live.txt"
   [ -s "$OUT/$name.png" ] || rm -f "$OUT/$name.png"
 }
+# homeq: a quick look at Home (+ Profile) with this careful picture taker — every phone command has a time limit,
+# a phone that stops is started again, and the phone's log is kept for a picture that went wrong
+if [ "$SET" = homeq ]; then
+  R="--es tf_preview home"
+  rshot h01-home 9
+  rshot h02-home-girl 9 --ez tf_girl true
+  rshot h03-home-scroll1 10 --es tf_open scroll1
+  rshot h04-home-scroll2 10 --es tf_open scroll2
+  R="--es tf_preview profile"
+  rshot p01-profile 9
+  alive && T 30 adb logcat -d > "$OUT/logcat-last.txt"
+  exit 0
+fi
 rshot r01-recent 8
 # the list alone (no card): scrolled, empty, couldn't load, loading
 rshot r12-recent-end 3 --es tf_open scroll
@@ -189,7 +202,7 @@ if [ "$SET" = supa2 ]; then bash ci/supa-test.sh "$APK" "$OUT" ravi; exit 0; fi
 if [ "$SET" = mapperf ]; then bash ci/mapperf.sh "$APK" "$OUT"; exit 0; fi
 # what each map layer costs to draw (ci/mapcost.sh)
 if [ "$SET" = mapcost ]; then bash ci/mapcost.sh "$APK" "$OUT"; exit 0; fi
-if [ "$SET" = home ] || [ "$SET" = homeq ]; then
+if [ "$SET" = home ]; then
 # ── native Home, bottom bar, Profile (+ its pages and Settings screens), Edit your profile, Verification ──
 P="--es tf_preview"
 nshot() {
@@ -217,8 +230,6 @@ nshot h02-home-girl 9 $P home --ez tf_girl true
 nshot h03-home-scroll1 10 $P home --es tf_open scroll1
 nshot h04-home-scroll2 10 $P home --es tf_open scroll2
 nshot h05-home-scroll3 10 $P home --es tf_open scroll3
-# homeq: only the first Home pictures and Profile (a quick look; the whole home set can run past the time limit)
-if [ "$SET" = homeq ]; then nshot p01-profile 9 $P profile; exit 0; fi
 nshot h06-home-daily 11 $P home --es tf_open daily
 nshot h07-home-confirm 10 $P home --es tf_open confirm
 nshot h08-home-person 10 $P home --es tf_open person
