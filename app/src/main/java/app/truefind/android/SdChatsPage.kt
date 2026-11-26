@@ -19,9 +19,8 @@ import java.util.Calendar
 import java.util.Locale
 
 /**
- * SECRET DATING · Chat (/secret-app?tab=chat) — the web's ChatList, native:
- * your private chats, newest first, live. Tap a photo → that person's profile (story · Open Chat);
- * tap the name / message → the chat itself. Search by name. The bottom bar stays the web's own.
+ * RECONNECT · Chat (/secret-app?tab=chat) — the web's ChatList, native:
+ * your private chats, newest first, live. A tap anywhere on a row opens the chat itself. Search by name. The bottom bar stays the web's own.
  */
 @SuppressLint("ViewConstructor")
 class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
@@ -304,18 +303,12 @@ class SdChatsPage(private val h: SecretHome) : FrameLayout(h.context) {
     }
 
     private fun row(c: Chat): View {
-        val st = h.chatStoryFor(c.uid, c.pid, "")
         val locked = h.premiumInfo.second && !h.isPremium && !c.demo
         val r = hbox(context, 12f).apply { background = rounded(Color.WHITE, 20f, 1f, if (c.unread > 0) Rs.c("#F3A7C6") else Rs.LINE); setPadding(dpi(10f), dpi(10f), dpi(10f), dpi(10f)) }
-        // the photo (a story ring when they have one) → the chat, as the rest of the row (owner, 23 Nov)
+        // the photo → the chat, as the rest of the row (owner, 23 Nov)
         val ph = FrameLayout(context)
-        val ring = FrameLayout(context).apply {
-            if (st != null) {
-                background = if (st.optBoolean("seen")) oval(Rs.c("#EBC9D9")) else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Rs.c("#E3086C"), Rs.c("#FF84BD"))).apply { shape = GradientDrawable.OVAL }
-                setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
-            }
-        }
-        val inner = FrameLayout(context).apply { background = oval(Rs.c("#F6D6E6"), if (st != null) 2f else 1f, if (st != null) Color.WHITE else K.line2); setPadding(dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f), dpi(if (st != null) 2f else 1f)) }
+        val ring = FrameLayout(context)
+        val inner = FrameLayout(context).apply { background = oval(Rs.c("#F6D6E6"), 1f, K.line2); setPadding(dpi(1f), dpi(1f), dpi(1f), dpi(1f)) }
         val photo = RoundPhoto(context, 56f)
         photo.set(listOf(c.photoThumb, c.photo), Demo.round(JSONObject().put("id", c.pid), Ui.dpi(56f)))
         inner.addView(photo, LayoutParams(-1, -1)); ring.addView(inner, LayoutParams(-1, -1))

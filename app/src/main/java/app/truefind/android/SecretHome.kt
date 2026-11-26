@@ -22,11 +22,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * SECRET DATING · Home — native version of the "home" view of src/pages/SecretApp.jsx.
- * Same data (getDiscoverProfiles, getMapProfiles, getRequestCredits, getStories,
- * getSecretActivity, UserProfile, PremiumAccess), same rules, same look.
- * The Secret Dating bottom bar (Online Map · Home · Chat) is the app's own too (SdNavBar): these pages
- * end where it starts. A member who has not joined Secret Dating yet gets the Join card here (JoinCard).
+ * RECONNECT · Home (26 Nov: Reconnect is now "Reconnect"; the owner took out the Discover cards, the ✕ ♥ likes,
+ * Liked you / Matches, Favorite and Stories — Reconnect keeps the map, the chats and the plans).
+ * Home: the header (photo · logo · credits), Complete your profile, Notifications (who messaged you or viewed your
+ * profile) and Private by Design. Data: getDiscoverProfiles (only whether Reconnect is joined), getMapProfiles,
+ * getRequestCredits, getSecretActivity, UserProfile, PremiumAccess.
+ * The Reconnect bottom bar (Home · Chat · Map) is the app's own too (SdNavBar): these pages end where it starts.
+ * A member who has not joined Reconnect yet gets the Join card here (JoinCard).
  */
 @SuppressLint("ViewConstructor")
 class SecretHome(
@@ -52,15 +54,12 @@ class SecretHome(
     private var myId = ""
     private var myProfile: JSONObject? = null                // null = still loading
     private var mine = JSONObject()                           // photo, name, gender, city, state
-    private var storiesState = "loading"
-    private var storiesMine: JSONObject? = null
-    private var storiesAll: List<JSONObject> = emptyList()
     private var activity: JSONObject? = null
     private val freshIds = LinkedHashSet<String>()
     private var actKnown: Set<String>? = null
     private val inviteState = HashMap<String, String>()
     /**
-     * My Secret Dating chats, by the other person's profile id and user id (owner, 20 Nov: after a request was
+     * My Reconnect chats, by the other person's profile id and user id (owner, 20 Nov: after a request was
      * sent, their profile asked for "Send Request" again — the request opens a chat at once, but the profile only
      * knew that when opened from the chat list). A profile with a chat shows Open Chat; Send Request on its card
      * opens the chat. Read as the member (their own matches), not as the app.
@@ -106,25 +105,22 @@ class SecretHome(
     // ── views ──
     private val scroll = ScrollView(ctx)
     private val col = vbox(ctx)
-    /** everything under "Complete your profile": Online Now, the cards, Stories, Private by Design */
+    /** everything under "Complete your profile": Notifications, Private by Design */
     private val body = vbox(ctx)
-    /** not a member of Secret Dating yet: the Join card takes the body's place (JoinAppCard.jsx) */
+    /** not a member of Reconnect yet: the Join card takes the body's place (JoinAppCard.jsx) */
     private var joinCard: View? = null
     private val myPhoto = RoundPhoto(ctx, 43f)
     private val headLeft = FrameLayout(ctx)
     private val headTitle = FrameLayout(ctx)
     private val headRight = FrameLayout(ctx)
     private var headMember: Boolean? = null
-    private val bellBtn = FrameLayout(ctx)
-    private val bellIcon = Icon(Lucide.Bell, Rs.INK, 24f, 2.2f)
-    private val bellBadge = BellBadge(ctx)
     /** the header's parts on this phone: 1 on the test phone's width (411), down to .84 on a narrow one — so the whole logo has room */
     private val headU = (ctx.resources.displayMetrics.widthPixels / Ui.density / 411f).coerceIn(.84f, 1f)
     private val logo = Rs.logo(ctx, (ctx.resources.displayMetrics.widthPixels / Ui.density * .064f).coerceIn(21f, 26f))
     private val myBadge = FrameLayout(ctx)
     private val creditsPill = sdText(ctx, "", 14f, Rs.INK)
     private val pills = ArrayList<TextView>()                 // the same pill on the map and chat pages
-    /** which Secret Dating page: "home" (/secret-app) · "map" (/dating) · "chat" (/secret-app?tab=chat) */
+    /** which Reconnect page: "home" (/secret-app) · "map" (/reconnect-map) · "chat" (/secret-app?tab=chat) */
     var page = "home"; private set
     private val backdrop = PinkBackdrop(ctx)
     private var mapPage: SdMapPage? = null
@@ -133,24 +129,6 @@ class SecretHome(
     private val actBox = FrameLayout(ctx)
     private val completeBtn = LinearLayout(ctx)
     private val completeSub = sdText(ctx, "", 13.5f, Rs.c("#8E2A55"), bold = false)
-    private val deckBox = FrameLayout(ctx)
-    private val deck = SdDeck(ctx, onOpen = { openProfile(it) }, onLike = { p, heart -> likeTap(p, heart) }, isLiked = { isLikedNow(it) })
-    // Discover · Nearby · Favorite over the card (owner's picture, 23 Nov)
-    private var deckTab = "discover"
-    private var deckRestart = false
-    private val deckChips = ArrayList<Triple<String, TextView, Icon>>()
-    /** the people I liked (getMyActivity's "You liked"); null = not asked yet */
-    private var favs: List<JSONObject>? = null
-    private var favSeq = 0
-    private val likedIds = LinkedHashSet<String>()
-    private val unlikedIds = HashSet<String>()
-    private val likedPeople = HashMap<String, JSONObject>()
-    private val liking = HashSet<String>()
-    private val storyRow = LinearLayout(ctx)
-    private val storyLock = LinearLayout(ctx)
-    private val storyLockTitle = sdText(ctx, "", 17f, Rs.c("#9A1246"))
-    private val storyLockSub = sdText(ctx, "", 14f, Rs.c("#8E2A55"), bold = false)
-    private val storyLockIcon = ImageView(ctx)
     private val toast = LinearLayout(ctx)
     private val toastText = sdText(ctx, "", 15f, K.ink2, bold = false)
     private val toastBtn = sdText(ctx, "", 14f, Color.WHITE)
@@ -158,7 +136,7 @@ class SecretHome(
     init {
         SdRules.load(ctx)
         clipChildren = false
-        // nothing of these pages may be drawn below their bottom edge: the Secret Dating bar is there
+        // nothing of these pages may be drawn below their bottom edge: the Reconnect bar is there
         outlineProvider = android.view.ViewOutlineProvider.BOUNDS
         clipToOutline = true
         addView(backdrop, LayoutParams(-1, -1))
@@ -180,18 +158,13 @@ class SecretHome(
         noticeBox.visibility = GONE
         noticeBox.setOnClickListener { notice = ""; noticeBox.visibility = GONE }
         col.addView(noticeBox, lp(MATCH, WRAP, t = 12f))
-        // (Notifications live inside My Activity now — the bell beside Credits, Nov 20)
         buildComplete()
         body.clipChildren = false
         col.addView(body, lp(MATCH, WRAP))
-        // owner's picture (23 Nov): Stories first, then Discover · Nearby · Favorite, the tall card, Private by Design
-        buildStories()
-        buildChips()
-        deckBox.clipChildren = false
-        body.addView(deckBox, lp(MATCH, WRAP, l = -16f, r = -16f, t = 12f))
-        // (SdDeck.fit) the card ends just above the bottom bar on the first screen: its room is measured whenever the page is laid out
-        val roomWatch = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> syncCardRoom() }
-        deckBox.addOnLayoutChangeListener(roomWatch); scroll.addOnLayoutChangeListener(roomWatch)
+        // Reconnect (26 Nov): Notifications (messages · profile views) at the top, then Private by Design
+        body.addView(actBox, lp(MATCH, WRAP, t = 12f))
+        // what is new counts as seen once the box has been on screen for a moment (also after scrolling to it)
+        scroll.setOnScrollChangeListener { _, _, _, _, _ -> if (!seenSent && freshIds.isNotEmpty()) watchSeen() }
         buildPrivate()
         buildToast()
         render()
@@ -236,27 +209,6 @@ class SecretHome(
         return out
     }
     private val onlineIds get() = liveDeck.map { it.optString("id") }.toHashSet()
-    private val storyList: List<JSONObject> get() {
-        val want = if (myGender == "m") "f" else if (myGender == "f") "m" else ""
-        val known = HashMap<String, JSONObject>()
-        for (p in (online ?: emptyList()) + (discover ?: emptyList())) known[p.optString("id")] = p
-        // demo stories (testing only, see SdDemo): after the real ones, of the demo people this member sees — once it is
-        // known who that is (the same moment the demo profiles themselves appear)
-        val all = if (SdDemo.SHOW && online != null) storiesAll + SdDemo.stories(myGender) else storiesAll
-        val list = if (want.isEmpty()) all else all.filter { x -> val g = SdRules.sexOf(x).ifEmpty { SdRules.sexOf(known[x.optString("profile_id")]) }; g.isEmpty() || g == want }
-        val myCity = SdRules.s(me, "city").ifEmpty { SdRules.s(mine, "city") }.trim().lowercase()
-        val here = if (me != null) SdRules.geoOf(SdRules.s(me, "city"), SdRules.s(me, "state")) else SdRules.geoOf(SdRules.s(mine, "city"), SdRules.s(mine, "state"))
-        val withKm = list.map { x ->
-            val who = known[x.optString("profile_id")]
-            val city = SdRules.s(x, "city").ifEmpty { SdRules.s(who, "city") }; val state = SdRules.s(x, "state").ifEmpty { SdRules.s(who, "state") }
-            val km = SdRules.kmBetween(here, SdRules.geoOf(city, state))
-            val sameCity = myCity.isNotEmpty() && city.trim().lowercase() == myCity
-            JSONObject(x.toString()).put("city", city).put("_km", if (sameCity) 0.0 else km)
-        }.filter { it.optDouble("_km", 0.0) <= 500.0 }
-        // not yet seen first; real members' stories before the demo ones (testing only); then the nearest first
-        return withKm.sortedWith(compareBy<JSONObject> { if (it.optBoolean("seen")) 1 else 0 }.thenBy { if (SdDemo.isDemoStory(it)) 1 else 0 }.thenBy { it.optDouble("_km", 1e9) })
-    }
-    private fun storyOf(id: String): JSONObject? = storyList.firstOrNull { it.optString("profile_id") == id }
 
     // ═════════════════ loading ═════════════════
     private var lastSearch: String? = null
@@ -264,7 +216,7 @@ class SecretHome(
         if (on && search != lastSearch) { lastSearch = search; parseNotice(search) }
         if (!on) lastSearch = null
         if (on && view != page) {
-            // another Secret Dating page: its own content (pop-ups of the last one close, as on the web)
+            // another Reconnect page: its own content (pop-ups of the last one close, as on the web)
             layer.closeAll()
             switchTo(view)
             if (shown) { loadAll(); restartPoll() }
@@ -328,7 +280,7 @@ class SecretHome(
         override fun run() {
             // every 90 s while the page is on screen (45 s before 23 Nov night: four lists every 45 s from every phone used up
             // the platform's shared allowance, and then chat messages were "busy") — not the people on the Chats page
-            if (shown) { if (page != "chat") loadPeople(); loadStories(); loadActivity() }
+            if (shown) { if (page != "chat") loadPeople(); loadActivity() }
             main.postDelayed(this, 90_000)
         }
     }
@@ -347,14 +299,14 @@ class SecretHome(
     private fun parseNotice(search: String) {
         val q = android.net.Uri.parse("x://x$search")
         notice = when {
-            q.getQueryParameter("premium") == "success" -> "Payment received — Secret Dating Premium is active!"
+            q.getQueryParameter("premium") == "success" -> "Payment received — Reconnect Premium is active!"
             q.getQueryParameter("premium") == "cancelled" -> "Payment cancelled. You can unlock anytime."
             q.getQueryParameter("credits") == "success" -> "Payment received — request credits added!"
             q.getQueryParameter("credits") == "cancelled" -> "Payment cancelled. You can recharge anytime."
             else -> notice
         }
-        // a tapped notification: open My Activity (Notifications are at its top)
-        if (q.getQueryParameter("activity") != null) main.postDelayed({ if (shown && !needSecret) openMyActivity("liked") }, 300)
+        // a tapped notification: Home, with Notifications at its top
+        if (q.getQueryParameter("activity") != null) main.postDelayed({ if (shown && !needSecret) scroll.smoothScrollTo(0, 0) }, 300)
         renderNotice()
     }
 
@@ -362,14 +314,12 @@ class SecretHome(
         if (!Api.ready) { main.postDelayed({ if (shown) loadAll(done) else done?.invoke() }, 700); return }
         // a plan remembered on this phone counts until the server answers (it is only what's SHOWN)
         if (access == null) prefs.getString("sd_plan_until", "")?.let { u -> if (u.isNotEmpty() && SdRules.ms(u) > System.currentTimeMillis()) access = true to u }
-        var left = 4
+        var left = 3
         val one: () -> Unit = { left -= 1; if (left == 0) done?.invoke() }
-        loadPeople(one); loadStories(one); loadActivity(one); loadMyChats(one)
-        // (Favorite is being looked at: its list is asked again too)
-        if (deckTab == "favorite") loadFavs()
+        loadPeople(one); loadActivity(one); loadMyChats(one)
     }
 
-    // ── pull down to refresh (owner, 19 Nov evening): the home page and the chats, in Secret Dating's own pink ──
+    // ── pull down to refresh (owner, 19 Nov evening): the home page and the chats, in Reconnect's own pink ──
     private val pull: PagePull = run {
         PagePull(this, PullSpinner.PINK, PullSpinner.PINK_RING, canPull = {
             shown && !layer.open && when (page) {
@@ -413,7 +363,7 @@ class SecretHome(
         }
         Api.invoke("getRequestCredits") { r ->
             if (r.ok) {
-                // the same answer the Secret Dating wallet asks for: handed over, so it opens with fresh credits at once
+                // the same answer the Reconnect wallet asks for: handed over, so it opens with fresh credits at once
                 onCredits?.invoke(r.data)
                 val c = r.data.optJSONObject("credits")
                 credits = if (c != null && c.has("available_request_credits") && !c.isNull("available_request_credits")) c.optInt("available_request_credits") else null
@@ -447,26 +397,14 @@ class SecretHome(
         }
     }
 
-    private fun loadStories(done: (() -> Unit)? = null) {
-        Api.invoke("getStories") { r ->
-            done?.invoke()
-            if (r.ok) {
-                storiesState = "ready"
-                storiesMine = r.data.optJSONObject("mine")
-                storiesAll = list(r.data.optJSONArray("stories"))
-            } else {
-                storiesState = if (r.status == 404 || Regex("not.?found", RegexOption.IGNORE_CASE).containsMatchIn(r.error ?: "")) "missing" else if (storiesState == "ready") "ready" else "error"
-            }
-            renderStories()
-        }
-    }
 
     private fun loadActivity(done: (() -> Unit)? = null) {
         Api.invoke("getSecretActivity") { r ->
             done?.invoke()
             val items = r.data.optJSONArray("items")
             if (!r.ok || items == null) { if (activity == null) { activity = JSONObject().put("items", JSONArray()).put("counts", JSONObject()).put("can_see", false); renderActivity() }; return@invoke }
-            val all = list(items)
+            // (likes are gone from Reconnect, 26 Nov: only messages and profile views are shown)
+            val all = list(items).filter { it.optString("kind").ifEmpty { "like" } != "like" }
             all.filter { it.optBoolean("fresh") }.forEach { freshIds.add(it.optString("id")) }
             val known = actKnown
             if (known != null) {
@@ -475,7 +413,7 @@ class SecretHome(
             }
             actKnown = all.map { it.optString("id") }.toSet()
             if ((r.data.optJSONObject("counts")?.optInt("total") ?: 0) > 0) seenSent = false
-            activity = r.data
+            activity = JSONObject(r.data.toString()).put("items", JSONArray().apply { all.forEach { put(it) } })
             renderActivity()
         }
     }
@@ -497,25 +435,15 @@ class SecretHome(
         btn.press().onTap { openMyProfile(false) }
         headLeft.addView(btn, LayoutParams(dpi(52f * u), dpi(52f * u), Gravity.START or Gravity.CENTER_VERTICAL))
         // the logo right after the photo (owner's picture, 23 Nov): the whole name on every phone — it takes the room that is
-        // left between the photo and the bell, and draws itself smaller where that is less than it needs
+        // left between the photo and the credits, and draws itself smaller where that is less than it needs
         headTitle.addView(logo, LayoutParams(-2, -2, Gravity.START or Gravity.CENTER_VERTICAL).apply { leftMargin = dpi(8f * u) })
-        // credits pill — opens the Secret Dating wallet
+        // credits pill — opens the Reconnect wallet
         styleCreditsPill(creditsPill, u)
         val pillBox = FrameLayout(context).apply { addView(creditsPill, LayoutParams(-2, dpi(36f * u), Gravity.CENTER)) }
         pillBox.press().onTap { wallet() }
-        // bell → My Activity (Liked you · You liked · Matches · Requests, with Notifications at its top); what is new shows as
-        // a red number at the bell's corner — beside the bell, not on it, so the bell stays whole (owner, 23 Nov)
-        val bellFace = ImageView(context).apply { setImageDrawable(bellIcon); scaleType = ImageView.ScaleType.FIT_CENTER }
-        val box = maxOf(40f, 44f * u)
-        bellBtn.addView(bellFace, LayoutParams(dpi(24f), dpi(24f), Gravity.START or Gravity.TOP).apply { setMargins(dpi((box - 24f) / 2f - 3f), dpi((box - 24f) / 2f + 2f), 0, 0) })
-        bellBadge.visibility = GONE
-        bellBtn.addView(bellBadge, LayoutParams(-2, -2, Gravity.END or Gravity.TOP).apply { setMargins(0, dpi((box - 24f) / 2f - 8f), dpi((box - 24f) / 2f - 9.5f), 0) })
-        bellBtn.clipChildren = false; bellBtn.clipToPadding = false
-        bellBtn.contentDescription = "My Activity"
-        bellBtn.press().onTap { openMyActivity("liked") }
+        // (no bell any more, 26 Nov: My Activity went with the likes — Notifications are on Home itself)
         val right = hbox(context, 2f)
         right.clipChildren = false
-        right.addView(bellBtn, lp(dpi(box), dpi(box)))
         right.addView(pillBox, lp(WRAP, dpi(44f)))
         headRight.addView(right, LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL))
         row.orientation = LinearLayout.HORIZONTAL
@@ -546,11 +474,11 @@ class SecretHome(
         val vw = resources.displayMetrics.widthPixels / Ui.density
         creditsPill.text = full
         creditsPill.measure(0, 0)
-        val fixed = 32f + 52f * u + 8f * u + maxOf(40f, 44f * u) + 2f + creditsPill.measuredWidth / Ui.density
+        val fixed = 32f + 52f * u + 8f * u + 2f + creditsPill.measuredWidth / Ui.density
         return if (vw - fixed >= LogoView.widthAt(18f) / Ui.density) full else SdRules.fmtCredits(creditsNow)
     }
     /**
-     * a member: photo · TrueFind (right after the photo, in the room that is left) · bell + credits;
+     * a member: photo · TrueFind (right after the photo, in the room that is left) · credits;
      * not a member yet: TrueFind in the middle of the row — the photo's side made as wide as the credits pill's side, and
      * the logo fits itself into what is left between them (on a narrow phone a little smaller, never cut, and the pill
      * keeps its whole "0 Credits")
@@ -569,54 +497,6 @@ class SecretHome(
             it.leftMargin = if (member) dpi(8f * headU) else 0
             logo.layoutParams = it
         }
-        bellBtn.visibility = if (member) VISIBLE else GONE
-    }
-    /** the bell: a red number at its corner while new likes / messages / views are unseen */
-    private fun renderBell() {
-        val n = activity?.optJSONObject("counts")?.optInt("total") ?: 0
-        bellIcon.tint(Rs.INK, null)
-        bellBadge.count = n
-        bellBadge.visibility = if (n > 0) VISIBLE else GONE
-        onLikesDot?.invoke(n > 0)
-        bellBtn.contentDescription = if (n > 0) "My Activity, $n new" else "My Activity"
-    }
-    /**
-     * What is new, at the bell's corner: a red circle with the number in it ("9+" over nine), a fine edge in the page's
-     * colour around it. Its opacity goes 1 → .55 → 1 every 1.1 s (sd-ndot) — only while it can be seen (no work for a
-     * hidden page).
-     */
-    private class BellBadge(ctx: Context) : View(ctx) {
-        var count = 0
-            set(v) { if (field != v) { field = v; requestLayout(); invalidate() } }
-        private val label get() = if (count > 9) "9+" else count.toString()
-        private val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#E11D48") }
-        private val edge = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = Rs.BG_TOP }
-        private val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE; typeface = Ui.bold; textSize = Ui.dp(10.5f); textAlign = android.graphics.Paint.Align.CENTER
-        }
-        private val r = android.graphics.RectF()
-        private val a = android.animation.ObjectAnimator.ofPropertyValuesHolder(this, android.animation.PropertyValuesHolder.ofKeyframe(View.ALPHA,
-            android.animation.Keyframe.ofFloat(0f, 1f), android.animation.Keyframe.ofFloat(.6f, .55f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() },
-            android.animation.Keyframe.ofFloat(1f, 1f).apply { interpolator = android.view.animation.AccelerateDecelerateInterpolator() })).apply { duration = 1100; repeatCount = -1 }
-        private var seen = false
-        private fun sync() {
-            val on = seen && isAttachedToWindow && !GlobeMap.REDUCED
-            if (on && !a.isStarted) a.start() else if (!on && a.isStarted) { a.cancel(); alpha = 1f }
-        }
-        override fun onMeasure(w: Int, h: Int) {
-            val side = Ui.dpi(18.5f)
-            setMeasuredDimension(maxOf(side, kotlin.math.ceil(text.measureText(label) + Ui.dp(9.5f)).toInt()), side)
-        }
-        override fun onDraw(c: android.graphics.Canvas) {
-            val e = Ui.dp(1.4f)
-            r.set(0f, 0f, width.toFloat(), height.toFloat()); c.drawRoundRect(r, height / 2f, height / 2f, edge)
-            r.inset(e, e); c.drawRoundRect(r, r.height() / 2f, r.height() / 2f, fill)
-            val m = text.fontMetrics
-            c.drawText(label, width / 2f, height / 2f - (m.ascent + m.descent) / 2f, text)
-        }
-        override fun onVisibilityAggregated(isVisible: Boolean) { super.onVisibilityAggregated(isVisible); seen = isVisible; sync() }
-        override fun onAttachedToWindow() { super.onAttachedToWindow(); sync() }
-        override fun onDetachedFromWindow() { a.cancel(); super.onDetachedFromWindow() }
     }
 
     /** the little white "+" circle at the end of the credits pill */
@@ -652,61 +532,7 @@ class SecretHome(
         col.addView(completeBtn, lp(MATCH, WRAP, t = 12f))
     }
 
-    private fun buildStories() {
-        // Stories at the top of Home (owner's picture, 23 Nov). A story is added from the row's first circle, "Your Story" —
-        // the "+ Add Story" that stood at the end of this line was one way too many (owner, 23 Nov evening); the line keeps
-        // the height it had with it
-        val head = hbox(context)
-        head.addView(Rs.section(context, "Stories"), lp(0, WRAP, 1f))
-        head.minimumHeight = dpi(36f)
-        body.addView(head, lp(MATCH, WRAP, t = 8f, b = 4f))
-        val hs = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER; clipToPadding = false }
-        storyRow.orientation = LinearLayout.HORIZONTAL
-        storyRow.setPadding(dpi(12f), dpi(2f), dpi(12f), dpi(2f))
-        hs.addView(storyRow)
-        body.addView(hs, lp(MATCH, WRAP, l = -16f, r = -16f))
-        // "Stories are Premium Only" / "Verify to use Stories free"
-        storyLock.orientation = LinearLayout.HORIZONTAL; storyLock.gravity = Gravity.CENTER_VERTICAL
-        storyLock.background = rounded(Color.WHITE, 16f, 1f, Rs.LINE)
-        storyLock.setPadding(dpi(10f), dpi(8f), dpi(8f), dpi(8f))
-        storyLockIcon.scaleType = ImageView.ScaleType.CENTER; storyLockIcon.background = K.badge()
-        storyLock.addView(storyLockIcon, lp(dpi(40f), dpi(40f), r = 10f))
-        val t = vbox(context); t.addView(storyLockTitle); t.addView(storyLockSub, lp(WRAP, WRAP, t = 2f))
-        storyLock.addView(t, lp(0, WRAP, 1f))
-        storyLock.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.ChevronRight, K.wine, 20f, 2.4f)) }, lp(dpi(20f), dpi(20f), l = 10f))
-        storyLock.press().onTap { locked("watch") }
-        body.addView(storyLock, lp(MATCH, WRAP, t = 8f))
-    }
 
-    /** Discover (everyone online) · Nearby (the nearest first) · Favorite (the people you liked) — flat chips, the chosen one maroon */
-    private fun buildChips() {
-        val row = hbox(context, 8f)
-        for ((key, label, path) in listOf(Triple("discover", "Discover", Lucide.Flame), Triple("nearby", "Nearby", Lucide.MapPin), Triple("favorite", "Favorite", Lucide.Star))) {
-            val ic = Icon(path, Rs.ICON, 16f, 2.1f)
-            val t = sdText(context, label, 15f, Rs.ICON).inlineIcon(ic, 6f).apply { gravity = Gravity.CENTER; maxLines = 1 }
-            t.press().onTap { pickDeck(key) }
-            deckChips.add(Triple(key, t, ic))
-            row.addView(t, lp(0, dpi(40f), 1f))
-        }
-        body.addView(row, lp(MATCH, WRAP, t = 12f))
-        paintChips()
-    }
-    private fun paintChips() {
-        for ((key, t, ic) in deckChips) {
-            val on = key == deckTab
-            t.background = if (on) Rs.flat(Rs.M, 20f) else rounded(Rs.CHIP, 20f, 1f, Rs.LINE)
-            val col = if (on) Color.WHITE else Rs.ICON
-            t.setTextColor(col); ic.tint(col, if (on && key != "nearby") col else null); t.invalidate()
-            t.contentDescription = "${t.text.toString().trim('\uFFFC')}${if (on) ", chosen" else ""}"
-        }
-    }
-    private fun pickDeck(key: String) {
-        if (deckTab == key) return
-        deckTab = key
-        deckRestart = true
-        if (key == "favorite") loadFavs()
-        render()
-    }
 
     private fun buildPrivate() {
         // owner's picture (23 Nov): four plain rows — an icon, a short title, one clear line
@@ -766,7 +592,7 @@ class SecretHome(
         }
         val creditsFull = "${SdRules.fmtCredits(creditsNow)} Credits"
         creditsPill.text = headerCredits(!needSecret)
-        creditsPill.contentDescription = "${creditsNow?.let { "$it credits" } ?: "Credits"}. Open Secret Dating wallet"
+        creditsPill.contentDescription = "${creditsNow?.let { "$it credits" } ?: "Credits"}. Open Reconnect wallet"
         renderNotice()
         // complete-profile prompt
         val showComplete = profileKnown && missing.isNotEmpty() && !needSecret
@@ -774,143 +600,35 @@ class SecretHome(
         completeSub.text = "Add ${missing.joinToString(", ") { SdRules.NEED_LABEL[it] ?: it }} to unlock Premium features."
         actBox.visibility = if (needSecret) GONE else VISIBLE
         layoutHeader(!needSecret)
-        // not a member yet: the Join card instead of Online Now, the cards, Stories and Private by Design
+        // not a member yet: the Join card instead of Notifications and Private by Design
         body.visibility = if (needSecret) GONE else VISIBLE
         if (needSecret && joinCard == null) {
             joinCard = JoinCard.build(context, "secret") { needSecret = false; render(); loadPeople() }
                 .also { col.addView(it, col.indexOfChild(body), lp(MATCH, WRAP, t = 22f)) }
         } else if (!needSecret) joinCard?.let { col.removeView(it); joinCard = null }
-        renderDeck()
         renderActivity()
-        renderStories()
         for (p in pills) p.text = creditsFull
         if (page == "map") mapPage?.render()
         if (page == "chat") chatPage?.render()
     }
 
-    /** the heart in the bottom bar gets a red dot while new likes / messages wait (MainActivity sets this) */
+    /** Home in the bottom bar gets a red dot while new messages / profile views wait (MainActivity sets this) */
     var onLikesDot: ((Boolean) -> Unit)? = null
-    /** Secret Dating Home has just read the credits (MainActivity hands them to the Wallet) */
+    /** Reconnect Home has just read the credits (MainActivity hands them to the Wallet) */
     var onCredits: ((JSONObject) -> Unit)? = null
     private fun renderNotice() {
         noticeBox.text = notice
         noticeBox.visibility = if (notice.isNotEmpty()) VISIBLE else GONE
     }
 
-    private var deckState = ""
-    private var nearKey = ""
-    private var nearList: List<JSONObject> = emptyList()
-    /** Nearby: the same people, the nearest first, with how far they are on the card (my city from my profile) */
-    private fun nearbyDeck(): List<JSONObject> {
-        val base = liveDeck
-        val my = if (me != null) me else mine
-        val city = SdRules.s(my, "city"); val state = SdRules.s(my, "state")
-        if (city.isEmpty() && state.isEmpty()) return base
-        val key = "$city|$state|" + base.joinToString(",") { it.optString("id") + (if (isLikedNow(it)) "+" else "") }
-        if (key != nearKey) {
-            nearKey = key
-            val here = SdRules.geoOf(city, state)
-            nearList = base.map { p -> JSONObject(p.toString()).put("_km", SdRules.kmBetween(here, SdRules.geoOf(SdRules.s(p, "city"), SdRules.s(p, "state")))) }.sortedBy { it.optDouble("_km") }
-        }
-        return nearList
-    }
-    /** Favorite: the people I liked — the ones liked just now first, then My Activity's "You liked" */
-    private fun favList(): List<JSONObject>? {
-        val known = favs
-        if (known == null && likedIds.isEmpty()) return null       // still asking
-        val pool = (online ?: emptyList()) + (discover ?: emptyList())
-        val out = ArrayList<JSONObject>(); val seen = HashSet<String>()
-        for (id in likedIds.toList().asReversed()) (likedPeople[id] ?: pool.firstOrNull { it.optString("id") == id })?.let { if (seen.add(id)) out.add(it) }
-        for (p in known ?: emptyList()) { val id = p.optString("id"); if (id !in unlikedIds && seen.add(id)) out.add(p) }
-        for (p in pool) { val id = p.optString("id"); if (p.optBoolean("liked_by_me") && id !in unlikedIds && seen.add(id)) out.add(p) }
-        return out
-    }
-    private fun loadFavs() {
-        val my = ++favSeq
-        Api.invoke("getMyActivity", JSONObject()) { r ->
-            if (my != favSeq) return@invoke
-            if (r.ok && r.data.optString("error").isEmpty()) {
-                favs = list(r.data.optJSONArray("you_liked")).mapNotNull { it.optJSONObject("person") }.filter { it.optString("id").isNotEmpty() }.map { it.put("liked_by_me", true) }
-            } else if (favs == null) favs = emptyList()
-            render()
-        }
-    }
-    private fun isLikedNow(p: JSONObject): Boolean { val id = p.optString("id"); return id in likedIds || (p.optBoolean("liked_by_me") && id !in unlikedIds) }
 
-    /** ♥ on a Home card: the same like as the heart on a profile (likeProfile) — they are told, and the person goes into Favorite */
-    private fun likeTap(p: JSONObject, heart: View) {
-        val id = p.optString("id")
-        if (id.isEmpty() || id in liking || sameGender(p)) return
-        val next = !isLikedNow(p)
-        fun mark(on: Boolean) { if (on) { likedIds.add(id); unlikedIds.remove(id); likedPeople[id] = p } else { likedIds.remove(id); unlikedIds.add(id) } }
-        if (next) HeartBurst.play(heart, layer.root)
-        // a demo profile (testing only): the heart changes here, but no like is sent anywhere
-        if (SdDemo.isDemo(p)) { mark(next); if (next) say("Demo profile: likes reach real members only"); render(); afterLike(next); return }
-        mark(next); liking.add(id); render()
-        val first = SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "They" }
-        Api.invoke("likeProfile", JSONObject().put("to_profile_id", id).put("app", "secret").put("action", if (next) "like" else "unlike")) { r ->
-            liking.remove(id)
-            if (r.ok && r.data.optString("error").isEmpty()) {
-                online = online?.map { if (it.optString("id") == id) it.put("liked_by_me", next) else it }
-                if (next) say(if (r.data.optBoolean("mutual")) "You both like each other" else "$first will be notified")
-            } else {
-                mark(!next)
-                say(r.data.optString("message").ifEmpty { r.data.optString("error").ifEmpty { "Couldn't send the like. Try again." } }, "err")
-            }
-            render()
-        }
-        afterLike(next)
-    }
-    /** after a like the next profile comes (not while looking through Favorite) */
-    private fun afterLike(on: Boolean) { if (on && deckTab != "favorite") main.postDelayed({ if (shown && page == "home" && !layer.open) deck.next() }, 560) }
 
-    private fun syncCardRoom() {
-        if (!SdDeck.fit || scroll.height <= 0 || deckBox.top <= 0) return
-        // (at least 1 = "measured", also where the first screen has no room left for the card: a very short or sideways phone)
-        val room = maxOf(1, scroll.height - (body.top + deckBox.top) - dpi(18f))
-        if (deck.room > 0 && kotlin.math.abs(room - deck.room) <= 1) return
-        // (not inside this layout pass: the card's new height asks for a layout of its own)
-        post { deck.room = room; deckState = ""; render() }
-    }
 
-    /** the cards of the chosen chip: everyone online · the nearest first · the people I liked (null: still loading) */
-    private fun deckList(): List<JSONObject>? = when (deckTab) {
-        "favorite" -> favList()
-        "nearby" -> if (online == null && discover == null) null else nearbyDeck()
-        else -> if (online == null && discover == null) null else liveDeck
-    }
-    private fun renderDeck() {
-        paintChips()
-        val people = deckList()
-        // (SdDeck.fit) the card is as tall as the room down to the bottom bar: until the page's first layout has measured that,
-        // the plain placeholder stays, so the card never shows in one height and then jumps to another
-        val unsized = SdDeck.fit && deck.room <= 0
-        if (unsized) syncCardRoom()
-        val state = if (people == null || unsized) "loading" else if (people.isNotEmpty()) "deck" else "empty-$deckTab"
-        if (state != deckState) {
-            deckState = state
-            deckBox.removeAllViews()
-            val w = SdDeck.cardW(context); val hh = SdDeck.cardH(w, deck.room)
-            when {
-                state == "loading" -> deckBox.addView(View(context).apply { background = rounded(Rs.c("#FCE4F0"), 26f) }, LayoutParams(w, hh, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
-                state == "deck" -> deckBox.addView(deck, LayoutParams(-1, -2))
-                else -> {
-                    val card = vbox(context, 0f, Gravity.CENTER_HORIZONTAL).apply { background = rounded(Color.WHITE, 26f, 1f, Rs.LINE); setPadding(dpi(22f), dpi(46f), dpi(22f), dpi(46f)) }
-                    val fav = deckTab == "favorite"
-                    card.addView(ImageView(context).apply { setImageDrawable(Icon(if (fav) Lucide.Star else Lucide.Sparkles, K.rose, 30f, 1.6f)) }, lp(dpi(30f), dpi(30f)))
-                    card.addView(sdText(context, if (fav) "No favorites yet" else "No one online right now", 22f, K.wine, serif = true).apply { gravity = Gravity.CENTER }, lp(WRAP, WRAP, t = 12f))
-                    card.addView(sdText(context, if (fav) "Tap the heart on a profile you like. It shows up here." else "Members appear here the moment they come online.", 15f, K.sub, bold = false).apply { gravity = Gravity.CENTER; lineHeight(1.2f) }, lp(WRAP, WRAP, t = 6f))
-                    deckBox.addView(card, LayoutParams(w, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = dpi(2f) })
-                }
-            }
-        }
-        if (people != null && state == "deck") { deck.set(people, deckRestart); deckRestart = false; deck.refresh() }
-    }
 
-    // ── Notifications (who liked you, messaged you, viewed your profile) ──
+    // ── Notifications (who messaged you, viewed your profile) ──
     private var actAll = false
     private fun renderActivity() {
-        renderBell()
+        onLikesDot?.invoke((activity?.let { a -> list(a.optJSONArray("items")).count { it.optString("id") in freshIds } } ?: 0) > 0)
         actBox.removeAllViews()
         if (needSecret) return
         val data = activity
@@ -928,7 +646,7 @@ class SecretHome(
         head.addView(bell, lp(dpi(42f), dpi(42f)))
         val t = vbox(context)
         t.addView(sdText(context, "Notifications", 21f, K.wine, serif = true))
-        t.addView(sdText(context, when { data == null -> "Checking…"; fresh.isNotEmpty() -> "${fresh.size} new for you"; items.isNotEmpty() -> "You're all caught up"; else -> "Likes, messages and profile views" },
+        t.addView(sdText(context, when { data == null -> "Checking…"; fresh.isNotEmpty() -> "${fresh.size} new for you"; items.isNotEmpty() -> "You're all caught up"; else -> "Messages and profile views" },
             13.5f, if (fresh.isNotEmpty()) K.hot else K.sub, bold = fresh.isNotEmpty()), lp(WRAP, WRAP, t = 2f))
         head.addView(t, lp(0, WRAP, 1f))
         if (fresh.isNotEmpty()) head.addView(sdText(context, if (fresh.size > 99) "99+" else fresh.size.toString(), 14f, Color.WHITE).apply {
@@ -937,18 +655,18 @@ class SecretHome(
         box.addView(head, lp(MATCH, WRAP))
         when {
             data == null -> { for (i in 0..1) box.addView(View(context).apply { background = rounded(Rs.c("#FCE4F0"), 14f) }, lp(MATCH, dpi(52f), l = 4f, r = 4f, t = if (i == 0) 12f else 8f)) }
-            all.isEmpty() -> box.addView(sdText(context, "When someone likes you, messages you or views your profile, you'll see it here.", 14f, K.sub, bold = false).apply {
+            all.isEmpty() -> box.addView(sdText(context, "When someone messages you or views your profile, you'll see it here.", 14f, K.sub, bold = false).apply {
                 gravity = Gravity.CENTER; lineHeight(1.2f); background = rounded(K.tint2, 14f); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f))
             }, lp(MATCH, WRAP, l = 4f, r = 4f, t = 10f, b = 2f))
             else -> {
                 val chips = hbox(context, 6f).apply { setPadding(dpi(2f), dpi(12f), dpi(2f), dpi(2f)) }
                 fun count(kind: String) = items.filter { it.optString("kind") == kind }.sumOf { if (kind == "message") (it.optInt("unread").takeIf { u -> u > 0 } ?: it.optInt("count").takeIf { c -> c > 0 } ?: 1) else 1 }
-                for ((k, l, ic) in listOf(Triple("like", "Like", Lucide.Heart), Triple("message", "Message", Lucide.MessageCircleMore), Triple("view", "View", Lucide.Eye))) {
+                for ((k, l, ic) in listOf(Triple("message", "Message", Lucide.MessageCircleMore), Triple("view", "View", Lucide.Eye))) {
                     val n = count(k)
                     val col = if (n > 0) K.wine else Rs.c("#B8A3AE")
                     // icon + count side by side in the middle of the chip
                     val chip = FrameLayout(context).apply { background = rounded(if (n > 0) K.tint else Rs.c("#FAF5F8"), 15f) }
-                    chip.addView(sdText(context, "$n ${if (n == 1) l else "${l}s"}", 13f, col).icon(Icon(ic, col, 14f, 2.4f, if (k == "like" && n > 0) col else null), 5f).apply {
+                    chip.addView(sdText(context, "$n ${if (n == 1) l else "${l}s"}", 13f, col).icon(Icon(ic, col, 14f, 2.4f), 5f).apply {
                         gravity = Gravity.CENTER; maxLines = 1
                     }, LayoutParams(-2, -1, Gravity.CENTER))
                     chips.addView(chip, lp(0, dpi(30f), 1f))
@@ -979,16 +697,13 @@ class SecretHome(
     }
 
     private fun activityRow(x: JSONObject, canSee: Boolean, isNew: Boolean): View {
-        val kind = x.optString("kind").ifEmpty { "like" }
+        val kind = x.optString("kind").ifEmpty { "message" }
         val p = x.optJSONObject("person")
         val show = canSee && p != null
-        val bg = when (kind) { "message" -> K.hot; "view" -> K.wine; else -> Rs.c("#F0386B") }
-        val ic = when (kind) { "message" -> Lucide.MessageCircleMore; "view" -> Lucide.Eye; else -> Lucide.Heart }
-        val text = when (kind) {
-            "message" -> if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"
-            "view" -> if (x.optInt("count") > 1) "viewed your profile ${x.optInt("count")} times" else "viewed your profile"
-            else -> if (x.optBoolean("mutual")) "likes you — you liked them too" else "liked your profile"
-        }
+        val bg = if (kind == "view") K.wine else K.hot
+        val ic = if (kind == "view") Lucide.Eye else Lucide.MessageCircleMore
+        val text = if (kind == "view") { if (x.optInt("count") > 1) "viewed your profile ${x.optInt("count")} times" else "viewed your profile" }
+            else { if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message" }
         val at = SdRules.timeAgo(x.optString("at")).let { if (it == "just now") "Just now" else it }
         val row = hbox(context, 11f).apply {
             setPadding(dpi(8f), dpi(9f), dpi(8f), dpi(9f))
@@ -1002,7 +717,7 @@ class SecretHome(
             ringB.addView(ph, LayoutParams(-1, -1))
             face.addView(ringB, LayoutParams(dpi(50f), dpi(50f), Gravity.CENTER))
         } else face.addView(BlurFace(context, x.optString("g")), LayoutParams(dpi(48f), dpi(48f), Gravity.CENTER))
-        face.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Color.WHITE, 11f, 2.6f, if (kind == "like") Color.WHITE else null)); scaleType = ImageView.ScaleType.CENTER; background = oval(bg, 2f, Color.WHITE) },
+        face.addView(ImageView(context).apply { setImageDrawable(Icon(ic, Color.WHITE, 11f, 2.6f)); scaleType = ImageView.ScaleType.CENTER; background = oval(bg, 2f, Color.WHITE) },
             LayoutParams(dpi(21f), dpi(21f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -dpi(3f); bottomMargin = -dpi(3f) })
         row.addView(face, lp(dpi(48f), dpi(48f)))
         val mid = vbox(context)
@@ -1079,9 +794,9 @@ class SecretHome(
         }
     }
 
-    /** the box was on screen (in My Activity) for a moment: what is new counts as seen */
+    /** the box was on screen (Home) for a moment: what is new counts as seen */
     private val seenCheck = Runnable {
-        if (seenSent || !shown || actPage?.isOpen != true) return@Runnable
+        if (seenSent || !shown || page != "home") return@Runnable
         val r = Rect()
         if (actBox.isShown && actBox.getGlobalVisibleRect(r) && r.height() >= actBox.height * 0.4f) { seenSent = true; markActivitySeen() }
     }
@@ -1090,105 +805,16 @@ class SecretHome(
         main.removeCallbacks(seenCheck)
         main.postDelayed(seenCheck, 1200)
     }
-    /** My Activity scrolled: look again in a moment */
-    fun activitySeenSoon() { if (!seenSent && freshIds.isNotEmpty()) watchSeen() }
 
-    // ── My Activity (the bell): Notifications at its top, then Liked you · You liked · Matches · Requests ──
-    private var actPage: SdActivity? = null
-    fun openMyActivity(start: String = "liked", all: Boolean = false, aboveBar: Int = 0) {
-        if (needSecret) return
-        if (actPage?.isOpen == true) return
-        actAll = all   // the Notifications list starts short each time (See all N opens it in place)
-        actPage = SdActivity.open(this, start, aboveBar)
-        if (aboveBar > 0) onActivityBar?.invoke(true)
-        watchSeen()
-    }
-    /** the Notifications box goes into the My Activity page that is opening */
-    fun attachActivityBox(parent: LinearLayout, params: LinearLayout.LayoutParams) {
-        (actBox.parent as? android.view.ViewGroup)?.removeView(actBox)
-        parent.addView(actBox, params)
-        renderActivity()
-    }
-    fun activityClosed(page: SdActivity) { if (actPage === page) { actPage = null; onActivityBar?.invoke(false) } }
-    /** My Activity is open from the bottom bar's heart (true) / has closed (false): the bar lights the heart */
-    var onActivityBar: ((Boolean) -> Unit)? = null
-    /** close My Activity if it is open (another tab of the bottom bar was tapped) */
-    fun closeMyActivity() { actPage?.takeIf { it.isOpen }?.close() }
     /** a credits pill made for a page that has closed (its number no longer needs keeping up to date) */
     fun forgetPill(wrapper: View) { (wrapper as? android.view.ViewGroup)?.getChildAt(0)?.let { pills.remove(it) } }
     fun openChatId(id: String) { layer.closeAll(); go("/chat/$id", JSONObject().put("openChat", 1)) }
 
-    // ── stories ──
-    private fun renderStories() {
-        storyRow.removeAllViews()
-        val list = storyList
-        val sm = storiesMine
-        if (sm != null) storyRow.addView(storyRing("mine", listOf(mine.optString("photo")), "Your Story", eyeSub(sm.optInt("views")), false, null) {
-            StoryViewer.open(this, listOf(JSONObject(sm.toString()).put("photo", mine.optString("photo"))), 0, true)
-        }.apply { contentDescription = "Your story, ${sm.optInt("views")} views" })
-        else storyRow.addView(storyRing("add", emptyList(), "Your Story", null, false, null) { if (canUse) addStory() else locked("story") }.apply {
-            contentDescription = if (canUse) "Add to your story" else "Add to your story, Premium only"
-        })
-        list.forEachIndexed { i, s ->
-            storyRow.addView(storyRing(if (s.optBoolean("seen")) "seen" else "new", listOf(SdRules.s(s, "photo_thumb"), SdRules.s(s, "photo")),
-                SdRules.firstName(SdRules.s(s, "name")), null, !canUse, s) { if (canUse) openStories(i) else locked("watch") })
-        }
-        if (list.isEmpty()) {
-            val empty = when (storiesState) { "missing" -> "Stories are switching on soon."; "loading" -> ""; else -> "No stories within 500 km yet." }
-            if (empty.isNotEmpty()) storyRow.addView(sdText(context, empty, 14f, K.sub, bold = false).apply { lineHeight(1.15f); maxWidth = dpi(230f); setPadding(dpi(8f), 0, dpi(8f), dpi(18f)) },
-                LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.CENTER_VERTICAL })
-        }
-        val locked = premiumKnown && !canUse
-        storyLock.visibility = if (locked) VISIBLE else GONE
-        if (locked) {
-            storyLockTitle.text = if (girlUnverified) "Verify to use Stories free" else "Stories are Premium Only"
-            storyLockSub.text = if (girlUnverified) "Verified girls post and watch stories free." else "Only Premium Members can watch or post stories."
-            storyLockIcon.setImageDrawable(if (girlUnverified) Icon(Lucide.ShieldCheck, Color.WHITE, 24f, 2f) else Icon(Lucide.Crown, Color.WHITE, 23f, 2f, Color.WHITE))
-        }
-    }
-    private fun eyeSub(views: Int) = sdText(context, views.toString(), 12f, K.sub, bold = false).icon(Icon(Lucide.Eye, K.sub, 12f), 2f)
-    private fun pinSub(t: String) = sdText(context, t, 12f, K.sub, bold = false).icon(Icon(Lucide.MapPin, K.sub, 12f, 2.2f), 2f).oneLine()
 
-    private fun storyRing(kind: String, photos: List<String>, label: String, sub: TextView?, crown: Boolean, story: JSONObject?, onClick: () -> Unit): View {
-        // a little bigger (owner, 24 Nov: 54 → 62), and no place line under the name any more
-        val size = 62f
-        val col = vbox(context, 4f, Gravity.CENTER_HORIZONTAL)
-        val ringBox = FrameLayout(context).apply { clipChildren = false }
-        if (kind == "add") {
-            ringBox.addView(ImageView(context).apply {
-                setImageDrawable(Icon(Lucide.Plus, K.hot, size * 0.46f, 2.6f)); scaleType = ImageView.ScaleType.CENTER
-                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.c("#FFF3F9"), Rs.c("#FDDDEC"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Rs.c("#EC4E98")) }
-                elevation = Ui.dp(2f)
-            }, FrameLayout.LayoutParams(dpi(size), dpi(size)))
-        } else {
-            val ring = FrameLayout(context).apply {
-                background = when (kind) {
-                    "seen" -> oval(Rs.c("#EBC9D9"))
-                    "mine" -> RingDrawable(intArrayOf(Rs.c("#F43D95"), Rs.c("#8E1243"), Rs.c("#FF7DBB"), Rs.c("#F43D95")), floatArrayOf(0f, .55f, .85f, 1f))
-                    else -> RingDrawable(intArrayOf(Rs.c("#FF7DBB"), Rs.c("#E3086C"), Rs.c("#8E1243"), Rs.c("#FF9CCB"), Rs.c("#FF7DBB")), floatArrayOf(0f, .4f, .7f, .9f, 1f))
-                }
-                setPadding(dpi(2.5f), dpi(2.5f), dpi(2.5f), dpi(2.5f))
-            }
-            val wb = FrameLayout(context).apply { background = oval(Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-            val ph = RoundPhoto(context, size)
-            ph.set(photos, story?.let { Demo.round(JSONObject().put("id", it.optString("profile_id")).put("gender", it.optString("gender")), dpi(size)) })
-            wb.addView(ph, FrameLayout.LayoutParams(-1, -1)); ring.addView(wb, FrameLayout.LayoutParams(-1, -1))
-            ringBox.addView(ring, FrameLayout.LayoutParams(dpi(size), dpi(size)))
-        }
-        if (crown) ringBox.addView(ImageView(context).apply {
-            setImageDrawable(Icon(Lucide.Crown, Color.WHITE, 12f, 2.2f, Color.WHITE)); scaleType = ImageView.ScaleType.CENTER
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Rs.c("#F23D93"), Rs.c("#C20A5E"))).apply { shape = GradientDrawable.OVAL; setStroke(dpi(2f), Color.WHITE) }
-        }, FrameLayout.LayoutParams(dpi(22f), dpi(22f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -dpi(4f); bottomMargin = -dpi(2f) })
-        col.addView(ringBox, lp(dpi(size), dpi(size)))
-        col.addView(sdText(context, label, 13f, if (kind == "seen") K.soft else K.ink).oneLine().apply { maxWidth = dpi(size + 8f) })
-        if (sub != null) col.addView(sub.apply { maxWidth = dpi(size + 8f) }, lp(WRAP, WRAP, t = -2f))
-        col.press().onTap(onClick)
-        return FrameLayout(context).apply { addView(col, FrameLayout.LayoutParams(dpi(size + 8f), -2)); setPadding(dpi(1f), 0, dpi(1f), 0) }
-    }
 
     // ═════════════════ actions (same rules as the web) ═════════════════
     fun wallet() = go("/wallet?app=secret", null)
-    /** True Find's Settings (Profile's drawer, the very same screens); Back comes back to Secret Dating */
+    /** True Find's Settings (Profile's drawer, the very same screens); Back comes back to Reconnect */
     fun openSettings() = go("/profile?open=settings", null)
 
     /** Get Premium: the profile must be complete first (otherwise Premium couldn't be used) */
@@ -1234,7 +860,7 @@ class SecretHome(
     val hostRoot: FrameLayout get() = host
     fun clearNotice() { notice = ""; renderNotice(); render() }
     fun goHome() = go("/secret-app", null)
-    /** the same credits pill as the Home header (opens the Secret Dating wallet) */
+    /** the same credits pill as the Home header (opens the Reconnect wallet) */
     fun newCreditsPill(): View {
         val t = sdText(context, "${SdRules.fmtCredits(creditsNow)} Credits", 14f, Rs.INK).apply { styleCreditsPill(this) }
         pills.add(t)
@@ -1262,11 +888,6 @@ class SecretHome(
             .icon(Icon(Lucide.Hourglass, if (renew) Rs.c("#B4183C") else K.wine, 13f), 5f).apply {
                 gravity = Gravity.CENTER_VERTICAL; background = rounded(if (renew) Rs.c("#FFE4E6") else Color.WHITE, 14f); setPadding(dpi(10f), 0, dpi(10f), 0)
             }.also { it.press().onTap { wallet() } }
-    }
-    /** a story from someone you're chatting with (shown on their profile) */
-    fun chatStoryFor(uid: String, pid: String, otherId: String): JSONObject? = storyList.firstOrNull { x ->
-        val xu = x.optString("user_id"); val xp = x.optString("profile_id")
-        (xu.isNotEmpty() && (xu == uid || xu == otherId)) || (xp.isNotEmpty() && (xp == pid || xp == otherId))
     }
     /** the chat was pinned / unpinned (ChatRoom's ⋮ menu) */
     fun chatPinned(id: String, on: Boolean) { chatPage?.setPinned(id, on) }
@@ -1298,7 +919,6 @@ class SecretHome(
     val creditsShown get() = creditsNow
     val until get() = untilText
     fun isSameGender(p: JSONObject) = sameGender(p)
-    fun storyFor(p: JSONObject): JSONObject? = storyOf(p.optString("id")) ?: p.optJSONObject("_story")
     fun inviteOf(id: String) = inviteState[id] ?: ""
     val myProfileNow get() = myProfile ?: JSONObject()
     val gender get() = myGender
@@ -1346,7 +966,7 @@ class SecretHome(
                 when {
                     err == "verify_first" -> verifySheet()
                     err == "opposite_gender_only" -> say(d.optString("message").ifEmpty { "Requests can only be sent to the opposite gender." }, "err")
-                    err == "no_credits" -> { credits = 0; say(d.optString("message").ifEmpty { "No credits left. Credits come with a Secret Dating plan." }, "credits") }
+                    err == "no_credits" -> { credits = 0; say(d.optString("message").ifEmpty { "No credits left. Credits come with a Reconnect plan." }, "credits") }
                     err == "busy" || r.status == 0 || r.status >= 500 -> say(if (r.status == 0) "No connection. Check your internet and try again." else "The server is busy for a moment. Please try again.", "err")
                     r.status == 402 || err == "premium_required" -> say(if (freeGirl) "Requests need credits — they come with a plan." else "Sending requests is for Premium members.", "premium")
                     r.status == 403 -> say(d.optString("message").ifEmpty { err.ifEmpty { "You can't send a request to this person." } }, "err")
@@ -1354,8 +974,6 @@ class SecretHome(
                 }
             }
             render(); refresh()
-            // My Activity shows the request's new status
-            actPage?.takeIf { it.isOpen }?.load()
         }
     }
 
@@ -1379,7 +997,6 @@ class SecretHome(
             if (r.ok) {
                 val id = p.optString("id")
                 online = online?.filter { it.optString("id") != id }; discover = discover?.filter { it.optString("id") != id }
-                storiesAll = storiesAll.filter { it.optString("profile_id") != id }
                 layer.closeAll()
                 say(if (action == "block") "Blocked. You won't see each other anymore." else "Report sent. Our team will review it.")
                 render()
@@ -1387,48 +1004,9 @@ class SecretHome(
         }
     }
 
-    fun liked(id: String, v: Boolean) {
-        online = online?.map { if (it.optString("id") == id) it.put("liked_by_me", v) else it }
-        if (v) { likedIds.add(id); unlikedIds.remove(id) } else { likedIds.remove(id); unlikedIds.add(id) }
-        render()
-    }
 
     fun openChat(p: JSONObject) { val id = p.optString("_chatId"); layer.closeAll(); go("/chat/$id", JSONObject().put("openChat", 1)) }
 
-    private fun openStories(i: Int) {
-        if (!canUse) { locked("watch"); return }
-        val l = storyList
-        if (i !in l.indices) return
-        StoryViewer.open(this, l, i, false)
-    }
-    fun watchStory(s: JSONObject) { StoryViewer.open(this, listOf(s), 0, false) }
-    /** the stories were closed: the row again — the ones just watched go pale and move behind the ones not yet seen */
-    fun storiesClosed() { renderStories() }
-    fun seeStory(s: JSONObject) {
-        if (s.optBoolean("seen")) return
-        val id = s.optString("id")
-        // a demo story (testing only): seen on this phone, nothing is sent anywhere
-        if (SdDemo.isDemoStory(s)) { SdDemo.seeStory(id); return }
-        storiesAll = storiesAll.map { if (it.optString("id") == id) it.put("seen", true) else it }
-        Api.invoke("viewStory", JSONObject().put("story_id", id)) { }
-    }
-    fun deleteStory(done: () -> Unit) {
-        Api.invoke("deleteStory", JSONObject().put("story_id", storiesMine?.optString("id"))) { r ->
-            if (r.ok) { done(); storiesMine = null; say("Story deleted."); renderStories() } else say(r.data.optString("error").ifEmpty { "Could not delete the story." }, "err")
-        }
-    }
-    fun viewersOfMine(done: (List<JSONObject>) -> Unit) {
-        Api.invoke("getStories") { r -> done(list(r.data.optJSONObject("mine")?.optJSONArray("viewers"))) }
-    }
-    private fun addStory() {
-        if (!canUse) { locked("story"); return }
-        if (storiesState != "ready") { say("Stories are switching on soon."); return }
-        SdSheets.addStory(this) { d ->
-            d.optJSONObject("mine")?.let { storiesMine = it }
-            say("Your story is live for 24 hours ✨")
-            loadStories()
-        }
-    }
 
     fun openMyProfile(edit: Boolean) { SdMyProfile.open(this, edit) }
     fun profileSaved(next: JSONObject) {
@@ -1457,34 +1035,17 @@ class SecretHome(
             "premium" -> SdSheets.premium(this, "request", false, intro) { }
             "need" -> SdSheets.need(this, listOf("age", "city")) { }
             "verify" -> SdSheets.verify(this, "none") { }
-            "story" -> StoryViewer.open(this, storyList, 0, false)
             "my" -> openMyProfile(false)
             "myedit" -> openMyProfile(true)
-            "addstory" -> SdSheets.addStory(this) { }
             "toast" -> say("Request sent to ${SdRules.firstName(SdRules.s(first, "name"))} ✓")
             "pop" -> showPop(list(activity?.optJSONArray("items")).take(1))
             "scroll" -> scroll.scrollTo(0, scroll.getChildAt(0).height)
-            "scrollmid" -> scroll.scrollTo(0, deckBox.top + deckBox.height / 2)
-            "stories" -> scroll.scrollTo(0, (storyRow.parent as View).top - dpi(260f))
-            "seeall" -> openMyActivity("liked", all = true)
-            "activity" -> openMyActivity("liked")
-            "heart" -> openMyActivity("liked", aboveBar = Ui.dpi(SdNavBar.BAR))   // as from the bottom bar's Likes (its height)
-            // the card's foot (name, ✕ ♥) just above the bottom bar · its top
-            "card" -> { scroll.scrollTo(0, maxOf(0, body.top + deckBox.top + SdDeck.cardH(SdDeck.cardW(context), 0) + dpi(4f) - (scroll.height - dpi(SdNavBar.BAR) - dpi(20f)))); postDelayed({ deck.logButtons() }, 600) }
-            "cardtop" -> scroll.scrollTo(0, body.top + deckBox.top - dpi(10f))
-            "nearby" -> pickDeck("nearby")
-            "favorite" -> pickDeck("favorite")
-            "like" -> deck.front?.let { likeTap(it, deckBox) }
-            "activity-you" -> openMyActivity("you")
-            "activity-match" -> openMyActivity("match")
-            "activity-req" -> openMyActivity("req")
+            "scrollmid" -> scroll.scrollTo(0, scroll.getChildAt(0).height / 3)
             "demo-profile" -> online?.firstOrNull { SdDemo.isDemo(it) && SdRules.liveOf(it) }?.let { openProfile(it) }
             "demo-profile-new" -> online?.filter { SdDemo.isDemo(it) }?.getOrNull(8)?.let { openProfile(it) }
             "demo-request" -> online?.firstOrNull { SdDemo.isDemo(it) }?.let { askRequest(it) }
             // (a demo person outside the chat list's five: Send Request starts a new, empty chat)
             "demo-request-new" -> online?.filter { SdDemo.isDemo(it) }?.getOrNull(8)?.let { askRequest(it) }
-            "demostory" -> storyList.firstOrNull { SdDemo.isDemoStory(it) }?.let { watchStory(it) }
-            "storyrow-end" -> (storyRow.parent as? android.widget.HorizontalScrollView)?.let { it.scrollTo(storyRow.width, 0) }
             "profileend" -> { openProfile(first); postDelayed({ lastScroll(layer.root)?.let { it.scrollTo(0, it.getChildAt(0).height) } }, 1200) }
         }
     }
@@ -1516,7 +1077,7 @@ class SecretHome(
     private val hideToast = Runnable { toast.animate().alpha(0f).setDuration(200).withEndAction { toast.visibility = GONE }.start() }
     fun say(text: String, kind: String = "ok") {
         if (toast.parent == null) host.addView(toast, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), 0) })
-        // 12 above the bottom of this page (the Secret Dating bar sits right under it)
+        // 12 above the bottom of this page (the Reconnect bar sits right under it)
         val bottomGap = host.height - host.paddingBottom - (bottom - dpi(12f))
         (toast.layoutParams as FrameLayout.LayoutParams).bottomMargin = maxOf(dpi(12f), bottomGap)
         toastText.text = text
@@ -1533,7 +1094,7 @@ class SecretHome(
         val canSee = activity?.optBoolean("can_see") == true
         val p = if (canSee) x.optJSONObject("person") else null
         val kind = x.optString("kind")
-        val text = when (kind) { "message" -> if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"; "view" -> "viewed your profile"; else -> if (x.optBoolean("mutual")) "likes you — you liked them too" else "liked your profile" }
+        val text = if (kind == "view") "viewed your profile" else if (x.optInt("count") > 1) "sent you ${x.optInt("count")} messages" else "sent you a message"
         val title = if (items.size > 1) "${items.size} new notifications" else "${p?.let { SdRules.firstName(SdRules.s(it, "name")) } ?: "Someone"} $text"
         val card = hbox(context, 11f).apply { background = rounded(Color.WHITE, 20f, 1f, Rs.argb(46, 214, 40, 120)); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)); elevation = Ui.dp(95f) }
         val face: View = if (p != null) RoundPhoto(context, 44f).also { it.set(SdRules.thumbs(p)) } else BlurFace(context, x.optString("g"))
@@ -1545,13 +1106,12 @@ class SecretHome(
         card.translationY = -dpi(120f).toFloat(); card.alpha = 0f
         card.animate().translationY(0f).alpha(1f).setDuration(380).setInterpolator(android.view.animation.PathInterpolator(.2f, .8f, .2f, 1f)).start()
         val close = Runnable { card.animate().alpha(0f).setDuration(200).withEndAction { host.removeView(card) }.start() }
-        card.setOnClickListener { main.removeCallbacks(close); host.removeView(card); openMyActivity("liked") }
+        card.setOnClickListener { main.removeCallbacks(close); host.removeView(card); if (items.size == 1) openActivity(x) else scroll.smoothScrollTo(0, 0) }
         main.postDelayed(close, 4500)
     }
 }
 
-/** My Secret Dating chats by the other person's user id and profile id (newest first wins) — and the lookup for a profile. */
-/** Secret Dating: is this chat open for me without a running plan? — the same rule as the server's shared/chatOpen.ts */
+/** Reconnect: is this chat open for me without a running plan? — the same rule as the server's shared/chatOpen.ts */
 object SdChatOpen {
     /** chats made before this moment (1 Dec 2026, UTC): the one who sent the request counts as having opened them */
     const val RULE_FROM = 1796083200000L
@@ -1572,6 +1132,7 @@ object SdChatOpen {
     }
 }
 
+/** My Reconnect chats by the other person's user id and profile id (newest first wins) — and the lookup for a profile. */
 object SdChatIndex {
     fun build(items: org.json.JSONArray, me: String): HashMap<String, String> {
         val out = HashMap<String, String>()

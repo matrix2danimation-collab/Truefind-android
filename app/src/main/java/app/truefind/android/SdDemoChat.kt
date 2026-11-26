@@ -117,7 +117,6 @@ object SdDemoChat {
                 return ok(JSONObject().put("ok", true))
             }
             "moderateUser" -> if (payload.optString("profile_id").startsWith("demo-sd-")) return Api.Result(403, JSONObject().put("error", "This is a demo profile."), "This is a demo profile.")
-            "viewStory" -> if (payload.optString("story_id").startsWith("demo-story-")) return ok(JSONObject().put("ok", true))
         }
         return null
     }

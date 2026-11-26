@@ -4,11 +4,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Secret Dating demo profiles (Nov 20, the web's src/lib/sdDemo.js) — so the Online Map and Home look full while the
+ * Reconnect demo profiles (Nov 20, the web's src/lib/sdDemo.js) — so the Online Map and Home look full while the
  * app is being tested. They exist only inside the app: no accounts, nothing saved anywhere. Each one has a 3D avatar
  * face (the Random Match faces in assets/home/faces — never a real person's photo), says "Demo profile" in its About,
- * and can't really be liked, requested, blocked or reported — no credit or coin is ever spent on one.
- * Since 23 Nov (owner, native app only) the demo people also have stories ([stories]) and chats: "Send Request" on a
+ * and can't really be requested, blocked or reported — no credit or coin is ever spent on one.
+ * Since 23 Nov (owner, native app only) the demo people also have chats: "Send Request" on a
  * demo profile and a tap on a demo chat open a demo chat room at once ([SdDemoChat]) — all of it only on this phone.
  * SHOW = false switches them all off again (do that before the real launch, with the web's SHOW_SD_DEMO).
  */
@@ -107,7 +107,7 @@ object SdDemo {
     }
 
     private val made = HashMap<String, List<JSONObject>>()
-    /** the 100 demo people of the gender this member sees on Secret Dating (boys see girls, girls see boys) — made once */
+    /** the 100 demo people of the gender this member sees on Reconnect (boys see girls, girls see boys) — made once */
     @Synchronized fun people(myGender: String): List<JSONObject> {
         val girls = myGender != "f" && myGender != "female"
         val key = if (girls) "f" else "m"
@@ -118,7 +118,7 @@ object SdDemo {
             JSONObject().put("id", d.id).put("user_id", "").put("name", d.name).put("age", d.age).put("gender", if (girls) "female" else "male")
                 .put("city", d.city).put("state", d.state).put("photo", d.photo).put("photo_thumb", "")
                 .put("bio", "Demo profile (for testing)").put("occupation", d.job).put("height", d.height).put("hobbies", JSONArray(d.hobbies))
-                .put("looking_for", "dating").put("account_type", if (girls) "creator" else "user").put("verified", true).put("premium", false)
+                .put("looking_for", "friends").put("account_type", if (girls) "creator" else "user").put("verified", true).put("premium", false)
                 .put("online", d.online).put("_online", d.online).put("last_active", iso.format(java.util.Date(if (d.online) now else now - d.hours * 3_600_000L)))
                 .put("demo", true).put("_demo", true).put("liked_by_me", false).put("chatting", false)
         }
@@ -129,37 +129,4 @@ object SdDemo {
     /** a demo profile (made here, never a real member) */
     fun isDemo(p: JSONObject?): Boolean = p != null && (p.optBoolean("_demo") || (p.optBoolean("demo") && p.optString("id").startsWith("demo-sd-")))
 
-    // ── demo stories (owner, 23 Nov: "Demo stories भी दिखाओ") ──
-    private val CAPTIONS = listOf("Good morning ☀️", "Chai time ☕", "Weekend vibes ✨", "New day, new smile 😊", "Long drive 🚗", "Rainy evening 🌧️", "Music on 🎧", "Feeling happy 💕")
-    private val storyMade = HashMap<String, List<JSONObject>>()
-    private val storySeen = HashSet<String>()
-    /**
-     * The stories of every fourth demo person of the gender this member sees, so Home's Stories row looks as it will with
-     * real members (Home shows the ones within 500 km, the nearest first). Like the people, they exist only inside the
-     * app; a story's picture is the person's demo face on a soft page (made in Photos, "demo:sdstory:").
-     */
-    fun stories(myGender: String, now: Long = System.currentTimeMillis()): List<JSONObject> {
-        if (!SHOW) return emptyList()
-        val girls = myGender != "f" && myGender != "female"
-        val key = if (girls) "f" else "m"
-        val base = synchronized(storyMade) {
-            storyMade.getOrPut(key) {
-                val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-                people(myGender).mapIndexedNotNull { i, p ->
-                    if (i % 4 != 1) null
-                    else JSONObject().put("id", "demo-story-$key$i").put("profile_id", p.optString("id")).put("user_id", "")
-                        .put("name", p.optString("name")).put("age", p.optInt("age")).put("city", p.optString("city")).put("state", p.optString("state"))
-                        .put("gender", p.optString("gender")).put("photo", p.optString("photo")).put("photo_thumb", "")
-                        .put("caption", CAPTIONS[(i / 4) % CAPTIONS.size]).put("views", 0)
-                        // posted between 20 minutes and 20 hours ago
-                        .put("created_date", iso.format(java.util.Date(now - (20L + (i * 53L) % 1180L) * 60_000L)))
-                        .put("media_url", "demo:sdstory:${p.optString("photo")}").put("_demo", true)
-                }
-            }
-        }
-        return synchronized(storySeen) { base.map { JSONObject(it.toString()).put("seen", it.optString("id") in storySeen) } }
-    }
-    fun isDemoStory(s: JSONObject?): Boolean = s != null && s.optString("id").startsWith("demo-story-")
-    /** a demo story was watched: its ring goes pale, as a real one's does (remembered while the app is open) */
-    fun seeStory(id: String) { synchronized(storySeen) { storySeen.add(id) } }
 }

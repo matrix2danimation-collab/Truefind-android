@@ -70,7 +70,7 @@ internal class DeletePage(ctx: Context, layer: LoginLayer) : LPage(ctx, layer) {
 
         // What is deleted
         val what = LK.col(ctx)
-        what.addView(LK.t(ctx, "Your profile, photos, chats, coins, followers, stories and Secret Dating data.", 13.5f, sub, false, 19f / 13.5f), LK.lp(-1, -2, b = 6f))
+        what.addView(LK.t(ctx, "Your profile, photos, chats, coins, followers and Reconnect data.", 13.5f, sub, false, 19f / 13.5f), LK.lp(-1, -2, b = 6f))
         what.addView(LK.t(ctx, "We keep only what the law or safety needs: payment and withdrawal records (for tax), call records (without your name), and records of reports and bans, for as long as required. If you are a Creator or Host, please withdraw your earnings first.", 13.5f, sub, false, 19f / 13.5f), LK.lp(-1, -2))
         col.addView(section("What is deleted", what))
 

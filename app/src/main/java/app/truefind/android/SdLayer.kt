@@ -14,7 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ScrollView
 
 /**
- * Pop-ups of Secret Dating on top of the whole screen (the web's portal layer):
+ * Pop-ups of Reconnect on top of the whole screen (the web's portal layer):
  * bottom sheets (dim + panel sliding up), full pages sliding in from the right,
  * and plain fades. The phone's Back closes the top one first.
  */
@@ -88,7 +88,7 @@ class SdLayer(private val host: FrameLayout) {
     }
 
     /** A full page sliding in from the right (sd-in). [back] may handle Back itself (e.g. leave the edit form). */
-    /** [bottom]: the page ends that far above the bottom (Secret Dating's bar stays in sight under it) */
+    /** [bottom]: the page ends that far above the bottom (Reconnect's bar stays in sight under it) */
     fun page(view: View, z: Float = 30f, back: () -> Boolean = { false }, onClose: () -> Unit = {}, animate: Boolean = true, bottom: Int = 0): () -> Unit {
         var closed = false
         val close: () -> Unit = {

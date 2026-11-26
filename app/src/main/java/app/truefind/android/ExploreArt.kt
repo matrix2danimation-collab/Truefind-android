@@ -181,10 +181,10 @@ class PanelLight(private val radiusDp: Float) : Drawable() {
 class AppBackground(private val strip: () -> Int, private val box: () -> Int) : Drawable() {
     var purple = false
         set(v) { if (field != v) { field = v; invalidateSelf() } }
-    /** the strip under the status bar in the page's own top colour (Secret Dating pink, Home's light lilac; owner, 21 Nov) */
+    /** the strip under the status bar in the page's own top colour (Reconnect pink, Home's light lilac; owner, 21 Nov) */
     var top: Int? = null
         set(v) { if (field != v) { field = v; invalidateSelf() } }
-    /** the strip over the phone's own buttons (and behind the keyboard) in the page's bottom colour: a Secret Dating
+    /** the strip over the phone's own buttons (and behind the keyboard) in the page's bottom colour: a Reconnect
      *  chat ends in blush, not in a separate white strip (23 Nov). [bottomStrip] = that strip's height. */
     var bottom: Int? = null
         set(v) { if (field != v) { field = v; invalidateSelf() } }

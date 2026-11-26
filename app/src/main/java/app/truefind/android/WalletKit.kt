@@ -28,7 +28,7 @@ import org.json.JSONObject
  * Sizes are in dp (= the web's px), colours are the web's own.
  */
 
-/** One wallet's colours: True Find = deep purple, Secret Dating = rose (Wallet.jsx THEME). */
+/** One wallet's colours: True Find = deep purple, Reconnect = rose (Wallet.jsx THEME). */
 class WTheme(
     val hdr: Int, val btn: Int, val track: Int, val sub: Int, val off: Int,
     val tint: Int, val tintLine: Int, val line: Int, val ink: Int, val muted: Int, val accent: Int,
@@ -323,7 +323,7 @@ class CoinArtView(ctx: Context, tier: Int, widthDp: Float = 76f) : View(ctx) {
     }
 }
 
-/** Secret Dating request credit: a round heart token (HeartToken in Wallet.jsx). */
+/** Reconnect request credit: a round heart token (HeartToken in Wallet.jsx). */
 class HeartTokenDrawable(private val sizeDp: Float, private val bg: Int, private val fg: Int) : Drawable() {
     private val px = Ui.dpi(sizeDp)
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)

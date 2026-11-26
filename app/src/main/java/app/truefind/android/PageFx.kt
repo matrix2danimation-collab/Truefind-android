@@ -20,7 +20,7 @@ import android.widget.FrameLayout
  * Moving from one page to the next, the way FRND does it. Measured from the owner's screen recordings of
  * FRND (same phone, 60 pictures a second on the screen, 24 in the recording), each move followed frame by frame:
  *
- * - TAB (Home ↔ Explore ↔ Recent, and Secret Dating's Map ↔ Home ↔ Chat): both pages slide side by side, a
+ * - TAB (Home ↔ Explore ↔ Recent, and Reconnect's Map ↔ Home ↔ Chat): both pages slide side by side, a
  *   whole screen width; nothing fades, the bottom bar stays still. FRND's pages were 35 % of the way on the
  *   first screen frame, then 60 · 76 · 87 · 93 · 97 · 99 %: exactly Android's ViewPager (200 ms, curve
  *   1 − (1 − t)⁵). Two tabs apart takes 300 ms and the page in between passes by, as in FRND.
@@ -58,7 +58,7 @@ import android.widget.FrameLayout
  *   (page speed report, 19 Nov, build 100: typical 11 ms against 15–27 ms for tabs and opening, where up
  *   to a fifth of the frames came late), so tabs and opening do it too. A page coming in becomes a picture
  *   one frame after the tap: each of the first two frames then carries one page's drawing.
- * - Pages that keep moving by themselves (Explore's bubbles, the Secret Dating globe) hold still while a
+ * - Pages that keep moving by themselves (Explore's bubbles, the Reconnect globe) hold still while a
  *   move runs ([running]) and go on right after it — otherwise their picture is made again in every frame.
  * - The move's clock goes by the frames that were really drawn: when the phone needs longer for one frame
  *   (a page drawn for the first time), the next frame goes on from where the last one was instead of jumping
@@ -203,7 +203,7 @@ object PageFx {
      * [from] / [to]: the page you leave and the page you go to (the web view counts as a page).
      * [between]: TAB only — the pages lying between them, in the order they pass by.
      * [lowerExtras]: views that move with the lower page (the bottom bar of a tab page).
-     * [upperExtras]: views that move with the upper page, just under it (Secret Dating's own bottom bar).
+     * [upperExtras]: views that move with the upper page, just under it (Reconnect's own bottom bar).
      * [snapshot]: for POP when the page you leave is already gone (a web page): its picture.
      * [moveLower]: false when the lower page is not one of the app's own (the sign-in web page): it is left alone.
      * [onEnd]: after the move (the app then hides the pages that should be hidden).

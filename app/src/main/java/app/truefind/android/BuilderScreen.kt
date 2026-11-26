@@ -110,7 +110,7 @@ class BuilderScreen(ctx: Context, private val pages: NativePages) : FrameLayout(
         two.addView(g1, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = Ui.dpi(10f) })
         val g2 = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
         g2.addView(label("Interested in"))
-        prefText = selectBox(g2, "Dating preferences", Lu.ChevronDown) { pickPreferred() }
+        prefText = selectBox(g2, "Select", Lu.ChevronDown) { pickPreferred() }
         two.addView(g2, LinearLayout.LayoutParams(0, -2, 1f))
         dc.addView(two, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(14f) })
         dc.addView(Tf.t(ctx, "Gender is set at registration and can't be changed.", 12f, sub, false).lineH(16f), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(8f); leftMargin = Ui.dpi(2f); rightMargin = Ui.dpi(2f) })

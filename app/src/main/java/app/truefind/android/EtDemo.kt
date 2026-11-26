@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * Test mode only (emulator pictures on GitHub, never in the real app): made-up answers for the
- * native Expert Talk, My Dashboard and Secret Dating Earning, so every screen can be opened and
+ * native Expert Talk, My Dashboard and Reconnect Earning, so every screen can be opened and
  * photographed without logging in. Off unless a test screen turns it on.
  */
 object EtDemo {

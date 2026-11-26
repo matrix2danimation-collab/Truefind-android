@@ -10,7 +10,7 @@ import android.view.View
 /**
  * Calls that only exist on newer Android, made safe for every phone the app installs on (Android 7.0 and up).
  * Without these, Android 7 / 7.1 phones crash on the sign-in screens (autofill is Android 8+), and
- * Android 7 – 8.1 phones crash when a chat or Secret Dating screen draws bold or regular words (TypefaceSpan(Typeface) is Android 9+).
+ * Android 7 – 8.1 phones crash when a chat or Reconnect screen draws bold or regular words (TypefaceSpan(Typeface) is Android 9+).
  */
 object Compat {
     /** autofill hints (Android 8+); older phones simply don't autofill */

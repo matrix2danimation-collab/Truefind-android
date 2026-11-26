@@ -37,7 +37,7 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** Secret Dating's colours: the names every page uses (the web's K). */
+/** Reconnect's colours: the names every page uses (the web's K). */
 interface SdPal {
     val wine: Int; val wine2: Int; val rose: Int; val hot: Int; val deep: Int
     val ink: Int; val ink2: Int; val sub: Int; val soft: Int
@@ -48,7 +48,7 @@ interface SdPal {
     fun badge(): GradientDrawable
 }
 
-/** The earlier pink (the web's K). True Find's own chats still wear it (ChatRoom); Secret Dating moved to [K]. */
+/** The earlier pink (the web's K). True Find's own chats still wear it (ChatRoom); Reconnect moved to [K]. */
 object KP : SdPal {
     override val wine = Ui.c("#8E1243"); override val wine2 = Ui.c("#9E1447"); override val rose = Ui.c("#E3086C"); override val hot = Ui.c("#D80F6E"); override val deep = Ui.c("#8A0E3C")
     override val ink = Ui.c("#1B1A1D"); override val ink2 = Ui.c("#2A1F25"); override val sub = Ui.c("#6E5562"); override val soft = Ui.c("#8C878B")
@@ -67,7 +67,7 @@ object KP : SdPal {
     override fun badge() = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#F43D95"), Ui.c("#C80962"))).apply { shape = GradientDrawable.OVAL }
 }
 
-/** Secret Dating now (owner's picture, 23 Nov): maroon on blush, flat buttons. The same names as the pink had. */
+/** Reconnect now (owner's picture, 23 Nov): maroon on blush, flat buttons. The same names as the pink had. */
 object K : SdPal {
     override val wine = Ui.c("#6D1328"); override val wine2 = Ui.c("#77152C"); override val rose = Ui.c("#931A39"); override val hot = Ui.c("#931A39"); override val deep = Ui.c("#671226")
     override val ink = Ui.c("#161214"); override val ink2 = Ui.c("#2A1F22"); override val sub = Ui.c("#6A6061"); override val soft = Ui.c("#8C878B")
@@ -85,7 +85,7 @@ object K : SdPal {
 
 /**
  * The page background, drawn once and kept still while the page scrolls (sticky in the web).
- * Secret Dating: blush with fine hearts and leaves ([rose], 23 Nov). True Find's own chats: the earlier pink.
+ * Reconnect: blush with fine hearts and leaves ([rose], 23 Nov). True Find's own chats: the earlier pink.
  */
 class PinkBackdrop(ctx: Context) : View(ctx) {
     var rose = true
@@ -260,7 +260,7 @@ class RingDrawable(private val colors: IntArray, private val stops: FloatArray?)
 }
 
 // ───────── small view helpers ─────────
-/** [serif]: a heading in Secret Dating's serif (a little smaller: its letters are wider than the app font's) */
+/** [serif]: a heading in Reconnect's serif (a little smaller: its letters are wider than the app font's) */
 fun sdText(ctx: Context, s: CharSequence, sizeDp: Float, color: Int, bold: Boolean = true, italic: Boolean = false, serif: Boolean = false): TextView =
     TextView(ctx).apply {
         text = s

@@ -17,7 +17,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import org.json.JSONObject
 
-/** My own Secret Dating profile (the photo at the top-left): view + edit — MyProfile in SecretApp.jsx. */
+/** My own Reconnect profile (the photo at the top-left): view + edit — MyProfile in SecretApp.jsx. */
 object SdMyProfile {
     private val NAME_OK = Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$")
 
@@ -132,7 +132,7 @@ object SdMyProfile {
             pb.addView(ring, FrameLayout.LayoutParams(-1, -1))
             pb.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, white, 21f, 2.2f)); scaleType = ImageView.ScaleType.CENTER; background = oval(K.pill, 3f, white); elevation = Ui.dp(10f); contentDescription = "Change photo" }
                 .press().onTap { h.changePhoto() }, FrameLayout.LayoutParams(dpi(46f), dpi(46f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(6f) })
-            // Premium: the crown shows here too, as on the small photo at the top of Secret Dating (owner, 20 Nov)
+            // Premium: the crown shows here too, as on the small photo at the top of Reconnect (owner, 20 Nov)
             if (premium) pb.addView(ImageView(ctx).apply {
                 setImageDrawable(Icon(Lucide.Crown, white, if (editing) 17f else 21f, 2.2f, white)); scaleType = ImageView.ScaleType.CENTER
                 background = oval(K.hot, 3f, white); elevation = Ui.dp(10f); contentDescription = "Premium"
@@ -304,8 +304,8 @@ object SdMyProfile {
                     r.press().onTap(onClick)
                     rows.addView(r, lp(MATCH, WRAP, t = 8f))
                 }
-                row(Lucide.Wallet, "Secret Dating Wallet", if (premium) "Plan, credits and history" else "Get Premium · credits come with the plan") { h.showWallet() }
-                row(Lucide.Home, "Back to True Find", "Leave Secret Dating", blue = true) { h.exit() }
+                row(Lucide.Wallet, "Reconnect Wallet", if (premium) "Plan, credits and history" else "Get Premium · credits come with the plan") { h.showWallet() }
+                row(Lucide.Home, "Back to True Find", "Leave Reconnect", blue = true) { h.exit() }
                 col.addView(rows, lp(MATCH, WRAP))
             }
             scroll.removeAllViews()

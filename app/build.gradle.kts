@@ -162,7 +162,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.1")
     // live chat updates (the same socket the web SDK uses) and PATCH requests
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    // Google Play Billing (25 Nov): coins and Secret Dating plans are bought through Google Play (PlayBilling.kt)
+    // Google Play Billing (25 Nov): coins and Reconnect plans are bought through Google Play (PlayBilling.kt)
     implementation("com.android.billingclient:billing:9.1.0")
     // native games: the web's SVG pictures drawn by the phone, and the games' voice room
     implementation("com.caverock:androidsvg-aar:1.4")

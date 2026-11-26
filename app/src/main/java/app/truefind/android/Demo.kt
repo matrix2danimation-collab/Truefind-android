@@ -11,11 +11,11 @@ import org.json.JSONObject
  */
 object Demo {
     @Volatile var on = false
-    var premium = false          // the made-up user has a Secret Dating plan
+    var premium = false          // the made-up user has a Reconnect plan
     var girl = false              // the made-up user is a girl (sees boys)
     var noBlur = false            // test runs only: compare speed without the side-card blur
     var noChats = false           // test runs only: no chats yet (the empty Chats page)
-    var notJoined = false         // test runs only: not a member of Secret Dating yet (the Join card)
+    var notJoined = false         // test runs only: not a member of Reconnect yet (the Join card)
     var tfChat = false            // test runs only: the chats are True Find's own (they keep the pink look)
 
     private val girls = listOf("Anvi" to "Rohtak", "Simran" to "Delhi", "Kavya" to "Jaipur", "Riya" to "Hisar", "Meher" to "Chandigarh", "Ishita" to "Noida", "Pooja" to "Panipat")
@@ -34,7 +34,7 @@ object Demo {
     }
     private fun people(): JSONArray { val a = JSONArray(); for (i in 0 until if (girl) 5 else 7) a.put(person(i, !girl)); return a }
 
-    /** Secret Dating's own demo profiles (SdDemo, "demo-sd-…") show their 3D faces, also in test mode */
+    /** Reconnect's own demo profiles (SdDemo, "demo-sd-…") show their 3D faces, also in test mode */
     private fun own(id: String) = !id.startsWith("demo") || id.startsWith("demo-sd-")
 
     fun face(p: JSONObject?): Bitmap? {
@@ -156,17 +156,9 @@ object Demo {
                 .put("me", JSONObject().put("gender", if (girl) "female" else "male").put("city", "Rohtak").put("state", "Haryana"))
             "getRequestCredits" -> JSONObject().put("credits", JSONObject().put("available_request_credits", if (premium) 5 else 0))
                 .put("member", JSONObject().put("verified", true).put("free", false).put("gender", if (girl) "f" else "m")).put("intro", JSONObject().put("available", true))
-            "getStories" -> {
-                val st = JSONArray()
-                for (i in 0 until 5) { val p = person(i, !girl); st.put(JSONObject().put("id", "st$i").put("profile_id", p.optString("id")).put("user_id", p.optString("user_id"))
-                    .put("name", p.optString("name")).put("age", p.optInt("age")).put("city", p.optString("city")).put("state", p.optString("state")).put("gender", p.optString("gender"))
-                    .put("seen", i == 3).put("created_date", iso((i * 50).toLong())).put("caption", "Good morning ☀️")
-                    .put("media_url", "demo:story:${p.optString("id")}:${p.optString("gender")}")) }
-                JSONObject().put("premium", premium).put("mine", JSONObject.NULL).put("stories", st)
-            }
             "getSecretActivity" -> {
                 val items = JSONArray()
-                val kinds = listOf("like", "message", "view", "like", "view")
+                val kinds = listOf("message", "view", "message", "view", "view")
                 for (i in 0 until 5) {
                     val p = person(i + 1, !girl)
                     items.put(JSONObject().put("id", "a$i").put("kind", kinds[i]).put("fresh", i < 2).put("at", iso((i * 40 + 3).toLong())).put("g", if (girl) "m" else "f")
@@ -174,21 +166,6 @@ object Demo {
                         .put("person", if (premium) p else JSONObject.NULL).put("match_id", if (kinds[i] == "message") "m1" else JSONObject.NULL))
                 }
                 JSONObject().put("can_see", premium).put("counts", JSONObject().put("total", 2)).put("items", items)
-            }
-            // My Activity: who liked me, who I liked, matches, requests I sent (people only with a plan where the server hides them)
-            "getMyActivity" -> {
-                val g = if (girl) "m" else "f"
-                fun item(id: String, ago: Long, p: JSONObject?) = JSONObject().put("id", id).put("at", iso(ago)).put("g", g).put("person", p ?: JSONObject.NULL)
-                val liked = JSONArray(); for (i in 0 until 5) liked.put(item("l$i", (i * 55 + 4).toLong(), if (premium) person(i, !girl) else null))
-                val you = JSONArray()
-                for (i in 0 until 4) you.put(item("y$i", (i * 70 + 9).toLong(), far(i, !girl)).put("request", when (i) {
-                    0 -> JSONObject().put("status", "accepted").put("match_id", "m2"); 1 -> JSONObject().put("status", "pending").put("match_id", JSONObject.NULL)
-                    2 -> JSONObject().put("status", "declined").put("match_id", JSONObject.NULL); else -> JSONObject.NULL }))
-                val matches = JSONArray(); for (i in 0 until 2) matches.put(item("x$i", (i * 90 + 30).toLong(), if (premium) person(i + 1, !girl) else null).put("request", JSONObject.NULL))
-                val reqs = JSONArray()
-                for ((i, st) in listOf("accepted", "pending", "declined").withIndex()) reqs.put(item("r$i", (i * 120 + 15).toLong(), far(i, !girl)).put("status", st).put("match_id", if (st == "accepted") "m2" else JSONObject.NULL))
-                JSONObject().put("can_see", premium).put("counts", JSONObject().put("liked_you", liked.length()).put("you_liked", you.length()).put("matches", matches.length()).put("requests", reqs.length()))
-                    .put("liked_you", liked).put("you_liked", you).put("matches", matches).put("requests", reqs)
             }
             "getChats" -> {
                 val ids = if (noChats) emptyList() else listOf("m1", "m2", "m3", "m4", "m5")
@@ -202,10 +179,8 @@ object Demo {
                     .put("message", JSONObject().put("id", "msg-$mid-new-${System.currentTimeMillis()}").put("match_id", mid).put("from_user_id", "demo-me").put("to_user_id", o?.optString("user_id"))
                         .put("kind", payload.optString("kind", "text")).put("text", payload.optString("text")).put("gif_id", payload.optString("gif_id")).put("created_date", iso(0)).put("read", false))
             }
-            "likeProfile" -> JSONObject().put("ok", true).put("mutual", false)
             "sendInvitation" -> JSONObject().put("ok", true).put("credits_left", 4)
             "updateMyProfile" -> JSONObject().put("ok", true).put("profile", myProfile.also { m -> payload.optJSONObject("updates")?.let { u -> u.keys().forEach { k -> m.put(k, u.get(k)) } } })
-            "createStory" -> JSONObject().put("mine", JSONObject().put("id", "mine").put("views", 0))
             else -> JSONObject().put("ok", true)
         }
         return Api.Result(200, d, null)

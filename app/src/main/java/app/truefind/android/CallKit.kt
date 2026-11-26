@@ -41,7 +41,7 @@ object CallKit {
     const val HEART_PATH = "M12 21c-6.5-4.4-10-8-10-12a5 5 0 0 1 10-1.6A5 5 0 0 1 22 9c0 4-3.5 7.6-10 12z"
     const val PHONE_PATH = "M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"
 
-    /** the pink "Date This" heart (linear gradient #FF6FA8 → #E1306C) */
+    /** the pink "Reconnect" heart (linear gradient #FF6FA8 → #E1306C) */
     val PINK_HEART = "<svg viewBox=\"0 0 24 24\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FF6FA8\"/><stop offset=\"1\" stop-color=\"#E1306C\"/></linearGradient></defs><path d=\"$HEART_PATH\" fill=\"url(#g)\"/></svg>"
     val PHONE = "<svg viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"$PHONE_PATH\"/></svg>"
     private fun stroke(w: Float, inner: String) =

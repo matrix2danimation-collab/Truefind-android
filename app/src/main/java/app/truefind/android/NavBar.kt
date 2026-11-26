@@ -16,8 +16,8 @@ import android.view.View
 
 /**
  * True Find bottom bar — native copy of components/BottomNav.jsx:
- * Home · Explore · Find (Secret Dating, purple heart with a white T and the
- * red count of new Secret Dating notifications) · Recent · Wallet.
+ * Home · Explore · Find (Reconnect, purple heart with a white T and the
+ * red count of new Reconnect notifications) · Recent · Wallet.
  * Same sizes (the web's f(n, min) on a 853 design), colours, icons, the lit
  * tab's soft glow and underline, and the .94 press.
  * It shows on Home, Explore and Recent only (NativePages decides).

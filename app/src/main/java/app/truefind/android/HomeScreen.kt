@@ -864,7 +864,7 @@ class VerifyBarView(ctx: Context, private val m: Zm, private val onOpen: () -> U
             cornerRadius = m.px(18f); setStroke(max(1, m.pi(1f)), Ui.c("#E4D8FB"))
         } else Tf.boxPx(Color.WHITE, m.px(18f), max(1f, m.px(1f)), Ui.c("#EEE9F5"))
         fun plural(n: Int) = "$n step${if (n == 1) "" else "s"} left"
-        main.text = if (nv == null) "Checking…" else if (full) "Fully Verified" else if (tf) (if (wait) "Secret Dating in review" else "Secret Dating pending") else plural(nv.left)
+        main.text = if (nv == null) "Checking…" else if (full) "Fully Verified" else if (tf) (if (wait) "Reconnect in review" else "Reconnect pending") else plural(nv.left)
         main.setTextColor(if (full) Ui.c("#4A1D96") else Ui.c("#1F1235"))
         // icon
         seal.visibility = if (full) VISIBLE else GONE
@@ -882,7 +882,7 @@ class VerifyBarView(ctx: Context, private val m: Zm, private val onOpen: () -> U
             capTicks.addView(Tf.tpx(context, if (full) "True Find" else "True Find verified", m.px(12f), Ui.c("#15803D")))
             if (full) {
                 capTicks.addView(tick(), LayoutParams(m.pi(11f), m.pi(11f)).apply { leftMargin = m.pi(9f); rightMargin = m.pi(4f) })
-                capTicks.addView(Tf.tpx(context, "Secret Dating", m.px(12f), Ui.c("#15803D")))
+                capTicks.addView(Tf.tpx(context, "Reconnect", m.px(12f), Ui.c("#15803D")))
             }
         } else {
             capTicks.visibility = GONE; capText.visibility = VISIBLE

@@ -29,11 +29,11 @@ import org.json.JSONObject
  *  - before pick-up and for calls that never connected: the white + purple stage (Calling / Ringing /
  *    Connecting… / Call declined / No answer) with the red Cancel / End / Close button
  *  - the call itself, voice or video: two round photos with talk bars (voice) or the other person's camera
- *    with mine in a small tile you can drag (video), "Date This" with the pink heart that flies onto her
+ *    with mine in a small tile you can drag (video), "Reconnect" with the pink heart that flies onto her
  *    photo, duration, coin balance with "+", Mute / Camera / End / Speaker, the Report button, the
  *    low-balance / reconnecting / error notes
  *  - after the call: the soft "Call ended" card (coins charged, "Add coins" when they ran out) and the stars sheet
- *  - "Go to Chat": her Secret Dating card with a small chat over the call (the call keeps going)
+ *  - "Go to Chat": her Reconnect card with a small chat over the call (the call keeps going)
  */
 @SuppressLint("ViewConstructor")
 class CallView(
@@ -212,7 +212,7 @@ class CallView(
         main.postDelayed(hideToast, ms)
     }
 
-    /** Date This: the heart bursts, flies onto her photo and stays there until the call ends */
+    /** Reconnect: the heart bursts, flies onto her photo and stays there until the call ends */
     private fun like(btn: View, heartPart: View) {
         val s = session
         if (s.iLiked || landed || flying) return
@@ -235,7 +235,7 @@ class CallView(
         main.postDelayed({
             flying = false
             if (!(answered && err != null)) landed = true
-            toast("Date request sent to ${CallKit.firstName(s.otherName).ifEmpty { "them" }}", 2600)
+            toast("Reconnect request sent to ${CallKit.firstName(s.otherName).ifEmpty { "them" }}", 2600)
             conn.bind()
         }, 1000)
         @Suppress("UNUSED_EXPRESSION") btn
@@ -432,15 +432,15 @@ class CallView(
         private val meBars = CallKit.Bars(ctx)
         private val peerBars = CallKit.Bars(ctx)
         private val peerLabel = CallKit.t(ctx, "…", 16.5f, CallKit.INK, 700).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER }
-        private val meHeart = HeartBadge(ctx, "liked you for a date")
-        private val peerHeart = HeartBadge(ctx, "You liked them for a date")
+        private val meHeart = HeartBadge(ctx, "wants to Reconnect with you")
+        private val peerHeart = HeartBadge(ctx, "You asked to Reconnect")
         private val muteBadge = FrameLayout(ctx)
         private val peerMuteBadge = FrameLayout(ctx)
         private lateinit var peopleRow: LinearLayout
         private lateinit var meCol: View
         private lateinit var peerCol: View
 
-        // voice: the Date This card
+        // voice: the Reconnect card
         private lateinit var dateCard: LinearLayout
         private lateinit var dateBox: FrameLayout
         private val dateAsk = Tf.row(ctx)
@@ -450,18 +450,18 @@ class CallView(
         private lateinit var heartCircle: FrameLayout
         private val dateErr = CallKit.t(ctx, "", 13f, Ui.c("#B91C1C"), 400)
 
-        // video: her chip, my tile, the floating Date This
+        // video: her chip, my tile, the floating Reconnect
         val vPeerFace = CallFace(ctx, 46f, 3f, shadow = false)
         private val vPeerName = CallKit.t(ctx, "…", 15.5f, Color.WHITE, 700)
         private val vPeerBars = CallKit.Bars(ctx, white = true, count = 5)
-        private val vPeerHeart = HeartBadge(ctx, "You liked them for a date")
+        private val vPeerHeart = HeartBadge(ctx, "You asked to Reconnect")
         private lateinit var vPeerChip: LinearLayout
         private val tile = FrameLayout(ctx)
         private val tileBox = FrameLayout(ctx)
         private val tilePhoto = CoverImage(ctx)
         private val tileFace = CallFace(ctx, 84f, 0f, shadow = false)
         private val tileBorder = View(ctx)
-        private val tileHeart = HeartBadge(ctx, "liked you for a date")
+        private val tileHeart = HeartBadge(ctx, "wants to Reconnect with you")
         private lateinit var vDate: LinearLayout
         private lateinit var vHeartBtn: LinearLayout
         private lateinit var vHeartCircle: FrameLayout
@@ -654,7 +654,7 @@ class CallView(
             heartCircle = FrameLayout(ctx).apply { background = Tf.circle(CallKit.PINK_BG) }
             heartCircle.addView(ImageView(ctx).apply { setImageDrawable(CallKit.heart(28f)) }, LayoutParams(Ui.dpi(28f), Ui.dpi(28f), Gravity.CENTER))
             heartBtn.addView(heartCircle, Tf.ll(Ui.dpi(44f), Ui.dpi(44f)))
-            heartBtn.addView(CallKit.t(ctx, "Date This", 12f, CallKit.PINK_TEXT, 700), Tf.ll(t = 2f))
+            heartBtn.addView(CallKit.t(ctx, "Reconnect", 12f, CallKit.PINK_TEXT, 700), Tf.ll(t = 2f))
             heartBtn.setOnClickListener { like(heartBtn, heartCircle) }
             dateAsk.addView(heartBtn, Tf.ll(l = 12f))
             // after the heart: "Request sent" + Go to Chat
@@ -743,7 +743,7 @@ class CallView(
             vHeartCircle = FrameLayout(ctx).apply { background = Tf.circle(Color.argb(235, 255, 255, 255)); elevation = Ui.dp(6f); outlineSpotShadowColorCompat(Color.BLACK) }
             vHeartCircle.addView(ImageView(ctx).apply { setImageDrawable(CallKit.heart(32f)) }, LayoutParams(Ui.dpi(32f), Ui.dpi(32f), Gravity.CENTER))
             vHeartBtn.addView(vHeartCircle, Tf.ll(Ui.dpi(54f), Ui.dpi(54f)))
-            vHeartBtn.addView(CallKit.t(ctx, "Date This", 12.5f, Color.WHITE, 800).apply { setShadowLayer(Ui.dp(4f), 0f, Ui.dp(1f), Color.argb(178, 0, 0, 0)) }, Tf.ll(t = 3f))
+            vHeartBtn.addView(CallKit.t(ctx, "Reconnect", 12.5f, Color.WHITE, 800).apply { setShadowLayer(Ui.dp(4f), 0f, Ui.dp(1f), Color.argb(178, 0, 0, 0)) }, Tf.ll(t = 3f))
             vHeartBtn.setOnClickListener { like(vHeartBtn, vHeartCircle) }
             vDate.addView(vHeartBtn, Tf.ll())
             vGoChat = goChatPill(ctx, true)
@@ -898,7 +898,7 @@ class CallView(
             val v = builtVideo
             statusText.text = if (s.practice) "Demo call · nothing billed" else "Connected · HD Voice"
             // they gave ME a heart: a banner for a few seconds (the badge on my photo stays)
-            if (s.theyLiked && !seenTheirs) { seenTheirs = true; toast("$peerName liked you for a date", 4000) }
+            if (s.theyLiked && !seenTheirs) { seenTheirs = true; toast("$peerName wants to Reconnect with you", 4000) }
 
             if (!v) {
                 meFace.setPhoto(s.mePhoto); peerFace.setPhoto(s.otherPhoto)
@@ -911,12 +911,12 @@ class CallView(
                 badge(peerHeart, liked)
                 muteBadge.visibility = if (s.muted) VISIBLE else GONE
                 peerMuteBadge.visibility = if (s.peerMuted && !ended) VISIBLE else GONE
-                dateTitle.text = "Date $peerName?"
+                dateTitle.text = "Reconnect with $peerName?"
                 dateAsk.visibility = if (liked) INVISIBLE else VISIBLE
                 dateSent.visibility = if (liked) VISIBLE else INVISIBLE
                 heartCircle.alpha = if (flying) .35f else 1f
                 dateErr.text = likeErr; dateErr.visibility = if (likeErr.isEmpty()) GONE else VISIBLE
-                heartBtn.contentDescription = "Date $peerName"
+                heartBtn.contentDescription = "Reconnect with $peerName"
                 showBtns.visibility = GONE
                 val asking = s.videoAskMine
                 if (lastVideoAsk != asking) {
@@ -1235,8 +1235,8 @@ class CallView(
             // the end-call question (small card in the middle): the red End button / the phone's Back
             "exitask" -> askExitOrEnd()
             "endask" -> askEnd()
-            "toast" -> toast("Date request sent to ${CallKit.firstName(session.otherName)}", 60000)
-            "liketoast" -> toast("${CallKit.firstName(session.otherName)} liked you for a date", 60000)
+            "toast" -> toast("Reconnect request sent to ${CallKit.firstName(session.otherName)}", 60000)
+            "liketoast" -> toast("${CallKit.firstName(session.otherName)} wants to Reconnect with you", 60000)
         }
     }
 

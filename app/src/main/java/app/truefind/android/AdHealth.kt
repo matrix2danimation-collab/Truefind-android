@@ -784,7 +784,7 @@ object AdMemberHealth {
             AU.row(ctx).apply {
                 setPadding(Ui.dpi(12f), Ui.dpi(9f), Ui.dpi(12f), Ui.dpi(9f))
                 val c = AU.col(ctx)
-                c.addView(AU.t(ctx, "${AF.s(x, "plan_name").ifEmpty { "Purchase" }}${if (AF.s(x, "app") == "secret") " · Secret Dating" else ""}", 13f, AK.ink, true).ell())
+                c.addView(AU.t(ctx, "${AF.s(x, "plan_name").ifEmpty { "Purchase" }}${if (AF.s(x, "app") == "secret") " · Reconnect" else ""}", 13f, AK.ink, true).ell())
                 c.addView(AU.t(ctx, "${AF.fmt(AF.s(x, "created_date"))}${AF.s(x, "provider_ref").let { if (it.isNotEmpty()) " · $it" else "" }}", 11.5f, AK.sub).ell())
                 addView(c, AU.lp(0, -2, 1f, r = 8f))
                 val rr = AU.col(ctx).apply { gravity = Gravity.END }

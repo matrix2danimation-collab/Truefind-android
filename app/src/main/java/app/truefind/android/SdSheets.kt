@@ -15,15 +15,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
 
-/** The bottom sheets of Secret Dating: Go Premium, Verify, Send Request, Complete Profile, Add Story. */
+/** The bottom sheets of Reconnect: Go Premium, Verify, Send Request, Complete Profile. */
 object SdSheets {
     /** set by MainActivity: opens the phone's photo picker, answers with the photo (bytes, type) or null */
     var pickImage: (((ByteArray?, String) -> Unit) -> Unit)? = null
 
     private val PREMIUM_WHY = mapOf(
-        "story" to "Posting stories is for Premium members.", "watch" to "Watching stories is for Premium members.",
         "chat" to "Chat is for Premium members.", "request" to "Sending requests is for Premium members.",
-        "like" to "Likes are for Premium members.", "activity" to "See who liked you, messaged you and viewed your profile.",
+        "activity" to "See who messaged you and viewed your profile.",
     )
     private val PLANS = listOf(Triple("Daily", 12, 1 to 3), Triple("Starter", 39, 7 to 5), Triple("Pro", 79, 7 to 8), Triple("Elite", 169, 30 to 10))
     private fun daysText(d: Int) = if (d == 1) "1 day" else if (d == 30) "1 month" else "$d days"
@@ -72,7 +71,7 @@ object SdSheets {
         p.addView(head(h, Icon(Lucide.Gem, Color.WHITE, 26f, 2f), if (girl) "Get a Plan" else "Go Premium",
             if (girl) "Requests need credits, and credits come with a plan." else PREMIUM_WHY[what] ?: "Free members can browse and view profiles."))
         p.addView(perks(h, if (girl) listOf("Request credits to send requests (1 credit each)", "Chat stays free for you", "Credits end when the plan ends")
-            else listOf("Unlimited chat", "Send requests to verified singles (1 credit each)", "Post and watch stories near you")), lp(MATCH, WRAP, t = 16f))
+            else listOf("Unlimited chat", "Send requests to verified members (1 credit each)", "See who messaged you and viewed your profile")), lp(MATCH, WRAP, t = 16f))
         if (intro?.optBoolean("available") == true) {
             val r = hbox(h.context, 10f).apply { background = grad(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Rs.c("#FFF4D6"), Rs.c("#FFFBEF")), 16f, 1f, Rs.c("#F4D27A")); setPadding(dpi(12f), dpi(10f), dpi(12f), dpi(10f)) }
             r.addView(ImageView(h.context).apply { setImageDrawable(Icon(Lucide.Sparkles, Rs.c("#B45309"), 22f)) }, lp(dpi(22f), dpi(22f)))
@@ -101,15 +100,15 @@ object SdSheets {
         close = h.layer.sheet(p)
     }
 
-    // ── Verify first (girls): Secret Dating is free for verified girls ──
+    // ── Verify first (girls): Reconnect is free for verified girls ──
     fun verify(h: SecretHome, status: String, onVerify: () -> Unit) {
         val pending = status == "pending"
         val p = panel(h)
         var close: () -> Unit = {}
         p.addView(head(h, if (pending) Icon(Lucide.Hourglass, Color.WHITE, 25f, 2f) else Icon(Lucide.ShieldCheck, Color.WHITE, 26f, 2f), if (pending) "Under review" else "Verify your profile",
-            when { pending -> "Our team is checking your video. Secret Dating opens for you as soon as it's approved."
+            when { pending -> "Our team is checking your video. Reconnect opens for you as soon as it's approved."
                 status == "rejected" -> "Your last video wasn't approved. Verify again with a short live video."
-                else -> "Secret Dating is free for verified girls. Verify with a short live video, the same as Become a Creator." }))
+                else -> "Reconnect is free for verified girls. Verify with a short live video, the same as Become a Creator." }))
         p.addView(perks(h, listOf("Chat free — no plan needed", "Be seen on the map as verified", "First plan: 1 day + 3 credits for 1 True Find coin")), lp(MATCH, WRAP, t = 16f))
         if (!pending) p.addView(bigButton(h, if (status == "rejected") "Verify Again" else "Verify Now") { close(); onVerify() }, lp(MATCH, dpi(58f), t = 20f))
         p.addView(textButton(h, if (pending) "OK" else "Not now") { close() }, lp(MATCH, dpi(46f), t = if (pending) 18f else 6f))
@@ -190,110 +189,6 @@ object SdSheets {
         close = h.layer.sheet(p, locked = { sending })
     }
 
-    // ── Add to your story ──
-    fun addStory(h: SecretHome, onPosted: (JSONObject) -> Unit) {
-        val ctx = h.context
-        val p = panel(h, 20f)
-        var close: () -> Unit = {}
-        var bytes: ByteArray? = null
-        var mime = "image/jpeg"
-        var busy = false
-        val top = hbox(ctx)
-        top.addView(sdText(ctx, "Add to your story", 26f, K.wine, serif = true), lp(0, WRAP, 1f))
-        top.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.X, K.wine, 24f)); scaleType = ImageView.ScaleType.CENTER }.press().onTap { if (!busy) close() }, lp(dpi(44f), dpi(44f)))
-        p.addView(top, lp(MATCH, WRAP))
-        // the photo box (9 : 14), dashed until a photo is chosen
-        val w = (ctx.resources.displayMetrics.widthPixels * 0.6f).toInt()
-        val pic = FrameLayout(ctx).apply { background = DashedBox(); clipToOutline = true; outlineProvider = android.view.ViewOutlineProvider.BACKGROUND }
-        val preview = ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
-        val empty = vbox(ctx, 8f, Gravity.CENTER_HORIZONTAL)
-        empty.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ImagePlus, K.rose, 34f, 1.6f)) }, lp(dpi(34f), dpi(34f)))
-        empty.addView(sdText(ctx, "Choose a photo", 17f, K.ink2), lp(WRAP, WRAP))
-        val change = sdText(ctx, "Change", 13f, K.wine).apply { background = rounded(Rs.argb(230, 255, 255, 255), 12f); setPadding(dpi(10f), dpi(4f), dpi(10f), dpi(4f)); visibility = View.GONE }
-        pic.addView(preview, FrameLayout.LayoutParams(-1, -1))
-        pic.addView(empty, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-        pic.addView(change, FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.BOTTOM).apply { setMargins(0, 0, dpi(8f), dpi(8f)) })
-        p.addView(pic, lp(w, (w * 14f / 9f).toInt(), t = 10f, gravity = Gravity.CENTER_HORIZONTAL))
-        // caption
-        val capBox = FrameLayout(ctx)
-        val cap = EditText(ctx).apply {
-            hint = "Say something (optional)"; setHintTextColor(K.soft); setTextColor(K.ink); typeface = Ui.regular; textSize = 16f
-            filters = arrayOf(InputFilter.LengthFilter(140)); maxLines = 1; isSingleLine = true
-            background = rounded(Color.WHITE, 25f, 1f, Rs.c("#F2C3D8")); setPadding(dpi(18f), 0, dpi(60f), 0)
-        }
-        val count = sdText(ctx, "0/140", 13f, K.soft, bold = false)
-        capBox.addView(cap, FrameLayout.LayoutParams(-1, dpi(50f)))
-        capBox.addView(count, FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL).apply { rightMargin = dpi(18f) })
-        p.addView(capBox, lp(MATCH, WRAP, t = 14f))
-        val err = sdText(ctx, "", 14f, Rs.c("#c0153d"), bold = false).lineHeight(1.2f).apply { visibility = View.GONE }
-        p.addView(err, lp(MATCH, WRAP, l = 2f, r = 2f, t = 10f))
-        val rule = hbox(ctx, 10f, Gravity.TOP).apply { background = rounded(Rs.c("#FFF6FA"), 16f, 1f, K.line2); setPadding(dpi(14f), dpi(12f), dpi(14f), dpi(12f)) }
-        rule.addView(ImageView(ctx).apply { setImageDrawable(Icon(Lucide.ShieldCheck, K.rose, 18f)) }, lp(dpi(18f), dpi(18f), t = 1f))
-        rule.addView(sdText(ctx, "No phone numbers, links or social IDs — in the text or written on the photo. Stories with them are removed automatically. Your story disappears after 24 hours.", 13.5f, K.sub, bold = false).lineHeight(1.15f), lp(0, WRAP, 1f))
-        p.addView(rule, lp(MATCH, WRAP, t = 14f))
-        lateinit var post: FrameLayout
-        fun refresh() {
-            val capErr = SdRules.findContact(cap.text.toString())
-            count.text = "${cap.text.length}/140"
-            cap.background = rounded(Color.WHITE, 25f, 1f, if (capErr.isNotEmpty()) Rs.c("#f87171") else Rs.c("#F2C3D8"))
-            val e = err.tag as? String ?: ""
-            val shownErr = e.ifEmpty { if (capErr.isNotEmpty()) "$capErr Please remove it." else "" }
-            err.text = shownErr; err.visibility = if (shownErr.isEmpty()) View.GONE else View.VISIBLE
-            post.alpha = if (bytes == null || capErr.isNotEmpty()) 0.5f else 1f
-        }
-        cap.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun afterTextChanged(s: Editable?) { err.tag = ""; refresh() }
-        })
-        pic.press().onTap {
-            if (busy) return@onTap
-            val pick = pickImage ?: return@onTap
-            pick(chosen@{ b, type ->
-                if (b == null) return@chosen
-                if (!type.startsWith("image/")) { err.tag = "Please choose a photo."; refresh(); return@chosen }
-                if (b.size > 10 * 1024 * 1024) { err.tag = "This photo is too big. Please choose one under 10 MB."; refresh(); return@chosen }
-                bytes = b; mime = type; err.tag = ""
-                val o = BitmapFactory.Options().apply { inSampleSize = 4 }
-                preview.setImageBitmap(BitmapFactory.decodeByteArray(b, 0, b.size, o))
-                preview.visibility = View.VISIBLE; empty.visibility = View.GONE; change.visibility = View.VISIBLE
-                pic.background = rounded(Color.WHITE, 20f, 2f, K.line)
-                refresh()
-            })
-        }
-        post = bigButton(h, "Post story", Icon(Lucide.Send, Color.WHITE, 18f), 20f) {
-            val b = bytes ?: return@bigButton
-            if (busy) return@bigButton
-            val bad = SdRules.findContact(cap.text.toString())
-            if (bad.isNotEmpty()) { err.tag = "$bad Please remove it to post."; refresh(); return@bigButton }
-            busy = true; err.tag = ""; refresh()
-            val label = (post.getChildAt(0) as TextView)
-            label.text = "Checking & posting…"; label.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-            Api.uploadPrivate(b, "story.jpg", mime) { up ->
-                val uri = up.data.optString("file_uri")
-                if (!up.ok || uri.isEmpty()) { busy = false; label.text = "Post story"; err.tag = "Upload failed. Please try again."; refresh(); return@uploadPrivate }
-                Api.invoke("createStory", JSONObject().put("file_uri", uri).put("kind", "photo").put("caption", cap.text.toString().trim().take(140))) { r ->
-                    busy = false
-                    if (r.ok) { close(); onPosted(r.data); return@invoke }
-                    label.text = "Post story"; label.icon(Icon(Lucide.Send, Color.WHITE, 18f), 9f)
-                    val d = r.data; val e = d.optString("error")
-                    err.tag = when {
-                        e == "blocked" -> "Story removed: ${d.optString("reason").ifEmpty { "it has a phone number, link or ID." }}"
-                        e == "premium_required" -> "Stories are for Premium members."
-                        e == "verify_first" -> "Verify your profile first — stories are free for verified girls."
-                        e == "profile_incomplete" -> "Add your name, age, state and city first."
-                        r.status == 503 -> "Could not check the photo. Please try again."
-                        r.status == 404 -> "Stories are not switched on yet. Please try again later."
-                        else -> d.optString("message").ifEmpty { e.ifEmpty { r.error ?: "Could not post your story. Please try again." } }
-                    }
-                    refresh()
-                }
-            }
-        }
-        p.addView(post, lp(MATCH, dpi(56f), t = 16f))
-        refresh()
-        close = h.layer.sheet(p, z = 35f, locked = { busy })
-    }
 
     /** the dashed pink box of "Choose a photo" (2px dashed #EE6AA9, radius 20, K.tile inside) */
     private class DashedBox : android.graphics.drawable.Drawable() {

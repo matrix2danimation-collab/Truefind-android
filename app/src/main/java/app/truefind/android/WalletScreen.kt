@@ -94,7 +94,7 @@ object WalletNet : WalletSource {
 
 /**
  * WALLET — native version of src/pages/Wallet.jsx: the True Find coin wallet and
- * the Secret Dating wallet (credits and plans), the creators' Earnings tab, the
+ * the Reconnect wallet (credits and plans), the creators' Earnings tab, the
  * coin packs with the green Pay bar, the payment steps, history and help.
  * Same backend functions, same rules, same look. Full screen (no bottom bar).
  *
@@ -143,7 +143,7 @@ class WalletScreen(
     /** the credits could not be read (no answer in 12 s, or an error): the header says so instead of an endless "–" */
     private var creditsFailed = false
     private var credReq = 0
-    /** the credits Secret Dating Home read a moment ago (used only while fresh: at most 2 minutes old) */
+    /** the credits Reconnect Home read a moment ago (used only while fresh: at most 2 minutes old) */
     private var offeredCredits: JSONObject? = null
     private var offeredAt = 0L
     private var savingRate = false
@@ -242,7 +242,7 @@ class WalletScreen(
 
         // two separate wallets
         switchBox.setPadding(Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f))
-        for ((k, label) in listOf("truefind" to "True Find", "secret" to "Secret Dating")) {
+        for ((k, label) in listOf("truefind" to "True Find", "secret" to "Reconnect")) {
             val t = WV.text(ctx, label, 15f, T.off, true).apply {
                 gravity = Gravity.CENTER
                 isClickable = true
@@ -322,7 +322,7 @@ class WalletScreen(
         }
         // back from the plan payment page: that tap is over
         if (buyingCredits) { buyingCredits = false; renderPayBar() }
-        // ?app=secret opens the Secret Dating wallet, a plain /wallet the True Find wallet
+        // ?app=secret opens the Reconnect wallet, a plain /wallet the True Find wallet
         val target = if (q["app"] == "secret") "secret" else "truefind"
         if (first) {
             app = target
@@ -336,7 +336,7 @@ class WalletScreen(
         // back from paying for a plan: say so, and check the plan again shortly
         val st = q["premium"].orEmpty()
         if (q["app"] == "secret" && st.isNotEmpty()) {
-            if (st == "success") note = "Payment received — your Secret Dating plan is active!"
+            if (st == "success") note = "Payment received — your Reconnect plan is active!"
             else if (st == "cancelled") note = "Payment cancelled. You can choose a plan anytime."
             renderBody()
             main.postDelayed({ loadCredits() }, 3500)
@@ -416,8 +416,8 @@ class WalletScreen(
     }
 
     /**
-     * Secret Dating Home has just read the credits (the very answer this page asks for): kept, so the Secret
-     * Dating wallet opens with them at once instead of "–". The server is still asked; its answer replaces them.
+     * Reconnect Home has just read the credits (the very answer this page asks for): kept, so the Reconnect
+     * wallet opens with them at once instead of "–". The server is still asked; its answer replaces them.
      * Never older than 2 minutes, so a number on screen is never an old one.
      */
     fun offerCredits(d: JSONObject) {
@@ -444,7 +444,7 @@ class WalletScreen(
     private fun load(initial: Boolean = false, quiet: Boolean = false, done: ((Boolean) -> Unit)? = null) {
         val id = ++reqId
         val forApp = app
-        // (21 Nov, owner: the Secret Dating wallet kept loading forever. A first load that has no answer in 12 s
+        // (21 Nov, owner: the Reconnect wallet kept loading forever. A first load that has no answer in 12 s
         // stops the spinner and says so; pull down tries again, and a late answer still fills the page.)
         if (loading) main.postDelayed({
             if (id == reqId && forApp == app && loading) {
@@ -510,7 +510,7 @@ class WalletScreen(
         }
     }
 
-    /** Secret Dating: credits, the running plan, the first-time offer and the True Find coins. */
+    /** Reconnect: credits, the running plan, the first-time offer and the True Find coins. */
     private fun loadCredits(done: (() -> Unit)? = null) {
         val id = ++credReq
         // True Find coins (only for the "Unlock for 1 coin" offer): the True Find wallet already read by Home or
@@ -762,12 +762,12 @@ class WalletScreen(
         }
         if (coinsView && secret) secretSections()
 
-        // Creator earnings (Secret Dating wallet; True Find uses the Earnings tab)
+        // Creator earnings (Reconnect wallet; True Find uses the Earnings tab)
         if (isCreator && !showEarnings) section(WV.box(context, true).apply { setPadding(0, 0, 0, Ui.dpi(14f)); addView(rateCard(earned), WV.lp(WV.MATCH, WV.WRAP)) })
 
         if (coinsView) {
             if (loading) {
-                // (Secret Dating: only the coin history still waits for its answer)
+                // (Reconnect: only the coin history still waits for its answer)
                 val f = FrameLayout(ctx)
                 f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
                 section(f.also { it.minimumHeight = Ui.dpi(120f) })
@@ -957,21 +957,21 @@ class WalletScreen(
         }
     }
 
-    // ───────── Secret Dating wallet: request credits + plans ─────────
+    // ───────── Reconnect wallet: request credits + plans ─────────
 
     private fun secretSections() {
         val t = T
         val ctx = context
         noteBox()?.let { section(it) }
 
-        // girls: Creator verification first — then Secret Dating is free
+        // girls: Creator verification first — then Reconnect is free
         if (sdMustVerify) {
             val r = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
                 background = WV.round(t.tint, 16f, t.tintLine)
                 setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(12f))
             }
             r.addView(WIcons.view(ctx, WIcons.SHIELD_CHECK, t.accent, 24f))
-            r.addView(WV.text(ctx, "Verify your profile first (Creator verification). Then Secret Dating is free for you, and a plan only adds request credits.", 14f, t.ink, false, 19f),
+            r.addView(WV.text(ctx, "Verify your profile first (Creator verification). Then Reconnect is free for you, and a plan only adds request credits.", 14f, t.ink, false, 19f),
                 WV.lp(0, WV.WRAP, l = 10f, weight = 1f))
             r.addView(WV.button(ctx, "Verify now", t.accent, Color.WHITE, 40f, 12f, 14f).apply {
                 setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), 0)
@@ -982,7 +982,7 @@ class WalletScreen(
 
         // first-time offer: 1 True Find coin → 1 day + 3 credits (once, after verification)
         if (sdOffer && !sdMustVerify) {
-            val box = offerBox("FIRST TIME", "Try Secret Dating for 1 coin", "1 day${if (sdGirl) "" else " of unlimited chat"} + 3 request credits.")
+            val box = offerBox("FIRST TIME", "Try Reconnect for 1 coin", "1 day${if (sdGirl) "" else " of unlimited chat"} + 3 request credits.")
             if (sdIntro?.opt("available") == true) {
                 val off = claimingIntro || tfCoins == 0.0
                 val lead: View? = if (claimingIntro) WSpinner(ctx, 18f, Color.WHITE) else null
@@ -1065,9 +1065,9 @@ class WalletScreen(
         }
         section(hist)
 
-        // Secret Dating has its own coins too (gifts and paid chat there)
+        // Reconnect has its own coins too (gifts and paid chat there)
         val sc = WV.box(ctx, true)
-        sc.addView(WV.h2(ctx, "Secret Dating coins", t.ink))
+        sc.addView(WV.h2(ctx, "Reconnect coins", t.ink))
         val r = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
             background = WV.round(Color.WHITE, 16f, t.line)
             setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
@@ -1090,7 +1090,7 @@ class WalletScreen(
         section(sc)
     }
 
-    /** One Secret Dating plan: radio, name + tag, days, credits, price. */
+    /** One Reconnect plan: radio, name + tag, days, credits, price. */
     private inner class PlanRow(val p: WPlan) : LinearLayout(context) {
         private val dot = View(context)
         private val ringV = FrameLayout(context)
@@ -1541,7 +1541,7 @@ class WalletScreen(
         }
     }
 
-    /** RateCard: the creator's premium chat rate (₹ per message), with earnings on the Secret Dating wallet. */
+    /** RateCard: the creator's premium chat rate (₹ per message), with earnings on the Reconnect wallet. */
     private fun rateCard(earnedShown: Double?): View {
         val ctx = context
         val c = WV.card(ctx, 18f, 18f)
@@ -1719,7 +1719,7 @@ class WalletScreen(
         super.onAttachedToWindow()
         if (source !== WalletNet) return
         PlayBilling.onRecovered = { d ->
-            note = if (d.str("kind") == "plan") "Your earlier payment went through — your Secret Dating plan is active!" else "Your earlier payment went through — the coins are in your wallet."
+            note = if (d.str("kind") == "plan") "Your earlier payment went through — your Reconnect plan is active!" else "Your earlier payment went through — the coins are in your wallet."
             load()
             if (app == "secret") loadCredits { }
         }
@@ -1793,7 +1793,7 @@ class WalletScreen(
                 cr.addView(WCoins.flat(ctx, 20f))
                 cr.addView(WV.text(ctx, "${wRupees(f.pack.coins)} coins", 15f, WC.ink, true), WV.lp(WV.WRAP, WV.WRAP, l = 6f))
                 c.addView(cr, WV.lp(WV.WRAP, WV.WRAP, t = 2f))
-                c.addView(WV.text(ctx, "to your ${if (secret) "Secret Dating" else "True Find"} wallet${if (f.pack.offer) " · first recharge offer" else ""}", 13f, WC.sub).apply { gravity = Gravity.CENTER },
+                c.addView(WV.text(ctx, "to your ${if (secret) "Reconnect" else "True Find"} wallet${if (f.pack.offer) " · first recharge offer" else ""}", 13f, WC.sub).apply { gravity = Gravity.CENTER },
                     WV.lp(WV.WRAP, WV.WRAP, t = 2f))
                 s.content.addView(c, WV.lp(WV.MATCH, WV.WRAP))
                 val m = WV.card(ctx, 14f, 8f)
@@ -1862,7 +1862,7 @@ class WalletScreen(
                 r.addView(WCoins.flat(ctx, 34f))
                 r.addView(WV.text(ctx, wRupees(coinsAdded), 40f, WC.ink, true), WV.lp(WV.WRAP, WV.WRAP, l = 8f))
                 col.addView(r, WV.lp(WV.MATCH, WV.WRAP, t = 6f))
-                col.addView(WV.text(ctx, "coins added to your ${if (secret) "Secret Dating" else "True Find"} wallet", 14f, WC.sub).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 2f))
+                col.addView(WV.text(ctx, "coins added to your ${if (secret) "Reconnect" else "True Find"} wallet", 14f, WC.sub).apply { gravity = Gravity.CENTER }, WV.lp(WV.MATCH, WV.WRAP, t = 2f))
                 val card = WV.card(ctx, 16f, 4f)
                 card.addView(WV.row(ctx, "Amount paid", "₹${wRupees(f.pack.price)}"))
                 card.addView(WV.row(ctx, "Payment mode", WData.methodName(f.method)))
@@ -1954,7 +1954,7 @@ class WalletScreen(
         }
     }
 
-    /** Secret Dating plan (Daily ₹12 · Starter ₹39 · Pro ₹79 · Elite ₹169): Google Play's payment screen (25 Nov),
+    /** Reconnect plan (Daily ₹12 · Starter ₹39 · Pro ₹79 · Elite ₹169): Google Play's payment screen (25 Nov),
      *  then the server gives the plan's days and credits. (The emulator pictures keep the old checkout call.) */
     private fun buyPlan(planKey: String) {
         if (buyingCredits) return
@@ -1967,12 +1967,12 @@ class WalletScreen(
             }) { o ->
                 buyingCredits = false
                 note = when (o) {
-                    is PlayBilling.Outcome.Done -> "Payment received — your Secret Dating plan is active!"
+                    is PlayBilling.Outcome.Done -> "Payment received — your Reconnect plan is active!"
                     PlayBilling.Outcome.Pending -> "Payment pending — your plan starts as soon as Google confirms the payment."
                     PlayBilling.Outcome.Cancelled -> ""
                     is PlayBilling.Outcome.NotReady -> "Online payments are coming soon."
                     is PlayBilling.Outcome.Failed ->
-                        if (o.code == "verify_first") "Complete your Creator verification first — then Secret Dating is free for you." else o.message
+                        if (o.code == "verify_first") "Complete your Creator verification first — then Reconnect is free for you." else o.message
                 }
                 if (o is PlayBilling.Outcome.Done) { load(); loadCredits { renderBody() } }
                 renderBody(); renderPayBar()
@@ -1988,7 +1988,7 @@ class WalletScreen(
             val d = r.data
             note = when {
                 r.status == 503 -> "Online payments are coming soon."
-                d.str("error") == "verify_first" -> "Complete your Creator verification first — then Secret Dating is free for you."
+                d.str("error") == "verify_first" -> "Complete your Creator verification first — then Reconnect is free for you."
                 r.ok -> d.str("error").ifEmpty { "Could not start checkout." }
                 else -> d.str("message").ifEmpty { d.str("error") }.ifEmpty { axiosMessage(r) }.ifEmpty { "Could not start checkout." }
             }
@@ -2008,7 +2008,7 @@ class WalletScreen(
             if (r.ok) {
                 if (d.opt("ok") == true) {
                     d.optJSONObject("wallet")?.let { tfCoins = it.num("coins") }
-                    note = "Done — Secret Dating Premium is on for 1 day with 3 request credits."
+                    note = "Done — Reconnect Premium is on for 1 day with 3 request credits."
                     loadCredits { claimingIntro = false; renderBody() }
                     return@fn
                 }
@@ -2016,7 +2016,7 @@ class WalletScreen(
                 note = when {
                     d.str("error") == "insufficient_coins" -> "You need 1 True Find coin. Add coins to your True Find wallet first."
                     d.str("error") == "verify_first" -> "Complete your verification first to get this offer."
-                    truthy(d.opt("needs_membership")) -> "Join Secret Dating first, then come back for the offer."
+                    truthy(d.opt("needs_membership")) -> "Join Reconnect first, then come back for the offer."
                     else -> d.str("message").ifEmpty { d.str("error") }.ifEmpty { "Could not start the offer. Please try again." }
                 }
                 if (d.str("error") == "offer_used") { loadCredits { claimingIntro = false; renderBody() }; return@fn }
@@ -2163,7 +2163,7 @@ class WalletScreen(
             "gpending" -> { flow = Flow("pending", WData.findPack("p259")!!, "gplay"); showFlow() }
             "gfailed" -> { flow = Flow("failed", WData.findPack("p259")!!, "gplay", error = "Google Play is not reachable right now. Check your internet and try again."); showFlow() }
             "gsoon-admin" -> { isAdmin = true; flow = Flow("soon", WData.findPack("p259")!!); showFlow() }
-            "gplan-done" -> { pickPlan("starter"); note = "Payment received — your Secret Dating plan is active!"; renderBody(); renderPayBar() }
+            "gplan-done" -> { pickPlan("starter"); note = "Payment received — your Reconnect plan is active!"; renderBody(); renderPayBar() }
             "gplan-pending" -> { pickPlan("starter"); note = "Payment pending — your plan starts as soon as Google confirms the payment."; renderBody(); renderPayBar() }
             "tx" -> transactions.firstOrNull()?.let { openTx(it) }
             "help" -> { faqOpen.clear(); faqOpen.add(0); renderBody(); goToHelp() }

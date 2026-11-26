@@ -100,7 +100,7 @@ object HomeRules {
         )
         val videoOk = creatorOk(p)
         val sd = ArrayList<Step>()
-        sd.add(Step("Secret Dating", apps.contains("secret"), false, "/secret-app"))
+        sd.add(Step("Reconnect", apps.contains("secret"), false, "/secret-app"))
         if (genderOf(p) == "f") sd.add(Step("Live video", videoOk, !videoOk && creatorStatus(p) == "pending", "/profile?open=creator"))
         val state = if (tf.any { !it.ok }) "pending" else if (sd.any { !it.ok }) "tf" else "full"
         val open = (if (state == "pending") tf + sd else sd).filter { !it.ok }

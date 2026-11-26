@@ -52,11 +52,11 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Secret Dating chat room for one match (/chat/:matchId) — the web's src/pages/ChatRoom.jsx, native.
+ * Reconnect chat room for one match (/chat/:matchId) — the web's src/pages/ChatRoom.jsx, native.
  * Messages stream in live. A message with a phone number, ID, email, link or abusive words is NOT sent:
  * it stays only on your side with a red ✕ "Not sent". Text and GIFs only (voice notes and photos sent
  * earlier still show). Tap the photo or the name at the top to open their full profile.
- * Back always returns to the Secret Dating chat list.
+ * Back always returns to the Reconnect chat list.
  */
 @SuppressLint("ViewConstructor")
 class ChatRoom(
@@ -91,14 +91,12 @@ class ChatRoom(
     private var chatApp = "secret"
     private var otherTyping = false
     private var blockRow: JSONObject? = null
-    private var story: JSONObject? = null
-    private var storyPremium = false
     private var gifOpen = false
     private var gifTab = "sweet"
     private var meId = ""
     private var gen = 0
 
-    // ── the look: a Secret Dating chat wears the maroon and blush of the owner's picture (23 Nov);
+    // ── the look: a Reconnect chat wears the maroon and blush of the owner's picture (23 Nov);
     //    True Find's own chats keep the pink they had. Every colour below asks which one it is. ──
     private val sdLook get() = chatApp != "truefind"
     private val pk: SdPal get() = if (sdLook) K else KP
@@ -136,7 +134,7 @@ class ChatRoom(
     private val input = EditText(ctx)
     private val counter = sdText(ctx, "", 12f, pk.soft, bold = false)
     private val gifBtn = sdText(ctx, "GIF", 14f, pk.hot)
-    // Secret Dating's look (23 Nov): the gifts on their own round button, a smiley for a row of quick emojis
+    // Reconnect's look (23 Nov): the gifts on their own round button, a smiley for a row of quick emojis
     private val backdrop = PinkBackdrop(ctx)
     private val headBand = FrameLayout(ctx)
     private val headWhite = FrameLayout(ctx)
@@ -283,7 +281,7 @@ class ChatRoom(
         other = null; otherPhotoRaw = ""; messages.clear(); pending.clear(); held = readHeld(id)
         loading = true; error = ""; sendFailed = false; balance = null; lowCoins = false; chatApp = "secret"; otherTyping = false
         failedKey = ""; failedText = ""
-        blockRow = null; story = null; storyPremium = false; gifOpen = false; gifTab = "sweet"; input.setText(""); shownKeys = emptyList()
+        blockRow = null; gifOpen = false; gifTab = "sweet"; input.setText(""); shownKeys = emptyList()
         listCol.removeAllViews(); tailCol.removeAllViews()
         // what was seen of this chat before (the chat list, the last visit) shows at once; the server's answer
         // follows quietly (owner, 20 Nov: the chat took half a minute to show anything)
@@ -295,7 +293,7 @@ class ChatRoom(
             otherPhotoRaw = SdRules.s(other, "photo")
         }
         // a chat not seen in a list yet (opened from a notification): the look it had last time, so a True Find chat
-        // does not flash Secret Dating's maroon first
+        // does not flash Reconnect's maroon first
         if (ChatCache.chat(id) == null && prefs.getString("chat_app_$id", "") == "truefind") chatApp = "truefind"
         ChatCache.messages(id)?.let { list -> messages.addAll(list); loading = false }
         ChatCache.me().takeIf { it.isNotEmpty() }?.let { meId = it }
@@ -384,8 +382,7 @@ class ChatRoom(
             "block" -> confirm("block")
             "blocked" -> { blockRow = JSONObject(); renderComposer(); renderList() }
             "sendgif" -> gifOf("bouquet")?.let { sendGifNow(it) }
-            "toast" -> say("Watching stories is for Premium members.", "premium")
-            "story" -> { storyPremium = true; openStory() }
+            "toast" -> say("Message sent.")
             "error" -> { }
         }
         android.util.Log.i("TFDBG", "preview open $what")
@@ -443,17 +440,6 @@ class ChatRoom(
                 Api.invoke("getWallet", JSONObject().put("app", chatApp)) { w -> if (g == gen && w.ok) { balance = w.data.optJSONObject("wallet")?.optInt("coins") ?: 0; renderTray() } }
                 // did I block this person?
                 if (meId.isNotEmpty()) Api.filter("Block", JSONObject().put("blocker_id", meId), null, 200) { b -> if (g == gen && b.ok) { blockRow = findBlock(b.data.optJSONArray("items")); renderComposer() } }
-                // their story (Secret Dating chats only)
-                if (chatApp != "truefind") Api.invoke("getStories", JSONObject()) { s ->
-                    if (g != gen || !s.ok) return@invoke
-                    val arr = s.data.optJSONArray("stories")
-                    val o = other ?: JSONObject()
-                    story = (0 until (arr?.length() ?: 0)).mapNotNull { arr!!.optJSONObject(it) }.firstOrNull {
-                        (SdRules.s(o, "profile_id").isNotEmpty() && it.optString("profile_id") == SdRules.s(o, "profile_id")) || (SdRules.s(o, "user_id").isNotEmpty() && it.optString("user_id") == SdRules.s(o, "user_id"))
-                    }
-                    storyPremium = s.data.optBoolean("premium")
-                    renderHeader()
-                }
                 renderAll()
             }
         }
@@ -787,14 +773,9 @@ class ChatRoom(
     private fun renderHeader() {
         val o = other
         headPhoto.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", SdRules.s(o, "profile_id", "id")).put("gender", SdRules.s(o, "gender")), Ui.dpi(43f)))
-        val st = story
-        headRing.background = when {
-            // on the maroon band: a white ring; their story lights it bright pink (seen: pale)
-            sdLook -> oval(if (st == null) Color.WHITE else if (st.optBoolean("seen")) Rs.c("#F0C9C8") else Rs.SEAL)
-            st == null -> GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
-            st.optBoolean("seen") -> oval(Ui.c("#F2C3D8"))
-            else -> RingDrawable(intArrayOf(Ui.c("#FFC2DF"), Ui.c("#F7569F"), Ui.c("#E3086C"), Ui.c("#FF8CC8"), Ui.c("#FFC2DF")), floatArrayOf(0f, .25f, .5f, .75f, 1f))
-        }
+        // on the maroon band: a white ring (no stories any more, 26 Nov)
+        headRing.background = if (sdLook) oval(Color.WHITE)
+            else GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#F7569F"), Ui.c("#C7105F"))).apply { shape = GradientDrawable.OVAL }
         headDot.visibility = if (isOnline && !loading) VISIBLE else GONE
         headName.text = SdRules.s(o, "name").ifEmpty { if (loading) "" else "Chat" }
         headName.setCompoundDrawablesWithIntrinsicBounds(null, null, if (!isVerified) null else if (sdLook) Seal(19f, Rs.SEAL, Color.WHITE) else Seal(19f, Color.WHITE, pk.rose), null); headName.compoundDrawablePadding = dpi(6f)
@@ -1237,7 +1218,7 @@ class ChatRoom(
     private fun buildComposer(): View {
         composer.setPadding(dpi(12f), dpi(8f), dpi(12f), dpi(12f))
         val row = hbox(context, 8f, Gravity.BOTTOM)
-        // Secret Dating's look: the gifts on a round button of their own, left of the message box
+        // Reconnect's look: the gifts on a round button of their own, left of the message box
         giftBtn.setImageDrawable(Icon(Lucide.Gift, Rs.M, 24f, 1.9f)); giftBtn.scaleType = ImageView.ScaleType.CENTER
         giftBtn.background = oval(Color.WHITE, 1f, Rs.LINE); giftBtn.contentDescription = "Gifts"
         giftBtn.press().onTap { gifOpen = !gifOpen; if (gifOpen) { hideKeyboard(); emojiOpen = false; renderEmoji() }; renderTray() }
@@ -1392,18 +1373,6 @@ class ChatRoom(
             col.addView(nameRow, lp(MATCH, WRAP, l = 24f, r = 24f, t = 18f))
             col.addView(sdText(context, if (online) "Online now" else lastSeenOf(o), 15f, if (sdLook) Rs.SUB else Color.WHITE).shadow(2f, 1f, glow).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP, t = 6f))
             if (where.isNotEmpty()) col.addView(sdText(context, where, 17f, onBg).oneLine().shadow(2f, 1f, glow).icon(Icon(Lucide.MapPin, if (sdLook) Rs.ICON else Color.WHITE, 19f, 2f), 6f), lp(WRAP, WRAP, t = 6f, gravity = Gravity.CENTER_HORIZONTAL))
-            // story
-            story?.let {
-                val b = hbox(context, 9f).apply { background = rounded(Color.WHITE, 22f, 1f, pk.line); setPadding(dpi(4f), 0, dpi(16f), 0) }
-                val sr = FrameLayout(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(pc("#F7569F"), pc("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-                val sw = FrameLayout(context).apply { background = oval(pk.tint, 2f, Color.WHITE); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-                val sp = RoundPhoto(context, 28f); sp.set(listOf(otherPhotoRaw), Demo.round(JSONObject().put("id", pid), Ui.dpi(28f))); if (!storyPremium) sp.dim = 0.35f
-                sw.addView(sp, LayoutParams(-1, -1)); sr.addView(sw, LayoutParams(-1, -1))
-                b.addView(sr, lp(dpi(36f), dpi(36f)))
-                b.addView(if (storyPremium) sdText(context, "Watch story", 15.5f, pk.wine) else sdText(context, "Story · Premium", 15.5f, pk.wine).icon(Icon(Lucide.Lock, pk.wine, 15f), 6f))
-                b.contentDescription = if (storyPremium) "Watch $first's story" else "Stories are for Premium members"
-                col.addView(b.press().onTap { openStory() }, lp(WRAP, dpi(44f), t = 14f, gravity = Gravity.CENTER_HORIZONTAL))
-            }
             // main button: back to the chat
             val back = sdText(context, "Back to Chat", 22f, Color.WHITE).icon(Icon(Lucide.MessageCircleMore, Color.WHITE, 27f, 2f), 10f).apply { gravity = Gravity.CENTER }
             val backBox = FrameLayout(context).apply { background = ckBtn(30f, Color.WHITE); elevation = Ui.dp(6f); outlineSpotShadowColorCompat(pa(191, 190, 0, 85)); addView(back, LayoutParams(-2, -1, Gravity.CENTER)) }
@@ -1510,7 +1479,6 @@ class ChatRoom(
         var close: () -> Unit = {}
         p.addView(sheetRow(Lucide.User, "View profile", null, false) { close(); profilePage() }, lp(MATCH, WRAP, t = 8f))
         p.addView(sheetRow(if (pinned) Lucide.PinOff else Lucide.Pin, if (pinned) "Unpin chat" else "Pin chat", if (pinned) "It goes back to its normal place" else "Keep it at the top of your chats", false) { close(); togglePin() }, lp(MATCH, WRAP, t = 8f))
-        if (story != null) p.addView(sheetRow(Lucide.Eye, "Watch story", if (storyPremium) "Posted in the last 24 hours" else "Premium", false) { close(); openStory() }, lp(MATCH, WRAP, t = 8f))
         if (blockRow != null) p.addView(sheetRow(Lucide.Ban, "Unblock", "Let them message you again", false) { close(); unblock() }, lp(MATCH, WRAP, t = 8f))
         else p.addView(sheetRow(Lucide.Ban, "Block", "They won't be able to message you", true) { close(); confirm("block") }, lp(MATCH, WRAP, t = 8f))
         p.addView(sheetRow(Lucide.Trash2, "Delete chat", "Removes this conversation for you", true) { close(); confirm("delete") }, lp(MATCH, WRAP, t = 8f))
@@ -1739,35 +1707,6 @@ class ChatRoom(
         close = layer.fade(f, z = 90f)
     }
 
-    private fun openStory() {
-        val s = story ?: return
-        if (!storyPremium) { say("Watching stories is for Premium members.", "premium"); return }
-        // one story, 6 s (counted on the clock), tap to close
-        val f = FrameLayout(context).apply { setBackgroundColor(Color.BLACK); contentDescription = "${SdRules.s(s, "name").ifEmpty { SdRules.s(other, "name") }}'s story" }
-        val img = ImageView(context).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
-        val sp = ProgressBar(context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.WHITE) }
-        f.addView(img, LayoutParams(-1, -1)); f.addView(sp, LayoutParams(dpi(30f), dpi(30f), Gravity.CENTER))
-        Photos.loadFull(SdRules.s(s, "media_url", "media_uri"), 1600) { b -> if (b != null) { img.setImageBitmap(b); sp.visibility = GONE } }
-        val top = vbox(context).apply { setPadding(dpi(12f), dpi(10f), dpi(12f), 0) }
-        val track = FrameLayout(context).apply { background = rounded(pa(64, 255, 255, 255), 2f) }
-        val fill = View(context).apply { background = rounded(Color.WHITE, 2f); pivotX = 0f; scaleX = 0f }
-        track.addView(fill, LayoutParams(-1, -1))
-        top.addView(track, lp(MATCH, dpi(3f)))
-        val row = FrameLayout(context)
-        row.addView(sdText(context, SdRules.s(s, "name").ifEmpty { SdRules.s(other, "name") }, 18f, Color.WHITE), LayoutParams(-2, -2, Gravity.START or Gravity.CENTER_VERTICAL))
-        var close: () -> Unit = {}
-        row.addView(ImageView(context).apply { setImageDrawable(Icon(Lucide.X, Color.WHITE, 22f)); scaleType = ImageView.ScaleType.CENTER; background = oval(pa(102, 0, 0, 0)); contentDescription = "Close story" }.onTap { close() }, LayoutParams(dpi(40f), dpi(40f), Gravity.END))
-        top.addView(row, lp(MATCH, WRAP, t = 10f))
-        f.addView(top, LayoutParams(-1, -2, Gravity.TOP))
-        if (SdRules.s(s, "caption").isNotEmpty()) f.addView(sdText(context, SdRules.s(s, "caption"), 16f, Color.WHITE, bold = false).shadow(6f, 1f, pa(230, 0, 0, 0)).apply { gravity = Gravity.CENTER },
-            LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(dpi(16f), 0, dpi(16f), dpi(28f)) })
-        f.setOnClickListener { close() }
-        Api.invoke("viewStory", JSONObject().put("story_id", s.optString("id"))) { }
-        val t0 = System.currentTimeMillis()
-        val tick = object : Runnable { override fun run() { val k = (System.currentTimeMillis() - t0) / 6000f; fill.scaleX = min(1f, k); if (k >= 1f) close() else f.postOnAnimation(this) } }
-        close = layer.fade(f, z = 95f, onClose = { f.removeCallbacks(tick); story = story?.put("seen", true); renderHeader() })
-        f.postOnAnimation(tick)
-    }
 
     // ═════════════ toast ═════════════
     private var toastView: View? = null
@@ -1792,7 +1731,7 @@ class ChatRoom(
 
     // ═════════════ helpers (same as the web) ═════════════
     companion object {
-        /** the row of quick emojis (Secret Dating's chat) */
+        /** the row of quick emojis (Reconnect's chat) */
         val EMOJIS = listOf("😊", "😂", "❤️", "😍", "😘", "🥰", "😉", "👍", "🙏", "😎", "🤗", "🔥", "🌹", "💕", "🎉", "👋", "😇", "🤔", "😋", "😢")
         fun kindOf(m: JSONObject): String {
             val k = (listOf("kind", "type", "message_type").map { m.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "").lowercase()

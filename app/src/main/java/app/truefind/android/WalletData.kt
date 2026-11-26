@@ -17,7 +17,7 @@ data class WPack(
     val tag: String? = null, val was: Long = 0, val offer: Boolean = false,
 )
 
-/** A Secret Dating plan (Premium + request credits; credits end with the plan). */
+/** A Reconnect plan (Premium + request credits; credits end with the plan). */
 data class WPlan(val key: String, val name: String, val price: Int, val credits: Int, val days: String, val tag: String? = null)
 
 /** Withdraw sums (Wallet.jsx payoutBreakdown). */
@@ -63,7 +63,7 @@ object WData {
 
     fun findPack(id: String?): WPack? = OFFERS.find { it.id == id } ?: PACKS.find { it.id == id }
 
-    // Secret Dating plans (the server's shared/secretPlans.ts has the same list).
+    // Reconnect plans (the server's shared/secretPlans.ts has the same list).
     val PLANS = listOf(
         WPlan("daily", "Daily", 12, 3, "1 day"),
         WPlan("starter", "Starter", 39, 5, "7 days", "Most popular"),

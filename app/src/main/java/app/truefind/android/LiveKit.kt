@@ -51,7 +51,7 @@ object LK {
     val HEART: DK.Gift get() = gift("heart")!!
     val GIFT_COUNTS = listOf(1, 5, 10, 20)
 
-    val CATEGORIES = listOf("Chat", "Music", "Friends", "Dating", "Fun")
+    val CATEGORIES = listOf("Chat", "Music", "Friends", "Advice", "Fun")
     val LANGUAGES = listOf("Hindi", "English", "Hinglish")
     val REASONS = listOf("Abuse or bad language", "Nudity or adult content", "Harassment or threats", "Spam or promotion", "Asking for money / numbers", "Fake profile", "Other")
 

@@ -234,7 +234,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
         // what the admin can do
         val g = AdGrid(ctx, 130f, 8f)
         g.addView(AU.btn(ctx, "Coins", "dark", true, AdIc.Coins) { adjust(c) })
-        g.addView(AU.btn(ctx, "Secret plan", "dark", true, AdIc.Crown) { secretPlan(c) })
+        g.addView(AU.btn(ctx, "Reconnect plan", "dark", true, AdIc.Crown) { secretPlan(c) })
         g.addView(AU.btn(ctx, "Message", "light", true, AdIc.MessageSquare) { message(c) })
         g.addView(AU.btn(ctx, "Warn", "light", true, AdIc.AlertTriangle) { warn(c) })
         if (AF.b(c, "banned")) g.addView(AU.btn(ctx, "Unban", "green", true, AdIc.RotateCcw) { unban(c) })
@@ -274,7 +274,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
         // wallets
         b.addView(AU.section(ctx, "Wallets"))
         val wg = AdGrid(ctx, 0f, 8f, 3)
-        for ((l, v) in listOf("True Find coins" to AF.n(tf, "coins"), "Earnings (TF)" to AF.n(tf, "earned_coins"), "Secret Dating coins" to AF.n(sd, "coins"))) {
+        for ((l, v) in listOf("True Find coins" to AF.n(tf, "coins"), "Earnings (TF)" to AF.n(tf, "earned_coins"), "Reconnect coins" to AF.n(sd, "coins"))) {
             wg.addView(AU.card(ctx, 10f).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
                 addView(AU.t(ctx, AF.coins(v), 18f, AK.ink, true).apply { gravity = Gravity.CENTER })
@@ -307,7 +307,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
             AU.row(ctx).apply {
                 setPadding(Ui.dpi(12f), Ui.dpi(9f), Ui.dpi(12f), Ui.dpi(9f))
                 val l = AU.col(ctx)
-                l.addView(AU.t(ctx, "${TX_LABEL[AF.s(t, "type")] ?: AF.s(t, "type")}${if (AF.s(t, "app") == "secret") " · Secret" else ""}", 13f, AK.ink, true))
+                l.addView(AU.t(ctx, "${TX_LABEL[AF.s(t, "type")] ?: AF.s(t, "type")}${if (AF.s(t, "app") == "secret") " · Reconnect" else ""}", 13f, AK.ink, true))
                 l.addView(AU.t(ctx, AF.s(t, "description"), 11.5f, AK.sub).ell())
                 addView(l, AU.lp(0, -2, 1f, r = 10f))
                 val amt = AF.n(t, "amount")
@@ -445,7 +445,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
             go.background = Tf.box(if (sign == "1") AK.black else AK.red, 12f)
             go.off = v == null || reason.value.trim().length < 5
         }
-        b.addView(seg(listOf("truefind" to "True Find wallet", "secret" to "Secret Dating wallet"), { app }) { app = it; refresh() })
+        b.addView(seg(listOf("truefind" to "True Find wallet", "secret" to "Reconnect wallet"), { app }) { app = it; refresh() })
         b.addView(seg(listOf("coins" to "Coins", "earned" to "Earnings (TF currency)"), { kind }) { kind = it; refresh() })
         b.addView(seg(listOf("1" to "Add", "-1" to "Take"), { sign }) { sign = it; refresh() })
         b.addView(AU.label(ctx, "Amount", top = 4f))
@@ -472,10 +472,10 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
         refresh()
         sh.show()
     }
-    // ───────── free Secret Dating plan ─────────
+    // ───────── free Reconnect plan ─────────
     private fun secretPlan(c: JSONObject) {
         var plan = "elite"; var notify = true
-        val sh = AdSheet(a.layer, "Secret Dating plan for ${name(c).ifEmpty { "member" }}")
+        val sh = AdSheet(a.layer, "Reconnect plan for ${name(c).ifEmpty { "member" }}")
         val b = sh.body
         val grid = AdGrid(ctx, 0f, 8f, 2)
         val cells = ArrayList<LinearLayout>()
@@ -510,7 +510,7 @@ class AdMemberSheet(private val a: AdminScreen, private val userId: String, priv
             go.busy = true
             src.fn("adminUsers", JSONObject().put("action", "grant_secret_plan").put("user_id", uid(c)).put("plan", plan).put("reason", reason.value.trim()).put("notify", notify)) { r ->
                 go.busy = false
-                if (r.ok) { val until = AF.s(r.data, "until"); a.say("Secret Dating plan added ✓${if (until.isNotEmpty()) " · till ${AF.fmt(until)}" else ""}"); sh.close(); changed() }
+                if (r.ok) { val until = AF.s(r.data, "until"); a.say("Reconnect plan added ✓${if (until.isNotEmpty()) " · till ${AF.fmt(until)}" else ""}"); sh.close(); changed() }
                 else a.say(AF.err(r, "Could not give the plan."), true)
             }
         }

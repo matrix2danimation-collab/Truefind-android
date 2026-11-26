@@ -25,7 +25,7 @@ import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** Shared look of My Dashboard and Secret Dating Earning (390 px design, zoomed to the phone like the web). */
+/** Shared look of My Dashboard and Reconnect Earning (390 px design, zoomed to the phone like the web). */
 object DashK {
     val INK = Ui.c("#1F1235"); val SUB = Ui.c("#6B6478"); val BODY = Ui.c("#4B4458"); val PURPLE = Ui.c("#6C2BD9"); val DEEP = Ui.c("#4A1D96")
     val LINE = Ui.c("#E9E0FB"); val SOFT = Ui.c("#EEE9F5"); val TINT = Ui.c("#F4EFFC"); val PAGE = Ui.c("#FAF8FD")
@@ -44,7 +44,7 @@ object DashK {
     val ICON_GIFT = "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"10.5\" width=\"16\" height=\"9.5\" rx=\"1.5\" $ST/><path d=\"M3 7.5h18v3H3zM12 7.5V20M12 7.5c-1.5-4-6-3.5-5-1 .5 1 2.5 1 5 1zm0 0c1.5-4 6-3.5 5-1-.5 1-2.5 1-5 1z\" $ST/></svg>"
 
 
-    /** stroke style of Secret Dating Earning's icons */
+    /** stroke style of Reconnect Earning's icons */
     const val SE = "fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
 
     /** zoomed text */
@@ -107,7 +107,7 @@ fun dashZoom(ctx: Context): Zm { val dm = ctx.resources.displayMetrics; return Z
 /**
  * True Find · My Dashboard (src/pages/Dashboard.jsx), native. The signed-in person's own numbers:
  * photo and name, calls, video calls, talk time, gifts, money, and a graph for the week / month / all.
- * A Creator / Host sees EARNINGS (rupees); a member sees only calls, talk time and the Secret Dating plan.
+ * A Creator / Host sees EARNINGS (rupees); a member sees only calls, talk time and the Reconnect plan.
  * It always opens (the last numbers, or the page outline while the first answer comes) and updates
  * itself: when one of my calls starts / ends or my wallet changes, every 30 s, and when the app comes back.
  */
@@ -368,7 +368,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         val color = if (on) "#047857" else "#DB2777"
         c.addView(FrameLayout(ctx).apply { background = DashK.circ(if (on) DashK.GREEN_BG else DashK.PINK_BG); addView(DashK.svg(ctx, m, heart(color), 22f), FrameLayout.LayoutParams(m.pi(22f), m.pi(22f), Gravity.CENTER)) }, DashK.lp(m, 40f, 40f))
         c.addView(DashK.col(ctx, m, 2f).apply {
-            addView(DashK.t(ctx, m, "Secret Dating plan", 16f, DashK.INK, true))
+            addView(DashK.t(ctx, m, "Reconnect plan", 16f, DashK.INK, true))
             addView(DashK.t(ctx, m, if (on) "Active till ${planUntil(Et.s(sec, "until"))}" else "No active plan", 12.5f, DashK.SUB))
         }, DashK.lp(m, 0f, -2f, 1f))
         c.addView(pill(if (on) "Active" else "Get plan", if (on) DashK.GREEN_BG else DashK.PINK_BG, if (on) DashK.GREEN else DashK.PINK).apply { layoutParams = LinearLayout.LayoutParams(-2, m.pi(24f)); background = DashK.box(m, if (on) DashK.GREEN_BG else DashK.PINK_BG, 12f); setPadding(m.pi(10f), 0, m.pi(10f), 0) })
@@ -406,7 +406,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         }
         c.addView(FrameLayout(ctx).apply { background = DashK.circ(DashK.PINK_BG); addView(DashK.svg(ctx, m, heart("#DB2777"), 22f), FrameLayout.LayoutParams(m.pi(22f), m.pi(22f), Gravity.CENTER)) }, DashK.lp(m, 40f, 40f))
         c.addView(DashK.col(ctx, m, 2f).apply {
-            addView(DashK.t(ctx, m, "Secret Dating Earning", 16f, DashK.INK, true))
+            addView(DashK.t(ctx, m, "Reconnect Earning", 16f, DashK.INK, true))
             addView(DashK.t(ctx, m, "Like bonus, renewals, gifts", 12.5f, DashK.SUB))
         }, DashK.lp(m, 0f, -2f, 1f))
         c.addView(DashK.svg(ctx, m, "<svg viewBox=\"0 0 24 24\"><path d=\"M9.5 5l7 7-7 7\" fill=\"none\" stroke=\"#6B6478\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", 18f))
@@ -505,9 +505,9 @@ class DashChart(ctx: Context, private val m: Zm, private val vals0: List<Double>
     }
 }
 
-// ═══════════════════════════ Secret Dating Earning ═══════════════════════════
+// ═══════════════════════════ Reconnect Earning ═══════════════════════════
 /**
- * True Find · Secret Dating Earning (src/pages/SecretEarnings.jsx), native. Opened from My Dashboard
+ * True Find · Reconnect Earning (src/pages/SecretEarnings.jsx), native. Opened from My Dashboard
  * (creators only): like bonus, renewal bonus, gift earnings and the locked-chat messages left today.
  * Every number comes from getSecretEarnings; the admin can open /secret-earnings?creator=<id>.
  */
@@ -566,7 +566,7 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
             if (s != seq) return@invoke
             busy = false
             if (r.ok && r.data.optJSONObject("total") != null) { d = r.data; dFor = creatorId; err = "" }
-            else err = if (r.ok) "Could not load Secret Dating Earning. Please try again." else Tf.err(r, "Could not load Secret Dating Earning. Please try again.")
+            else err = if (r.ok) "Could not load Reconnect Earning. Please try again." else Tf.err(r, "Could not load Reconnect Earning. Please try again.")
             render()
         }
     }
@@ -582,7 +582,7 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
     private fun render() {
         val ctx = context
         column.removeAllViews()
-        column.addView(DashK.header(ctx, m, "Secret Dating Earning", 19f) { pages.historyBack() }, DashK.lp(m, -1f, 44f))
+        column.addView(DashK.header(ctx, m, "Reconnect Earning", 19f) { pages.historyBack() }, DashK.lp(m, -1f, 44f))
         val data = d
         if (data?.optBoolean("viewed_by_admin") == true) column.addView(DashK.t(ctx, m, "Admin view · ${Et.s(data.optJSONObject("creator"), "name").ifEmpty { "Creator" }}", 12.5f, DashK.AMBER, true).apply {
             gravity = Gravity.CENTER; background = DashK.box(m, DashK.AMBER_BG, 12f); setPadding(m.pi(12f), m.pi(8f), m.pi(12f), m.pi(8f))
@@ -601,15 +601,15 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
         val total = data?.optJSONObject("total")
         // ── total this month ──
         val tc = DashK.col(ctx, m, 0f).apply { background = DashK.box(m, DashK.DEEP, 20f); setPadding(m.pi(16f), m.pi(16f), m.pi(16f), m.pi(16f)) }
-        tc.addView(DashK.t(ctx, m, "Secret Dating · this month", 13.5f, Ui.c("#E4D9F7")))
+        tc.addView(DashK.t(ctx, m, "Reconnect · this month", 13.5f, Ui.c("#E4D9F7")))
         if (loading) tc.addView(DashK.skel(ctx, true), DashK.lp(m, 150f, 40f).apply { topMargin = m.pi(2f) })
         else tc.addView(DashK.t(ctx, m, DashK.inr(total?.opt("month")), 32f, Color.WHITE, true, 40f), DashK.lp(m, -2f, -2f).apply { topMargin = m.pi(2f) })
         tc.addView(DashK.three(ctx, m, listOf("This Week" to DashK.inr(total?.opt("week")), "This Month" to DashK.inr(total?.opt("month")), "All Time" to DashK.inr(total?.opt("all"))), loading, labelOneLine = false), DashK.lp(m, -1f, -2f).apply { topMargin = m.pi(12f) })
-        tc.addView(DashK.t(ctx, m, "Like members you enjoyed talking to — earn more ❤", 12.5f, Ui.c("#E4D9F7")).apply { gravity = Gravity.CENTER }, DashK.lp(m, -1f, -2f).apply { topMargin = m.pi(10f) })
+        tc.addView(DashK.t(ctx, m, "Tap Reconnect on calls you enjoyed — earn more ❤", 12.5f, Ui.c("#E4D9F7")).apply { gravity = Gravity.CENTER }, DashK.lp(m, -1f, -2f).apply { topMargin = m.pi(10f) })
         column.addView(tc, DashK.lp(m, -1f, -2f))
         val lb = data?.optJSONObject("like_bonus"); val rb = data?.optJSONObject("renewal_bonus"); val gf = data?.optJSONObject("gifts"); val lm = data?.optJSONObject("locked_messages"); val rates = data?.optJSONObject("rates")
-        column.addView(part("heart", DashK.PINK, DashK.PINK_BG, "Like bonus", data?.let { DashK.inr(lb?.opt("inr_month")) },
-            listOf("Likes given" to "${lb?.optInt("likes_month") ?: 0}", "Bought a plan" to "${lb?.optInt("count_month") ?: 0}", "All time" to DashK.inr(lb?.opt("inr_all"))), loading), DashK.lp(m, -1f, -2f))
+        column.addView(part("heart", DashK.PINK, DashK.PINK_BG, "Reconnect bonus", data?.let { DashK.inr(lb?.opt("inr_month")) },
+            listOf("Reconnects sent" to "${lb?.optInt("likes_month") ?: 0}", "Bought a plan" to "${lb?.optInt("count_month") ?: 0}", "All time" to DashK.inr(lb?.opt("inr_all"))), loading), DashK.lp(m, -1f, -2f))
         column.addView(part("renew", DashK.GREEN, DashK.GREEN_BG, "Renewal bonus", data?.let { DashK.inr(rb?.opt("inr_month")) },
             listOf("Renewed" to "${rb?.optInt("count_month") ?: 0}", "From your message" to "${rb?.optInt("messages_renewed") ?: 0}", "All time" to DashK.inr(rb?.opt("inr_all"))), loading), DashK.lp(m, -1f, -2f))
         column.addView(part("gift", DashK.PURPLE, DashK.TINT, "Gift earnings", data?.let { DashK.inr(gf?.opt("inr_month")) },

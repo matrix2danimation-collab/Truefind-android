@@ -308,7 +308,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
 
     private fun sendGift(id: String) { closeSheet(); act("gift", JSONObject().put("gift", id)) }
 
-    // ── Secret Dating: the app's own invitation flow ──
+    // ── Reconnect: the app's own invitation flow ──
     private fun sendSecret() {
         val s = session ?: return
         val pid = s.obj("partner").str("profile_id")
@@ -326,7 +326,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
                 when {
                     d.str("needs_membership") == "secret" -> openSheet("join")
                     d.str("error") == "no_credits" || r.status == 402 -> openSheet("offer")
-                    d.str("error") == "verify_first" -> { closeSheet(); toast.show("Finish your verification in Secret Dating first.") }
+                    d.str("error") == "verify_first" -> { closeSheet(); toast.show("Finish your verification in Reconnect first.") }
                     else -> { closeSheet(); toast.show(GameApi.err(r)) }
                 }
             }
@@ -759,10 +759,10 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
             gm.addView(row, G.lp(G.MATCH, G.WRAP))
             box.addView(gm, G.lp(G.MATCH, G.WRAP))
         }
-        // Secret Dating
+        // Reconnect
         when {
-            st == "over" && s.str("match_id").isNotEmpty() -> box.addView(Btn(ctx, "pink", "Open Secret Dating chat", icon = "MessageCircle") { openChat(s.str("match_id")) }, btnLp())
-            st == "over" && host && inv.str("status") != "sent" -> box.addView(Btn(ctx, "pink", "Secret Date with $pn?", icon = "Lock") { openSheet("secret") }, btnLp())
+            st == "over" && s.str("match_id").isNotEmpty() -> box.addView(Btn(ctx, "pink", "Open Reconnect chat", icon = "MessageCircle") { openChat(s.str("match_id")) }, btnLp())
+            st == "over" && host && inv.str("status") != "sent" -> box.addView(Btn(ctx, "pink", "Reconnect with $pn?", icon = "Lock") { openSheet("secret") }, btnLp())
             st == "over" && inv.str("status") == "sent" && inv.str("from") == "me" -> box.addView(G.text(ctx, "Invitation sent · waiting for $pn…", 14f, C.muted, bold = false).apply { gravity = Gravity.CENTER })
         }
         box.addView(Btn(ctx, "quiet", "End call", icon = "PhoneOff", iconColor = C.miss) { leaveGame() }, btnLp())
@@ -941,7 +941,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
                 p.addView(G.text(ctx, "$pn keeps 70% of every gift.", 13f, C.muted, bold = false).apply { gravity = Gravity.CENTER }, G.lp(G.MATCH, G.WRAP))
             }
             "secret" -> {
-                head("Invite $pn to Secret Dating")
+                head("Invite $pn to Reconnect")
                 para("You are still on the call. Talk it over, then send — her screen shows your invitation at once.")
                 sheetBtn = Btn(ctx, "pink", if (sending) "Sending…" else "Send invitation") { sendSecret() }.also { it.isEnabled = !sending; p.addView(it, btnLp()) }
                 link("Not now") { closeSheet() }
@@ -952,17 +952,17 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
                 p.addView(Btn(ctx, "quiet", "OK") { closeSheet() }, btnLp())
             }
             "offer" -> {
-                head("Open Secret Dating")
+                head("Open Reconnect")
                 val box = G.vbox(ctx).apply { background = G.round(G.ca("#ffd477", 0.08f), 16f, G.ca("#ffd477", 0.6f), 1.5f); pad(12f) }
                 box.addView(G.text(ctx, "First-time offer · 1 coin", 17f, C.gold))
-                box.addView(G.text(ctx, "Secret Dating for 1 day · 3 invitations · unlimited chat", 14f, G.c("#F4D9E8"), bold = false))
+                box.addView(G.text(ctx, "Reconnect for 1 day · 3 invitations · unlimited chat", 14f, G.c("#F4D9E8"), bold = false))
                 p.addView(box, G.lp(G.MATCH, G.WRAP))
                 sheetBtn = Btn(ctx, "pink", if (sending) "Opening…" else "Unlock for 1 coin & send") { claimOffer() }.also { it.isEnabled = !sending; p.addView(it, btnLp()) }
-                link("See Secret Dating plans") { closeSheet(); layer.openWeb("/secret-app") }
+                link("See Reconnect plans") { closeSheet(); layer.openWeb("/secret-app") }
             }
             "join" -> {
-                head("Join Secret Dating")
-                para("Secret Dating is where your private chat with $pn lives.")
+                head("Join Reconnect")
+                para("Reconnect is where your private chat with $pn lives.")
                 p.addView(Btn(ctx, "pink", "Join and send") { joinApp("secret") { closeSheet(); sendSecret() } }, btnLp())
             }
             "coins" -> {
@@ -988,7 +988,7 @@ class HeartChaseScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer)
         inviteSheet = s
         val p = s.panel
         p.addView(G.text(ctx, "$pn invites you", 21f, Color.WHITE), G.lp(G.MATCH, G.WRAP))
-        p.addView(G.text(ctx, "“Will you go on a Secret Date with me?” Secret Dating is free for you — if you accept, your private chat opens right away.", 15.5f, G.c("#F4D9E8"), bold = false).lineH(1.45f), G.lp(G.MATCH, G.WRAP))
+        p.addView(G.text(ctx, "“Will you Reconnect with me?” Reconnect is free for you — if you accept, your private chat opens right away.", 15.5f, G.c("#F4D9E8"), bold = false).lineH(1.45f), G.lp(G.MATCH, G.WRAP))
         inviteAccept = Btn(ctx, "pink", "Accept") { answerSecret(true) }.also { p.addView(it, btnLp()) }
         val no = G.text(ctx, "Not now", 14f, C.muted, bold = false).apply { gravity = Gravity.CENTER; paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG; pad(6f) }
         G.click(no) { answerSecret(false) }

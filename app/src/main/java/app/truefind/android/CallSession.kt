@@ -628,7 +628,7 @@ class CallSession(
         }
     }
 
-    /** "Date This": the pink heart (the server marks the call, both phones see it live). done(error or null) */
+    /** "Reconnect": the pink heart (the server marks the call, both phones see it live). done(error or null) */
     fun like(done: (String?) -> Unit) {
         if (practice) {
             practiceLiked = true; emit(); done(null)

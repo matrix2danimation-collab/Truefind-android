@@ -45,7 +45,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Secret Dating · Online Map — a 3D Earth with India on it (the web's components/secret/GlobeMap.jsx, rebuilt Nov 20).
+ * Reconnect · Online Map — a 3D Earth with India on it (the web's components/secret/GlobeMap.jsx, rebuilt Nov 20).
  * • A real globe you can spin 360°: one finger turns the Earth under your finger, two fingers zoom where your
  *   fingers are, a flick keeps it turning a little. The first time it opens the Earth rolls half way round and
  *   glides down to your city.

@@ -13,9 +13,9 @@ import java.util.TimeZone
  * (MainActivity "tf_wallet" test mode). Never used in the real app.
  *
  * Scene words: "new" (first-recharge offer), "earn" (creator with earnings),
- * "pending" (a withdrawal in process), "girl" (Secret Dating girl not verified
- * yet), "plan" (a Secret Dating plan running), "admin", "empty" (no history),
- * "wallethang" (the Secret Dating coin wallet never answers), "credhang" (the
+ * "pending" (a withdrawal in process), "girl" (Reconnect girl not verified
+ * yet), "plan" (a Reconnect plan running), "admin", "empty" (no history),
+ * "wallethang" (the Reconnect coin wallet never answers), "credhang" (the
  * credits never answer), "fail" (both answer 500) — the owner's endless loading, 21 Nov.
  */
 class WalletDemo(private val scene: String) : WalletSource {

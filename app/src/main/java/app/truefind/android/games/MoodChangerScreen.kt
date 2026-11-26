@@ -229,7 +229,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             val est = System.currentTimeMillis() - s!!.long("seconds") * 1000
             if (abs(callStartLocal - est) > 3000) callStartLocal = est
         }
-        // the Secret Dating offer (the boy, after his final mood)
+        // the Reconnect offer (the boy, after his final mood)
         if (wantOffer() && !offerLoading) {
             offerLoading = true
             fn(JSONObject().put("action", "secret_info").put("session_id", sid)) { r ->
@@ -378,7 +378,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         }
     }
 
-    // ── Secret Dating request: the boy sends it before the call ends, the girl answers it ──
+    // ── Reconnect request: the boy sends it before the call ends, the girl answers it ──
     private fun sendSecret() {
         val s = session ?: return
         val o = offer ?: return
@@ -393,7 +393,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
                 val d = r.data
                 if (d.bool("already_matched") || d.bool("already_invited")) { secretNote = JSONObject().put("kind", "connected").put("match_id", d.str("match_id")); done(); return@call }
                 act("invite_sent", JSONObject().put("invitation_id", d.str("invitation_id"))) { after ->
-                    if (after == null) secretNote = JSONObject().put("kind", "error").put("text", "Your request was sent, but the game couldn’t show it. You’ll find it in Secret Dating.")
+                    if (after == null) secretNote = JSONObject().put("kind", "error").put("text", "Your request was sent, but the game couldn’t show it. You’ll find it in Reconnect.")
                     done()
                 }
             }
@@ -432,7 +432,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             act("invite_done") { secretBusy = false; render() }
         }
     }
-    /** the chat lives in Secret Dating: the game ends for both, then the chat opens */
+    /** the chat lives in Reconnect: the game ends for both, then the chat opens */
     private fun openChat(matchId: String) {
         if (matchId.isEmpty()) return
         val s = session
@@ -603,7 +603,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             if (isHost) "Get matched" to "We find a partner who’s free to play right now." else "Wait for a player" to "You’re connected as soon as someone starts a game.",
             "Both share your mood" to "20 moods, how strong it feels, and privately, why.",
             "Talk through 7 rounds" to "Each round you get a question to lift your partner’s mood — only you see it, with a tip on how to ask. They get one for you. A little deeper each time, then a warm ending.",
-            "Check in" to "See how your mood changed. Enjoyed the talk? Take it to a Secret Date.",
+            "Check in" to "See how your mood changed. Enjoyed the talk? Keep it going on Reconnect.",
         )), G.lp(G.MATCH, G.WRAP))
         val last = history.lastOrNull()
         if (last != null && McData.has(last.mood)) {
@@ -1232,13 +1232,13 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             val note: Pair<String, String> = when {
                 reason == "reported" && (reported || by == "me") -> "ShieldCheck" to "Report received. You won’t be matched with ${s.obj("partner").str("name").ifEmpty { "them" }} again. Thanks for keeping True Find safe."
                 reason == "partner_left" -> "Info" to "$pname lost connection, so the call ended."
-                reason == "chat" -> "Info" to if (by == "me") "The game has ended." else "$pname went to your Secret Dating chat. The game has ended."
+                reason == "chat" -> "Info" to if (by == "me") "The game has ended." else "$pname went to your Reconnect chat. The game has ended."
                 reason == "done" -> "Info" to "The game is over. Thanks for the chat!"
                 else -> "Info" to if (by == "me") "You ended the call. Thanks for playing!" else notice.ifEmpty { "The game has ended." }
             }
             sc.body.addView(MC.noteBox(ctx, note.first, note.second), G.lp(G.MATCH, G.WRAP).m(t = 14f))
         }
-        // the Secret Dating card
+        // the Reconnect card
         val secret = secretView(ended)
         var deciding = false
         if (secret != null) { sc.body.addView(secret.first, G.lp(G.MATCH, G.WRAP).m(t = 18f)); deciding = secret.second in listOf("ask", "loading", "invited") }
@@ -1249,7 +1249,7 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
         return sc.root
     }
 
-    /** the Secret Dating card and its view name */
+    /** the Reconnect card and its view name */
     private fun secretView(ended: Boolean): Pair<View, String>? {
         val ctx = context
         val s = session!!
@@ -1299,26 +1299,26 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
             if (!locked) return
             val l = G.hbox(ctx, 8f, Gravity.TOP).apply { background = G.round(G.c("#FFF1F7"), 14f); pad(12f, 10f, 12f, 10f) }
             l.addView(G.icon(ctx, "Lock", G.c("#7A1043"), 16f), LinearLayout.LayoutParams(G.dpi(16f), G.dpi(16f)).m(t = 2f))
-            l.addView(G.text(ctx, "Your chat with $name is locked. It opens as soon as you take a Secret Dating plan ($PLAN).", MC.SM, G.c("#7A1043"), false).lineH(1.4f), G.lpw(1f))
+            l.addView(G.text(ctx, "Your chat with $name is locked. It opens as soon as you take a Reconnect plan ($PLAN).", MC.SM, G.c("#7A1043"), false).lineH(1.4f), G.lpw(1f))
             box.addView(l, G.lp(G.MATCH, G.WRAP).m(b = 12f))
         }
         val bz = busy || secretBusy
         when (view) {
-            "loading" -> { head("Heart", "Secret Date $name?", "One moment…"); box.addView(waiting("Checking your Secret Dating options…", spinnerFirst = true), G.lp(G.MATCH, G.WRAP)) }
+            "loading" -> { head("Heart", "Reconnect with $name?", "One moment…"); box.addView(waiting("Checking your Reconnect options…", spinnerFirst = true), G.lp(G.MATCH, G.WRAP)) }
             "ask" -> {
                 val o = offer!!
-                head("Heart", "Secret Date $name?", "Enjoyed talking? Send $name a Secret Dating request before the call ends.")
+                head("Heart", "Reconnect with $name?", "Enjoyed talking? Send $name a Reconnect request before the call ends.")
                 val mode = o.str("mode")
                 val cost = when (mode) {
                     "send" -> "Uses 1 request credit from your plan · ${o.int("credits")} left."
                     "offer" -> "First-day offer: send it for just 1 coin. You have ${o.int("coins")} ${if (o.int("coins") == 1) "coin" else "coins"}."
-                    else -> if (o.bool("plan")) "Free from the game. $name gets it now, and your chat is open." else "Free from the game. $name gets it now; your chat opens as soon as you take a Secret Dating plan ($PLAN)."
+                    else -> if (o.bool("plan")) "Free from the game. $name gets it now, and your chat is open." else "Free from the game. $name gets it now; your chat opens as soon as you take a Reconnect plan ($PLAN)."
                 }
                 val cl = G.hbox(ctx, 8f, Gravity.TOP).apply { background = G.round(G.c("#FFF1F7"), 14f); pad(12f, 10f, 12f, 10f) }
                 cl.addView(G.icon(ctx, if (mode == "offer") "Coins" else if (mode == "free" && !o.bool("plan")) "Lock" else "Check", G.c("#7A1043"), 16f), LinearLayout.LayoutParams(G.dpi(16f), G.dpi(16f)).m(t = 2f))
                 cl.addView(G.text(ctx, cost, MC.SM, G.c("#7A1043"), false).lineH(1.4f), G.lpw(1f))
                 box.addView(cl, G.lp(G.MATCH, G.WRAP))
-                if (!o.bool("member")) box.addView(MC.t(ctx, "Secret Dating, True Find’s private dating space, gets added to your account.", MC.XS, MC.inkSoft), G.lp(G.MATCH, G.WRAP).m(t = 8f))
+                if (!o.bool("member")) box.addView(MC.t(ctx, "Reconnect, True Find’s private chat space, gets added to your account.", MC.XS, MC.inkSoft), G.lp(G.MATCH, G.WRAP).m(t = 8f))
                 // (no margin above these in the web: they sit right under the price line)
                 if (secretNote.str("kind") == "coins") box.addView(waiting("You need 1 coin for the first-day offer.", "no", "Info", extra = MC.Btn(ctx, "secondary", "Add coins", small = true) { layer.openWeb("/wallet") }.also { it.layoutParams = LinearLayout.LayoutParams(G.WRAP, G.dpi(38f)) }), G.lp(G.MATCH, G.WRAP))
                 if (secretNote.str("kind") == "error") box.addView(waiting(secretNote.str("text"), "no", "Info"), G.lp(G.MATCH, G.WRAP))
@@ -1326,21 +1326,21 @@ class MoodChangerScreen(ctx: Context, layer: GamesLayer) : GameScreen(ctx, layer
                 box.addView(MC.Btn(ctx, "secondary", if (ended) "No thanks" else "No thanks, end the game") { skipSecret() }.also { it.isEnabled = !bz }, G.lp(G.MATCH, G.dpi(50f)).m(t = 8f))
             }
             "sent" -> {
-                head("Check", "Request sent to $name", if (locked) "She can see your request now." else "Your Secret Dating chat is open — say hi anytime.", 2.6f)
+                head("Check", "Request sent to $name", if (locked) "She can see your request now." else "Your Reconnect chat is open — say hi anytime.", 2.6f)
                 box.addView(waiting("Waiting for $name’s answer…", avatar = true, spinner = true), G.lp(G.MATCH, G.WRAP).m(b = 12f))
                 lockLine()
                 chatBtn?.let { box.addView(it, G.lp(G.MATCH, G.dpi(50f))) }
             }
             "accepted" -> {
-                head("HeartHandshake", if (mine) "$name accepted!" else "You’re connected with $name", if (locked) "Your chat is waiting for you in Secret Dating." else "Your private chat is ready in Secret Dating.")
+                head("HeartHandshake", if (mine) "$name accepted!" else "You’re connected with $name", if (locked) "Your chat is waiting for you in Reconnect." else "Your private chat is ready in Reconnect.")
                 lockLine()
                 chatBtn?.let { box.addView(it, G.lp(G.MATCH, G.dpi(50f))) }
             }
-            "declined" -> head("Heart", "Thanks for the chat!", if (mine) "$name isn’t ready for a Secret Date right now." else "No problem — you said not now.")
-            "connected" -> { head("HeartHandshake", "You and $name are already connected", "Your chat is in Secret Dating."); chatBtn?.let { box.addView(it, G.lp(G.MATCH, G.dpi(50f))) } }
-            "unavailable" -> head("Heart", "Thanks for the chat!", "A Secret Dating request isn’t available with $name.")
+            "declined" -> head("Heart", "Thanks for the chat!", if (mine) "$name isn’t ready to Reconnect right now." else "No problem — you said not now.")
+            "connected" -> { head("HeartHandshake", "You and $name are already connected", "Your chat is in Reconnect."); chatBtn?.let { box.addView(it, G.lp(G.MATCH, G.dpi(50f))) } }
+            "unavailable" -> head("Heart", "Thanks for the chat!", "A Reconnect request isn’t available with $name.")
             "invited" -> {
-                head("Heart", "$name wants to Secret Date you", "Accept to open a private chat in Secret Dating.")
+                head("Heart", "$name wants to Reconnect with you", "Accept to open a private chat in Reconnect.")
                 box.addView(MC.Btn(ctx, "primary", if (bz) "One moment…" else "Accept", iconRight = "ArrowRight") { answerSecret(true) }.also { it.isEnabled = !bz }, G.lp(G.MATCH, G.dpi(50f)))
                 box.addView(MC.Btn(ctx, "secondary", "Not now") { answerSecret(false) }.also { it.isEnabled = !bz }, G.lp(G.MATCH, G.dpi(50f)).m(t = 8f))
             }

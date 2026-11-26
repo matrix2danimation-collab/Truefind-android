@@ -20,7 +20,7 @@ internal object IntroArt {
         ),
         0.0f, 8.0f, 7.0f, 0x592E0617.toInt(),
         listOf(
-            Txt(61.0f, 86.5f, 12.5f, true, 0xFF1F1235.toInt(), false, -1.0f, 84.0f, 82.0f, "Dating nearby"),
+            Txt(61.0f, 86.5f, 12.5f, true, 0xFF1F1235.toInt(), false, -1.0f, 84.0f, 82.0f, "People nearby"),
             Txt(250.0f, 86.5f, 12.0f, true, 0xFFFFFFFF.toInt(), false, 1.0f, 295.0f, 82.0f, "7 online near you"),
             Txt(134.0f, 250.0f, 10.5f, false, 0xC7FFFFFF.toInt(), false, 0.0f, 0.0f, 0.0f, "1.2 km"),
             Txt(306.0f, 256.0f, 10.5f, false, 0xC7FFFFFF.toInt(), false, 0.0f, 0.0f, 0.0f, "3 km"),

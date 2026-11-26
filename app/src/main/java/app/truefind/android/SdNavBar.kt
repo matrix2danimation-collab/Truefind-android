@@ -15,11 +15,11 @@ import android.view.animation.PathInterpolator
 import androidx.core.graphics.PathParser
 
 /**
- * Secret Dating's bottom bar, from the owner's picture (23 Nov): one white, pill-shaped bar on the blush page —
- * Discover (Home) · Likes (My Activity: who liked you) · Chat · Map — each an icon with its name under it.
+ * Reconnect's bottom bar, from the owner's picture (23 Nov): one white, pill-shaped bar on the blush page —
+ * Home · Chat · Map — each an icon with its name under it (26 Nov: Discover and Likes went with the like feature).
  * The open tab is a flat maroon pill with a white icon and name ("2D": no gloss, no shadow).
  * The blush runs on under the bar, down over the phone's own button strip, so no separate strip shows.
- * Likes opens My Activity over the page you are on; a red dot on its heart while new likes / messages wait.
+ * A red dot on Home while new messages / profile views wait there (its Notifications).
  * A tap on another tab opens it; a tap on the tab you are on does nothing.
  */
 @SuppressLint("ViewConstructor")
@@ -27,16 +27,15 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     private class Item(val key: String, val label: String, val path: String)
     private val items = listOf(
-        Item("home", "Discover", "/secret-app"),
-        Item("likes", "Likes", "likes"),
+        Item("home", "Home", "/secret-app"),
         Item("chat", "Chat", "/secret-app?tab=chat"),
-        Item("map", "Map", "/dating"),
+        Item("map", "Map", "/reconnect-map"),
     )
 
-    /** the bar's height: the Secret Dating pages end where this starts */
+    /** the bar's height: the Reconnect pages end where this starts */
     val barPx: Int get() = Ui.dpi(BAR)
 
-    /** which page is open: "home" · "likes" · "chat" · "map" */
+    /** which page is open: "home" · "chat" · "map" */
     var current = "home"
         set(v) {
             if (field == v) return
@@ -44,15 +43,15 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             field = v
             val to = items.indexOfFirst { it.key == v }.coerceAtLeast(0)
             slide(from, to)
-            contentDescription = "Secret Dating, ${items[to].label}"
+            contentDescription = "Reconnect, ${items[to].label}"
         }
 
     /** the phone's own button strip under the bar: the blush runs on over it (MainActivity sets it) */
     var below = 0
         set(v) { if (field != v) { field = v; requestLayout() } }
 
-    /** new likes are waiting: a red dot on the heart */
-    var heartDot = false
+    /** something new waits in Home's Notifications: a red dot on Home */
+    var homeDot = false
         set(v) { if (field != v) { field = v; invalidate() } }
 
     private val bg = Paint().apply { color = Rs.BG_END }
@@ -62,8 +61,8 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Ui.bold; textAlign = Paint.Align.CENTER }
-    private val flame: Path = PathParser.createPathFromPathData(Lucide.Flame)
-    private val heart: Path = PathParser.createPathFromPathData(Lucide.Heart)
+    private val house: Path = PathParser.createPathFromPathData("M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z")
+    private val door: Path = PathParser.createPathFromPathData("M15 21v-8a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v8")
     private val bubble: Path = PathParser.createPathFromPathData("M7.9 20A9 9 0 1 0 4 16.1L2 22Z")
     private val dots: Path = PathParser.createPathFromPathData("M8 12h.01 M12 12h.01 M16 12h.01")
     private val pin: Path = PathParser.createPathFromPathData("M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0")
@@ -75,11 +74,11 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     private val ease = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)
     private var anim: ValueAnimator? = null
     private var pressed = -1
-    private val scale = FloatArray(4) { 1f }
+    private val scale = FloatArray(items.size) { 1f }
 
     init {
         isClickable = true
-        contentDescription = "Secret Dating, Discover"
+        contentDescription = "Reconnect, Home"
     }
 
     override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), barPx + below)
@@ -116,7 +115,7 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
     }
     private val side get() = Ui.dp(SIDE)
     private val inner get() = Ui.dp(5f)
-    private fun cell(): Float = (width - 2 * side - 2 * inner) / 4f
+    private fun cell(): Float = (width - 2 * side - 2 * inner) / items.size
 
     override fun onDraw(c: Canvas) {
         // the page's blush under the bar, on down over the phone's own button strip (this view's height includes it)
@@ -143,12 +142,12 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
             c.translate(cx - 12f * s, cy - 12f * s); c.scale(s, s)
             stroke.color = col; stroke.strokeWidth = 2f
             when (it.key) {
-                "home" -> outlined(c, flame, o)
-                "likes" -> {
-                    outlined(c, heart, o)
-                    if (heartDot && current != "likes") {
-                        fill.color = Color.WHITE; fill.alpha = 255; c.drawCircle(19.6f, 4.6f, 4.8f, fill)
-                        fill.color = Rs.RED; c.drawCircle(19.6f, 4.6f, 3.3f, fill)
+                "home" -> {
+                    outlined(c, house, o)
+                    stroke.color = mix(Rs.INK, Rs.M, o); stroke.strokeWidth = 2f; c.drawPath(door, stroke)
+                    if (homeDot && current != "home") {
+                        fill.color = Color.WHITE; fill.alpha = 255; c.drawCircle(20.4f, 4.2f, 4.8f, fill)
+                        fill.color = Rs.RED; c.drawCircle(20.4f, 4.2f, 3.3f, fill)
                     }
                 }
                 "chat" -> {
@@ -176,11 +175,11 @@ class SdNavBar(ctx: Context, private val onTab: (String) -> Unit) : View(ctx) {
 
     private fun hit(x: Float, y: Float): Int {
         if (y < 0 || y > barPx || x < side || x > width - side) return -1
-        return ((x - side - inner) / cell()).toInt().coerceIn(0, 3)
+        return ((x - side - inner) / cell()).toInt().coerceIn(0, items.size - 1)
     }
 
     private fun press(i: Int, down: Boolean) {
-        if (i !in 0..3) return
+        if (i !in items.indices) return
         ValueAnimator.ofFloat(scale[i], if (down) 0.92f else 1f).apply {
             duration = 120
             addUpdateListener { scale[i] = it.animatedValue as Float; invalidate() }

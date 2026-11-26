@@ -325,7 +325,6 @@ tshot() {
 # the Home card's two sizes (owner's second picture, 23 Nov): exactly the picture's (the page scrolls; the one in the app) · as
 # tall as the first screen allows
 if [ "$SET" = card ]; then
-shot c01-exact-first home --es tf_preview secret --ez tf_premium true --ez tf_cardfit false
 shot c02-exact-scrolled open --es tf_preview secret --ez tf_premium true --ez tf_cardfit false --es tf_open card
 shot c03-fit-first home --es tf_preview secret --ez tf_premium true --ez tf_cardfit true
 shot c04-exact-free home --es tf_preview secret --ez tf_cardfit false
@@ -416,12 +415,8 @@ if [ "$SET" = rose ]; then
 shot r01-home home --es tf_preview secret --ez tf_premium true
 shot r02-home-free home --es tf_preview secret
 shot r03-home-end open --es tf_preview secret --ez tf_premium true --es tf_open scroll
-shot r04-nearby open --es tf_preview secret --ez tf_premium true --es tf_open nearby
-shot r05-favorite open --es tf_preview secret --ez tf_premium true --es tf_open favorite
-shot r06-like quick --es tf_preview secret --ez tf_premium true --es tf_open like
 shot r07-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
 shot r08-my open --es tf_preview secret --ez tf_premium true --es tf_open my
-shot r09-activity open --es tf_preview secret --ez tf_premium true --es tf_open heart
 shot r10-request open --es tf_preview secret --ez tf_premium true --es tf_open request
 shot r11-premium open --es tf_preview secret --es tf_open premium
 shot r12-chats home --es tf_preview secret-chat --ez tf_premium true
@@ -445,8 +440,6 @@ shot r27-demo-request-free open --es tf_preview secret --es tf_open demo-request
 shot r28-demo-chat-said open --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-1 --es tf_open say
 shot r29-demo-chat-gift quick --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-1 --es tf_open saygif
 shot r30-demo-chat-profile open --es tf_preview chatroom --ez tf_premium true --es tf_chat demo-chat-2 --es tf_open profile
-shot r31-demo-story story --es tf_preview secret --ez tf_premium true --es tf_open demostory
-shot r32-stories-end open --es tf_preview secret --ez tf_premium true --es tf_open storyrow-end
 shot r33-demo-chat-list open --es tf_preview secret-chat --ez tf_premium true --es tf_open scroll
 fi
 if [ "$SET" = sd ]; then
@@ -462,30 +455,34 @@ shot 08-request open --es tf_preview secret --ez tf_premium true --es tf_open re
 shot 09-premium open --es tf_preview secret --es tf_open premium
 shot 10-need open --es tf_preview secret --es tf_open need
 shot 11-verify open --es tf_preview secret --ez tf_girl true --es tf_open verify
-shot 12-story story --es tf_preview secret --ez tf_premium true --es tf_open story
 shot 13-my-profile open --es tf_preview secret --ez tf_premium true --es tf_open my
 shot 14-my-edit open --es tf_preview secret --es tf_open myedit
-shot 15-add-story open --es tf_preview secret --ez tf_premium true --es tf_open addstory
 shot 16-toast quick --es tf_preview secret --ez tf_premium true --es tf_open toast
 shot 17-girl-home home --es tf_preview secret --ez tf_girl true
 shot 18-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
-shot 19-free-stories open --es tf_preview secret --es tf_open stories
-shot 20-see-all open --es tf_preview secret --ez tf_premium true --es tf_open seeall
 shot 21-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
 fi
-# My Activity (the bell beside Credits): Notifications at its top, then Liked you · You liked · Matches · Requests;
-# and a demo profile (3D face; a request to it is stopped) — their own set, the "sd" set is already long
-if [ "$SET" = act ]; then
-shot 22-activity open --es tf_preview secret --ez tf_premium true --es tf_open activity
-shot 22b-activity-heart open --es tf_preview secret --ez tf_premium true --es tf_open heart
-shot 23-activity-free open --es tf_preview secret --es tf_open activity
-shot 24-activity-you open --es tf_preview secret --ez tf_premium true --es tf_open activity-you
-shot 25-activity-match open --es tf_preview secret --ez tf_premium true --es tf_open activity-match
-shot 26-activity-req open --es tf_preview secret --ez tf_premium true --es tf_open activity-req
-shot 27-activity-girl open --es tf_preview secret --ez tf_girl true --es tf_open activity
-shot 28-activity-match-free open --es tf_preview secret --es tf_open activity-match
-shot 29-demo-profile open --es tf_preview secret --ez tf_premium true --es tf_open demo-profile
-shot 29b-demo-request quick --es tf_preview secret --ez tf_premium true --es tf_open demo-request
+# Reconnect (26 Nov: Secret Dating renamed; Discover, likes, Liked you / Matches, Favorite and Stories taken out):
+# Home (Notifications · Private by Design), the Join card, a profile, the sheets, the map, the chats and one chat
+if [ "$SET" = reconnect ]; then
+shot rc01-home-free home --es tf_preview secret
+shot rc02-home-premium home --es tf_preview secret --ez tf_premium true
+shot rc03-home-end open --es tf_preview secret --ez tf_premium true --es tf_open scroll
+shot rc04-join home --es tf_preview secret --ez tf_notjoined true
+shot rc05-girl-home home --es tf_preview secret --ez tf_girl true
+shot rc06-profile open --es tf_preview secret --ez tf_premium true --es tf_open profile
+shot rc07-profile-end open --es tf_preview secret --ez tf_premium true --es tf_open profileend
+shot rc08-request open --es tf_preview secret --ez tf_premium true --es tf_open request
+shot rc09-premium open --es tf_preview secret --es tf_open premium
+shot rc10-verify open --es tf_preview secret --ez tf_girl true --es tf_open verify
+shot rc11-my-profile open --es tf_preview secret --ez tf_premium true --es tf_open my
+shot rc12-pop quick --es tf_preview secret --ez tf_premium true --es tf_open pop
+shot rc13-map home --es tf_preview secret-map --ez tf_premium true
+shot rc14-chats home --es tf_preview secret-chat --ez tf_premium true
+shot rc15-chats-free home --es tf_preview secret-chat
+shot rc16-room home --es tf_preview chatroom --ez tf_premium true
+shot rc17-room-menu open --es tf_preview chatroom --ez tf_premium true --es tf_open menu
+shot rc18-room-profile open --es tf_preview chatroom --ez tf_premium true --es tf_open profile
 fi
 if [ "$SET" = chat ] || [ "$SET" = all ]; then
 # Online Map (/dating)
@@ -525,7 +522,6 @@ shot 62-room-short home --es tf_preview chatroom --ez tf_premium true --es tf_ch
 shot 63-room-gift-sent animopen --es tf_preview chatroom --ez tf_premium true --es tf_chat m2 --es tf_open sendgif
 shot 64-room-strong-phone animopen --es tf_preview chatroom --ez tf_premium true --es tf_lite 0 --es tf_chat m2 --es tf_open gifpremium
 shot 65-room-toast quick --es tf_preview chatroom --ez tf_premium true --es tf_open toast
-shot 66-room-story story --es tf_preview chatroom --ez tf_premium true --es tf_open story
 shot 67-room-not-found open --es tf_preview chatroom --ez tf_premium true --es tf_chat zz --es tf_open error
 fi
 adb logcat -d > "$OUT/logcat-last.txt"

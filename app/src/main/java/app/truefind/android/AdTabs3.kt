@@ -541,7 +541,7 @@ class AdSystem(a: AdminScreen) : AdTab(a) {
         val TABLES = listOf("UserProfile" to "Members", "Wallet" to "Wallets", "WalletTransaction" to "Wallet history", "Call" to "Calls",
             "PayoutRecord" to "Payouts", "ModerationReport" to "Reports", "SupportTicket" to "Support", "AdminAction" to "Audit log", "AppConfig" to "Settings", "CallRating" to "Call ratings", "Referral" to "Refer & Earn")
         val KIND_LABEL = mapOf("send" to "Login OTP", "verify" to "Code check", "limited" to "Blocked", "test" to "Test send")
-        val OFFER_PAGES = listOf("/wallet" to "Wallet", "/" to "Home", "/secret-app" to "Secret Dating", "/games" to "Games", "/live" to "Live Rooms")
+        val OFFER_PAGES = listOf("/wallet" to "Wallet", "/" to "Home", "/secret-app" to "Reconnect", "/games" to "Games", "/live" to "Live Rooms")
     }
     private val main = Handler(Looper.getMainLooper())
     private val otpBox = AU.col(ctx); private val offerBox = AU.col(ctx); private val jobsBox = AU.col(ctx); private val backupBox = AU.col(ctx); private val auditBox = AU.col(ctx); private val testBox = AU.col(ctx)

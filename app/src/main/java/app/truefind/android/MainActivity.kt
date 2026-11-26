@@ -56,7 +56,7 @@ private const val FAST_SCREEN = true
  *    pages (LoginLayer): Base44's one-time sign-in link, Google's page and the server's log-out only work
  *    in a browser. It is made when it is needed and thrown away as soon as you are in.
  *
- * The screens: Home, Profile, Recent, Expert Talk, Dashboard (NativePages) · Explore · Secret Dating
+ * The screens: Home, Profile, Recent, Expert Talk, Dashboard (NativePages) · Explore · Reconnect
  * (SecretHome + its own bar SdNavBar, one chat in ChatRoom) · Wallet · Games · Live Dance · Live Rooms ·
  * Control Center · calls (CallManager) · status screens (AppStatus) · sign-in pages (LoginLayer).
  */
@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
         fileCallback = null
     }
 
-    // Secret Dating "Add to your story": the phone's photo picker
+    // Reconnect "Add to your story": the phone's photo picker
     private var pickDone: ((ByteArray?, String) -> Unit)? = null
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val cb = pickDone ?: return@registerForActivityResult
@@ -244,7 +244,7 @@ class MainActivity : ComponentActivity() {
         appBg.bottomStrip = { root.paddingBottom }
         root.background = appBg
         setContentView(root)
-        // the Secret Dating page ends exactly where its bar starts — checked again whenever the screen's edges change
+        // the Reconnect page ends exactly where its bar starts — checked again whenever the screen's edges change
         // (the phone's insets can arrive after the page was sized: a white band showed between the page and the bar)
         root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> root.post { sizeSecretPage() } }
         // keep everything clear of the status bar, the phone's own buttons and the keyboard
@@ -252,7 +252,7 @@ class MainActivity : ComponentActivity() {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
-            // Secret Dating's bar (the page's blush) runs on down over the phone's own button strip
+            // Reconnect's bar (the page's blush) runs on down over the phone's own button strip
             if (::sdNav.isInitialized && sdNav.below != bars.bottom) {
                 sdNav.below = bars.bottom
                 (sdNav.layoutParams as? FrameLayout.LayoutParams)?.let { it.bottomMargin = -bars.bottom; sdNav.layoutParams = it }
@@ -269,11 +269,9 @@ class MainActivity : ComponentActivity() {
         secret = SecretHome(this, root) { p, state -> navigate(p, state) }
         secret.visibility = View.GONE
         root.addView(secret, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        // Secret Dating's own bottom bar (Discover · Likes · Chat · Map); Likes opens My Activity over the page
-        // (owner, 21 Nov: the bar stays under My Activity, the heart lit; another tab closes My Activity and opens)
-        sdNav = SdNavBar(this) { to -> if (to == "likes") secret.openMyActivity("liked", aboveBar = sdNav.barPx) else { secret.closeMyActivity(); navigate(to) } }
-        secret.onLikesDot = { on -> sdNav.heartDot = on }
-        secret.onActivityBar = { on -> sdNav.current = if (on) "likes" else secret.page }
+        // Reconnect's own bottom bar (Home · Chat · Map; 26 Nov: Discover and Likes went with the like feature)
+        sdNav = SdNavBar(this) { to -> navigate(to) }
+        secret.onLikesDot = { on -> sdNav.homeDot = on }
         sdNav.visibility = View.GONE
         root.addView(sdNav, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
         SdSheets.pickImage = { cb -> pickDone = cb; try { pickPhoto.launch("image/*") } catch (e: Exception) { pickDone = null; cb(null, "") } }
@@ -424,11 +422,11 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(login, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
-        // the soft glow at a list's top / bottom end (owner, 19 Nov evening): True Find's blue, Secret Dating's pink.
+        // the soft glow at a list's top / bottom end (owner, 19 Nov evening): True Find's blue, Reconnect's pink.
         // It sits over the pages (under the call screen) and never takes a touch.
         edgeGlow = EdgeGlow(this) {
             val p = pathOnly(path)
-            if (p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p)) K.rose else PullSpinner.BLUE
+            if (p == "/secret-app" || p == "/reconnect-map" || Regex("^/chat/[^/]+$").matches(p)) K.rose else PullSpinner.BLUE
         }
         edgeGlow.elevation = Ui.dp(99f)
         root.addView(edgeGlow, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -752,7 +750,7 @@ class MainActivity : ComponentActivity() {
     /** a page the app has (the web showed "Page not found" for anything else) */
     private fun known(p: String): Boolean =
         p == "/" || p == "/home" || p == "/explore" || p == "/chats" || p == "/wallet" || p == "/profile" || p == "/profile/edit" ||
-            p == "/register/verification" || p == "/secret-app" || p == "/dating" || Regex("^/chat/[^/]+$").matches(p) ||
+            p == "/register/verification" || p == "/secret-app" || p == "/reconnect-map" || Regex("^/chat/[^/]+$").matches(p) ||
             p == "/games" || p.startsWith("/games/") || p == "/dance" || p.startsWith("/dance/") || p == "/live" || p.startsWith("/live/") ||
             p == "/expert-talk" || p == "/dashboard" || p == "/secret-earnings" || p == "/admin"
     /** where [target] really leads: an unknown address is Home; an expert account stays in Expert Talk */
@@ -783,7 +781,7 @@ class MainActivity : ComponentActivity() {
             val r = room(); r.visibility = View.VISIBLE; r.open(id); roomShown = true; roomStrips(); sdNav.visibility = View.GONE
             return
         }
-        // (and True Find's Settings, opened from Secret Dating's My Profile: the Profile page with its Settings drawer)
+        // (and True Find's Settings, opened from Reconnect's My Profile: the Profile page with its Settings drawer)
         if (Demo.on && preview.startsWith("secret") && pathOnly(full) == "/profile" && full.contains("open=settings")) {
             secret.layer.closeAll(); secret.visibility = View.GONE; sdNav.visibility = View.GONE
             pages.startPreview("profile", "settings=1")
@@ -823,13 +821,13 @@ class MainActivity : ComponentActivity() {
         if (leaving) return true
         return router.back(n)
     }
-    /** a chat's Back: the page you came from, or the Secret Dating chats (the web's goBack in ChatRoom.jsx) */
+    /** a chat's Back: the page you came from, or the Reconnect chats (the web's goBack in ChatRoom.jsx) */
     private fun chatBack() { if (!goBack()) navigate("/secret-app?tab=chat", null, true) }
     private fun room(): ChatRoom = chatRoom ?: ChatRoom(this, root, go = { p, st -> navigate(p, st) }, goBack = { chatBack() }, replace = { navigate(it, null, true) }).also {
         it.visibility = View.GONE
-        // a Secret Dating chat has a maroon top and a blush page: the phone's strips follow (True Find's own chats: white as before)
+        // a Reconnect chat has a maroon top and a blush page: the phone's strips follow (True Find's own chats: white as before)
         it.onStrip = { if (roomShown) roomStrips() }
-        // pinned / unpinned in the chat: the Secret Dating chat list moves it at once
+        // pinned / unpinned in the chat: the Reconnect chat list moves it at once
         it.onPinned = { id, on -> if (::secret.isInitialized) secret.chatPinned(id, on) }
         root.addView(it, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         chatRoom = it
@@ -938,7 +936,7 @@ class MainActivity : ComponentActivity() {
                 onEnd = { settle() })
             PageFx.Kind.PUSH -> PageFx.run(root, kind, fromV, toV,
                 lowerExtras = if (navBefore && !navAfter) listOf(pages.nav) else emptyList(),
-                // Secret Dating's pink bar comes in with its page
+                // Reconnect's pink bar comes in with its page
                 upperExtras = if (after === secret && before != null) listOf(sdNav) else emptyList(),
                 moveLower = before != null || nativeLed, onEnd = { settle() })
             PageFx.Kind.POP -> {
@@ -1021,13 +1019,13 @@ class MainActivity : ComponentActivity() {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !on
     }
 
-    /** Secret Dating's bar is showing: the page's blush runs on under the phone's own button strip — the strip is
+    /** Reconnect's bar is showing: the page's blush runs on under the phone's own button strip — the strip is
      *  painted the same blush (older phones paint it themselves) and the bar may draw over the padding (owner, 21 Nov) */
     private var sdBottomOn: Boolean? = null
 
-    private val SD_TOP = Rs.BG_TOP                  // Secret Dating's blush page, at its top (23 Nov; was the pink #FB5C94)
+    private val SD_TOP = Rs.BG_TOP                  // Reconnect's blush page, at its top (23 Nov; was the pink #FB5C94)
     private var roomShown = false
-    /** one Secret Dating chat is open: maroon behind the clock (white clock), blush over the phone's buttons */
+    /** one Reconnect chat is open: maroon behind the clock (white clock), blush over the phone's buttons */
     private fun roomStrips() {
         val r = chatRoom
         pageStrip(r?.stripTop)
@@ -1060,7 +1058,7 @@ class MainActivity : ComponentActivity() {
         sdBottomOn = on
     }
 
-    /** Secret Dating's pages end where its own bar starts (the room inside the phone's edges, less the bar) */
+    /** Reconnect's pages end where its own bar starts (the room inside the phone's edges, less the bar) */
     private fun sizeSecretPage() {
         if (!::secret.isInitialized || !::sdNav.isInitialized) return
         val innerH = root.height - root.paddingTop - root.paddingBottom
@@ -1104,9 +1102,9 @@ class MainActivity : ComponentActivity() {
         val navTop = pages.update(inApp)
         val p = path.trimEnd('/')
         val onExplore = p == "/explore"
-        // Secret Dating: which page (the web's SecretApp view)
+        // Reconnect: which page (the web's SecretApp view)
         val tab = try { Uri.parse("x://x$search").getQueryParameter("tab") } catch (e: Exception) { null }
-        val secretView = when (p) { "/secret-app" -> if (tab == "chat") "chat" else "home"; "/dating" -> "map"; else -> "" }
+        val secretView = when (p) { "/secret-app" -> if (tab == "chat") "chat" else "home"; "/reconnect-map" -> "map"; else -> "" }
         val chatId = Regex("^/chat/([^/]+)$").find(p)?.groupValues?.get(1).orEmpty()
         val show = onExplore && inApp
         val showSecret = secretView.isNotEmpty() && inApp
@@ -1114,7 +1112,7 @@ class MainActivity : ComponentActivity() {
         val showRoom = chatId.isNotEmpty() && inApp
         if (showRoom) room().open(chatId) else chatRoom?.close()
         chatRoom?.let { r -> if (showRoom != (r.visibility == View.VISIBLE)) r.visibility = if (showRoom) View.VISIBLE else View.GONE }
-        // Explore ends where the bottom bar starts; the Secret Dating pages end where their own bar starts
+        // Explore ends where the bottom bar starts; the Reconnect pages end where their own bar starts
         sizeTo(explore, if (pages.navShown && navTop > 0) navTop else ViewGroup.LayoutParams.MATCH_PARENT)
         sizeSecretPage()
         // (its own "open" state counts too: a page move may hold its view visible or hidden for a moment, and the
@@ -1187,7 +1185,7 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * A Secret Dating plan's payment page (only when online payments are switched on on the server): it opens in
+     * A Reconnect plan's payment page (only when online payments are switched on on the server): it opens in
      * the phone's browser, on top of the app; back in the app the Wallet reads the plan again.
      */
     private var checkoutOpen = false
@@ -1241,9 +1239,9 @@ class MainActivity : ComponentActivity() {
             "Wallet -> Recent (back: the fixed step above the Wallet)" to { goBack() },
             "Recent -> Home (tab)" to { navigate("/") },
             "Home -> Recent (tab)" to { navigate("/chats") },
-            "Recent -> Secret Dating (open)" to { navigate("/secret-app") },
-            "Secret Dating Home -> Map (its own tab)" to { navigate("/dating") },
-            "Secret Dating -> Recent (back, two pages)" to { goBack(2) },
+            "Recent -> Reconnect (open)" to { navigate("/secret-app") },
+            "Reconnect Home -> Map (its own tab)" to { navigate("/reconnect-map") },
+            "Reconnect -> Recent (back, two pages)" to { goBack(2) },
         )
         root.postDelayed({
             say("start"); router.reset("/")
@@ -1300,7 +1298,6 @@ class MainActivity : ComponentActivity() {
         Demo.noChats = intent.getBooleanExtra("tf_nochats", false)
         Demo.notJoined = intent.getBooleanExtra("tf_notjoined", false)
         Demo.tfChat = intent.getBooleanExtra("tf_tfchat", false)
-        if (intent.hasExtra("tf_cardfit")) SdDeck.fit = intent.getBooleanExtra("tf_cardfit", false)   // test shots: the card's two sizes
         intent.getStringExtra("tf_lite")?.let { Lite.forceForTests(it == "1") }
         intent.getStringExtra("tf_mapoff")?.let { GlobeMap.testOff = it.split(",").filter { s -> s.isNotBlank() }.toSet() }
         if (intent.getBooleanExtra("tf_mapcheck", false)) GlobeMap.testCheck = true
@@ -1328,7 +1325,7 @@ class MainActivity : ComponentActivity() {
             root.post { val innerH = root.height - root.paddingTop - root.paddingBottom; if (innerH > 0) sizeTo(explore, innerH - pages.nav.barPx) }
         } else {
             secret.setShown(true, view, "")
-            // Secret Dating's own bar under its pages, as in the app
+            // Reconnect's own bar under its pages, as in the app
             sdNav.current = view; sdNav.visibility = View.VISIBLE
             sdBottom(true)
             navStrip(Rs.BG_END)

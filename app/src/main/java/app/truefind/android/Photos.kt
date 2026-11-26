@@ -16,7 +16,7 @@ import java.util.concurrent.Executors
  * Downloads profile photos once, decodes them already shrunk to the size
  * they are shown at (square, centre-cropped), and keeps them in memory.
  * At most 6 download at the same time (same rule as the web Explore).
- * "asset:path" is a picture kept inside the app (Secret Dating's demo profiles: the 3D faces in assets/home/faces).
+ * "asset:path" is a picture kept inside the app (Reconnect's demo profiles: the 3D faces in assets/home/faces).
  */
 object Photos {
     /** the app's own pictures (set when the app starts) */
@@ -101,7 +101,7 @@ object Photos {
         }
     }
 
-    /** A photo cut to fill a w × h box (object-fit: cover), not round — Secret Dating cards. */
+    /** A photo cut to fill a w × h box (object-fit: cover), not round — Reconnect cards. */
     fun loadCover(raws: List<String>, w: Int, h: Int, done: (Bitmap?) -> Unit) {
         val list = raws.filter { it.isNotBlank() }.distinct()
         if (list.isEmpty()) { done(null); return }

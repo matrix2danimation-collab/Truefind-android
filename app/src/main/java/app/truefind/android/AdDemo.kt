@@ -212,7 +212,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         issue("i3", "crash", "crash", "IllegalStateException", "java.lang.IllegalStateException: The specified child already has a parent · at ExploreScreen.bubble", "u-b2", 14.0, 2, "Explore", "Samsung SM-A155F", "14 (34)", "mobile", "Airtel"),
         issue("i4", "call", "call_failed", "PASS_NETWORK", "Voice call · Could not connect the call service. Please end the call and try again.", "u-b3", 21.0, ref = "call-64", device = "Realme RMX3830", op = "Vi"),
         issue("i5", "message", "msg_failed", "NO_CONNECTION", "Message did not send (no connection)", "u-g4", 26.0, 3, "Chat room"),
-        issue("i6", "hang", "hang", "FROZE", "The app froze for 3.4 s", "u-b1", 33.0, 1, "Secret Dating", "Vivo V2250", "13 (33)", "wifi", "Jio"),
+        issue("i6", "hang", "hang", "FROZE", "The app froze for 3.4 s", "u-b1", 33.0, 1, "Reconnect", "Vivo V2250", "13 (33)", "wifi", "Jio"),
         issue("i7", "call", "call_no_audio", "NO_SOUND_15S", "Voice call · No sound from the other phone for 15 s", "u-g2", 41.0, ref = "call-58", op = "Airtel"),
         issue("i8", "page", "page_slow", "OPEN_SLOW", "Took 3.6 s to appear", "u-b4", 52.0, 1, "Explore", "Redmi 220333QAI", "12 (31)"),
         issue("i9", "server", "server_timeout", "getOnlineNow", "No answer in 30 s", "u-g5", 66.0, 4, "Home"),
@@ -224,7 +224,7 @@ class AdDemo(private val ctx: Context) : AdSrc {
         val rows = listOf(
             listOf("Home", 18230, 3980, 412_000, 41, 2, 380, "Redmi 220333QAI"), listOf("Explore", 9120, 3010, 388_500, 96, 5, 910, "Xiaomi 23021RAAEG"),
             listOf("Call Back", 6420, 2240, 96_300, 12, 0, 340, ""), listOf("Wallet", 4310, 1870, 61_200, 9, 0, 520, ""), listOf("Profile", 3880, 1950, 70_500, 4, 0, 300, ""),
-            listOf("Secret Dating", 3120, 1340, 240_800, 22, 3, 760, "Vivo V2250"), listOf("Chat room", 2950, 880, 301_100, 6, 1, 280, ""),
+            listOf("Reconnect", 3120, 1340, 240_800, 22, 3, 760, "Vivo V2250"), listOf("Chat room", 2950, 880, 301_100, 6, 1, 280, ""),
             listOf("Live Rooms", 1210, 640, 158_400, 15, 1, 830, "Oppo CPH2387"), listOf("Games", 980, 520, 88_900, 3, 0, 450, ""), listOf("Dashboard", 410, 220, 9_800, 0, 0, 260, ""),
             listOf("Edit profile", 380, 300, 21_400, 1, 0, 330, ""), listOf("Expert Talk", 160, 120, 12_100, 0, 0, 410, ""),
         )
@@ -253,9 +253,9 @@ class AdDemo(private val ctx: Context) : AdSrc {
                     JSONObject().put("kind", "crash").put("area", "crash").put("n", n(3)).put("members", n(3)).put("line", "${n(3)} app crashes ${rg.optString("when")}").put("hint", "Mostly on Airtel (${n(2)}) · ${n(3)} members · Samsung SM-A155F (${n(2)}) · page Explore · app 0.1.252"),
                     JSONObject().put("kind", "call_failed").put("area", "call").put("n", n(7)).put("members", n(6)).put("line", "${n(7)} calls could not connect ${rg.optString("when")}").put("hint", "Mostly on Vi (${n(4)}) · ${n(6)} members · Realme RMX3830 (${n(3)})"),
                     JSONObject().put("kind", "msg_failed").put("area", "message").put("n", n(9)).put("members", n(5)).put("line", "${n(9)} messages did not send ${rg.optString("when")}").put("hint", "Mostly on Jio (${n(6)}) · ${n(5)} members · page Chat room"),
-                    JSONObject().put("kind", "hang").put("area", "hang").put("n", n(11)).put("members", n(8)).put("line", "${n(11)} times the app froze for a few seconds ${rg.optString("when")}").put("hint", "Mostly on Wi-Fi (${n(5)}) · ${n(8)} members · Vivo V2250 (${n(4)}) · page Secret Dating"),
+                    JSONObject().put("kind", "hang").put("area", "hang").put("n", n(11)).put("members", n(8)).put("line", "${n(11)} times the app froze for a few seconds ${rg.optString("when")}").put("hint", "Mostly on Wi-Fi (${n(5)}) · ${n(8)} members · Vivo V2250 (${n(4)}) · page Reconnect"),
                 ))
-                .put("slow_pages", arr(JSONObject().put("page", "Explore").put("slow", n(96)).put("hangs", n(5)), JSONObject().put("page", "Home").put("slow", n(41)).put("hangs", n(2)), JSONObject().put("page", "Secret Dating").put("slow", n(22)).put("hangs", n(3))))
+                .put("slow_pages", arr(JSONObject().put("page", "Explore").put("slow", n(96)).put("hangs", n(5)), JSONObject().put("page", "Home").put("slow", n(41)).put("hangs", n(2)), JSONObject().put("page", "Reconnect").put("slow", n(22)).put("hangs", n(3))))
                 .put("days", if (!week) JSONArray() else JSONArray().also { d -> for (i in 6 downTo 0) d.put(JSONObject().put("day", dayAgo(i)).put("active", 3700 + i * 83).put("new", 210 + i * 7).put("revenue_inr", 6100 + i * 420)
                     .put("calls", 2700 + i * 31).put("connected", 2080 + i * 25).put("call_problems", 20 + (i * 3) % 9).put("crashes", i % 3).put("messages", 17500 + i * 130)) })
                 .put("alerts", JSONObject().put("enabled", true).put("push_ready", true).put("last", arr(JSONObject().put("title", "⚠️ 6 call problems in 10 min").put("body", "Mostly on Jio (5)").put("created_date", iso(95.0)))))

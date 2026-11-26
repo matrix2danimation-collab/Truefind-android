@@ -25,7 +25,7 @@ import kotlin.math.hypot
 import kotlin.math.min
 
 /**
- * SECRET DATING · Online Map (/dating) — the web's map view of SecretApp.jsx, native:
+ * RECONNECT · Online Map (/reconnect-map) — the web's map view of SecretApp.jsx, native:
  * header (back · Online Map · credits), "Verified Boys & Girls Across India", the 3D Earth
  * (Near You / Online filters, full screen), "N People · M Online", the gliding strip of
  * people and the location promise. The bottom bar stays the web's own.

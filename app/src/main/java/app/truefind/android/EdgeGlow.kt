@@ -21,7 +21,7 @@ import kotlin.math.min
 
 /**
  * The soft glow at the very top or bottom of a list when you go on pulling past its end, or when a fast swipe
- * hits the end (owner, 19 Nov evening: "like VoiceClub's red one, in blue"; Secret Dating in its own pink).
+ * hits the end (owner, 19 Nov evening: "like VoiceClub's red one, in blue"; Reconnect in its own pink).
  * Android 12 and later only stretch the page there and give it no colour, so the app draws the glow itself:
  * one see-through layer over the screen, fed with every touch (it never takes a touch). The list under the
  * finger is found at the touch; it doesn't stretch any more (the glow takes the stretch's place).

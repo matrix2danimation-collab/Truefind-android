@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.FrameLayout
 
 /**
- * A page that stays ready while it is hidden (Home, Explore, Recent, Profile, Wallet, Secret Dating).
+ * A page that stays ready while it is hidden (Home, Explore, Recent, Profile, Wallet, Reconnect).
  *
  * Why: when Android hides a view completely (GONE), it throws away everything it had drawn of it — and of
  * every view inside. Showing the page again then draws all of it from nothing in one frame; on the owner's

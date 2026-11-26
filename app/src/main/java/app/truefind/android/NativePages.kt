@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 /**
  * The native Home, Profile (with Settings and every screen inside it), Edit your
- * profile, Verification, Recent, Expert Talk, My Dashboard, Secret Dating Earning
+ * profile, Verification, Recent, Expert Talk, My Dashboard, Reconnect Earning
  * and the bottom bar.
  *
  * A screen shows whenever its address is open (the app's own Router keeps the address):
@@ -19,7 +19,7 @@ import org.json.JSONObject
  *   /chats              → Recent (RecentScreen)
  *   /, /home, /explore, /chats → the bottom bar
  *   /expert-talk        → Expert Talk (member side or the expert's panel)
- *   /dashboard          → My Dashboard        /secret-earnings      → Secret Dating Earning
+ *   /dashboard          → My Dashboard        /secret-earnings      → Reconnect Earning
  * Before, these followed the address of the web page hidden underneath; now MainActivity tells
  * them the address ([setRoute]) and their taps go back to it ([Host]).
  */

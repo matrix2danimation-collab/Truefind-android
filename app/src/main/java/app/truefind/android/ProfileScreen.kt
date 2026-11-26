@@ -199,7 +199,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 "verification", "notifications", "privacy", "blocked", "memberships", "help", "security" -> open
                 else -> null
             }
-            // (opened from another page — Home's Verification bar, Secret Dating, a Wallet button: its back arrow goes
+            // (opened from another page — Home's Verification bar, Reconnect, a Wallet button: its back arrow goes
             // back to that page, like the phone's Back; owner, 19 Nov evening)
             if (target != null) { replaceQuery("?settings=$target", JSONObject().put("fromOutside", true)); return }
         }
@@ -573,7 +573,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             if (!r.ok) { done(); say(PR.errText(r, "Could not join right now."), true); return@invoke }
             load()
             done()
-            say("You joined Secret Dating.")
+            say("You joined Reconnect.")
         }
     }
 

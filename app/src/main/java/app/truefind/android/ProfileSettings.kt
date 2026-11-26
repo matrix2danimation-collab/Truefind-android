@@ -56,7 +56,7 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         "refer" to "invite friend code link share free coins reward",
         "apply" to "apply earn earning selfie video upi",
         "verification" to "verify verified identity age 18 pan card voice badge",
-        "memberships" to "membership premium plan secret dating join",
+        "memberships" to "membership premium plan reconnect join",
         "update" to "update version latest new",
         "speed" to "speed smooth test",
         "fxspeed" to "speed slow slower fast animation move test",
@@ -116,7 +116,7 @@ class PSettings(ctx: Context, private val ps: ProfileScreen) : FrameLayout(ctx) 
         g1.add(Item("apply", if (ps.applyKind == "creator") "Become a Creator" else "Become a Host",
             when (st) { "approved" -> "Approved"; "pending" -> "Under review"; "rejected" -> "Rejected · apply again"; else -> "Not applied" }, Lu.Radio, PC.tHost))
         g1.add(Item("verification", "Verification", if (vi.verified) "Verified" else if (vi.pending) "Under review" else "Identity and age status", Lu.ShieldCheck, PC.tVerification))
-        g1.add(Item("memberships", "Memberships & premium", if (ps.premiumActive) "Secret Dating premium active" else "True Find, Secret Dating", Lu.Crown, PC.tMemberships))
+        g1.add(Item("memberships", "Memberships & premium", if (ps.premiumActive) "Reconnect premium active" else "True Find, Reconnect", Lu.Crown, PC.tMemberships))
         val g2 = listOfNotNull(
             // the app's own updates (test builds from GitHub): ask now instead of waiting for the box
             if (BuildConfig.SELF_UPDATE) Item("update", "Check for update", "Version ${BuildConfig.VERSION_NAME} · tap to look for a new one", Lu.RefreshCw, PC.tHelp, action = { ps.pages.checkUpdate() }) else null,
@@ -460,13 +460,13 @@ class PMemberships(ctx: Context, ps: ProfileScreen) : PPanel(ctx, ps) {
         val r2 = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         r2.addView(PUi.tile(ctx, PC.tMemberships, Lu.Crown), LinearLayout.LayoutParams(Ui.dpi(42f), Ui.dpi(42f)).apply { rightMargin = Ui.dpi(12f) })
         val t2 = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
-        t2.addView(Tf.t(ctx, "Secret Dating", 15f, PC.ink))
+        t2.addView(Tf.t(ctx, "Reconnect", 15f, PC.ink))
         val until = PR.s(ps.premium, "until")
         t2.addView(Tf.t(ctx, if (ps.premiumActive) "Premium active${if (until.isNotEmpty()) " until ${PR.fmtDate(until)}" else ""}" else if (joined) "Joined · free plan" else "Not joined yet", 12.5f, PC.sub, false), lp(2f))
         r2.addView(t2, LinearLayout.LayoutParams(0, -2, 1f))
         c2.addView(r2)
-        if (!joined && !ps.premiumActive) c2.addView(PUi.btn(ctx, "Join Secret Dating", "light") { ps.joinSecret { } }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { topMargin = Ui.dpi(14f) })
-        c2.addView(PUi.btn(ctx, "Open Secret Dating") { ps.leaveTo("/secret-app") }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { topMargin = Ui.dpi(10f) })
+        if (!joined && !ps.premiumActive) c2.addView(PUi.btn(ctx, "Join Reconnect", "light") { ps.joinSecret { } }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { topMargin = Ui.dpi(14f) })
+        c2.addView(PUi.btn(ctx, "Open Reconnect") { ps.leaveTo("/secret-app") }, LinearLayout.LayoutParams(-1, Ui.dpi(48f)).apply { topMargin = Ui.dpi(10f) })
         view.addView(c2, lp(12f))
     }
 }

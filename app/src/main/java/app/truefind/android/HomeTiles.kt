@@ -118,7 +118,7 @@ object HomeTiles {
     }
     private fun cell(m: Zm, i: Int) = LinearLayout.LayoutParams(0, -1, 1f).apply { if (i > 0) leftMargin = m.pi(10f) }
 
-    /** Serious Single (opens Secret Dating) */
+    /** Serious Single (opens Reconnect) */
     fun serious(ctx: Context, m: Zm, open: () -> Unit): View {
         val card = FrameLayout(ctx).apply {
             background = Tf.boxPx(Ui.c("#3A1A70"), m.px(20f)); clipToOutline = true
@@ -136,8 +136,8 @@ object HomeTiles {
             compoundDrawablePadding = m.pi(5f)
             setCompoundDrawablesWithIntrinsicBounds(SvgDrawable(Svg.of(HomeArt.CROWN_GOLD11), 11f * m.z), null, null, null)
         }, LinearLayout.LayoutParams(-2, m.pi(20f)))
-        top.addView(Tf.tpx(ctx, "Serious Single", m.px(22f), Color.WHITE).apply { letterSpacing = -0.2f / 22f; setPadding(0, m.pi(2f), 0, m.pi(2f)) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(8f) })
-        top.addView(Tf.tpx(ctx, "Date quietly.\nYour identity stays yours.", m.px(13f), Color.argb(217, 255, 255, 255), false).apply { setLineSpacing(m.px(13f) * 0.38f - 0f, 1f) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(4f) })
+        top.addView(Tf.tpx(ctx, "Reconnect", m.px(22f), Color.WHITE).apply { letterSpacing = -0.2f / 22f; setPadding(0, m.pi(2f), 0, m.pi(2f)) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(8f) })
+        top.addView(Tf.tpx(ctx, "Talk privately.\nYour identity stays yours.", m.px(13f), Color.argb(217, 255, 255, 255), false).apply { setLineSpacing(m.px(13f) * 0.38f - 0f, 1f) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = m.pi(4f) })
         col.addView(top)
         val feats = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, m.pi(12f), 0, 0) }
         for ((svg, text) in listOf(HomeArt.MASK to "Anonymous", HomeArt.EYE_OFF to "Hidden", HomeArt.LOCK to "Private", HomeArt.INFINITY to "No Limits")) {

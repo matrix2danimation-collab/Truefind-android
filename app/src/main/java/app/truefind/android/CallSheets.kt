@@ -449,7 +449,7 @@ class CallFlow(ctx: Context, private val gapX: Int, private val gapY: Int, priva
 }
 
 /**
- * "Go to Chat" during a call: the other person's Secret Dating card with a small chat, drawn over the call
+ * "Go to Chat" during a call: the other person's Reconnect card with a small chat, drawn over the call
  * (the call keeps going; the purple bar on top goes back to it). Same as PeerPage in DateCallScreen.jsx:
  * callDate "peer" (her card + chat state), "chat" (opens the chat, 5 free messages without a plan),
  * the messages of that chat live, sendMessage; free messages used up → Go Premium (₹19/day).
@@ -526,10 +526,10 @@ class PeerPage(ctx: Context, private val s: CallSession, private val onBack: () 
         bar.addView(CallKit.t(ctx, "Return", 12.5f, CallKit.PURPLE, 700).apply { background = Tf.box(Color.WHITE, 999f); setPadding(Ui.dpi(12f), Ui.dpi(6f), Ui.dpi(12f), Ui.dpi(6f)) })
         Ui.pressable(bar, .98f)
         col.addView(bar, Tf.ll(Tf.M, Tf.W))
-        // SECRET DATING
+        // RECONNECT
         val sd = Tf.row(ctx)
         sd.addView(ImageView(ctx).apply { setImageDrawable(CallKit.svg(CallKit.LOCK, 14f, CallKit.PURPLE)) }, Tf.ll(Ui.dpi(14f), Ui.dpi(14f), r = 7f))
-        sd.addView(CallKit.t(ctx, "SECRET DATING", 13f, CallKit.PURPLE, 700).apply { letterSpacing = .6f / 13f })
+        sd.addView(CallKit.t(ctx, "RECONNECT", 13f, CallKit.PURPLE, 700).apply { letterSpacing = .6f / 13f })
         col.addView(sd, Tf.ll(t = 14f))
         // her card
         card.background = Tf.box(CallKit.LAV2, 26f, 2.5f, CallKit.INK)
@@ -725,7 +725,7 @@ class PeerPage(ctx: Context, private val s: CallSession, private val onBack: () 
             isClickable = true
         }
         p.addView(CallKit.t(ctx, "Go Premium", 18f, CallKit.INK, 800))
-        p.addView(CallKit.t(ctx, "The Secret Dating wallet opens on its own page, so this call will end. Open it now?", 14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
+        p.addView(CallKit.t(ctx, "The Reconnect wallet opens on its own page, so this call will end. Open it now?", 14f, CallKit.SUB, 400).apply { setLineSpacing(0f, 1.2f) }, Tf.ll(t = 4f))
         val row = Tf.row(ctx)
         val keep = CallKit.t(ctx, "Keep talking", 15f, CallKit.INK, 700).apply { gravity = Gravity.CENTER; background = Tf.box(Color.WHITE, 14f, 1f, Ui.c("#E9E6EE")); setOnClickListener { premiumClose?.invoke() } }
         val buy = CallKit.t(ctx, "End call & buy", 15f, Color.WHITE, 700).apply { gravity = Gravity.CENTER; background = Tf.box(CallKit.PINK_B, 14f); setOnClickListener { premiumClose?.invoke(); s.endAndGo("/wallet?app=secret") } }

@@ -128,7 +128,7 @@ class GamesLayer(
     /** The Games page's own back (web history back, to wherever Games was opened from). */
     fun back() = webBack("/")
 
-    /** Opens a web page (wallet, chat, Secret Dating, profile …). Leaving /games ends the games. */
+    /** Opens a web page (wallet, chat, Reconnect, profile …). Leaving /games ends the games. */
     fun openWeb(path: String) = go(path, null)
 
     fun onBack(): Boolean {

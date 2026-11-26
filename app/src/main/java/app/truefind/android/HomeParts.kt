@@ -337,7 +337,7 @@ class CornerMarks(ctx: Context, private val m: Zm) : View(ctx) {
 
 // ═════════════════ the Verification bar and Daily Free Coins ═════════════════
 
-/** The ring of steps round the shield (one segment per step; purple = True Find, pink = Secret Dating, amber = in review). */
+/** The ring of steps round the shield (one segment per step; purple = True Find, pink = Reconnect, amber = in review). */
 class StepRing(ctx: Context) : View(ctx) {
     var tf: List<String> = listOf("todo", "todo", "todo")
     var sd: List<String> = listOf("todo")

@@ -59,7 +59,7 @@ internal class IntroStep(ctx: Context, private val page: WelcomePage) : WelcomeS
             )),
             Words("#FCD34D", "Nearby", "Find Your Match Nearby", "See who is online around you on the live India map.", listOf(
                 """<path d="M3 7h3.5c2 0 3.2 1 4.3 2.6L13 13c1.1 1.6 2.3 2.6 4.3 2.6H20M3 17h3.5c1.4 0 2.4-.5 3.2-1.3M20 8.4h-2.7c-1.4 0-2.4.5-3.2 1.3M17.5 5.5L20 8.4l-2.5 2.9M17.5 12.7l2.5 2.9-2.5 2.9" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>""" to "Random match",
-                """<path d="M4 6c3-1.5 13-1.5 16 0v5c0 5-4 8-8 8s-8-3-8-8z" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="9" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="15" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/>""" to "Secret Dating",
+                """<path d="M4 6c3-1.5 13-1.5 16 0v5c0 5-4 8-8 8s-8-3-8-8z" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="9" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/><circle cx="15" cy="11" r="1.5" fill="rgba(255,255,255,0.8)"/>""" to "Reconnect",
             )),
             Words("#6EE7B7", "Safety", "100% Safe & Private", "No fake users. Your data stays yours.", listOf(
                 """<rect x="4" y="5" width="16" height="14" rx="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.2"/><circle cx="12" cy="12" r="3" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/><circle cx="17" cy="8.5" r="1" fill="rgba(255,255,255,0.8)"/>""" to "Live selfie check",

@@ -17,7 +17,7 @@ import android.view.animation.PathInterpolator
 class PullSpinner(ctx: Context, dots: Int = BLUE, ring: Int = Ui.c("#EEE6FB")) : View(ctx) {
     companion object {
         val BLUE = Ui.c("#5664EF")
-        /** Secret Dating: its own pink, not the blue (owner, 19 Nov evening) */
+        /** Reconnect: its own pink, not the blue (owner, 19 Nov evening) */
         val PINK get() = K.rose
         val PINK_RING get() = K.line
     }
@@ -106,7 +106,7 @@ class PullSpinner(ctx: Context, dots: Int = BLUE, ring: Int = Ui.c("#EEE6FB")) :
 
 
 /**
- * Pull down at the top of a page to refresh — for any page (owner, 19 Nov evening: Secret Dating, Live Room,
+ * Pull down at the top of a page to refresh — for any page (owner, 19 Nov evening: Reconnect, Live Room,
  * Live Dance, Games, Expert Talk, Dashboard and its earnings pages too; "wherever it is needed").
  * [scroll] goes inside a [PullHost] with the five-dot circle over it, the same as Home. [refresh] loads the page
  * again and calls done() when everything is back: the circle turns at least 0.65 s, at most 8 s. No vibration.

@@ -57,7 +57,7 @@ object SdProfileView {
             FrameLayout.LayoutParams(dpi(54f), dpi(54f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = dpi(2f); bottomMargin = dpi(8f) })
         col.addView(photoBox, lp(dpi(204f), dpi(204f), t = 4f, gravity = Gravity.CENTER_HORIZONTAL))
 
-        // ── name · city · seen · like ──
+        // ── name · city · seen (no ♥ any more: likes are gone from Reconnect, 26 Nov) ──
         val same = h.isSameGender(p)
         val live = SdRules.liveOf(p)
         val head = hbox(ctx, 12f).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }
@@ -72,58 +72,7 @@ object SdProfileView {
         val dot = if (live) oval(K.green) else oval(Rs.SOFT)
         info.addView(sdText(ctx, SdRules.seenText(p), 15f, Rs.SUB).icon(dot.apply { setSize(dpi(9f), dpi(9f)) }, 7f))
         head.addView(info, lp(0, WRAP, 1f))
-        val likeMsg = sdText(ctx, "", 14f, Rs.ICON).apply { gravity = Gravity.END; visibility = View.GONE }
-        if (!same) {
-            var fav = p.optBoolean("liked_by_me")
-            var liking = false
-            val heart = Icon(Lucide.Heart, if (fav) white else Rs.c("#C8186C"), 26f, 2f, if (fav) white else null)
-            val heartView = ImageView(ctx).apply { setImageDrawable(heart); scaleType = ImageView.ScaleType.CENTER }
-            val btn = FrameLayout(ctx).apply { background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); contentDescription = if (fav) "Liked. Tap to take back" else "Like" }
-            btn.addView(heartView, FrameLayout.LayoutParams(-1, -1))
-            fun paint() { btn.background = oval(if (fav) Rs.c("#E3086C") else Rs.c("#FDEFF7"), 1f, Rs.c("#F6CFE1")); heart.tint(if (fav) white else Rs.c("#C8186C"), if (fav) white else null) }
-            btn.press().onTap {
-                if (liking) return@onTap
-                val next = !fav
-                if (next) HeartBurst.play(btn, h.layer.root, heartView)
-                // a demo profile (testing only): the heart changes here, but no like is sent anywhere
-                if (SdDemo.isDemo(p)) {
-                    fav = next; paint()
-                    likeMsg.text = "Demo profile: likes reach real members only"; likeMsg.icon(Icon(Lucide.Heart, Rs.ICON, 14f, 2f, Rs.ICON), 5f)
-                    likeMsg.visibility = if (next) View.VISIBLE else View.GONE
-                    return@onTap
-                }
-                fav = next; paint(); liking = true; likeMsg.visibility = View.GONE
-                Api.invoke("likeProfile", JSONObject().put("to_profile_id", p.optString("id")).put("app", "secret").put("action", if (next) "like" else "unlike")) { r ->
-                    liking = false
-                    if (r.ok && r.data.optString("error").isEmpty()) {
-                        h.liked(p.optString("id"), next)
-                        if (next) { likeMsg.text = if (r.data.optBoolean("mutual")) "You both like each other" else "${SdRules.firstName(SdRules.s(p, "name")).ifEmpty { "They" }} will be notified"; likeMsg.visibility = View.VISIBLE }
-                    } else {
-                        fav = !next; paint()
-                        likeMsg.text = r.data.optString("message").ifEmpty { r.data.optString("error").ifEmpty { "Couldn't send the like. Try again." } }; likeMsg.visibility = View.VISIBLE
-                    }
-                    likeMsg.icon(Icon(Lucide.Heart, Rs.ICON, 14f, 2f, Rs.ICON), 5f)
-                }
-            }
-            head.addView(btn, lp(dpi(52f), dpi(52f)))
-        }
         col.addView(head, lp(MATCH, WRAP, t = 18f))
-        col.addView(likeMsg, lp(MATCH, WRAP, l = 24f, r = 24f, t = 10f))
-
-        // ── story ──
-        val story = h.storyFor(p)
-        if (story != null) {
-            val prem = h.isPremium
-            val b = hbox(ctx, 9f).apply { background = rounded(white, 22f, 1f, K.line); setPadding(dpi(4f), 0, dpi(16f), 0) }
-            val r2 = FrameLayout(ctx).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Rs.c("#F7569F"), Rs.c("#FF9BCB"))).apply { shape = GradientDrawable.OVAL }; setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-            val w2 = FrameLayout(ctx).apply { background = oval(white); setPadding(dpi(2f), dpi(2f), dpi(2f), dpi(2f)) }
-            w2.addView(RoundPhoto(ctx, 32f).also { it.set(SdRules.thumbs(p)); if (!prem) it.dim = 0.35f }, FrameLayout.LayoutParams(-1, -1)); r2.addView(w2, FrameLayout.LayoutParams(-1, -1))
-            b.addView(r2, lp(dpi(36f), dpi(36f)))
-            b.addView(if (prem) sdText(ctx, "Watch story", 15f, K.wine) else sdText(ctx, "Story · Premium", 15f, K.wine).icon(Icon(Lucide.Lock, K.wine, 15f), 6f))
-            b.press().onTap { if (prem) h.watchStory(story) else h.locked("watch") }
-            b.contentDescription = if (prem) "Watch ${SdRules.s(p, "name")}'s story" else "Stories are for Premium members"
-            col.addView(b, lp(WRAP, dpi(44f), l = 24f, t = 14f))
-        }
 
         // ── main button ──
         val mainBox = vbox(ctx).apply { setPadding(dpi(24f), 0, dpi(24f), 0) }

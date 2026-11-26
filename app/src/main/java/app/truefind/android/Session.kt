@@ -73,7 +73,7 @@ object Session {
  *    the sign-in pages; no internet is not a sign-out ("No internet connection", tried again by itself).
  *  - Presence (lib/presence.js): online as soon as the app is on screen (again every minute), offline as
  *    soon as it leaves the screen and on log out — so Explore shows who is online right now.
- *  - The red number on the Find button (BottomNav.jsx): new Secret Dating likes, messages and views.
+ *  - The red number on the Find button (BottomNav.jsx): new Reconnect likes, messages and views.
  *  - Expert accounts are Expert Talk only (ExpertGate.jsx).
  */
 class SessionWork(private val ctx: Context, private val host: Host) {

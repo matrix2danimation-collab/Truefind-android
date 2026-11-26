@@ -18,7 +18,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.PathParser
 
 /**
- * Secret Dating's look from the owner's picture (23 Nov): a blush page, maroon buttons, black words,
+ * Reconnect's look from the owner's picture (23 Nov): a blush page, maroon buttons, black words,
  * flat ("2D") buttons — no gloss, no heavy shadows. One place for its colours, its heading font and
  * the change of the earlier pinks into this look.
  */

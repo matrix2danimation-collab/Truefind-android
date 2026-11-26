@@ -18,7 +18,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 import org.json.JSONObject
 
 /**
- * Buying through Google Play (25 Nov): coin packs and Secret Dating plans. Google's own payment screen takes the
+ * Buying through Google Play (25 Nov): coin packs and Reconnect plans. Google's own payment screen takes the
  * money (UPI — Google Pay, PhonePe, Paytm — card, net banking …); the server then checks the purchase with Google
  * and gives what was bought (verifyPlayPurchase), exactly once. Nothing is given by the phone itself.
  *
