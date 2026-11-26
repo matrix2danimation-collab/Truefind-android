@@ -538,7 +538,7 @@ class PeerPage(ctx: Context, private val s: CallSession, private val onBack: () 
         card.addView(cardPhoto, LayoutParams(-1, -1))
         val liked = Tf.row(ctx).apply { background = Tf.box(Color.WHITE, 999f); setPadding(Ui.dpi(7f), Ui.dpi(5f), Ui.dpi(11f), Ui.dpi(5f)); elevation = Ui.dp(4f) }
         liked.addView(ImageView(ctx).apply { setImageDrawable(CallKit.heart(17f)) }, Tf.ll(Ui.dpi(17f), Ui.dpi(17f), r = 6f))
-        liked.addView(CallKit.t(ctx, "Liked", 12.5f, CallKit.PINK_TEXT, 700))
+        liked.addView(CallKit.t(ctx, "Request sent", 12.5f, CallKit.PINK_TEXT, 700))
         card.addView(liked, LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { topMargin = Ui.dpi(12f); rightMargin = Ui.dpi(12f) })
         val shade = GradientView(ctx, intArrayOf(Color.argb(0, 21, 16, 30), Color.argb(217, 21, 16, 30)), null)
         val nameBox = FrameLayout(ctx)

@@ -407,7 +407,7 @@ class DashboardScreen(ctx: Context, val pages: NativePages) : FrameLayout(ctx) {
         c.addView(FrameLayout(ctx).apply { background = DashK.circ(DashK.PINK_BG); addView(DashK.svg(ctx, m, heart("#DB2777"), 22f), FrameLayout.LayoutParams(m.pi(22f), m.pi(22f), Gravity.CENTER)) }, DashK.lp(m, 40f, 40f))
         c.addView(DashK.col(ctx, m, 2f).apply {
             addView(DashK.t(ctx, m, "Reconnect Earning", 16f, DashK.INK, true))
-            addView(DashK.t(ctx, m, "Like bonus, renewals, gifts", 12.5f, DashK.SUB))
+            addView(DashK.t(ctx, m, "Reconnect bonus, renewals, gifts", 12.5f, DashK.SUB))
         }, DashK.lp(m, 0f, -2f, 1f))
         c.addView(DashK.svg(ctx, m, "<svg viewBox=\"0 0 24 24\"><path d=\"M9.5 5l7 7-7 7\" fill=\"none\" stroke=\"#6B6478\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", 18f))
         return c
@@ -618,7 +618,7 @@ class SecretEarningsScreen(ctx: Context, val pages: NativePages) : FrameLayout(c
             listOf("Sent today" to "${lm?.optInt("sent_today") ?: 0}", "This month" to "${lm?.optInt("sent_month") ?: 0}"), loading), DashK.lp(m, -1f, -2f))
         if (!loading && data != null) {
             val f = rates?.optJSONObject("first")
-            column.addView(DashK.t(ctx, m, "Like bonus: ${DashK.inr(f?.opt("1"))} (1 day) · ${DashK.inr(f?.opt("7"))} (1 week) · ${DashK.inr(f?.opt("30"))} (1 month) when your like brings a member to his first plan. " +
+            column.addView(DashK.t(ctx, m, "Reconnect bonus: ${DashK.inr(f?.opt("1"))} (1 day) · ${DashK.inr(f?.opt("7"))} (1 week) · ${DashK.inr(f?.opt("30"))} (1 month) when your Reconnect brings a member to his first plan. " +
                 "Renewal bonus: ${DashK.inr(rates?.opt("renewal"))} when your message brings him back. One message per locked chat. Only you can see this page.${if (data.optBoolean("capped")) " Very old activity may not be counted." else ""}",
                 12f, DashK.SUB, lh = 18f).apply { gravity = Gravity.CENTER }, DashK.lp(m, -1f, -2f).apply { setMargins(m.pi(4f), 0, m.pi(4f), 0) })
         }
