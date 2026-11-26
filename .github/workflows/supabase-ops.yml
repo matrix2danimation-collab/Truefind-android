@@ -1,0 +1,29 @@
+# True Find — Supabase settings: reads the login (Auth) settings, makes the changes listed in ops/auth_patch.json,
+# and writes a short report into the database (table private."OpsReport"): only plain settings (on/off, limits,
+# times) and the NAMES of the server's secrets — never a key, password or code. Nothing secret is printed here
+# either (this repo is public). Runs on a push to this branch (supabase-ops) or by hand. Never touches the app.
+name: Supabase settings
+
+on:
+  push:
+    branches: [supabase-ops]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-ops
+  cancel-in-progress: false
+
+jobs:
+  settings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_REF: ltffzgmnhjeqoguquovf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read, change, report (nothing secret is printed)
+        run: python3 ops/run.py
