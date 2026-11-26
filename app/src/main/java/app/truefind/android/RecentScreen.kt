@@ -391,7 +391,8 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
             val col = LinearLayout(ctx).apply { orientation = VERTICAL }
             // name, age (+ tick)
-            val nameT = Tf.t(ctx, nm + if (r.age.isNotEmpty()) ", ${r.age}" else "", 16.5f, RC.ink).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
+            // name only — no age (owner, 26 Nov)
+            val nameT = Tf.t(ctx, nm, 16.5f, RC.ink).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
             val l1 = RecentLine(ctx, Ui.dpi(24.75f)).add(nameT, shrinks = true)
             if (r.verified) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, RC.purple, 16f, 2.2f)) }, 5f, Ui.dpi(16f), Ui.dpi(16f))
             col.addView(l1, LayoutParams(-1, Ui.dpi(24.75f)))
