@@ -225,30 +225,15 @@ class RowBox : Drawable() {
     }
 
     override fun draw(c: Canvas) {
-        val b = RectF(bounds)
-        val rad = Ui.dp(18f)
-        // 0 6px 16px -14px rgba(76,29,149,.45)  →  picked: 0 10px 22px -16px rgba(76,29,149,.55)
-        RC.shadowBelow(c, b, 6f, 16f, -14f, Color.argb(115, 76, 29, 149), 1f - t)
-        RC.shadowBelow(c, b, 10f, 22f, -16f, Color.argb(140, 76, 29, 149), t)
-        // picked: 0 0 0 4px rgba(108,4,203,.10) around the box
-        if (t > 0f) {
-            val ring = Ui.dp(4f)
-            p.style = Paint.Style.STROKE; p.strokeWidth = ring
-            p.color = Color.argb((0.10f * t * 255).roundToInt(), 108, 4, 203)
-            r.set(b.left - ring / 2f, b.top - ring / 2f, b.right + ring / 2f, b.bottom + ring / 2f)
-            c.drawRoundRect(r, rad + ring / 2f, rad + ring / 2f, p)
-        }
-        // the box (its colour runs under the line, like CSS)
+        // 26 Nov (owner): the rows share one white card, so a row has no box, line or shadow of its own; only when
+        // it is picked (or a finger is on it) does a soft lavender patch show behind it, inside the card
+        val k = maxOf(t, press * 0.6f)
+        if (k <= 0f) return
+        val inset = Ui.dp(6f)
+        r.set(bounds.left + inset, bounds.top + Ui.dp(2f), bounds.right - inset, bounds.bottom - Ui.dp(2f))
         p.style = Paint.Style.FILL
-        p.color = RC.mix(Color.argb(235, 255, 255, 255), Color.WHITE, t)
-        c.drawRoundRect(b, rad, rad, p)
-        // the line: 1 px #E8E1F1 → 2 px #6C04CB; a finger on it: #C9B2F2
-        val bw = Ui.dp(1f + t)
-        p.style = Paint.Style.STROKE; p.strokeWidth = bw
-        p.color = RC.mix(RC.mix(RC.line, RC.purple, t), Ui.c("#C9B2F2"), press)
-        r.set(b.left + bw / 2f, b.top + bw / 2f, b.right - bw / 2f, b.bottom - bw / 2f)
-        c.drawRoundRect(r, rad - bw / 2f, rad - bw / 2f, p)
-        p.style = Paint.Style.FILL
+        p.color = Color.argb((255 * k).roundToInt().coerceIn(0, 255), 0xF1, 0xEA, 0xFF)
+        c.drawRoundRect(r, Ui.dp(14f), Ui.dp(14f), p)
     }
     override fun setAlpha(a: Int) {}
     override fun setColorFilter(cf: ColorFilter?) {}

@@ -310,6 +310,10 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         listBox.removeAllViews()
         rows.clear(); callBtns.clear()
         val list = calls
+        // 26 Nov (owner): all the calls sit together in ONE white card — no box per person, no lines between them
+        val oneCard = list != null && list.isNotEmpty()
+        listBox.background = if (oneCard) Tf.box(Color.WHITE, 18f, 1f, RC.line) else null
+        listBox.setPadding(0, if (oneCard) Ui.dpi(4f) else 0, 0, if (oneCard) Ui.dpi(4f) else 0)
         when {
             // loading: five grey boxes
             list == null -> for (i in 0 until 5) listBox.addView(RecentShimmer(ctx, 16f, Ui.c("#F3EEFA"), Ui.c("#FBF8FE")), gapLp(i, Ui.dpi(78f)))
@@ -318,7 +322,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             else -> list.forEachIndexed { i, r ->
                 val v = RowView(ctx, r)
                 rows[r.otherId] = v
-                listBox.addView(v, gapLp(i))
+                listBox.addView(v, LinearLayout.LayoutParams(-1, -2))
             }
         }
         refreshRowCalls()
