@@ -31,6 +31,12 @@ def call(method, path, body=None):
             raw = r.read()
             return r.status, (json.loads(raw) if raw else None)
     except urllib.error.HTTPError as e:
+        # an error answer carries no secret (only a reason): its start is shown, to see why a call was refused
+        try:
+            reason = e.read()[:160].decode("utf-8", "replace").replace("\n", " ")
+        except Exception:
+            reason = ""
+        print(f"{method} {path.split('?')[0]} -> {e.code} {reason}")
         return e.code, None
 
 
