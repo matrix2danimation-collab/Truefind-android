@@ -69,7 +69,7 @@ shot() {
 # the native Control Center and status screens (their own list, from the misc-admin-native work)
 if [ "$SET" = misc ] || [ "$SET" = admin ] || [ "$SET" = health ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
-if [ "$SET" = recent ]; then
+if [ "$SET" = recent ] || [ "$SET" = homeq ]; then
 R="--es tf_preview recent"
 T() { timeout "$@"; }   # every phone command has a time limit: one stuck command can't hold up the rest
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
@@ -134,6 +134,16 @@ rshot() {
   [ $bad = 1 ] || rm -f "$OUT/$name.live.txt"
   [ -s "$OUT/$name.png" ] || rm -f "$OUT/$name.png"
 }
+if [ "$SET" = homeq ]; then
+  R="--es tf_preview home"
+  rshot h01-home 9
+  rshot h02-home-girl 9 --ez tf_girl true
+  rshot h03-home-scroll1 10 --es tf_open scroll1
+  R="--es tf_preview profile"
+  rshot p01-profile 9
+  alive && T 30 adb logcat -d > "$OUT/logcat-last.txt"
+  exit 0
+fi
 rshot r01-recent 8
 # the list alone (no card): scrolled, empty, couldn't load, loading
 rshot r12-recent-end 3 --es tf_open scroll
