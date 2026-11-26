@@ -23,7 +23,8 @@ def call(method, path, body=None):
     req = urllib.request.Request(
         API + path, method=method,
         data=None if body is None else json.dumps(body).encode(),
-        headers={"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json"},
+        headers={"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json",
+                 "Accept": "application/json", "User-Agent": "truefind-ops/1.0"},
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
