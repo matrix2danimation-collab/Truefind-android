@@ -307,14 +307,15 @@ class RecentFace(ctx: Context, private val sizeDp: Float) : View(ctx) {
 @SuppressLint("ViewConstructor")
 class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
     private val icon = ImageView(ctx)
-    private val loader = TfLoader(ctx, 19f, if (video) Color.WHITE else Tf.BLUE)
+    private val loader = TfLoader(ctx, 19f, if (video) Ui.c("#111111") else Tf.BLUE)
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var fill: Shader? = null
 
     init {
         setWillNotDraw(false)
-        icon.setImageDrawable(if (video) Tf.lu(Lu.Video, Color.WHITE, 19f, 2.1f) else Tf.lu(RC.PHONE, RC.softInk, 18f, 2.1f))
+        // 26 Nov (owner): the video button is white with a black camera (was purple with a white camera)
+        icon.setImageDrawable(if (video) Tf.lu(Lu.Video, Ui.c("#111111"), 19f, 2.1f) else Tf.lu(RC.PHONE, RC.softInk, 18f, 2.1f))
         addView(icon, LayoutParams(Ui.dpi(if (video) 19f else 18f), Ui.dpi(if (video) 19f else 18f), Gravity.CENTER))
         loader.visibility = GONE
         addView(loader, LayoutParams(Ui.dpi(19f), Ui.dpi(19f), Gravity.CENTER))
@@ -378,7 +379,9 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
         val w = width.toFloat(); val h = height.toFloat()
         if (video) {
             // flat, no glow under it (26 Nov, the owner's templates)
-            p.shader = fill; c.drawCircle(w / 2f, h / 2f, w / 2f, p); p.shader = null
+            // white with a thin lavender ring, so it still shows on the white card
+            p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
+            p.color = Color.WHITE; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
         } else {
             p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
             p.color = RC.soft; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
