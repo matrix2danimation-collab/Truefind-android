@@ -136,7 +136,7 @@ class SessionWork(private val ctx: Context, private val host: Host) {
         expertNow = null
     }
 
-    /** Signing out (or the sign-in ended): [sayOffline] tells Explore first (1.5 s at most), then [done]. */
+    /** Signing out (or the sign-in ended): [sayOffline] tells Explore first (waits 1.5 s at most), then [done]. */
     fun stop(sayOffline: Boolean, done: () -> Unit = {}) {
         val was = running
         halt()
@@ -250,7 +250,9 @@ class SessionWork(private val ctx: Context, private val host: Host) {
         val body = JSONObject().put("state", "offline")
         val stats = AppHealth.takeBatch(true)
         if (stats != null) body.put("stats", stats)
-        Api.invoke("updatePresence", body, 1500) { r -> if (stats != null) AppHealth.ack(stats, r.ok); done() }
+        // (8 s to arrive: the server can take a few seconds to wake up, and 1.5 s cut the message off on the way, so
+        // the member stayed "online"; signing out still waits 1.5 s at most — the message goes on by itself)
+        Api.invoke("updatePresence", body, 8000) { r -> if (stats != null) AppHealth.ack(stats, r.ok); done() }
     }
 
     private var netCb: ConnectivityManager.NetworkCallback? = null

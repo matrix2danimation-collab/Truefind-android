@@ -792,7 +792,6 @@ class AdSystem(a: AdminScreen) : AdTab(a) {
     // ───────── background jobs ─────────
     private var jobsRunning = false
     private var lastRun: JSONObject? = null
-    private var details = false
     private fun drawJobs() {
         if (!alive) return
         jobsBox.removeAllViews()
@@ -828,21 +827,8 @@ class AdSystem(a: AdminScreen) : AdTab(a) {
             }
         }
         c.addView(run, AU.lp(-1, -2))
-        c.addView(AU.t(ctx, "${if (details) "▾" else "▸"} Also run them when nobody is online (optional)", 12.5f, AK.deep, true).apply { setOnClickListener { details = !details; drawJobs() }; setPadding(0, Ui.dpi(4f), 0, Ui.dpi(4f)) }, AU.lp(-1, -2, t = 6f))
-        if (details) {
-            val sb = android.text.SpannableStringBuilder("1. In Base44 → Secrets, add ")
-            var st = sb.length; sb.append("JOBS_KEY"); sb.setSpan(TypefaceSpanCompat(Ui.bold), st, sb.length, 0)
-            sb.append(" with any long secret word. 2. On cron-job.org (free), make a job every 5 minutes that sends a POST to the address below with the body ")
-            st = sb.length; sb.append("{\"key\":\"your secret word\"}"); sb.setSpan(android.text.style.TypefaceSpan("monospace"), st, sb.length, 0)
-            sb.append(".")
-            c.addView(AU.t(ctx, sb, 12.5f, AK.sub, false, 18f), AU.lp(-1, -2, t = 4f, b = 6f))
-            val url = "${src.origin}/api/apps/${src.appId.ifEmpty { "<app id>" }}/functions/runJobs"
-            c.addView(AU.t(ctx, url, 11.5f, AK.ink).apply {
-                background = Tf.box(AK.soft, 10f, 1f, AK.line); setPadding(Ui.dpi(10f), Ui.dpi(8f), Ui.dpi(10f), Ui.dpi(8f))
-                compoundDrawablePadding = Ui.dpi(6f); setCompoundDrawablesWithIntrinsicBounds(Tf.lu(AdIc.Copy, AK.ink, 13f), null, null, null)
-                setOnClickListener { AU.copy(ctx, url); say("Copied") }
-            }, AU.lp(-1, -2))
-        }
+        // (Supabase, 24 Nov: the server's own timer runs them every 5 minutes; the Base44 / cron-job.org steps are gone)
+        c.addView(AU.t(ctx, "The server also runs them by itself every 5 minutes, even when nobody is online.", 12.5f, AK.sub, false, 18f), AU.lp(-1, -2, t = 8f))
         jobsBox.addView(c)
     }
 
@@ -853,7 +839,7 @@ class AdSystem(a: AdminScreen) : AdTab(a) {
         if (!alive) return
         backupBox.removeAllViews()
         val c = AU.card(ctx)
-        c.addView(headRow(AdIc.DatabaseBackup, "Backup", "Base44 keeps your data safe. This gives you your own copy too — keep it somewhere private (it has phone numbers)."), AU.lp(-1, -2, b = 10f))
+        c.addView(headRow(AdIc.DatabaseBackup, "Backup", "The server's free plan keeps no automatic backup, so this is your copy. Download a full backup regularly (once a week is good) and keep it somewhere private — it has phone numbers."), AU.lp(-1, -2, b = 10f))
         c.addView(AU.btn(ctx, "Download full backup", "dark", icon = AdIc.Download, iconSize = 15f) { all() }.also { it.busy = backupBusy == "all"; it.off = backupBusy.isNotEmpty() && backupBusy != "all" }, AU.lp(-1, -2))
         if (progress.isNotEmpty()) c.addView(AU.t(ctx, progress, 12f, AK.sub), AU.lp(-1, -2, t = 8f))
         c.addView(AU.wrap(ctx, 6f, *TABLES.map { (e, l) -> AU.btn(ctx, l, "light", true) { one(e, l) }.also { it.busy = backupBusy == e; it.off = backupBusy.isNotEmpty() && backupBusy != e } }.toTypedArray()), AU.lp(-1, -2, t = 10f))
@@ -965,6 +951,6 @@ class AdSystem(a: AdminScreen) : AdTab(a) {
     }
 
     override fun previewOpen(action: String) {
-        when (action) { "details" -> { details = true; drawJobs(); jobsBox.postDelayed({ a.scrollToView(jobsBox) }, 400) } }
+        when (action) { "details" -> jobsBox.postDelayed({ a.scrollToView(jobsBox) }, 400) }
     }
 }

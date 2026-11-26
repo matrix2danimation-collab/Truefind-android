@@ -24,7 +24,7 @@ class AppHealthTest {
         assertEquals("Call Back", AppHealth.nameOf("/chats"))
         assertEquals("Chat room", AppHealth.nameOf("/chat/abc123def456ghi"))
         assertEquals("Call screen", AppHealth.nameOf("/call/0f1e2d3c4b5a69788"))
-        assertEquals("Wallet (Secret Dating)", AppHealth.nameOf("/wallet", "?app=secret"))
+        assertEquals("Wallet (Reconnect)", AppHealth.nameOf("/wallet", "?app=secret"))
         assertEquals("/profile/:id", AppHealth.nameOf("/profile/68f1a2b3c4d5e6f7a8b9c0d1"))
         assertEquals("/settings", AppHealth.nameOf("/settings/"))
     }

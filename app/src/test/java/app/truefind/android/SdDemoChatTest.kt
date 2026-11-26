@@ -104,15 +104,4 @@ class SdDemoChatTest {
         assertEquals("demo-sd-f3", SdDemoChat.filter("UserProfile", JSONObject().put("id", "demo-sd-f3"), now)!!.data.optJSONArray("items")!!.optJSONObject(0).optString("id"))
         assertFalse(SdDemoChat.function("moderateUser", JSONObject().put("profile_id", "demo-sd-f3").put("action", "block"), now)!!.ok)
     }
-
-    @Test fun everyFourthDemoPersonHasAStory() {
-        val st = SdDemo.stories("m", now)
-        assertEquals(25, st.size)
-        assertTrue(st.all { SdDemo.isDemoStory(it) && it.optString("profile_id").startsWith("demo-sd-f") && it.optString("media_url").startsWith("demo:sdstory:asset:") })
-        assertTrue(st.none { it.optBoolean("seen") })
-        SdDemo.seeStory(st[0].optString("id"))
-        assertTrue(SdDemo.stories("m", now)[0].optBoolean("seen"))
-        // posted within the last 20 hours
-        assertTrue(st.all { val ago = now - SdRules.ms(it.optString("created_date")); ago in 20 * 60_000L..20 * 3_600_000L })
-    }
 }

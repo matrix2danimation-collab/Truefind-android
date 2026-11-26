@@ -67,7 +67,7 @@ shot() {
   case "$mode" in anim*) anims 0 ;; esac
 }
 # the native Control Center and status screens (their own list, from the misc-admin-native work)
-if [ "$SET" = misc ] || [ "$SET" = admin ] || [ "$SET" = health ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
+if [ "$SET" = misc ] || [ "$SET" = admin ] || [ "$SET" = health ] || [ "$SET" = cc ]; then bash ci/misc-screens.sh "$APK" "$OUT" "$SET"; exit 0; fi
 # ── native Recent (/chats): the calls, a person's card and full profile, the messages ──
 if [ "$SET" = recent ]; then
 R="--es tf_preview recent"

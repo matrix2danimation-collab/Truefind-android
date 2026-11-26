@@ -130,6 +130,13 @@ if [ "$SET" = misc ]; then
   shot m12-rules-reminder 4 rules
 fi
 
+# Control Center → System only (26 Nov: the Jobs and Backup texts after the move off Base44)
+if [ "$SET" = cc ]; then
+  shot a34-system 3 admin-system
+  shot a35-system-jobs 3 admin-system details
+  shot a36-system-end 3 admin-system scrollend
+fi
+
 if [ "$SET" = admin ]; then
   shot a01-overview 3 admin-overview
   shot a02-overview-end 3 admin-overview scrollend
