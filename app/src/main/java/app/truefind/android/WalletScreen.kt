@@ -212,7 +212,8 @@ class WalletScreen(
     private val minuteChips = WV.box(ctx, false, Gravity.CENTER_VERTICAL)
     private val sheet = WV.box(ctx, true, Gravity.CENTER_HORIZONTAL)
     private val body = WMax(ctx, 480f, paddingInside = true)
-    private val payHost = FrameLayout(ctx)
+    private val payHost: FrameLayout = WPayDock(ctx) { scroll }
+    private var payBtn: View? = null
     private var payBar: View? = null
     private var payKey = ""
     private val spinner = PullSpinner(ctx)
@@ -293,8 +294,9 @@ class WalletScreen(
 
         // ───── the Pay bar (slides up when a pack or plan is tapped) ─────
         payHost.clipChildren = false
+        payHost.clipToPadding = false // the bar's shadow was cut at the holder's padding into a grey box (owner, 27 Nov)
         payHost.setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
-        addView(payHost, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(92f), Gravity.BOTTOM))
+        addView(payHost, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(92f + WData.PAY_SHADOW_ROOM), Gravity.BOTTOM))
 
         // ───── pull down to refresh ─────
         addView(spinner, LayoutParams(Ui.dpi(42f), Ui.dpi(42f), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(4f) })
@@ -1942,12 +1944,49 @@ class WalletScreen(
             bar = coinPayBar(p, opening)
         }
         val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(32f), Ui.dpi(448f))
-        payHost.addView(bar, LayoutParams(w, Ui.dpi(if (secret) 56f else 72f), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM))
+        // (room under the bar: its shadow fades out there instead of being cut off — owner, 27 Nov: a grey box showed
+        // at the bar's lower corners)
+        payHost.addView(bar, LayoutParams(w, Ui.dpi(if (secret) 56f else 72f), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM).apply {
+            bottomMargin = Ui.dpi(WData.PAY_SHADOW_ROOM)
+        })
+        val wasShown = payBar != null
         payBar = bar
-        if (animate) {
-            bar.translationY = Ui.dp(56f) * 1.6f
-            bar.animate().translationY(0f).setStartDelay(70).setDuration(360).setInterpolator(WV.EASE_OUT).start()
+        if (animate) payMotion(bar, firstShow = !wasShown)
+    }
+
+    /**
+     * How the Pay bar arrives (owner, 27 Nov: the old slide up from the bottom looked like a sheet of paper, not a
+     * payment button). First time: it pops up from a little lower and smaller with a small springy overshoot, a band
+     * of light runs across it once, and the Pay button gives one short pulse. Another pack tapped while it shows:
+     * a quick springy bump and the light again, no slide.
+     */
+    private fun payMotion(bar: View, firstShow: Boolean) {
+        val shine = WShine(Ui.dp(24f))
+        bar.foreground = shine
+        val spring = android.view.animation.OvershootInterpolator(if (firstShow) 1.7f else 2.4f)
+        if (firstShow) {
+            bar.alpha = 0f; bar.scaleX = 0.86f; bar.scaleY = 0.86f; bar.translationY = Ui.dp(28f)
+            bar.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f).setStartDelay(40).setDuration(430).setInterpolator(spring).start()
+        } else {
+            bar.scaleX = 0.95f; bar.scaleY = 0.95f
+            bar.animate().scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(spring).start()
         }
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            startDelay = if (firstShow) 300L else 120L
+            duration = 620L
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener { shine.progress = it.animatedValue as Float }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(a: android.animation.Animator) { shine.progress = -1f }
+            })
+            start()
+        }
+        val btn = payBtn ?: return
+        if (btn.parent !== bar) return
+        btn.animate().scaleX(1.07f).scaleY(1.07f).setStartDelay(if (firstShow) 420L else 200L).setDuration(140)
+            .setInterpolator(WV.EASE_OUT).withEndAction {
+                btn.animate().scaleX(1f).scaleY(1f).setStartDelay(0).setDuration(220).setInterpolator(android.view.animation.OvershootInterpolator(2f)).start()
+            }.start()
     }
 
     /** The coin pack's Pay bar (design 1, owner 27 Nov): green, the TF coin, "24,375 coins · 20% OFF" and the
@@ -1959,14 +1998,14 @@ class WalletScreen(
                 android.graphics.drawable.GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#15803D"), Ui.c("#166534")),
             ).apply { cornerRadius = Ui.dp(24f) }
             elevation = Ui.dp(10f)
-            setPadding(Ui.dpi(16f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f))
+            setPadding(Ui.dpi(14f), Ui.dpi(10f), Ui.dpi(12f), Ui.dpi(10f))
             isClickable = true
         }
         bar.addView(android.widget.ImageView(ctx).apply { setImageResource(R.drawable.wallet_coin); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO },
-            WV.lp(Ui.dpi(40f), Ui.dpi(40f)))
+            WV.lp(Ui.dpi(38f), Ui.dpi(38f)))
         val col = WV.box(ctx, true)
         val off = WData.offPct(p)
-        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (off > 0) " · $off% OFF" else ""), 16.5f, Color.WHITE, true, 21f).apply {
+        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (off > 0) " · $off% OFF" else ""), 15f, Color.WHITE, true, 20f).apply {
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END
         })
         col.addView(WV.text(ctx, "New balance: ${wRupees(Math.max(0.0, Math.floor(coins)) + p.coins)}", 12.5f, Color.argb(225, 255, 255, 255), true, 17f).apply {
@@ -1976,11 +2015,12 @@ class WalletScreen(
         val btn = WV.box(ctx, false, Gravity.CENTER).apply {
             background = WV.round(Color.WHITE, 16f)
             elevation = Ui.dp(2f)
-            setPadding(Ui.dpi(18f), 0, Ui.dpi(18f), 0)
+            setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
             isClickable = true
             setOnClickListener { if (!opening) openBuy(p) }
             WV.press(this)
         }
+        payBtn = btn
         if (opening) btn.addView(WSpinner(ctx, 16f, Ui.c("#111111")), WV.lp(Ui.dpi(16f), Ui.dpi(16f), r = 8f))
         btn.addView(WV.text(ctx, "Pay ₹${wRupees(p.price)}", 16f, Ui.c("#111111"), true).apply { maxLines = 1 })
         bar.addView(btn, WV.lp(WV.WRAP, Ui.dpi(48f), l = 8f))

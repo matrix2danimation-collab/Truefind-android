@@ -111,3 +111,70 @@ class WFillIcon(ctx: Context, data: String, private val color: Int, private val 
         const val VIDEO = "M4 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM16 10l5-3.2v10.4L16 14z"
     }
 }
+
+/**
+ * Holds the Wallet's Pay bar. A finger that starts on the bar and moves up or down scrolls the page (owner, 27 Nov:
+ * with the bar showing, a swipe that began on it did not scroll); a plain tap still presses the bar / Pay button.
+ */
+class WPayDock(ctx: Context, private val target: () -> View?) : android.widget.FrameLayout(ctx) {
+    private val slop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
+    private var downX = 0f
+    private var downY = 0f
+    private var dragging = false
+
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean {
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { downX = e.rawX; downY = e.rawY; dragging = false }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val dy = Math.abs(e.rawY - downY); val dx = Math.abs(e.rawX - downX)
+                if (!dragging && dy > slop && dy > dx) {
+                    dragging = true
+                    // the page gets a finger-down where the finger started, then this move: it scrolls from here on
+                    send(e, android.view.MotionEvent.ACTION_DOWN, downX, downY)
+                    send(e, android.view.MotionEvent.ACTION_MOVE, e.rawX, e.rawY)
+                }
+            }
+        }
+        return dragging
+    }
+
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (!dragging) return false
+        send(e, e.actionMasked.let { if (it == android.view.MotionEvent.ACTION_POINTER_UP || it == android.view.MotionEvent.ACTION_POINTER_DOWN) android.view.MotionEvent.ACTION_MOVE else it }, e.rawX, e.rawY)
+        if (e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL) dragging = false
+        return true
+    }
+
+    private fun send(src: android.view.MotionEvent, action: Int, rawX: Float, rawY: Float) {
+        val t = target() ?: return
+        val loc = IntArray(2); t.getLocationOnScreen(loc)
+        val ev = android.view.MotionEvent.obtain(src.downTime, src.eventTime, action, rawX - loc[0], rawY - loc[1], 0)
+        t.dispatchTouchEvent(ev)
+        ev.recycle()
+    }
+}
+
+/** A bright band of light that runs once across the Pay bar when it appears (like payment apps' buttons). */
+class WShine(private val radiusPx: Float) : android.graphics.drawable.Drawable() {
+    var progress = -1f
+        set(v) { field = v; invalidateSelf() }
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val clip = Path()
+    override fun draw(c: Canvas) {
+        if (progress < 0f || progress > 1f) return
+        val b = bounds
+        val w = b.width().toFloat(); val h = b.height().toFloat()
+        val band = w * 0.28f
+        val x = b.left - band + (w + band * 2f) * progress
+        clip.reset(); clip.addRoundRect(RectF(b), radiusPx, radiusPx, Path.Direction.CW)
+        c.save(); c.clipPath(clip)
+        p.shader = android.graphics.LinearGradient(x - band / 2f, 0f, x + band / 2f, h * 0.35f,
+            intArrayOf(Color.TRANSPARENT, Color.argb(95, 255, 255, 255), Color.TRANSPARENT), floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
+        c.drawRect(RectF(b), p)
+        c.restore()
+    }
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(cf: android.graphics.ColorFilter?) {}
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+}
