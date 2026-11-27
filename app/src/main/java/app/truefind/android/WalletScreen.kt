@@ -945,6 +945,8 @@ class WalletScreen(
     private inner class PackTile(val p: WPack, val offer: Boolean) : FrameLayout(context) {
         private val strip: LinearLayout
         private val tick: View
+        private var priceTv: TextView? = null
+        private var wasTv: TextView? = null
         var on = false
             set(v) { if (field != v) { field = v; paint() } }
 
@@ -970,9 +972,11 @@ class WalletScreen(
             col.addView(Space(context), WV.lp(1, 0, weight = 1f))
             strip = WV.box(context, true, Gravity.CENTER).apply { setPadding(0, Ui.dpi(7f), 0, Ui.dpi(7f)) }
             strip.addView(WV.text(context, "₹${wRupees(p.price)}", 15.5f, Ui.c("#5F5673"), true, 19f).apply { gravity = Gravity.CENTER })
+            priceTv = strip.getChildAt(0) as TextView
             if (was > 0) strip.addView(WV.text(context, "₹${wRupees(was)}", 10.5f, Ui.c("#9A93AE"), true, 13f).apply {
                 gravity = Gravity.CENTER
                 paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                wasTv = this
             })
             col.addView(strip, WV.lp(WV.MATCH, Ui.dpi(if (was > 0) 48f else 40f)))
             addView(col, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -997,13 +1001,18 @@ class WalletScreen(
             paint()
         }
 
+        /** Selected (owner, 27 Nov — like his reference): white card, a bold green border, the price strip filled green. */
         private fun paint() {
-            background = if (on) WV.round(Ui.c("#F1FBF5"), 14f, PAY_GREEN, 2f) else WV.round(Color.WHITE, 14f)
+            val green = Ui.c("#16A34A")
+            val r = Ui.dp(14f)
+            background = if (on) WV.round(Color.WHITE, 14f, green, 3f) else WV.round(Color.WHITE, 14f)
             strip.background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(if (on) Ui.c("#DDF6E6") else Ui.c("#F1EAFF"))
-                cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(14f), Ui.dp(14f), Ui.dp(14f), Ui.dp(14f))
+                setColor(if (on) green else Ui.c("#F1EAFF"))
+                cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, r, r, r, r)
             }
-            tick.visibility = if (on) View.VISIBLE else View.GONE
+            priceTv?.setTextColor(if (on) Color.WHITE else Ui.c("#5F5673"))
+            wasTv?.setTextColor(if (on) Color.argb(210, 255, 255, 255) else Ui.c("#9A93AE"))
+            tick.visibility = View.GONE
             isSelected = on
         }
     }
@@ -1693,8 +1702,8 @@ class WalletScreen(
             val p = picked!!
             bar = coinPayBar(p, opening)
         }
-        val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(24f), Ui.dpi(448f))
-        payHost.addView(bar, LayoutParams(w, Ui.dpi(if (secret) 56f else 76f), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM))
+        val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(32f), Ui.dpi(448f))
+        payHost.addView(bar, LayoutParams(w, Ui.dpi(if (secret) 56f else 64f), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM))
         payBar = bar
         if (animate) {
             bar.translationY = Ui.dp(56f) * 1.6f
@@ -1710,17 +1719,14 @@ class WalletScreen(
                 android.graphics.drawable.GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#15803D"), Ui.c("#166534")),
             ).apply { cornerRadius = Ui.dp(20f) }
             elevation = Ui.dp(10f)
-            setPadding(Ui.dpi(14f), Ui.dpi(10f), Ui.dpi(10f), Ui.dpi(10f))
+            setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(10f), Ui.dpi(8f))
             isClickable = true
         }
         bar.addView(android.widget.ImageView(ctx).apply { setImageResource(R.drawable.wallet_coin); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO },
             WV.lp(Ui.dpi(38f), Ui.dpi(38f)))
+        // just the coins (owner, 27 Nov: no minutes, no price line, no new balance — the Pay button has the price)
         val col = WV.box(ctx, true)
-        val rate = ctx.getSharedPreferences("tfhome", 0).getInt("rate_voice", 0)
-        val light = Ui.c("#DCFCE7")
-        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (rate > 0) " · ≈ ${wRupees(p.coins / rate)} min call" else ""), 11.5f, light, true, 15f).apply { maxLines = 1 })
-        col.addView(WV.text(ctx, "₹${wRupees(p.price)}", 18f, Color.WHITE, true, 22f))
-        col.addView(WV.text(ctx, "New balance: ${wRupees(Math.floor(coins) + p.coins)}", 10.5f, light, true, 14f).apply { maxLines = 1 })
+        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins", 18f, Color.WHITE, true, 22f).apply { maxLines = 1 })
         bar.addView(col, WV.lp(0, WV.WRAP, l = 12f, weight = 1f))
         val btn = WV.box(ctx, false, Gravity.CENTER).apply {
             background = WV.round(Color.WHITE, 13f)
