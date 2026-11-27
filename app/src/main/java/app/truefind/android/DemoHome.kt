@@ -84,7 +84,8 @@ object DemoHome {
         for (r in RECENT) put(JSONObject().put("user_id", r.id).put("name", r.name).put("age", r.age)
             .put("photo", if (r.face.isEmpty()) "" else "asset:home/faces/${r.face}.jpg").put("photo_thumb", "")
             .put("verified", r.verified).put("online", r.online).put("busy", r.busy).put("last_active", if (r.seenMin < 0) "" else iso(r.seenMin))
-            .put("last_call", JSONObject().put("type", r.type).put("status", r.status).put("mine", r.mine).put("at", iso(r.atMin))))
+            .put("last_call", JSONObject().put("type", r.type).put("status", r.status).put("mine", r.mine).put("at", iso(r.atMin))
+                .put("duration", if (r.status == "ended") (if (r.id == "u1") 720 else 260) else 0)))
     }
     private fun recentProfile(id: String): JSONObject {
         val r = RECENT.firstOrNull { it.id == id } ?: RECENT[0]
