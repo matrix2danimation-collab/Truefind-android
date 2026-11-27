@@ -625,9 +625,8 @@ class WalletScreen(
     private val coins get() = wallet.num("coins")
     private val earned get() = wallet.num("earned_coins")
     /** Earnings tab: True Find wallet only, and only for people who applied to be a creator / host. */
-    private val showEarnings
-        get() = app == "truefind" && (isCreator || me.str("creator_submitted_at").isNotEmpty() ||
-            (me.str("gender") != "female" && me.str("host_applied_at").isNotEmpty()))
+    // the Coins / Earnings switch is gone (owner, 27 Nov): the Wallet shows coins only
+    private val showEarnings get() = false
     private val coinsView get() = !showEarnings || tab == "coins"
     private val sdGirl get() = sdMember.str("gender") == "female"
     private val sdMustVerify get() = sdGirl && sdMember?.opt("free") != true
@@ -702,7 +701,7 @@ class WalletScreen(
         } else {
             col.addView(WV.text(context, "Your balance", 12f, Color.argb(235, 255, 255, 255), true, 16f))
             val row = WV.box(context, false, Gravity.BOTTOM)
-            row.addView(WV.text(context, wRupees(coins), 24f, Color.WHITE, true, 30f).apply { includeFontPadding = false })
+            row.addView(WV.text(context, wRupees(Math.floor(coins)), 24f, Color.WHITE, true, 30f).apply { includeFontPadding = false })
             row.addView(WV.text(context, "coins", 12f, Color.argb(235, 255, 255, 255), true, 16f).apply { includeFontPadding = false },
                 WV.lp(WV.WRAP, WV.WRAP, l = 6f, b = 3f))
             col.addView(row, WV.lp(WV.WRAP, WV.WRAP, t = 3f))
@@ -731,7 +730,7 @@ class WalletScreen(
         val t = T
         val ctx = context
         body.removeAllViews()
-        packTiles.clear(); planRows.clear(); txSection = null; helpSection = null; draftBox = null
+        packTiles.clear(); planRows.clear(); if (!historyOpen) txSection = null; helpSection = null; draftBox = null
         if (loading && !secret) {
             val f = FrameLayout(ctx)
             f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
@@ -768,7 +767,7 @@ class WalletScreen(
         if (coinsView && secret) secretSections()
 
         // Creator earnings (Reconnect wallet; True Find uses the Earnings tab)
-        if (isCreator && !showEarnings) section(WV.box(context, true).apply { setPadding(0, 0, 0, Ui.dpi(14f)); addView(rateCard(earned), WV.lp(WV.MATCH, WV.WRAP)) })
+        if (isCreator && secret) section(WV.box(context, true).apply { setPadding(0, 0, 0, Ui.dpi(14f)); addView(rateCard(earned), WV.lp(WV.MATCH, WV.WRAP)) })
 
         if (coinsView) {
             if (loading) {
@@ -776,7 +775,7 @@ class WalletScreen(
                 val f = FrameLayout(ctx)
                 f.addView(WSpinner(ctx, 30f, t.accent).apply { layoutParams = LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.CENTER) })
                 section(f.also { it.minimumHeight = Ui.dpi(120f) })
-            } else section(transactionsSection())
+            }
             section(helpBlock())
         }
     }
@@ -843,7 +842,7 @@ class WalletScreen(
         val r = WV.box(context, false, Gravity.CENTER_VERTICAL or Gravity.END).apply {
             isClickable = true
             contentDescription = "Transaction history"
-            setOnClickListener { scrollToHistory() }
+            setOnClickListener { openHistory() }
         }
         r.setPadding(0, 0, Ui.dpi(8f), 0)
         r.addView(WV.text(context, "Transaction history", 13f, Ui.c("#000000"), true))
@@ -851,11 +850,22 @@ class WalletScreen(
         return r
     }
 
-    private fun scrollToHistory() {
-        val v = txSection ?: return
-        var y = 0; var p: View? = v
-        while (p != null && p !== page) { y += p.top; p = p.parent as? View }
-        scroll.smoothScrollTo(0, Math.max(0, y - Ui.dpi(12f)))
+    /** "Transaction history" (owner, 27 Nov): the transactions open in a sheet of their own, never on the page. */
+    private var historyOpen = false
+    private fun openHistory() {
+        historyOpen = true
+        val s = WSheet(this, "Transaction history", { closeHistory() })
+        s.content.addView(transactionsSection().apply { setPadding(Ui.dpi(4f), Ui.dpi(6f), Ui.dpi(4f), 0) }, WV.lp(WV.MATCH, WV.WRAP))
+        sheetUi?.dismiss()
+        sheetUi = s
+        s.show()
+        renderPayBar()
+    }
+    private fun closeHistory() {
+        historyOpen = false
+        txSection = null
+        sheetUi?.dismiss(); sheetUi = null
+        renderPayBar()
     }
 
     /** First time offer (owner, 27 Nov): a purple-to-orchid box with the three offer packs in white cards. */
@@ -1654,7 +1664,7 @@ class WalletScreen(
     private fun renderPayBar() {
         val t = T
         val opening = flow?.step == "opening"
-        val show = (!loading || secret) && coinsView && (flow == null || opening) && txOpen == null && (if (secret) planPicked != null else picked != null)
+        val show = (!loading || secret) && coinsView && (flow == null || opening) && txOpen == null && !historyOpen && (if (secret) planPicked != null else picked != null)
         if (!show) {
             payBar?.let { payHost.removeView(it) }
             payBar = null; payKey = ""
@@ -1708,9 +1718,9 @@ class WalletScreen(
         val col = WV.box(ctx, true)
         val rate = ctx.getSharedPreferences("tfhome", 0).getInt("rate_voice", 0)
         val light = Ui.c("#DCFCE7")
-        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (rate > 0) " · ≈ ${p.coins / rate} min call" else ""), 11.5f, light, true, 15f).apply { maxLines = 1 })
+        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (rate > 0) " · ≈ ${wRupees(p.coins / rate)} min call" else ""), 11.5f, light, true, 15f).apply { maxLines = 1 })
         col.addView(WV.text(ctx, "₹${wRupees(p.price)}", 18f, Color.WHITE, true, 22f))
-        col.addView(WV.text(ctx, "New balance: ${wRupees(coins + p.coins)}", 10.5f, light, true, 14f).apply { maxLines = 1 })
+        col.addView(WV.text(ctx, "New balance: ${wRupees(Math.floor(coins) + p.coins)}", 10.5f, light, true, 14f).apply { maxLines = 1 })
         bar.addView(col, WV.lp(0, WV.WRAP, l = 12f, weight = 1f))
         val btn = WV.box(ctx, false, Gravity.CENTER).apply {
             background = WV.round(Color.WHITE, 13f)
@@ -1799,6 +1809,7 @@ class WalletScreen(
 
     private fun closeFlow() {
         flow = null
+        historyOpen = false
         sheetUi?.dismiss(); sheetUi = null
         resultLayer?.let { removeView(it) }; resultLayer = null
         renderPayBar()
@@ -2123,6 +2134,8 @@ class WalletScreen(
     private fun closeTx() {
         txOpen = null
         sheetUi?.dismiss(); sheetUi = null
+        // opened from Transaction history: back to the list
+        if (historyOpen) { openHistory(); return }
         renderPayBar()
     }
 
@@ -2235,7 +2248,7 @@ class WalletScreen(
             "tx" -> transactions.firstOrNull()?.let { openTx(it) }
             "help" -> { faqOpen.clear(); faqOpen.add(0); renderBody(); goToHelp() }
             "earnings" -> setTab("earnings")
-            "alltx" -> { showAllTx = true; txSection?.let { fillTx(it) }; main.postDelayed({ scroll.smoothScrollTo(0, txSection?.let { v -> var y = 0; var p: View? = v; while (p != null && p !== page) { y += p.top; p = p.parent as? View }; y } ?: 0) }, 80) }
+            "alltx" -> { showAllTx = true; openHistory() }
             "draft" -> { setTab("earnings"); main.postDelayed({ if (amountEditReady) amountEdit.setText("1500") }, 300) }
         }
     }
