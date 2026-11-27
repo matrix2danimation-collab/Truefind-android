@@ -29,21 +29,23 @@ class WalletHeaderCoins(ctx: Context) : View(ctx) {
         val w = width.toFloat(); val h = height.toFloat()
         if (w <= 0f || h <= 0f) return
         // soft light behind the coins
-        p.shader = RadialGradient(w * 0.56f, h * 0.52f, w * 0.52f, Color.argb(70, 220, 200, 255), Color.TRANSPARENT, Shader.TileMode.CLAMP)
-        c.drawCircle(w * 0.56f, h * 0.52f, w * 0.52f, p)
+        // (kept inside the picture's box so no square edge shows)
+        val gr = Math.min(w * 0.44f, h * 0.5f)
+        p.shader = RadialGradient(w * 0.56f, h * 0.5f, gr, Color.argb(60, 220, 200, 255), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        c.drawCircle(w * 0.56f, h * 0.5f, gr, p)
         p.shader = null
         // shadow on the ground
-        p.shader = RadialGradient(w * 0.55f, h * 0.9f, w * 0.42f, Color.argb(80, 30, 5, 70), Color.TRANSPARENT, Shader.TileMode.CLAMP)
-        c.save(); c.scale(1f, 0.22f, w * 0.55f, h * 0.9f); c.drawCircle(w * 0.55f, h * 0.9f, w * 0.42f, p); c.restore()
+        p.shader = RadialGradient(w * 0.55f, h * 0.9f, w * 0.44f, Color.argb(80, 30, 5, 70), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        c.save(); c.scale(1f, 0.2f, w * 0.55f, h * 0.9f); c.drawCircle(w * 0.55f, h * 0.9f, w * 0.44f, p); c.restore()
         p.shader = null
         // two coins lying flat (back right, then front left)
-        lying(c, w * 0.74f, h * 0.70f, w * 0.40f, h * 0.15f, h * 0.075f)
-        lying(c, w * 0.31f, h * 0.75f, w * 0.46f, h * 0.17f, h * 0.085f)
+        lying(c, w * 0.75f, h * 0.66f, w * 0.44f, h * 0.24f, h * 0.10f)
+        lying(c, w * 0.30f, h * 0.71f, w * 0.50f, h * 0.27f, h * 0.11f)
         // the 3D coin standing in front, leaning a little
         coin3d?.let { b ->
-            val ch = h * 0.80f
+            val ch = h * 0.76f
             val cw = ch * b.width / b.height
-            val cx = w * 0.57f; val cy = h * 0.47f
+            val cx = w * 0.56f; val cy = h * 0.45f
             c.save()
             c.rotate(-8f, cx, cy)
             val dst = RectF(cx - cw / 2f, cy - ch / 2f, cx + cw / 2f, cy + ch / 2f)
