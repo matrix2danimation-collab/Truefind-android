@@ -58,7 +58,7 @@ jobs:
         run: if ls overrides/*.ts >/dev/null 2>&1; then deno check --config deno.loose.json overrides/*.ts; fi
 
       - name: Deploy api
-        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
 
       - name: Deploy send-sms
-        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
