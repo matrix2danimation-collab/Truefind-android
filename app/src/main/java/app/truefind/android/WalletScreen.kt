@@ -240,7 +240,7 @@ class WalletScreen(
         // Wallet top (owner, 27 Nov — the approved design): a flat purple card with round bottom corners, "Wallet",
         // the balance; no back / help buttons and no True Find / Reconnect switch (the phone's back still works;
         // the Reconnect wallet opens from Reconnect). Two soft glass layers peek out under it.
-        header.setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(39f))
+        header.setPadding(Ui.dpi(20f), Ui.dpi(24f), Ui.dpi(20f), Ui.dpi(60f))
         titleSub = WV.text(ctx, "Wallet", 20f, Color.WHITE, true, 26f)
         header.addView(titleSub, WV.lp(WV.MATCH, WV.WRAP))
 
