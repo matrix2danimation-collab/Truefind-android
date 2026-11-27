@@ -156,9 +156,13 @@ object WData {
         }
     }
 
-    /** Pay bar spot: as high as the True Find bottom bar is tall (+ 12px), and 20px higher still (owner, 27 Nov:
-     *  "a little higher, not so low"). */
-    fun payLiftDp(screenWidthDp: Float): Float = Math.max(60f, Math.min(screenWidthDp, 480f) / 853f * 139f) + 12f + 20f
+    /** Room under the Pay bar inside its holder, so the bar's shadow fades out instead of being cut into a grey box. */
+    const val PAY_SHADOW_ROOM = 18f
+
+    /** Where the Pay bar's holder sits above the screen's bottom. The bar's own bottom edge = this + PAY_SHADOW_ROOM:
+     *  4px above the True Find bottom bar's height (owner, 27 Nov night: "a little lower", out from under the thumb —
+     *  28px lower than before). */
+    fun payLiftDp(screenWidthDp: Float): Float = Math.max(60f, Math.min(screenWidthDp, 480f) / 853f * 139f) + 4f - PAY_SHADOW_ROOM
 
     /** JavaScript's Math.round (halves go up). */
     fun jsRound(v: Double): Long = Math.floor(v + 0.5).toLong()

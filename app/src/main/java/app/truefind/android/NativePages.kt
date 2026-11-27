@@ -170,7 +170,7 @@ class NativePages(private val act: ComponentActivity, private val root: FrameLay
             // aside while coins are added); on other pages where the web's pill sat (84 px)
             val onWallet = p() == "/wallet"
             val b = if (showNav) nav.barPx + Ui.dpi(12f)
-                else if (onWallet) Ui.dpi(WData.payLiftDp((if (root.width > 0) root.width else act.resources.displayMetrics.widthPixels) / Ui.density) + 72f + 14f)
+                else if (onWallet) Ui.dpi(WData.payLiftDp((if (root.width > 0) root.width else act.resources.displayMetrics.widthPixels) / Ui.density) + WData.PAY_SHADOW_ROOM + 72f + 14f)
                 else if (showHome || showProfile || showBuilder || showVerify) Ui.dpi(24f) else Ui.dpi(84f)
             if (lp.bottomMargin != b) { lp.bottomMargin = b; callPill.layoutParams = lp }
         }

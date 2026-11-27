@@ -66,3 +66,15 @@ shot g08-plan-done 9 --es tf_wallet secret-plan --es tf_open gplan-done
 shot g09-plan-pending 9 --es tf_wallet secret-plan --es tf_open gplan-pending
 adb logcat -d > "$OUT/logcat-last.txt"
 ls -la "$OUT"
+# owner, 27 Nov night: a swipe that starts on the Pay bar must scroll the page (before: and after the swipe)
+if [ -z "$ONLY" ] || [ "${ONLY#04c}" != "$ONLY" ]; then
+  adb shell am force-stop $PKG
+  adb shell am start -W -n $PKG/.MainActivity --es tf_wallet tf-new --es tf_open pickbig > /dev/null
+  sleep 8
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1; sleep 1
+  adb exec-out screencap -p > "$OUT/04c-swipe-on-pay-bar-before.png"
+  # the bar's middle: find its green on the screen's lower part, then swipe up from there
+  adb shell input swipe 300 2060 300 1000 350
+  sleep 2
+  adb exec-out screencap -p > "$OUT/04c-swipe-on-pay-bar-after.png"
+fi
