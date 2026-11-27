@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Outline
 import android.graphics.Paint
 import android.os.Handler
 import android.os.Looper
@@ -22,7 +21,6 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewOutlineProvider
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -213,7 +211,7 @@ class WalletScreen(
     private val rateEdit: EditText by lazy { input("") }
 
     init {
-        setBackgroundColor(T.hdr)
+        setBackgroundColor(Color.WHITE)
         isClickable = true // nothing reaches the web page underneath
         clipChildren = false
 
@@ -225,18 +223,12 @@ class WalletScreen(
         scroll.addView(page, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         addView(scroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
-        header.setPadding(Ui.dpi(20f), Ui.dpi(28f), Ui.dpi(20f), Ui.dpi(56f))
-        val top = WV.box(ctx, false, Gravity.CENTER_VERTICAL)
-        headButton(backBtn, WIcons.CHEVRON_LEFT, "Back") { webBack() }
-        top.addView(backBtn, WV.lp(Ui.dpi(44f), Ui.dpi(44f)))
-        val titles = WV.box(ctx, true)
-        titles.addView(WV.text(ctx, "TrueFind", 18f, Color.WHITE, true))
-        titleSub = WV.text(ctx, "Wallet", 14f, T.sub)
-        titles.addView(titleSub)
-        top.addView(titles, WV.lp(0, WV.WRAP, l = 12f, r = 12f, weight = 1f))
-        headButton(helpBtn, WIcons.HELP, "Payment help") { goToHelp() }
-        top.addView(helpBtn, WV.lp(Ui.dpi(44f), Ui.dpi(44f)))
-        header.addView(top, WV.lp(WV.MATCH, WV.WRAP))
+        // Wallet top (owner, 27 Nov — the approved design): a flat purple card with round bottom corners, "Wallet",
+        // the balance; no back / help buttons and no True Find / Reconnect switch (the phone's back still works;
+        // the Reconnect wallet opens from Reconnect). Two soft glass layers peek out under it.
+        header.setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(20f))
+        titleSub = WV.text(ctx, "Wallet", 20f, Color.WHITE, true, 26f)
+        header.addView(titleSub, WV.lp(WV.MATCH, WV.WRAP))
 
         // two separate wallets
         switchBox.setPadding(Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f))
@@ -250,21 +242,34 @@ class WalletScreen(
             switchTabs.add(t)
             switchBox.addView(t, WV.lp(0, WV.MATCH, l = if (switchTabs.size > 1) 4f else 0f, weight = 1f))
         }
-        header.addView(switchBox, WV.lp(WV.MATCH, Ui.dpi(44f), t = 20f))
-        header.addView(balanceBox, WV.lp(WV.MATCH, WV.WRAP, t = 24f))
+        header.addView(balanceBox, WV.lp(WV.MATCH, WV.WRAP, t = 10f))
+        headerStrip.background = android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#5B21B6"), Ui.c("#4C1D95"), Ui.c("#43188A")),
+        ).apply { cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(26f), Ui.dp(26f), Ui.dp(26f), Ui.dp(26f)) }
+        headerStrip.elevation = Ui.dp(8f)
         headerStrip.addView(header, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL))
-        page.addView(headerStrip, WV.lp(WV.MATCH, WV.WRAP))
+        val headWrap = FrameLayout(ctx).apply { clipChildren = false }
+        fun glass(fill: Int, radius: Float, side: Float, below: Float) = View(ctx).also {
+            it.background = WV.round(fill, radius, Color.argb(153, 255, 255, 255))
+            headWrap.addView(it, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(60f), Gravity.BOTTOM).apply {
+                leftMargin = Ui.dpi(side); rightMargin = Ui.dpi(side); bottomMargin = Ui.dpi(20f - below)
+            })
+        }
+        glass(Color.argb(97, 214, 198, 255), 14f, 24f, 20f)
+        glass(Color.argb(140, 196, 173, 255), 16f, 14f, 10f)
+        headWrap.addView(headerStrip, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { bottomMargin = Ui.dpi(20f) })
+        page.addView(headWrap, WV.lp(WV.MATCH, WV.WRAP))
 
-        // the white sheet, with its rounded edge over the header
-        sheet.background = WV.topRound(Color.WHITE, 28f)
-        body.setPadding(Ui.dpi(20f), Ui.dpi(24f), Ui.dpi(20f), Ui.dpi(110f))
+        // the white page under it
+        sheet.setBackgroundColor(Color.WHITE)
+        body.setPadding(Ui.dpi(12f), Ui.dpi(18f), Ui.dpi(12f), Ui.dpi(130f))
         sheet.addView(body, WV.lp(WV.MATCH, WV.WRAP))
-        page.addView(sheet, WV.lp(WV.MATCH, 0, t = -28f, weight = 1f))
+        page.addView(sheet, WV.lp(WV.MATCH, 0, weight = 1f))
 
         // ───── the Pay bar (slides up when a pack or plan is tapped) ─────
         payHost.clipChildren = false
         payHost.setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
-        addView(payHost, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(56f), Gravity.BOTTOM))
+        addView(payHost, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(84f), Gravity.BOTTOM))
 
         // ───── pull down to refresh ─────
         addView(spinner, LayoutParams(Ui.dpi(42f), Ui.dpi(42f), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(4f) })
@@ -658,9 +663,9 @@ class WalletScreen(
 
     private fun renderHeader() {
         val t = T
-        setBackgroundColor(t.hdr)
-        headerStrip.setBackgroundColor(t.hdr)
-        scroll.setBackgroundColor(t.hdr)
+        setBackgroundColor(Color.WHITE)
+        scroll.setBackgroundColor(Color.WHITE)
+        titleSub.text = if (secret) "Reconnect" else "Wallet"
         backBtn.background = WV.round(t.btn, 12f)
         helpBtn.background = WV.round(t.btn, 12f)
         titleSub.setTextColor(t.sub)
@@ -695,11 +700,12 @@ class WalletScreen(
                 if (c == null && creditsFailed) { isClickable = true; setOnClickListener { if (!spinner.spinning) refreshNow() } }
             }, WV.lp(WV.WRAP, WV.WRAP, t = 8f))
         } else {
-            col.addView(WV.text(context, "Your balance", 14f, t.sub, false, 20f))
-            val row = WV.box(context, false, Gravity.CENTER_VERTICAL)
-            row.addView(bigNumber(wRupees(coins)), WV.lp(WV.WRAP, WV.WRAP))
-            row.addView(WV.text(context, "coins", 16f, t.sub), WV.lp(WV.WRAP, WV.WRAP, l = 10f).apply { gravity = Gravity.BOTTOM; bottomMargin = Ui.dpi(8f) })
-            col.addView(row, WV.lp(WV.WRAP, Ui.dpi(56f), t = 6f))
+            col.addView(WV.text(context, "Your balance", 12f, Color.argb(235, 255, 255, 255), true, 16f))
+            val row = WV.box(context, false, Gravity.BOTTOM)
+            row.addView(WV.text(context, wRupees(coins), 24f, Color.WHITE, true, 30f).apply { includeFontPadding = false })
+            row.addView(WV.text(context, "coins", 12f, Color.argb(235, 255, 255, 255), true, 16f).apply { includeFontPadding = false },
+                WV.lp(WV.WRAP, WV.WRAP, l = 6f, b = 3f))
+            col.addView(row, WV.lp(WV.WRAP, WV.WRAP, t = 3f))
         }
         balanceBox.addView(col)
     }
@@ -754,8 +760,9 @@ class WalletScreen(
         if (coinsView && !secret) {
             section(historyLink())
             // First time offer: only until the first purchase, then it is gone
-            if (offerOn) body.addView(offerCard(), WV.lp(WV.MATCH, WV.WRAP, t = 12f))
-            section(packsSection())
+            if (offerOn) body.addView(offerCard(), WV.lp(WV.MATCH, WV.WRAP, l = -2f, r = -2f, t = 12f))
+            body.addView(packsSection(), WV.lp(WV.MATCH, WV.WRAP, t = 26f))
+            body.addView(termsLine(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
             noteBox()?.let { section(it) }
         }
         if (coinsView && secret) secretSections()
@@ -838,7 +845,8 @@ class WalletScreen(
             contentDescription = "Transaction history"
             setOnClickListener { scrollToHistory() }
         }
-        r.addView(WV.text(context, "Transaction history", 14f, Ui.c("#111111"), true))
+        r.setPadding(0, 0, Ui.dpi(8f), 0)
+        r.addView(WV.text(context, "Transaction history", 13f, Ui.c("#000000"), true))
         r.addView(WIcons.view(context, WIcons.RECEIPT_LINES, Ui.c("#111111"), 18f), WV.lp(Ui.dpi(18f), Ui.dpi(18f), l = 6f))
         return r
     }
@@ -870,9 +878,20 @@ class WalletScreen(
     /** All packs, biggest on top (owner, 27 Nov), with a little more room under the offer box. */
     private fun packsSection(): View {
         val s = WV.box(context, true)
-        s.addView(packGrid(WData.PACKS, false, 16f), WV.lp(WV.MATCH, WV.WRAP, t = 8f))
-        s.addView(secureLine(), WV.lp(WV.MATCH, WV.WRAP, t = 14f))
+        s.addView(packGrid(WData.PACKS, false, 14f), WV.lp(WV.MATCH, WV.WRAP))
         return s
+    }
+
+    /** "By continuing you agree to the Terms of Service and Privacy Policy" — the two names in dark purple. */
+    private fun termsLine(): View {
+        val sb = android.text.SpannableStringBuilder("By continuing you agree to the ")
+        fun bold(w: String) {
+            val a = sb.length; sb.append(w)
+            sb.setSpan(android.text.style.ForegroundColorSpan(Ui.c("#4C1D95")), a, sb.length, 0)
+            sb.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD_ITALIC), a, sb.length, 0)
+        }
+        bold("Terms of Service"); sb.append("\nand "); bold("Privacy Policy")
+        return WV.text(context, sb, 12f, Ui.c("#111111"), false, 18f).apply { gravity = Gravity.CENTER }
     }
 
     private fun secureLine(): View {
@@ -890,7 +909,7 @@ class WalletScreen(
             for (j in 0 until 3) {
                 val p = chunk.getOrNull(j)
                 val v: View = if (p != null) PackTile(p, offer).also { it.on = picked?.id == p.id; packTiles[p.id] = it } else Space(context)
-                r.addView(v, WV.lp(0, Ui.dpi(176f), l = if (j > 0) 8f else 0f, weight = 1f))
+                r.addView(v, WV.lp(0, Ui.dpi(if (offer) 162f else 156f), l = if (j > 0) if (offer) 8f else 10f else 0f, weight = 1f))
             }
             grid.addView(r, WV.lp(WV.MATCH, WV.WRAP, t = if (i > 0) rowGap else 0f))
         }
@@ -910,6 +929,9 @@ class WalletScreen(
      * First time offers wear a gold "25% MORE" band; "Most popular" / "Best deal" sit on the top edge.
      * Selected = green border + light green fill + green tick.
      */
+    private val PILES = intArrayOf(R.drawable.wallet_pile1, R.drawable.wallet_pile2, R.drawable.wallet_pile3, R.drawable.wallet_pile4,
+        R.drawable.wallet_pile5, R.drawable.wallet_pile6, R.drawable.wallet_pile7, R.drawable.wallet_pile8)
+
     private inner class PackTile(val p: WPack, val offer: Boolean) : FrameLayout(context) {
         private val strip: LinearLayout
         private val tick: View
@@ -926,8 +948,12 @@ class WalletScreen(
             contentDescription = "${wRupees(p.coins)} coins for ₹${wRupees(p.price)}" +
                 (if (offer) ", ${WData.morePct(p)}% more coins" else "") + (p.tag?.let { ", $it" } ?: "")
             val col = WV.box(context, true, Gravity.CENTER_HORIZONTAL)
-            col.setPadding(0, Ui.dpi(if (offer) 30f else 18f), 0, 0)
-            col.addView(CoinArtView(context, p.art, 64f))
+            col.setPadding(0, Ui.dpi(if (offer) 24f else 18f), 0, 0)
+            col.addView(android.widget.ImageView(context).apply {
+                setImageResource(PILES[(p.art - 1).coerceIn(0, PILES.size - 1)])
+                scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }, WV.lp(Ui.dpi(82f), Ui.dpi(50f)))
             col.addView(WV.text(context, wRupees(p.coins), 18f, Ui.c("#4C1D95"), true, 22f).apply { gravity = Gravity.CENTER },
                 WV.lp(WV.WRAP, WV.WRAP, t = 6f))
             col.addView(WV.text(context, "coins", 11f, Ui.c("#8E87A3"), true, 14f).apply { gravity = Gravity.CENTER })
@@ -1655,23 +1681,49 @@ class WalletScreen(
             bar.setOnClickListener { if (!off) buyPlan(p.key) }
         } else {
             val p = picked!!
-            bar = WV.button(ctx, "Pay ₹${wRupees(p.price)} · Get ${wRupees(p.coins)} coins", Color.TRANSPARENT, Ui.c("#05301A"), 56f, 16f, 18f,
-                if (opening) WSpinner(ctx, 18f, Ui.c("#05301A")) else null)
-            bar.background = PayGreenDrawable(16f)
-            bar.elevation = Ui.dp(10f)
-            bar.outlineSpotShadowColorCompat(Color.argb(115, 34, 212, 107))
-            bar.outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) { outline.setRoundRect(0, 0, view.width, view.height, Ui.dp(16f)) }
-            }
-            bar.setOnClickListener { if (!opening) openBuy(p) }
+            bar = coinPayBar(p, opening)
         }
-        val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(32f), Ui.dpi(448f))
-        payHost.addView(bar, LayoutParams(w, Ui.dpi(56f), Gravity.CENTER_HORIZONTAL))
+        val w = Math.min(resources.displayMetrics.widthPixels - Ui.dpi(24f), Ui.dpi(448f))
+        payHost.addView(bar, LayoutParams(w, Ui.dpi(if (secret) 56f else 76f), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM))
         payBar = bar
         if (animate) {
             bar.translationY = Ui.dp(56f) * 1.6f
             bar.animate().translationY(0f).setStartDelay(70).setDuration(360).setInterpolator(WV.EASE_OUT).start()
         }
+    }
+
+    /** The coin pack's Pay bar (owner, 27 Nov — the approved design). Minutes come from the app's real voice price. */
+    private fun coinPayBar(p: WPack, opening: Boolean): LinearLayout {
+        val ctx = context
+        val bar = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
+            background = android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#15803D"), Ui.c("#166534")),
+            ).apply { cornerRadius = Ui.dp(20f) }
+            elevation = Ui.dp(10f)
+            setPadding(Ui.dpi(14f), Ui.dpi(10f), Ui.dpi(10f), Ui.dpi(10f))
+            isClickable = true
+        }
+        bar.addView(android.widget.ImageView(ctx).apply { setImageResource(R.drawable.wallet_coin); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO },
+            WV.lp(Ui.dpi(38f), Ui.dpi(38f)))
+        val col = WV.box(ctx, true)
+        val rate = ctx.getSharedPreferences("tfhome", 0).getInt("rate_voice", 0)
+        val light = Ui.c("#DCFCE7")
+        col.addView(WV.text(ctx, "${wRupees(p.coins)} coins" + (if (rate > 0) " · ≈ ${p.coins / rate} min call" else ""), 11.5f, light, true, 15f).apply { maxLines = 1 })
+        col.addView(WV.text(ctx, "₹${wRupees(p.price)}", 18f, Color.WHITE, true, 22f))
+        col.addView(WV.text(ctx, "New balance: ${wRupees(coins + p.coins)}", 10.5f, light, true, 14f).apply { maxLines = 1 })
+        bar.addView(col, WV.lp(0, WV.WRAP, l = 12f, weight = 1f))
+        val btn = WV.box(ctx, false, Gravity.CENTER).apply {
+            background = WV.round(Color.WHITE, 13f)
+            setPadding(Ui.dpi(18f), 0, Ui.dpi(18f), 0)
+            isClickable = true
+            setOnClickListener { if (!opening) openBuy(p) }
+            WV.press(this)
+        }
+        if (opening) btn.addView(WSpinner(ctx, 16f, Ui.c("#111111")), WV.lp(Ui.dpi(16f), Ui.dpi(16f), r = 8f))
+        btn.addView(WV.text(ctx, "Pay ₹${wRupees(p.price)}", 15f, Ui.c("#111111"), true).apply { maxLines = 1 })
+        bar.addView(btn, WV.lp(WV.WRAP, Ui.dpi(44f), l = 8f))
+        bar.setOnClickListener { if (!opening) openBuy(p) }
+        return bar
     }
 
     // ═════════════════ buying ═════════════════

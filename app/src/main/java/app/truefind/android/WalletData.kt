@@ -34,15 +34,15 @@ object WData {
     // regular ≈ ₹10 a minute, premium ≈ ₹8 a minute. Shown biggest first (owner: big packs on top, small ones
     // further down). Keep in sync with the server's shared/playProducts.ts and Play Console (coins_<id>).
     val PACKS = listOf(
-        WPack("c49999", 49999, 93750, 12),
-        WPack("c25999", 25999, 48750, 11),
-        WPack("c12999", 12999, 24375, 10),
-        WPack("c4999", 4999, 9375, 9, "Best deal"),
-        WPack("c2599", 2599, 4875, 8),
-        WPack("c1499", 1499, 2820, 7),
-        WPack("c799", 799, 1500, 6),
-        WPack("c399", 399, 750, 5, "Most popular"),
-        WPack("c199", 199, 375, 4),
+        WPack("c49999", 49999, 93750, 8),
+        WPack("c25999", 25999, 48750, 7),
+        WPack("c12999", 12999, 24375, 7),
+        WPack("c4999", 4999, 9375, 6, "Best deal"),
+        WPack("c2599", 2599, 4875, 5),
+        WPack("c1499", 1499, 2820, 5),
+        WPack("c799", 799, 1500, 4),
+        WPack("c399", 399, 750, 4, "Most popular"),
+        WPack("c199", 199, 375, 3),
         WPack("r149", 149, 225, 3),
         WPack("r60", 60, 90, 2),
         WPack("r15", 15, 22, 1),
@@ -51,8 +51,8 @@ object WData {
     // First time offer (once only; the server checks it too): more coins than the regular rate.
     val OFFERS = listOf(
         WPack("n9", 9, 17, 1, null, 0, true),
-        WPack("n49", 49, 94, 2, null, 0, true),
-        WPack("n79", 79, 152, 3, null, 0, true),
+        WPack("n49", 49, 94, 1, null, 0, true),
+        WPack("n79", 79, 152, 2, null, 0, true),
     )
 
     const val DEFAULT_PACK = "c399"
