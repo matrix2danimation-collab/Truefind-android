@@ -134,6 +134,18 @@ class WalletScreen(
     private var rate = 0.0
     private var rateDraft = "0"
     private var firstOffer = false
+    /** when the new user offer ends (the member's first 7 days; from the server), 0 = not known */
+    private var offerUntilMs = 0L
+    private var offerClock: TextView? = null
+    private val offerTick = object : Runnable {
+        override fun run() {
+            val tv = offerClock ?: return
+            val left = offerUntilMs - System.currentTimeMillis()
+            if (left <= 0) { offerClock = null; firstOffer = false; renderBody(); renderPayBar(); return }
+            tv.text = offerLeft(left)
+            main.postDelayed(this, 1000L - System.currentTimeMillis() % 1000L + 5L)
+        }
+    }
     private var loading = true
     /** the first load took too long: the page stops waiting and says so (a late answer still fills it) */
     private var loadSlow = false
@@ -184,7 +196,7 @@ class WalletScreen(
 
     // ── views ──
     private val T get() = if (app == "secret") WTheme.SECRET else WTheme.TRUEFIND
-    private val scroll = ScrollView(ctx)
+    private val scroll = WBounceScroll(ctx)
     private val page = WV.box(ctx, true)
     private val headerStrip = FrameLayout(ctx)
     private val header = WMax(ctx)
@@ -221,12 +233,13 @@ class WalletScreen(
         scroll.clipChildren = false
         page.clipChildren = false
         scroll.addView(page, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        scroll.overScrollMode = View.OVER_SCROLL_NEVER
         addView(scroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         // Wallet top (owner, 27 Nov — the approved design): a flat purple card with round bottom corners, "Wallet",
         // the balance; no back / help buttons and no True Find / Reconnect switch (the phone's back still works;
         // the Reconnect wallet opens from Reconnect). Two soft glass layers peek out under it.
-        header.setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(20f))
+        header.setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(39f))
         titleSub = WV.text(ctx, "Wallet", 20f, Color.WHITE, true, 26f)
         header.addView(titleSub, WV.lp(WV.MATCH, WV.WRAP))
 
@@ -244,7 +257,7 @@ class WalletScreen(
         }
         header.addView(balanceBox, WV.lp(WV.MATCH, WV.WRAP, t = 10f))
         headerStrip.background = android.graphics.drawable.GradientDrawable(
-            android.graphics.drawable.GradientDrawable.Orientation.TL_BR, intArrayOf(Ui.c("#5B21B6"), Ui.c("#4C1D95"), Ui.c("#43188A")),
+            android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#5B21B6"), Ui.c("#4C1D95"), Ui.c("#43188A")),
         ).apply { cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(26f), Ui.dp(26f), Ui.dp(26f), Ui.dp(26f)) }
         headerStrip.elevation = Ui.dp(8f)
         headerStrip.addView(header, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL))
@@ -370,6 +383,7 @@ class WalletScreen(
             if (txOpen != null) closeTx() else closeFlow()
             return true
         }
+        if (txPage != null) { closeHistory(); return true }
         return false
     }
 
@@ -481,6 +495,7 @@ class WalletScreen(
             rateDraft = jsNum(rate)
             if (rateEditReady) rateEdit.setText(rateDraft)
             firstOffer = forApp == "truefind" && d.opt("first_offer") == true
+            if (forApp == "truefind") offerUntilMs = wParseDate(d.str("offer_until")) ?: 0L
             cache[forApp] = Cached(wallet, transactions, accountType, profileId, rate, firstOffer)
             loading = false
             if (sig.isNotEmpty()) drawnFrom[forApp] = sig else drawnFrom.remove(forApp)
@@ -852,19 +867,124 @@ class WalletScreen(
 
     /** "Transaction history" (owner, 27 Nov): the transactions open in a sheet of their own, never on the page. */
     private var historyOpen = false
+    private var txPage: FrameLayout? = null
+    private var txNewestFirst = true
+
+    /** Transaction history (owner, 27 Nov): a whole page that pops in (not a sheet from the bottom), like his
+     *  reference — back arrow, "Transactions", All / Credits / Debits, rows grouped by day. */
     private fun openHistory() {
+        if (txPage != null) return
         historyOpen = true
-        val s = WSheet(this, "Transaction history", { closeHistory() })
-        s.content.addView(transactionsSection().apply { setPadding(Ui.dpi(4f), Ui.dpi(6f), Ui.dpi(4f), 0) }, WV.lp(WV.MATCH, WV.WRAP))
-        sheetUi?.dismiss()
-        sheetUi = s
-        s.show()
+        txFilter = "all"
+        val ctx = context
+        val pg = FrameLayout(ctx).apply {
+            setBackgroundColor(Ui.c("#F7F7FB"))
+            isClickable = true
+            elevation = Ui.dp(30f)
+        }
+        val col = WV.box(ctx, true)
+        // top: ← Transactions ......... filter
+        val top = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply { setPadding(Ui.dpi(8f), Ui.dpi(10f), Ui.dpi(16f), Ui.dpi(6f)) }
+        top.addView(FrameLayout(ctx).apply {
+            isClickable = true; contentDescription = "Back"
+            setOnClickListener { closeHistory() }
+            addView(WIcons.view(ctx, "M19 12H5M12 19l-7-7 7-7", Ui.c("#111111"), 22f), LayoutParams(Ui.dpi(22f), Ui.dpi(22f), Gravity.CENTER))
+        }, WV.lp(Ui.dpi(44f), Ui.dpi(44f)))
+        top.addView(Space(ctx), WV.lp(0, 1, weight = 1f))
+        top.addView(FrameLayout(ctx).apply {
+            background = WV.round(Ui.c("#EDE7FB"), 10f)
+            isClickable = true; contentDescription = "Newest or oldest first"
+            setOnClickListener { txNewestFirst = !txNewestFirst; fillTxPage() }
+            addView(WIcons.view(ctx, "M4 6h16M7 12h10M10 18h4", Ui.c("#6C2BD9"), 18f), LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
+        }, WV.lp(Ui.dpi(36f), Ui.dpi(36f)))
+        col.addView(top, WV.lp(WV.MATCH, WV.WRAP))
+        col.addView(WV.text(ctx, "Transactions", 24f, Ui.c("#111111"), true, 30f), WV.lp(WV.MATCH, WV.WRAP, l = 20f, r = 20f, t = 2f))
+        // All | Credits | Debits — a grey track, the chosen one a white pill
+        val seg = WV.box(ctx, false).apply {
+            background = WV.round(Ui.c("#ECECF2"), 10f)
+            setPadding(Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f), Ui.dpi(3f))
+        }
+        col.addView(seg, WV.lp(WV.MATCH, Ui.dpi(40f), l = 20f, r = 20f, t = 14f))
+        val list = WV.box(ctx, true).apply { setPadding(Ui.dpi(20f), Ui.dpi(6f), Ui.dpi(20f), Ui.dpi(30f)) }
+        val sc = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; isFillViewport = true; addView(list) }
+        col.addView(sc, WV.lp(WV.MATCH, 0, t = 8f, weight = 1f))
+        pg.addView(col, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        txSeg = seg; txList = list
+        fillTxPage()
+        addView(pg, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        txPage = pg
+        pg.alpha = 0f; pg.scaleX = 0.96f; pg.scaleY = 0.96f
+        pg.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(WV.EASE_OUT).start()
         renderPayBar()
     }
+    private var txSeg: LinearLayout? = null
+    private var txList: LinearLayout? = null
+
+    private fun fillTxPage() {
+        val ctx = context
+        val seg = txSeg ?: return
+        val list = txList ?: return
+        seg.removeAllViews()
+        for ((k, label) in listOf("all" to "All", "credit" to "Credits", "debit" to "Debits")) {
+            val on = txFilter == k
+            seg.addView(WV.text(ctx, label, 14f, if (on) Ui.c("#111111") else Ui.c("#6B6880"), on).apply {
+                gravity = Gravity.CENTER
+                background = if (on) WV.round(Color.WHITE, 8f) else null
+                elevation = if (on) Ui.dp(2f) else 0f
+                isClickable = true; isSelected = on
+                setOnClickListener { txFilter = k; fillTxPage() }
+            }, WV.lp(0, WV.MATCH, weight = 1f))
+        }
+        list.removeAllViews()
+        val items = filteredTx.sortedBy { wParseDate(it.str("created_date")) ?: 0L }.let { if (txNewestFirst) it.reversed() else it }
+        if (items.isEmpty()) {
+            list.addView(WV.text(ctx, if (txFilter == "all") "No transactions yet" else "Nothing here yet", 15f, Ui.c("#6B6880")).apply { gravity = Gravity.CENTER },
+                WV.lp(WV.MATCH, WV.WRAP, t = 60f))
+            return
+        }
+        val dayKey = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US)
+        val today = dayKey.format(java.util.Date())
+        val yest = dayKey.format(java.util.Date(System.currentTimeMillis() - 86_400_000L))
+        val rowDate = java.text.SimpleDateFormat("EEE MMM d, yyyy · h:mma", java.util.Locale.US)
+        var lastDay = ""
+        for (tx in items) {
+            val t = wParseDate(tx.str("created_date")) ?: 0L
+            val k = if (t > 0) dayKey.format(java.util.Date(t)) else ""
+            if (k != lastDay) {
+                lastDay = k
+                val label = when (k) { today -> "Today"; yest -> "Yesterday"; "" -> "Earlier"; else -> java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.US).format(java.util.Date(t)) }
+                list.addView(WV.text(ctx, label, 13f, Ui.c("#6B6880"), true, 18f), WV.lp(WV.MATCH, WV.WRAP, t = if (list.childCount > 0) 16f else 10f, b = 8f))
+            }
+            val plus = tx.num("amount") >= 0
+            val r = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
+                background = WV.round(Color.WHITE, 12f, Ui.c("#ECECF2"))
+                setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f))
+                isClickable = true
+                setOnClickListener { openTx(tx) }
+                WV.press(this)
+            }
+            r.addView(FrameLayout(ctx).apply {
+                background = WV.round(if (plus) Ui.c("#E3F0FD") else Ui.c("#FDECE3"), 18f)
+                addView(WIcons.view(ctx, if (plus) WIcons.ARROW_DOWN_LEFT else WIcons.ARROW_UP_RIGHT, if (plus) Ui.c("#3B82F6") else Ui.c("#F07A3A"), 16f),
+                    LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
+            }, WV.lp(Ui.dpi(36f), Ui.dpi(36f)))
+            val c = WV.box(ctx, true)
+            c.addView(WV.text(ctx, tx.str("description").ifEmpty { tx.str("type") }.ifEmpty { if (plus) "Coins added" else "Coins spent" }, 14f, Ui.c("#111111"), true, 19f).apply {
+                maxLines = 1; ellipsize = TextUtils.TruncateAt.END
+            })
+            if (t > 0) c.addView(WV.text(ctx, rowDate.format(java.util.Date(t)).replace("AM", "am").replace("PM", "pm"), 11.5f, Ui.c("#8E8BA0"), false, 16f), WV.lp(WV.WRAP, WV.WRAP, t = 2f))
+            r.addView(c, WV.lp(0, WV.WRAP, l = 12f, weight = 1f))
+            r.addView(WV.text(ctx, (if (plus) "+" else "−") + wRupees(Math.abs(tx.num("amount"))), 14.5f, Ui.c("#111111"), true),
+                WV.lp(WV.WRAP, WV.WRAP, l = 10f))
+            list.addView(r, WV.lp(WV.MATCH, WV.WRAP, b = 10f))
+        }
+    }
+
     private fun closeHistory() {
+        val pg = txPage ?: return
         historyOpen = false
-        txSection = null
-        sheetUi?.dismiss(); sheetUi = null
+        txPage = null; txSeg = null; txList = null
+        pg.animate().alpha(0f).scaleX(0.96f).scaleY(0.96f).setDuration(180).withEndAction { removeView(pg) }.start()
         renderPayBar()
     }
 
@@ -878,11 +998,35 @@ class WalletScreen(
             elevation = Ui.dp(6f)
             setPadding(Ui.dpi(12f), Ui.dpi(16f), Ui.dpi(12f), Ui.dpi(14f))
         }
-        box.addView(WV.text(context, "First time offer", 20f, Color.WHITE, true, 26f).apply {
+        // "New user offer" + a small countdown of the member's 7 days (owner, 27 Nov)
+        val head = WV.box(context, false, Gravity.CENTER_VERTICAL)
+        head.addView(WV.text(context, "New user offer", 20f, Color.WHITE, true, 26f).apply {
             setShadowLayer(Ui.dp(2f), 0f, Ui.dp(1f), Color.argb(46, 0, 0, 0))
-        }, WV.lp(WV.MATCH, WV.WRAP, l = 6f))
+        }, WV.lp(0, WV.WRAP, l = 6f, weight = 1f))
+        main.removeCallbacks(offerTick)
+        offerClock = null
+        val left = offerUntilMs - System.currentTimeMillis()
+        if (offerUntilMs > 0 && left > 0) {
+            val clock = WV.text(context, offerLeft(left), 11.5f, Color.WHITE, true, 15f).apply {
+                maxLines = 1
+                background = WV.round(Color.argb(56, 255, 255, 255), 10f, Color.argb(90, 255, 255, 255))
+                setPadding(Ui.dpi(9f), Ui.dpi(3f), Ui.dpi(9f), Ui.dpi(3f))
+                contentDescription = "Offer time left"
+            }
+            head.addView(clock, WV.lp(WV.WRAP, WV.WRAP, l = 8f, r = 2f))
+            offerClock = clock
+            main.post(offerTick)
+        }
+        box.addView(head, WV.lp(WV.MATCH, WV.WRAP))
         box.addView(packGrid(WData.OFFERS, true, 8f), WV.lp(WV.MATCH, WV.WRAP, t = 16f))
         return box
+    }
+
+    /** "⏱ 6d 23h 59m 59s left" */
+    private fun offerLeft(ms: Long): String {
+        val s = ms / 1000
+        val d = s / 86400; val h = s % 86400 / 3600; val m = s % 3600 / 60; val sec = s % 60
+        return "⏱ ${d}d ${h}h ${m}m ${sec}s left"
     }
 
     /** All packs, biggest on top (owner, 27 Nov), with a little more room under the offer box. */
@@ -1810,12 +1954,12 @@ class WalletScreen(
     }
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        main.removeCallbacks(offerTick)
         PlayBilling.onRecovered = null
     }
 
     private fun closeFlow() {
         flow = null
-        historyOpen = false
         sheetUi?.dismiss(); sheetUi = null
         resultLayer?.let { removeView(it) }; resultLayer = null
         renderPayBar()
@@ -2140,8 +2284,6 @@ class WalletScreen(
     private fun closeTx() {
         txOpen = null
         sheetUi?.dismiss(); sheetUi = null
-        // opened from Transaction history: back to the list
-        if (historyOpen) { openHistory(); return }
         renderPayBar()
     }
 
@@ -2182,7 +2324,7 @@ class WalletScreen(
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 ptrPull = false
-                ptrTrack = !spinner.spinning && !loading && sheetUi == null && resultLayer == null && scroll.scrollY <= 0 && !onInput(e.x, e.y)
+                ptrTrack = !spinner.spinning && !loading && sheetUi == null && resultLayer == null && txPage == null && scroll.scrollY <= 0 && !onInput(e.x, e.y)
                 ptrX = e.x; ptrY = e.y; ptrD = 0f
             }
             MotionEvent.ACTION_MOVE -> return detect(e)
@@ -2199,9 +2341,10 @@ class WalletScreen(
             }
         }
         when (e.actionMasked) {
-            MotionEvent.ACTION_MOVE -> { ptrD = travel(e.y - ptrY); spinner.pull(ptrD, 64f) }
+            MotionEvent.ACTION_MOVE -> { ptrD = travel(e.y - ptrY); spinner.pull(ptrD, 64f); page.translationY = Ui.dp(ptrD) * 0.8f }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 ptrPull = false; ptrTrack = false
+                page.animate().translationY(0f).setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
                 if (ptrD >= 64f && e.actionMasked == MotionEvent.ACTION_UP) refreshNow() else spinner.hide()
                 ptrD = 0f
             }

@@ -502,3 +502,51 @@ fun wNum(v: Any?): Double = when (v) {
 
 fun JSONObject?.num(key: String): Double = if (this == null || !has(key)) 0.0 else wNum(opt(key))
 fun JSONObject?.str(key: String): String = if (this == null || !has(key) || isNull(key)) "" else optString(key, "")
+
+
+/**
+ * The Wallet's scroll (owner, 27 Nov): at the bottom the page lifts with the finger and settles back with a soft
+ * spring when let go; a fling that reaches the end gives a small lift too. (The top is the pull-to-refresh.)
+ */
+class WBounceScroll(ctx: Context) : android.widget.ScrollView(ctx) {
+    private var lastY = 0f
+    private var over = 0f
+    private val maxOver = Ui.dp(110f)
+    private val kid get() = if (childCount > 0) getChildAt(0) else null
+
+    override fun onTouchEvent(ev: android.view.MotionEvent): Boolean {
+        when (ev.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { lastY = ev.y; kid?.animate()?.cancel() }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val dy = ev.y - lastY
+                lastY = ev.y
+                val atEnd = !canScrollVertically(1)
+                if ((atEnd && dy < 0) || over > 0f) {
+                    // resistance grows as it lifts
+                    over = (over - dy * (0.5f - 0.35f * (over / maxOver))).coerceIn(0f, maxOver)
+                    kid?.translationY = -over
+                    if (over > 0f) return true
+                }
+            }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                if (over > 0f) {
+                    over = 0f
+                    kid?.animate()?.translationY(0f)?.setDuration(450)?.setInterpolator(android.view.animation.OvershootInterpolator(1.1f))?.start()
+                    super.onTouchEvent(ev)
+                    return true
+                }
+            }
+        }
+        return super.onTouchEvent(ev)
+    }
+
+    override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
+        super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
+        val k = kid ?: return
+        if (clampedY && scrollY > 0 && over == 0f && k.translationY == 0f && !isPressed) {
+            k.animate().translationY(-Ui.dp(26f)).setDuration(140).withEndAction {
+                k.animate().translationY(0f).setDuration(380).setInterpolator(android.view.animation.OvershootInterpolator(1.2f)).start()
+            }.start()
+        }
+    }
+}
