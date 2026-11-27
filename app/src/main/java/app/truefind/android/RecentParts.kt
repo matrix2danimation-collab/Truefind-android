@@ -383,8 +383,9 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
             p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
             p.color = Color.WHITE; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
         } else {
+            // the voice button white too, like the video one (owner, 27 Nov); its phone stays purple
             p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
-            p.color = RC.soft; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
+            p.color = Color.WHITE; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
         }
     }
 }
