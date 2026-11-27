@@ -1041,6 +1041,7 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = col
     }
     private val WALLET_TOP = Color.rgb(91, 33, 182) // the Wallet's purple top (#5B21B6, owner 27 Nov): no white strip above it
+    private val CALLBACK_TOP = Color.rgb(250, 250, 250) // Call Back's off-white page, on up under the clock (owner, 27 Nov)
     private val HOME_TOP = Color.rgb(138, 76, 236) // True Find Home's purple header top (#8A4CEC, 23 Nov; was the light lilac #FAF8FD)
     private var stripNow: Int? = -1
     /** the status bar's strip in [col] (null: white as before); white clock and icons on a chat's maroon, dark elsewhere.
@@ -1131,7 +1132,7 @@ class MainActivity : ComponentActivity() {
         if (showRoom) roomStrips() else {
             appBg.bottom = null
             navStrip(if (showSecret) Rs.BG_END else Color.WHITE)   // the bar's blush (23 Nov)
-            pageStrip(if (show) null else if (showSecret) SD_TOP else if (inApp && (p.isEmpty() || p == "/home")) HOME_TOP else if (inApp && p == "/wallet") WALLET_TOP else null)
+            pageStrip(if (show) null else if (showSecret) SD_TOP else if (inApp && (p.isEmpty() || p == "/home")) HOME_TOP else if (inApp && p == "/wallet") WALLET_TOP else if (inApp && p == "/chats") CALLBACK_TOP else null)
         }
         // native Wallet: full screen
         val showWallet = p == "/wallet" && inApp

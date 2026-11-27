@@ -78,8 +78,10 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     private var closeDialog: (() -> Unit)? = null
 
     init {
-        setBackgroundColor(Ui.c("#F6F3FB"))
+        // 27 Nov (owner): a plain off-white page — no light purple wash or pattern behind the list
+        setBackgroundColor(Ui.c("#FAFAFA"))
         clipChildren = false
+        backdrop.visibility = View.GONE
         addView(backdrop, LayoutParams(-1, -1))
         scroll.isVerticalScrollBarEnabled = false
         scroll.overScrollMode = View.OVER_SCROLL_NEVER
