@@ -67,6 +67,13 @@ object WData {
     /** "25% MORE" on a First time offer: extra coins over the regular rate, rounded down (never more than true). */
     fun morePct(p: WPack): Int = Math.floor((p.coins / (p.price * REGULAR_COINS_PER_RUPEE) - 1) * 100).toInt()
 
+    /** "18% OFF": how much cheaper than the struck-out price, rounded down (never more than true); 0 = no discount. */
+    fun offPct(p: WPack): Int {
+        val was = wasPrice(p)
+        if (was <= p.price || was <= 0) return 0
+        return ((was - p.price) * 100 / was).toInt()
+    }
+
     fun findPack(id: String?): WPack? = OFFERS.find { it.id == id } ?: PACKS.find { it.id == id }
 
     // Reconnect plans (the server's shared/secretPlans.ts has the same list).
@@ -149,8 +156,9 @@ object WData {
         }
     }
 
-    /** Pay bar spot: as high as the True Find bottom bar is tall (+ 12px). */
-    fun payLiftDp(screenWidthDp: Float): Float = Math.max(60f, Math.min(screenWidthDp, 480f) / 853f * 139f) + 12f
+    /** Pay bar spot: as high as the True Find bottom bar is tall (+ 12px), and 20px higher still (owner, 27 Nov:
+     *  "a little higher, not so low"). */
+    fun payLiftDp(screenWidthDp: Float): Float = Math.max(60f, Math.min(screenWidthDp, 480f) / 853f * 139f) + 12f + 20f
 
     /** JavaScript's Math.round (halves go up). */
     fun jsRound(v: Double): Long = Math.floor(v + 0.5).toLong()

@@ -393,12 +393,15 @@ class RibbonView(ctx: Context, private val off: Int) : View(ctx) {
  * First time offer band (owner, 27 Nov): a gold ribbon hanging from the top edge of a pack, a small dark fold at its
  * top corners and a V point at the bottom; "25%" big and "MORE" small in white, so it reads clearly.
  */
-class MoreBandView(ctx: Context, private val pct: Int) : View(ctx) {
+class MoreBandView(
+    ctx: Context, private val pct: Int, private val word: String = "MORE",
+    private val top: Int = Ui.c("#F5B82A"), private val bottom: Int = Ui.c("#D98A06"), foldColor: Int = Ui.c("#9A5A00"),
+) : View(ctx) {
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val fold = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#9A5A00") }
+    private val fold = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = foldColor }
     private val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE; typeface = Ui.bold; textAlign = Paint.Align.CENTER }
     private val path = Path()
-    init { contentDescription = "$pct% more coins" }
+    init { contentDescription = if (word == "MORE") "$pct% more coins" else "$pct% off" }
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
         val inset = w * 3f / 38f
@@ -406,17 +409,26 @@ class MoreBandView(ctx: Context, private val pct: Int) : View(ctx) {
         path.reset()
         path.moveTo(0f, h * 3.2f / 42f); path.lineTo(inset, 0f); path.lineTo(w - inset, 0f); path.lineTo(w, h * 3.2f / 42f); path.close()
         c.drawPath(path, fold)
-        fill.shader = android.graphics.LinearGradient(0f, 0f, 0f, h, Ui.c("#F5B82A"), Ui.c("#D98A06"), android.graphics.Shader.TileMode.CLAMP)
+        fill.shader = android.graphics.LinearGradient(0f, 0f, 0f, h, top, bottom, android.graphics.Shader.TileMode.CLAMP)
         path.reset()
         path.moveTo(inset, 0f); path.lineTo(w - inset, 0f); path.lineTo(w - inset, h * 30f / 42f)
         path.lineTo(w / 2f, h); path.lineTo(inset, h * 30f / 42f); path.close()
         c.drawPath(path, fill)
-        txt.textSize = h * 12.3f / 42f
-        txt.letterSpacing = -0.03f
-        c.drawText("$pct%", w / 2f, h * 16f / 42f, txt)
-        txt.textSize = h * 7.4f / 42f
-        txt.letterSpacing = 0.02f
-        c.drawText("MORE", w / 2f, h * 26.5f / 42f, txt)
+        if (word == "MORE") {
+            txt.textSize = h * 12.3f / 42f
+            txt.letterSpacing = -0.03f
+            c.drawText("$pct%", w / 2f, h * 16f / 42f, txt)
+            txt.textSize = h * 7.4f / 42f
+            txt.letterSpacing = 0.02f
+            c.drawText(word, w / 2f, h * 26.5f / 42f, txt)
+        } else {
+            // "25%" over "OFF", both small (owner's design 1, 27 Nov)
+            txt.textSize = h * 9.6f / 42f
+            txt.letterSpacing = 0f
+            c.drawText("$pct%", w / 2f, h * 14.5f / 42f, txt)
+            txt.textSize = h * 9.2f / 42f
+            c.drawText(word, w / 2f, h * 25.5f / 42f, txt)
+        }
     }
 }
 
