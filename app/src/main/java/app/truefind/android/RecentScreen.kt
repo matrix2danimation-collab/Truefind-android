@@ -79,7 +79,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
     init {
         // 27 Nov (owner): a plain off-white page — no light purple wash or pattern behind the list
-        setBackgroundColor(Ui.c("#FAFAFA"))
+        setBackgroundColor(Ui.c("#F7F7FB"))
         clipChildren = false
         backdrop.visibility = View.GONE
         addView(backdrop, LayoutParams(-1, -1))
