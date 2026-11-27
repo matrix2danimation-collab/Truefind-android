@@ -59,6 +59,7 @@ class WalletDemo(private val scene: String) : WalletSource {
                     .put("wallet", JSONObject().put("coins", if (app == "secret") 80 else coins).put("earned_coins", if (creator) 8650 else 0))
                     .put("transactions", if (empty) JSONArray() else txs(app))
                     .put("first_offer", isNew)
+                    .put("offer_until", if (isNew) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date(System.currentTimeMillis() + 6L * 86_400_000L + 13L * 3_600_000L + 25L * 60_000L)) else "")
                     .put("my_profile_id", "demo-profile")
                     .put("account_type", if (creator) "creator" else "user")
                     .put("chat_rate_coins", if (creator) 5 else 0))
