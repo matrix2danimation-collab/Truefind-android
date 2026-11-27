@@ -1,0 +1,64 @@
+# Puts True Find's server code (the private Truefind repo) on Supabase.
+# Runs here because this repo is public: GitHub Actions are free here, while the private repo's own
+# "Supabase functions" workflow is stopped by its $0 Actions budget (owner, 27 Nov: no card on GitHub).
+# Same steps as Truefind/.github/workflows/supabase-functions.yml. Started by hand (Actions → Run workflow).
+# Secrets (Settings → Secrets and variables → Actions):
+#   TRUEFIND_READ_TOKEN   — a GitHub token that can only READ the Truefind repo
+#   SUPABASE_ACCESS_TOKEN — a Supabase token that can only read the project and write Edge Functions
+name: Server deploy (Supabase)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: server-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.repository == 'matrix2danimation-collab/Truefind-android'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PROJECT_REF: ltffzgmnhjeqoguquovf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Get the server code (Truefind, main)
+        uses: actions/checkout@v4
+        with:
+          repository: matrix2danimation-collab/Truefind
+          ref: main
+          token: ${{ secrets.TRUEFIND_READ_TOKEN }}
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Build the api function from base44/
+        run: python3 supabase/tools/prepare_api.py
+
+      - name: Check that every import resolves
+        working-directory: supabase/functions/api
+        run: deno info index.ts > /dev/null
+
+      - name: Type-check the Supabase stand-ins
+        working-directory: supabase/functions/api
+        run: deno check runtime.ts db.ts integrations.ts sdk.ts
+
+      - name: Type-check the Supabase versions of functions (overrides; Base44 code checked loosely)
+        working-directory: supabase/functions/api
+        run: if ls overrides/*.ts >/dev/null 2>&1; then deno check --config deno.loose.json overrides/*.ts; fi
+
+      - name: Deploy api
+        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+
+      - name: Deploy send-sms
+        run: supabase functions deploy send-sms --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
