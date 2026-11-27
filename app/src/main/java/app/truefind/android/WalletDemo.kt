@@ -27,7 +27,7 @@ class WalletDemo(private val scene: String) : WalletSource {
     private val plan = scene.contains("plan")
     private val admin = scene.contains("admin")
     private val empty = scene.contains("empty") || isNew
-    private var coins = if (isNew) 0L else 1240L
+    private var coins = if (isNew) 3153L else 1240L
     private val walletHang = scene.contains("wallethang")
     private val credHang = scene.contains("credhang")
     private val fail = scene.contains("fail")
