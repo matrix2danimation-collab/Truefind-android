@@ -98,7 +98,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         // 27 Nov (owner): no purple behind the title any more — "Call Back" and its small line in black on the page
         val top = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(6f))
+            setPadding(Ui.dpi(20f), Ui.dpi(36f), Ui.dpi(20f), Ui.dpi(6f))
             contentDescription = "Call Back"
         }
         top.addView(Tf.t(ctx, "Call Back", 20f, Ui.c("#111111")), LinearLayout.LayoutParams(-2, -2))
@@ -106,7 +106,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         column.addView(top, LinearLayout.LayoutParams(-1, -2))
         listBox.orientation = LinearLayout.VERTICAL
         listBox.clipChildren = false; listBox.clipToPadding = false
-        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(16f); leftMargin = Ui.dpi(14f); rightMargin = Ui.dpi(14f) })
+        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(28f); leftMargin = Ui.dpi(14f); rightMargin = Ui.dpi(14f) })
 
         // pull down at the top: the list loads again (five-dot True Find loader)
         spinner.elevation = Ui.dp(20f)
