@@ -140,6 +140,8 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     if (firebaseOn) implementation("com.google.firebase:firebase-crashlytics")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
+    // spring physics for the Wallet's smooth bounce (owner, 27 Nov)
+    implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
     // Live Dance video: Agora's Android engine, basic part only (no extensions) to keep the app small
     implementation("io.agora.rtc:full-rtc-basic:$agoraVersion")
 

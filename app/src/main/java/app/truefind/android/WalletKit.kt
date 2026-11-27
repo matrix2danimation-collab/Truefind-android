@@ -505,48 +505,75 @@ fun JSONObject?.str(key: String): String = if (this == null || !has(key) || isNu
 
 
 /**
- * The Wallet's scroll (owner, 27 Nov): at the bottom the page lifts with the finger and settles back with a soft
- * spring when let go; a fling that reaches the end gives a small lift too. (The top is the pull-to-refresh.)
+ * The Wallet's scroll (owner, 27 Nov): butter-smooth springs. At the bottom, dragging further lifts the content; at
+ * the top (the pull-to-refresh) it comes down; a fling that reaches either end gives a small bounce. Only what
+ * [onShift] moves goes with it (the offers and packs) — the purple top and "Transaction history" stay still.
  */
 class WBounceScroll(ctx: Context) : android.widget.ScrollView(ctx) {
+    /** moves the bouncing content by [px] (negative = up) */
+    var onShift: ((Float) -> Unit)? = null
+    private var shift = 0f
     private var lastY = 0f
-    private var over = 0f
+    private var dragging = false
+    private var edgeBounced = false
     private val maxOver = Ui.dp(110f)
-    private val kid get() = if (childCount > 0) getChildAt(0) else null
+    private val holder = androidx.dynamicanimation.animation.FloatValueHolder()
+    private val spring = androidx.dynamicanimation.animation.SpringAnimation(holder).apply {
+        spring = androidx.dynamicanimation.animation.SpringForce(0f).setStiffness(260f).setDampingRatio(0.78f)
+        addUpdateListener { _, v, _ -> applyShift(v) }
+    }
+
+    private fun applyShift(v: Float) { shift = v; onShift?.invoke(v) }
+
+    /** set by the pull-to-refresh at the top (content follows the finger) */
+    fun follow(px: Float) { spring.cancel(); applyShift(px) }
+
+    /** let go: spring back to rest */
+    fun settle(velocity: Float = 0f) {
+        if (shift == 0f && velocity == 0f) return
+        holder.value = shift
+        spring.setStartValue(shift)
+        spring.setStartVelocity(velocity)
+        spring.start()
+    }
 
     override fun onTouchEvent(ev: android.view.MotionEvent): Boolean {
         when (ev.actionMasked) {
-            android.view.MotionEvent.ACTION_DOWN -> { lastY = ev.y; kid?.animate()?.cancel() }
+            android.view.MotionEvent.ACTION_DOWN -> { lastY = ev.y; dragging = true; edgeBounced = false; if (spring.isRunning) { spring.cancel() } }
             android.view.MotionEvent.ACTION_MOVE -> {
                 val dy = ev.y - lastY
                 lastY = ev.y
                 val atEnd = !canScrollVertically(1)
-                if ((atEnd && dy < 0) || over > 0f) {
-                    // resistance grows as it lifts
-                    over = (over - dy * (0.5f - 0.35f * (over / maxOver))).coerceIn(0f, maxOver)
-                    kid?.translationY = -over
-                    if (over > 0f) return true
+                if ((atEnd && dy < 0) || shift < 0f) {
+                    val over = -shift
+                    // resistance grows as it lifts, so it feels soft
+                    val next = (over - dy * (0.55f - 0.4f * (over / maxOver))).coerceIn(0f, maxOver)
+                    applyShift(-next)
+                    if (next > 0f) return true
                 }
             }
             android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                if (over > 0f) {
-                    over = 0f
-                    kid?.animate()?.translationY(0f)?.setDuration(450)?.setInterpolator(android.view.animation.OvershootInterpolator(1.1f))?.start()
-                    super.onTouchEvent(ev)
-                    return true
-                }
+                dragging = false
+                if (shift < 0f) { settle(); super.onTouchEvent(ev); return true }
             }
         }
         return super.onTouchEvent(ev)
     }
 
+    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+        super.onScrollChanged(l, t, oldl, oldt)
+        if (t > 0 && canScrollVertically(1)) edgeBounced = false
+    }
+
     override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
         super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
-        val k = kid ?: return
-        if (clampedY && scrollY > 0 && over == 0f && k.translationY == 0f && !isPressed) {
-            k.animate().translationY(-Ui.dp(26f)).setDuration(140).withEndAction {
-                k.animate().translationY(0f).setDuration(380).setInterpolator(android.view.animation.OvershootInterpolator(1.2f)).start()
-            }.start()
+        // a fling that runs into the end or the top: one soft bounce of the content
+        if (clampedY && !dragging && !edgeBounced && shift == 0f) {
+            edgeBounced = true
+            holder.value = 0f
+            spring.setStartValue(0f)
+            spring.setStartVelocity(if (scrollY > 0) -Ui.dp(900f) else Ui.dp(900f))
+            spring.start()
         }
     }
 }

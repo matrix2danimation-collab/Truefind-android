@@ -234,6 +234,7 @@ class WalletScreen(
         page.clipChildren = false
         scroll.addView(page, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         scroll.overScrollMode = View.OVER_SCROLL_NEVER
+        scroll.onShift = { px -> for (i in 1 until body.childCount) body.getChildAt(i).translationY = px }
         addView(scroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         // Wallet top (owner, 27 Nov — the approved design): a flat purple card with round bottom corners, "Wallet",
@@ -892,10 +893,10 @@ class WalletScreen(
         }, WV.lp(Ui.dpi(44f), Ui.dpi(44f)))
         top.addView(Space(ctx), WV.lp(0, 1, weight = 1f))
         top.addView(FrameLayout(ctx).apply {
-            background = WV.round(Ui.c("#EDE7FB"), 10f)
+            background = WV.round(Ui.c("#6C2BD9"), 10f)
             isClickable = true; contentDescription = "Newest or oldest first"
             setOnClickListener { txNewestFirst = !txNewestFirst; fillTxPage() }
-            addView(WIcons.view(ctx, "M4 6h16M7 12h10M10 18h4", Ui.c("#6C2BD9"), 18f), LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
+            addView(WIcons.view(ctx, "M4 6h16M7 12h10M10 18h4", Color.WHITE, 18f), LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
         }, WV.lp(Ui.dpi(36f), Ui.dpi(36f)))
         col.addView(top, WV.lp(WV.MATCH, WV.WRAP))
         col.addView(WV.text(ctx, "Transactions", 24f, Ui.c("#111111"), true, 30f), WV.lp(WV.MATCH, WV.WRAP, l = 20f, r = 20f, t = 2f))
@@ -913,8 +914,11 @@ class WalletScreen(
         fillTxPage()
         addView(pg, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         txPage = pg
-        pg.alpha = 0f; pg.scaleX = 0.96f; pg.scaleY = 0.96f
-        pg.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(WV.EASE_OUT).start()
+        pg.alpha = 0f; pg.translationY = Ui.dp(28f); pg.scaleX = 0.985f; pg.scaleY = 0.985f
+        pg.post {
+            pg.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f).setDuration(320)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(2.2f)).withLayer().start()
+        }
         renderPayBar()
     }
     private var txSeg: LinearLayout? = null
@@ -963,28 +967,58 @@ class WalletScreen(
                 setOnClickListener { openTx(tx) }
                 WV.press(this)
             }
-            r.addView(FrameLayout(ctx).apply {
-                background = WV.round(if (plus) Ui.c("#E3F0FD") else Ui.c("#FDECE3"), 18f)
-                addView(WIcons.view(ctx, if (plus) WIcons.ARROW_DOWN_LEFT else WIcons.ARROW_UP_RIGHT, if (plus) Ui.c("#3B82F6") else Ui.c("#F07A3A"), 16f),
-                    LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
-            }, WV.lp(Ui.dpi(36f), Ui.dpi(36f)))
+            r.addView(txBadge(tx, plus), WV.lp(Ui.dpi(36f), Ui.dpi(36f)))
             val c = WV.box(ctx, true)
             c.addView(WV.text(ctx, tx.str("description").ifEmpty { tx.str("type") }.ifEmpty { if (plus) "Coins added" else "Coins spent" }, 14f, Ui.c("#111111"), true, 19f).apply {
                 maxLines = 1; ellipsize = TextUtils.TruncateAt.END
             })
             if (t > 0) c.addView(WV.text(ctx, rowDate.format(java.util.Date(t)).replace("AM", "am").replace("PM", "pm"), 11.5f, Ui.c("#8E8BA0"), false, 16f), WV.lp(WV.WRAP, WV.WRAP, t = 2f))
             r.addView(c, WV.lp(0, WV.WRAP, l = 12f, weight = 1f))
-            r.addView(WV.text(ctx, (if (plus) "+" else "−") + wRupees(Math.abs(tx.num("amount"))), 14.5f, Ui.c("#111111"), true),
+            r.addView(WV.text(ctx, (if (plus) "+" else "−") + wRupees(Math.abs(tx.num("amount"))), 14.5f, if (plus) Ui.c("#16A34A") else Ui.c("#DC2626"), true),
                 WV.lp(WV.WRAP, WV.WRAP, l = 10f))
             list.addView(r, WV.lp(WV.MATCH, WV.WRAP, b = 10f))
         }
+    }
+
+    /**
+     * The round badge of a history row (owner, 27 Nov): a call made (coins paid) — green ↗; a call picked up (earned)
+     * — black ↙; a missed call — red ↙; a gift — a gift box; daily / free coins — the TF coin; coins added — blue ↙;
+     * other coins spent — orange ↗.
+     */
+    private fun txBadge(tx: JSONObject, plus: Boolean): View {
+        val ctx = context
+        val d = (tx.str("description") + " " + tx.str("type")).lowercase(java.util.Locale.ROOT)
+        val f = FrameLayout(ctx)
+        fun arrow(path: String, color: Int, bg: String) {
+            f.background = WV.round(Ui.c(bg), 18f)
+            f.addView(WIcons.view(ctx, path, color, 16f), LayoutParams(Ui.dpi(16f), Ui.dpi(16f), Gravity.CENTER))
+        }
+        when {
+            d.contains("gift") -> {
+                f.background = WV.round(Ui.c("#FCE7F3"), 10f, Ui.c("#F9A8D4"))
+                f.addView(WIcons.view(ctx, WIcons.GIFT, Ui.c("#DB2777"), 18f), LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.CENTER))
+            }
+            d.contains("daily") || d.contains("free coin") || d.contains("streak") || d.contains("reward") || d.contains("welcome") || d.contains("bonus") -> {
+                f.background = WV.round(Ui.c("#FEF3C7"), 18f)
+                f.addView(android.widget.ImageView(ctx).apply { setImageResource(R.drawable.wallet_coin); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO },
+                    LayoutParams(Ui.dpi(24f), Ui.dpi(24f), Gravity.CENTER))
+            }
+            // calls: only the arrow's colour changes, the round background stays as it was (owner, 27 Nov)
+            d.contains("missed") -> arrow(WIcons.ARROW_DOWN_LEFT, Ui.c("#DC2626"), if (plus) "#E3F0FD" else "#FDECE3")
+            (d.contains("call") || d.contains("video") || d.contains("voice")) && plus -> arrow(WIcons.ARROW_DOWN_LEFT, Ui.c("#111111"), "#E3F0FD")
+            d.contains("call") || d.contains("video") || d.contains("voice") -> arrow(WIcons.ARROW_UP_RIGHT, Ui.c("#16A34A"), "#FDECE3")
+            plus -> arrow(WIcons.ARROW_DOWN_LEFT, Ui.c("#3B82F6"), "#E3F0FD")
+            else -> arrow(WIcons.ARROW_UP_RIGHT, Ui.c("#F07A3A"), "#FDECE3")
+        }
+        return f
     }
 
     private fun closeHistory() {
         val pg = txPage ?: return
         historyOpen = false
         txPage = null; txSeg = null; txList = null
-        pg.animate().alpha(0f).scaleX(0.96f).scaleY(0.96f).setDuration(180).withEndAction { removeView(pg) }.start()
+        pg.animate().alpha(0f).translationY(Ui.dp(20f)).setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator(1.4f)).withLayer().withEndAction { removeView(pg) }.start()
         renderPayBar()
     }
 
@@ -2341,10 +2375,10 @@ class WalletScreen(
             }
         }
         when (e.actionMasked) {
-            MotionEvent.ACTION_MOVE -> { ptrD = travel(e.y - ptrY); spinner.pull(ptrD, 64f); page.translationY = Ui.dp(ptrD) * 0.8f }
+            MotionEvent.ACTION_MOVE -> { ptrD = travel(e.y - ptrY); spinner.pull(ptrD, 64f); scroll.follow(Ui.dp(ptrD) * 0.8f) }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 ptrPull = false; ptrTrack = false
-                page.animate().translationY(0f).setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
+                scroll.settle()
                 if (ptrD >= 64f && e.actionMasked == MotionEvent.ACTION_UP) refreshNow() else spinner.hide()
                 ptrD = 0f
             }
