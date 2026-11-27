@@ -934,6 +934,7 @@ class WalletScreen(
             seg.addView(WV.text(ctx, label, 14f, if (on) Ui.c("#111111") else Ui.c("#6B6880"), on).apply {
                 gravity = Gravity.CENTER
                 background = if (on) WV.round(Color.WHITE, 8f) else null
+                if (on) outlineSpotShadowColorCompat(Color.argb(70, 160, 140, 230))
                 elevation = if (on) Ui.dp(2f) else 0f
                 isClickable = true; isSelected = on
                 setOnClickListener { txFilter = k; fillTxPage() }
@@ -961,7 +962,11 @@ class WalletScreen(
             }
             val plus = tx.num("amount") >= 0
             val r = WV.box(ctx, false, Gravity.CENTER_VERTICAL).apply {
-                background = WV.round(Color.WHITE, 12f, Ui.c("#ECECF2"))
+                // a glowing white card on the off-white page (owner, 27 Nov): pure white, a very light edge and a
+                // soft lavender-white glow around it; the text and the page colour stay as they were
+                background = WV.round(Color.WHITE, 12f, Ui.c("#F3F1F8"))
+                elevation = Ui.dp(3f)
+                outlineSpotShadowColorCompat(Color.argb(70, 160, 140, 230))
                 setPadding(Ui.dpi(12f), Ui.dpi(12f), Ui.dpi(14f), Ui.dpi(12f))
                 isClickable = true
                 setOnClickListener { openTx(tx) }
