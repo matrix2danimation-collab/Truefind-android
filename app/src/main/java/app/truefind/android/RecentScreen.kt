@@ -95,18 +95,14 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         column.setPadding(0, 0, 0, Ui.dpi(120f))
         content.addView(column, LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL))
 
-        // 26 Nov (owner's templates): a purple top like Profile / Wallet — "Call Back" in white with the small line
-        // under it, one flat purple, round bottom corners (the clock icon before the title is gone)
+        // 27 Nov (owner): no purple behind the title any more — "Call Back" and its small line in black on the page
         val top = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Ui.c("#4C1D95")); val r = Ui.dp(28f); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, r, r, r, r)
-            }
-            setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(22f))
+            setPadding(Ui.dpi(20f), Ui.dpi(18f), Ui.dpi(20f), Ui.dpi(6f))
             contentDescription = "Call Back"
         }
-        top.addView(Tf.t(ctx, "Call Back", 20f, Color.WHITE), LinearLayout.LayoutParams(-2, -2))
-        top.addView(Tf.t(ctx, "Your recent voice and video calls", 13.5f, Ui.c("#DCCFF5"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
+        top.addView(Tf.t(ctx, "Call Back", 20f, Ui.c("#111111")), LinearLayout.LayoutParams(-2, -2))
+        top.addView(Tf.t(ctx, "Your recent voice and video calls", 13.5f, Ui.c("#111111"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
         column.addView(top, LinearLayout.LayoutParams(-1, -2))
         listBox.orientation = LinearLayout.VERTICAL
         listBox.clipChildren = false; listBox.clipToPadding = false
