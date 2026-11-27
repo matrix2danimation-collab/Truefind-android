@@ -668,7 +668,7 @@ class WalletScreen(
         titleSub.text = if (secret) "Reconnect" else "Wallet"
         backBtn.background = WV.round(t.btn, 12f)
         helpBtn.background = WV.round(t.btn, 12f)
-        titleSub.setTextColor(t.sub)
+        titleSub.setTextColor(Color.WHITE)
         switchBox.background = WV.round(t.track, 12f)
         for (tv in switchTabs) {
             val on = tv.tag == app
