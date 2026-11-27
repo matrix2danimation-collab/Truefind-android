@@ -66,6 +66,8 @@ object WIcons {
 
     const val CHEVRON_LEFT = "M15 18l-6-6 6-6"
     const val CHEVRON_DOWN = "M6 9l6 6 6-6"
+    const val CHECK = "M20 6L9 17l-5-5"
+    const val RECEIPT_LINES = "M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1ZM8 8h8M8 12h8M8 16h5"
     const val TRENDING_UP = "M22 7L13.5 15.5L8.5 10.5L2 17M16 7L22 7L22 13"
     val CLOCK = circle(12f, 12f, 10f) + "M12 6L12 12L16 14"
     const val SHIELD_CHECK = "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1zM9 12l2 2 4-4"
@@ -384,6 +386,37 @@ class RibbonView(ctx: Context, private val off: Int) : View(ctx) {
         txt.letterSpacing = 0.2f / 6.5f
         y += big * 0.20f + Ui.dp(1f) + small * 0.80f
         c.drawText("OFF", w / 2f, y, txt)
+    }
+}
+
+/**
+ * First time offer band (owner, 27 Nov): a gold ribbon hanging from the top edge of a pack, a small dark fold at its
+ * top corners and a V point at the bottom; "25%" big and "MORE" small in white, so it reads clearly.
+ */
+class MoreBandView(ctx: Context, private val pct: Int) : View(ctx) {
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val fold = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.c("#9A5A00") }
+    private val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE; typeface = Ui.bold; textAlign = Paint.Align.CENTER }
+    private val path = Path()
+    init { contentDescription = "$pct% more coins" }
+    override fun onDraw(c: Canvas) {
+        val w = width.toFloat(); val h = height.toFloat()
+        val inset = w * 3f / 38f
+        // the fold: a thin darker strip a little wider than the band
+        path.reset()
+        path.moveTo(0f, h * 3.2f / 42f); path.lineTo(inset, 0f); path.lineTo(w - inset, 0f); path.lineTo(w, h * 3.2f / 42f); path.close()
+        c.drawPath(path, fold)
+        fill.shader = android.graphics.LinearGradient(0f, 0f, 0f, h, Ui.c("#F5B82A"), Ui.c("#D98A06"), android.graphics.Shader.TileMode.CLAMP)
+        path.reset()
+        path.moveTo(inset, 0f); path.lineTo(w - inset, 0f); path.lineTo(w - inset, h * 30f / 42f)
+        path.lineTo(w / 2f, h); path.lineTo(inset, h * 30f / 42f); path.close()
+        c.drawPath(path, fill)
+        txt.textSize = h * 12.3f / 42f
+        txt.letterSpacing = -0.03f
+        c.drawText("$pct%", w / 2f, h * 16f / 42f, txt)
+        txt.textSize = h * 7.4f / 42f
+        txt.letterSpacing = 0.02f
+        c.drawText("MORE", w / 2f, h * 26.5f / 42f, txt)
     }
 }
 

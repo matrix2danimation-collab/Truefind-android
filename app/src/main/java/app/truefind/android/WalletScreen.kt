@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.Paint
-import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.text.Editable
@@ -154,7 +153,6 @@ class WalletScreen(
     private var txFilter = "all"
     private var txOpen: JSONObject? = null
     private var sel: String? = null
-    private var showAllPacks = false
     private var planSel: String? = null
     private var flow: Flow? = null
     private var credits: JSONObject? = null
@@ -699,8 +697,7 @@ class WalletScreen(
         } else {
             col.addView(WV.text(context, "Your balance", 14f, t.sub, false, 20f))
             val row = WV.box(context, false, Gravity.CENTER_VERTICAL)
-            row.addView(WCoins.tilted(context, 52f))
-            row.addView(bigNumber(wRupees(coins)), WV.lp(WV.WRAP, WV.WRAP, l = 10f))
+            row.addView(bigNumber(wRupees(coins)), WV.lp(WV.WRAP, WV.WRAP))
             row.addView(WV.text(context, "coins", 16f, t.sub), WV.lp(WV.WRAP, WV.WRAP, l = 10f).apply { gravity = Gravity.BOTTOM; bottomMargin = Ui.dpi(8f) })
             col.addView(row, WV.lp(WV.WRAP, Ui.dpi(56f), t = 6f))
         }
@@ -755,8 +752,9 @@ class WalletScreen(
         if (showEarnings && tab == "earnings") section(earningsPanel())
 
         if (coinsView && !secret) {
-            // First recharge offer: only until the first purchase, then it is gone
-            if (offerOn) section(offerCard())
+            section(historyLink())
+            // First time offer: only until the first purchase, then it is gone
+            if (offerOn) body.addView(offerCard(), WV.lp(WV.MATCH, WV.WRAP, t = 12f))
             section(packsSection())
             noteBox()?.let { section(it) }
         }
@@ -833,30 +831,47 @@ class WalletScreen(
         return box
     }
 
+    /** "Transaction history ▤" on the right, above the offers (owner, 27 Nov): scrolls down to the history. */
+    private fun historyLink(): View {
+        val r = WV.box(context, false, Gravity.CENTER_VERTICAL or Gravity.END).apply {
+            isClickable = true
+            contentDescription = "Transaction history"
+            setOnClickListener { scrollToHistory() }
+        }
+        r.addView(WV.text(context, "Transaction history", 14f, Ui.c("#111111"), true))
+        r.addView(WIcons.view(context, WIcons.RECEIPT_LINES, Ui.c("#111111"), 18f), WV.lp(Ui.dpi(18f), Ui.dpi(18f), l = 6f))
+        return r
+    }
+
+    private fun scrollToHistory() {
+        val v = txSection ?: return
+        var y = 0; var p: View? = v
+        while (p != null && p !== page) { y += p.top; p = p.parent as? View }
+        scroll.smoothScrollTo(0, Math.max(0, y - Ui.dpi(12f)))
+    }
+
+    /** First time offer (owner, 27 Nov): a purple-to-orchid box with the three offer packs in white cards. */
     private fun offerCard(): View {
-        val box = offerBox("NEW USER", "First recharge at VIP rate", "Get 3 coins per ₹1 on your first pack.")
-        box.addView(packGrid(WData.OFFERS, true, 8f), WV.lp(WV.MATCH, WV.WRAP, t = 20f))
+        val box = WV.box(context, true).apply {
+            background = android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Ui.c("#9D4EF5"), Ui.c("#B347EE"), Ui.c("#D03FD8")),
+            ).apply { cornerRadius = Ui.dp(22f) }
+            elevation = Ui.dp(6f)
+            setPadding(Ui.dpi(12f), Ui.dpi(16f), Ui.dpi(12f), Ui.dpi(14f))
+        }
+        box.addView(WV.text(context, "First time offer", 20f, Color.WHITE, true, 26f).apply {
+            setShadowLayer(Ui.dp(2f), 0f, Ui.dp(1f), Color.argb(46, 0, 0, 0))
+        }, WV.lp(WV.MATCH, WV.WRAP, l = 6f))
+        box.addView(packGrid(WData.OFFERS, true, 8f), WV.lp(WV.MATCH, WV.WRAP, t = 16f))
         return box
     }
 
+    /** All packs, biggest on top (owner, 27 Nov), with a little more room under the offer box. */
     private fun packsSection(): View {
-        val t = T
         val s = WV.box(context, true)
-        s.addView(titleRow("Coin packs", muted("Tap a pack to buy")), WV.lp(WV.MATCH, WV.WRAP))
-        val shown = if (offerOn && !showAllPacks) WData.PACKS.take(6) else WData.PACKS
-        s.addView(packGrid(shown, false, 14f), WV.lp(WV.MATCH, WV.WRAP, t = 16f))
-        if (offerOn && !showAllPacks) {
-            val more = WV.box(context, false, Gravity.CENTER).apply {
-                background = WV.round(Color.WHITE, 12f, t.tintLine)
-                isClickable = true
-                setOnClickListener { showAllPacks = true; renderBody() }
-                WV.press(this)
-            }
-            more.addView(WV.text(context, "See all 12 packs", 15f, t.accent, true))
-            more.addView(WIcons.view(context, WIcons.CHEVRON_DOWN, t.accent, 16f), WV.lp(Ui.dpi(16f), Ui.dpi(16f), l = 6f))
-            s.addView(more, WV.lp(WV.MATCH, Ui.dpi(44f), t = 12f))
-        }
-        s.addView(secureLine(), WV.lp(WV.MATCH, WV.WRAP, t = 10f))
+        s.addView(packGrid(WData.PACKS, false, 16f), WV.lp(WV.MATCH, WV.WRAP, t = 8f))
+        s.addView(secureLine(), WV.lp(WV.MATCH, WV.WRAP, t = 14f))
         return s
     }
 
@@ -875,7 +890,7 @@ class WalletScreen(
             for (j in 0 until 3) {
                 val p = chunk.getOrNull(j)
                 val v: View = if (p != null) PackTile(p, offer).also { it.on = picked?.id == p.id; packTiles[p.id] = it } else Space(context)
-                r.addView(v, WV.lp(0, Ui.dpi(if (offer) 156f else 132f), l = if (j > 0) 8f else 0f, weight = 1f))
+                r.addView(v, WV.lp(0, Ui.dpi(176f), l = if (j > 0) 8f else 0f, weight = 1f))
             }
             grid.addView(r, WV.lp(WV.MATCH, WV.WRAP, t = if (i > 0) rowGap else 0f))
         }
@@ -889,71 +904,71 @@ class WalletScreen(
         renderPayBar()
     }
 
-    /** One coin-pack tile. Selected = green border + light green fill + soft green ring. */
+    /**
+     * One coin-pack tile (owner, 27 Nov): white card, coins in the middle with "coins" under them, the price in a
+     * lavender strip at the bottom (the regular-rate price struck out under it for offers and premium packs).
+     * First time offers wear a gold "25% MORE" band; "Most popular" / "Best deal" sit on the top edge.
+     * Selected = green border + light green fill + green tick.
+     */
     private inner class PackTile(val p: WPack, val offer: Boolean) : FrameLayout(context) {
-        private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(51, 34, 212, 107) }
-        private val rr = RectF()
+        private val strip: LinearLayout
+        private val tick: View
         var on = false
             set(v) { if (field != v) { field = v; paint() } }
 
         init {
-            val t = T
             clipChildren = false; clipToPadding = false
-            setWillNotDraw(false)
+            elevation = Ui.dp(3f)
             isClickable = true
             setOnClickListener { pick(p.id) }
             WV.press(this)
-            contentDescription = "${wRupees(p.coins)} coins for ₹${wRupees(p.price)}" + (p.tag?.let { ", $it" } ?: "")
-            val col = WV.box(context, true, Gravity.CENTER)
-            col.setPadding(Ui.dpi(4f), Ui.dpi(if (offer) 12f else 10f), Ui.dpi(4f), Ui.dpi(10f))
-            col.addView(CoinArtView(context, p.art))
-            col.addView(WV.text(context, wRupees(p.coins), if (offer) 24f else 18f, t.ink, true, if (offer) 28f else 22f).apply { gravity = Gravity.CENTER },
-                WV.lp(WV.WRAP, WV.WRAP, t = 3f))
-            if (offer) {
-                col.addView(WV.insteadOf(context, p.was, t.muted).apply { gravity = Gravity.CENTER }, WV.lp(WV.WRAP, WV.WRAP, t = 3f))
-                col.addView(WV.text(context, "₹${wRupees(p.price)}", 15f, t.accent, true, 20f).apply {
-                    background = WV.round(t.tint, 8f)
-                    setPadding(Ui.dpi(14f), Ui.dpi(3f), Ui.dpi(14f), Ui.dpi(3f))
-                }, WV.lp(WV.WRAP, WV.WRAP, t = 6f))
-            } else {
-                col.addView(WV.text(context, "₹${wRupees(p.price)}", 15f, t.muted, false, 18f), WV.lp(WV.WRAP, WV.WRAP, t = 3f))
-            }
+            val was = WData.wasPrice(p)
+            contentDescription = "${wRupees(p.coins)} coins for ₹${wRupees(p.price)}" +
+                (if (offer) ", ${WData.morePct(p)}% more coins" else "") + (p.tag?.let { ", $it" } ?: "")
+            val col = WV.box(context, true, Gravity.CENTER_HORIZONTAL)
+            col.setPadding(0, Ui.dpi(if (offer) 30f else 18f), 0, 0)
+            col.addView(CoinArtView(context, p.art, 64f))
+            col.addView(WV.text(context, wRupees(p.coins), 18f, Ui.c("#4C1D95"), true, 22f).apply { gravity = Gravity.CENTER },
+                WV.lp(WV.WRAP, WV.WRAP, t = 6f))
+            col.addView(WV.text(context, "coins", 11f, Ui.c("#8E87A3"), true, 14f).apply { gravity = Gravity.CENTER })
+            col.addView(Space(context), WV.lp(1, 0, weight = 1f))
+            strip = WV.box(context, true, Gravity.CENTER).apply { setPadding(0, Ui.dpi(7f), 0, Ui.dpi(7f)) }
+            strip.addView(WV.text(context, "₹${wRupees(p.price)}", 15.5f, Ui.c("#5F5673"), true, 19f).apply { gravity = Gravity.CENTER })
+            if (was > 0) strip.addView(WV.text(context, "₹${wRupees(was)}", 10.5f, Ui.c("#9A93AE"), true, 13f).apply {
+                gravity = Gravity.CENTER
+                paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+            })
+            col.addView(strip, WV.lp(WV.MATCH, Ui.dpi(if (was > 0) 48f else 40f)))
             addView(col, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-            // the green "% OFF" ribbon hangs from the top-left
-            val off = WData.offPct(p)
-            if (off >= 5) addView(RibbonView(context, off), LayoutParams(Ui.dpi(22f), Ui.dpi(36f), Gravity.TOP or Gravity.START).apply {
-                leftMargin = Ui.dpi(7f); topMargin = Ui.dpi(-4f)
+            // gold band hanging from the top edge: "25%" big, "MORE" small, white
+            if (offer) addView(MoreBandView(context, WData.morePct(p)), LayoutParams(Ui.dpi(38f), Ui.dpi(42f), Gravity.TOP or Gravity.START).apply {
+                leftMargin = Ui.dpi(5f); topMargin = Ui.dpi(-1f)
             })
             // the tag sits on the top edge, in the middle
             p.tag?.let { tag ->
-                val (bg, fg) = when (tag) {
-                    "Most popular" -> Ui.c("#D7142A") to Color.WHITE
-                    "Best start" -> Ui.c("#FFD60A") to Ui.c("#3A2A00")
-                    else -> t.accent to Color.WHITE
-                }
-                addView(WV.text(context, tag, 11f, fg, true, 16f).apply {
+                val (bg, fg) = if (tag == "Best deal") Ui.c("#4C1D95") to Ui.c("#F2B01E") else Ui.c("#6C2BD9") to Color.WHITE
+                addView(WV.text(context, if (tag == "Best deal") "★ Best deal" else tag, 10f, fg, true, 14f).apply {
                     maxLines = 1
-                    background = WV.round(bg, 8f)
-                    setPadding(Ui.dpi(8f), Ui.dpi(1f), Ui.dpi(8f), Ui.dpi(1f))
-                }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(-8f) })
+                    background = WV.round(bg, 10f)
+                    setPadding(Ui.dpi(9f), Ui.dpi(2f), Ui.dpi(9f), Ui.dpi(2f))
+                }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = Ui.dpi(-9f) })
             }
+            tick = FrameLayout(context).apply {
+                background = WV.round(PAY_GREEN, 9f)
+                addView(WIcons.view(context, WIcons.CHECK, Color.WHITE, 11f), LayoutParams(Ui.dpi(11f), Ui.dpi(11f), Gravity.CENTER))
+            }
+            addView(tick, LayoutParams(Ui.dpi(18f), Ui.dpi(18f), Gravity.TOP or Gravity.END).apply { topMargin = Ui.dpi(8f); rightMargin = Ui.dpi(8f) })
             paint()
         }
 
         private fun paint() {
-            val t = T
-            background = WV.round(if (on) Ui.c("#EEFBF3") else Color.WHITE, 14f, if (on) PAY_GREEN else if (offer) t.tintLine else t.line, 2f)
-            isSelected = on
-            invalidate()
-        }
-
-        override fun draw(c: Canvas) {
-            if (on) {
-                val e = Ui.dp(3f)
-                rr.set(-e, -e, width + e, height + e)
-                c.drawRoundRect(rr, Ui.dp(17f), Ui.dp(17f), ring)
+            background = if (on) WV.round(Ui.c("#F1FBF5"), 14f, PAY_GREEN, 2f) else WV.round(Color.WHITE, 14f)
+            strip.background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(if (on) Ui.c("#DDF6E6") else Ui.c("#F1EAFF"))
+                cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(14f), Ui.dp(14f), Ui.dp(14f), Ui.dp(14f))
             }
-            super.draw(c)
+            tick.visibility = if (on) View.VISIBLE else View.GONE
+            isSelected = on
         }
     }
 
@@ -2147,22 +2162,22 @@ class WalletScreen(
     /** Opens a pop-up / state for the emulator pictures (WalletDemo scenes). */
     fun previewOpen(what: String) {
         when (what) {
-            "pick" -> pick(if (offerOn) "w49" else "p259")
+            "pick" -> pick(if (offerOn) "n49" else "c399")
             "plan" -> pickPlan("starter")
             "planpay" -> { pickPlan("starter"); main.postDelayed({ buyPlan("starter") }, 600) }   // the plan's button with no payment gateway yet
-            "soon" -> { isAdmin = false; openBuy(WData.findPack("p259")) }
-            "method" -> { isAdmin = true; openBuy(WData.findPack("p259")) }
+            "soon" -> { isAdmin = false; openBuy(WData.findPack("c399")) }
+            "method" -> { isAdmin = true; openBuy(WData.findPack("c399")) }
             "pack" -> { isAdmin = true; openBuy(null) }
-            "processing" -> { flow = Flow("processing", WData.findPack("p259")!!, "gpay"); showFlow() }
-            "done" -> { flow = Flow("done", WData.findPack("p259")!!, "phonepe", System.currentTimeMillis(), "tx_demo_9f8e7d6c5b4a"); showFlow() }
-            "failed" -> { flow = Flow("failed", WData.findPack("p259")!!, "upi", error = "Top-up is not available yet."); showFlow() }
+            "processing" -> { flow = Flow("processing", WData.findPack("c399")!!, "gpay"); showFlow() }
+            "done" -> { flow = Flow("done", WData.findPack("c399")!!, "phonepe", System.currentTimeMillis(), "tx_demo_9f8e7d6c5b4a"); showFlow() }
+            "failed" -> { flow = Flow("failed", WData.findPack("c399")!!, "upi", error = "Top-up is not available yet."); showFlow() }
             // Google Play (25 Nov)
-            "gopening" -> { pick("p259"); main.postDelayed({ flow = Flow("opening", WData.findPack("p259")!!, "gplay"); renderPayBar() }, 700) }
-            "gprocessing" -> { flow = Flow("processing", WData.findPack("p259")!!, "gplay"); showFlow() }
-            "gdone" -> { flow = Flow("done", WData.findPack("p259")!!, "gplay", System.currentTimeMillis(), "GPA.3384-1290-5521-77142"); showFlow() }
-            "gpending" -> { flow = Flow("pending", WData.findPack("p259")!!, "gplay"); showFlow() }
-            "gfailed" -> { flow = Flow("failed", WData.findPack("p259")!!, "gplay", error = "Google Play is not reachable right now. Check your internet and try again."); showFlow() }
-            "gsoon-admin" -> { isAdmin = true; flow = Flow("soon", WData.findPack("p259")!!); showFlow() }
+            "gopening" -> { pick("c399"); main.postDelayed({ flow = Flow("opening", WData.findPack("c399")!!, "gplay"); renderPayBar() }, 700) }
+            "gprocessing" -> { flow = Flow("processing", WData.findPack("c399")!!, "gplay"); showFlow() }
+            "gdone" -> { flow = Flow("done", WData.findPack("c399")!!, "gplay", System.currentTimeMillis(), "GPA.3384-1290-5521-77142"); showFlow() }
+            "gpending" -> { flow = Flow("pending", WData.findPack("c399")!!, "gplay"); showFlow() }
+            "gfailed" -> { flow = Flow("failed", WData.findPack("c399")!!, "gplay", error = "Google Play is not reachable right now. Check your internet and try again."); showFlow() }
+            "gsoon-admin" -> { isAdmin = true; flow = Flow("soon", WData.findPack("c399")!!); showFlow() }
             "gplan-done" -> { pickPlan("starter"); note = "Payment received — your Reconnect plan is active!"; renderBody(); renderPayBar() }
             "gplan-pending" -> { pickPlan("starter"); note = "Payment pending — your plan starts as soon as Google confirms the payment."; renderBody(); renderPayBar() }
             "tx" -> transactions.firstOrNull()?.let { openTx(it) }

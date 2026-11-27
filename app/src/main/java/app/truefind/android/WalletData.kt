@@ -30,36 +30,42 @@ data class WBreakdown(
 data class WPayout(val paidTotal: Double, val amount: Double, val at: String, val state: String)
 
 object WData {
-    // Coin packs (price in ₹ → coins). Keep in sync with base44/functions/topUpWallet.
+    // Coin packs (price in ₹ → coins), owner's price list (27 Nov): 15 coins = 1 minute of calling,
+    // regular ≈ ₹10 a minute, premium ≈ ₹8 a minute. Shown biggest first (owner: big packs on top, small ones
+    // further down). Keep in sync with the server's shared/playProducts.ts and Play Console (coins_<id>).
     val PACKS = listOf(
-        WPack("p10", 10, 12, 1),
-        WPack("p49", 49, 60, 2),
-        WPack("p99", 99, 150, 3),
-        WPack("p199", 199, 360, 4),
-        WPack("p259", 259, 500, 5, "Most popular"),
-        WPack("p499", 499, 1000, 6),
-        WPack("p999", 999, 2300, 7, "Best value"),
-        WPack("p1999", 1999, 5000, 8),
-        WPack("p3999", 3999, 10000, 9),
-        WPack("p9999", 9999, 27000, 10),
-        WPack("p19999", 19999, 55000, 11),
-        WPack("p49999", 49999, 150000, 12, "VIP"),
+        WPack("c49999", 49999, 93750, 12),
+        WPack("c25999", 25999, 48750, 11),
+        WPack("c12999", 12999, 24375, 10),
+        WPack("c4999", 4999, 9375, 9, "Best deal"),
+        WPack("c2599", 2599, 4875, 8),
+        WPack("c1499", 1499, 2820, 7),
+        WPack("c799", 799, 1500, 6),
+        WPack("c399", 399, 750, 5, "Most popular"),
+        WPack("c199", 199, 375, 4),
+        WPack("r149", 149, 225, 3),
+        WPack("r60", 60, 90, 2),
+        WPack("r15", 15, 22, 1),
     )
 
-    // First recharge offer: 3 coins per ₹1, once only (the server checks it too).
+    // First time offer (once only; the server checks it too): more coins than the regular rate.
     val OFFERS = listOf(
-        WPack("w10", 10, 30, 2, null, 12, true),
-        WPack("w49", 49, 150, 3, "Best start", 60, true),
-        WPack("w99", 99, 300, 4, null, 150, true),
+        WPack("n9", 9, 17, 1, null, 0, true),
+        WPack("n49", 49, 94, 2, null, 0, true),
+        WPack("n79", 79, 152, 3, null, 0, true),
     )
 
-    const val DEFAULT_PACK = "p259"
-    const val BASE_RATE = 1.2 // coins per ₹ of the smallest pack; "extra" is counted from this
+    const val DEFAULT_PACK = "c399"
+    const val REGULAR_COINS_PER_RUPEE = 1.5 // ₹10 = 15 coins = 1 minute
 
-    fun extraPct(p: WPack): Int = jsRound((p.coins / (p.price * BASE_RATE) - 1) * 100).toInt()
+    /** What these coins would cost at the regular rate (₹10 = 15 coins), rounded down. */
+    fun regularPrice(p: WPack): Long = Math.floor(p.coins / REGULAR_COINS_PER_RUPEE).toLong()
 
-    /** The "% OFF" on a pack's ribbon (offers: against the regular coins). */
-    fun offPct(p: WPack): Int = if (p.offer) jsRound((p.coins.toDouble() / p.was - 1) * 100).toInt() else extraPct(p)
+    /** The struck-out price under a pack: First time offer and premium packs only (regular packs are the regular rate). */
+    fun wasPrice(p: WPack): Long = if (p.offer || p.id.startsWith("c")) regularPrice(p) else 0L
+
+    /** "25% MORE" on a First time offer: extra coins over the regular rate, rounded down (never more than true). */
+    fun morePct(p: WPack): Int = Math.floor((p.coins / (p.price * REGULAR_COINS_PER_RUPEE) - 1) * 100).toInt()
 
     fun findPack(id: String?): WPack? = OFFERS.find { it.id == id } ?: PACKS.find { it.id == id }
 
