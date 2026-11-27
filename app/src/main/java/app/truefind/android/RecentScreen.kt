@@ -459,15 +459,11 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             val nm = r.name.ifEmpty { "Someone" }
             // 27 Nov (owner's Recent design): photo (or the first letter on a soft colour) with the status dot,
             // name, "Voice · 12 min · 9:40 pm", and Online · Free / Online · Busy / Offline · seen …
-            val (stText, stColor, dot) = when {
-                r.online && r.busy -> Triple("Online · Busy", Ui.c("#DC2626"), Ui.c("#DC2626"))
-                r.online -> Triple("Online · Free", Ui.c("#16A34A"), Ui.c("#16A34A"))
-                else -> Triple(listOf("Offline", seenText(r.lastSeen)).filter { it.isNotEmpty() }.joinToString(" · "), Ui.c("#4A4560"), Ui.c("#9CA3AF"))
-            }
+            // 27 Nov night (owner): Recent never shows Online / Offline / Busy — no status line, no status dot
             val kindWord = if (r.type == "video") "Video" else "Voice"
             val mid = if (r.duration > 0 && r.status != "missed" && r.status != "declined") "${Math.max(1, (r.duration + 59) / 60)} min" else k.text
             val line2 = listOf(kindWord, mid, clock(r.time)).filter { it.isNotEmpty() }.joinToString(" · ")
-            contentDescription = "$nm. $line2. $stText. Tap to see profile"
+            contentDescription = "$nm. $line2. Tap to see profile"
 
             val face = FrameLayout(ctx).apply { clipChildren = false }
             if (r.photo.isNotEmpty() || r.full.isNotEmpty()) {
@@ -479,9 +475,6 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                     background = Tf.circle(soft[Math.abs(r.otherId.hashCode()) % soft.size])
                 }, FrameLayout.LayoutParams(Ui.dpi(44f), Ui.dpi(44f)))
             }
-            face.addView(View(ctx).apply {
-                background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(dot); setStroke(Ui.dpi(2f), Color.WHITE) }
-            }, FrameLayout.LayoutParams(Ui.dpi(11f), Ui.dpi(11f), Gravity.BOTTOM or Gravity.END).apply { bottomMargin = Ui.dpi(2f) })
             addView(face, LayoutParams(Ui.dpi(44f), Ui.dpi(44f)))
 
             val col = LinearLayout(ctx).apply { orientation = VERTICAL }
@@ -489,8 +482,6 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             if (r.verified) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, RC.purple, 14f, 2.2f)) }, 4f, Ui.dpi(14f), Ui.dpi(14f))
             col.addView(l1, LayoutParams(-1, Ui.dpi(20f)))
             col.addView(Tf.t(ctx, line2, 12f, if (k.color == RC.red && r.duration <= 0) RC.red else Ui.c("#5F5673"), false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END },
-                LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
-            col.addView(Tf.t(ctx, stText, 12f, stColor).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END },
                 LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
             addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = Ui.dpi(12f) })
 
