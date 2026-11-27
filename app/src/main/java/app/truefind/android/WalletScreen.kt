@@ -294,6 +294,7 @@ class WalletScreen(
 
         // ───── the Pay bar (slides up when a pack or plan is tapped) ─────
         payHost.clipChildren = false
+        payHost.clipToPadding = false // the bar's shadow was cut at the holder's padding into a grey box (owner, 27 Nov)
         payHost.setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), 0)
         addView(payHost, LayoutParams(LayoutParams.MATCH_PARENT, Ui.dpi(92f + WData.PAY_SHADOW_ROOM), Gravity.BOTTOM))
 
