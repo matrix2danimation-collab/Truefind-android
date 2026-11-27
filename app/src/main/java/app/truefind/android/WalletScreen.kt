@@ -241,7 +241,7 @@ class WalletScreen(
         // the balance; no back / help buttons and no True Find / Reconnect switch (the phone's back still works;
         // the Reconnect wallet opens from Reconnect). Two soft glass layers peek out under it.
         header.setPadding(Ui.dpi(20f), Ui.dpi(24f), Ui.dpi(20f), Ui.dpi(60f))
-        titleSub = WV.text(ctx, "Wallet", 20f, Color.WHITE, true, 26f)
+        titleSub = WV.text(ctx, "Wallet", 30f, Color.WHITE, true, 36f)
         header.addView(titleSub, WV.lp(WV.MATCH, WV.WRAP))
 
         // two separate wallets
@@ -256,7 +256,7 @@ class WalletScreen(
             switchTabs.add(t)
             switchBox.addView(t, WV.lp(0, WV.MATCH, l = if (switchTabs.size > 1) 4f else 0f, weight = 1f))
         }
-        header.addView(balanceBox, WV.lp(WV.MATCH, WV.WRAP, t = 10f))
+        header.addView(balanceBox, WV.lp(WV.MATCH, WV.WRAP, t = 22f))
         headerStrip.background = android.graphics.drawable.GradientDrawable(
             android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Ui.c("#5B21B6"), Ui.c("#4C1D95"), Ui.c("#43188A")),
         ).apply { cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, Ui.dp(26f), Ui.dp(26f), Ui.dp(26f), Ui.dp(26f)) }
@@ -715,11 +715,11 @@ class WalletScreen(
                 if (c == null && creditsFailed) { isClickable = true; setOnClickListener { if (!spinner.spinning) refreshNow() } }
             }, WV.lp(WV.WRAP, WV.WRAP, t = 8f))
         } else {
-            col.addView(WV.text(context, "Your balance", 12f, Color.argb(235, 255, 255, 255), true, 16f))
+            col.addView(WV.text(context, "Your balance", 15f, Color.argb(235, 255, 255, 255), true, 20f))
             val row = WV.box(context, false, Gravity.BOTTOM)
-            row.addView(WV.text(context, wRupees(Math.floor(coins)), 24f, Color.WHITE, true, 30f).apply { includeFontPadding = false })
-            row.addView(WV.text(context, "coins", 12f, Color.argb(235, 255, 255, 255), true, 16f).apply { includeFontPadding = false },
-                WV.lp(WV.WRAP, WV.WRAP, l = 6f, b = 3f))
+            row.addView(WV.text(context, wRupees(Math.floor(coins)), 38f, Color.WHITE, true, 44f).apply { includeFontPadding = false })
+            row.addView(WV.text(context, "coins", 15f, Color.argb(235, 255, 255, 255), true, 20f).apply { includeFontPadding = false },
+                WV.lp(WV.WRAP, WV.WRAP, l = 8f, b = 5f))
             col.addView(row, WV.lp(WV.WRAP, WV.WRAP, t = 3f))
         }
         balanceBox.addView(col)
