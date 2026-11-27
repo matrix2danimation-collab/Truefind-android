@@ -307,7 +307,7 @@ class RecentFace(ctx: Context, private val sizeDp: Float) : View(ctx) {
 @SuppressLint("ViewConstructor")
 class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
     private val icon = ImageView(ctx)
-    private val loader = TfLoader(ctx, 19f, if (video) Ui.c("#111111") else Tf.BLUE)
+    private val loader = TfLoader(ctx, 19f, if (video) Color.WHITE else Tf.BLUE)
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var fill: Shader? = null
@@ -315,7 +315,8 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
     init {
         setWillNotDraw(false)
         // 26 Nov (owner): the video button is white with a black camera (was purple with a white camera)
-        icon.setImageDrawable(if (video) Tf.lu(Lu.Video, Ui.c("#111111"), 19f, 2.1f) else Tf.lu(RC.PHONE, RC.softInk, 18f, 2.1f))
+        // 27 Nov (owner's Recent design): rounded squares — Voice light purple with a purple phone, Video black with a white camera
+        icon.setImageDrawable(if (video) Tf.lu(Lu.Video, Color.WHITE, 19f, 2.1f) else Tf.lu(RC.PHONE, Ui.c("#6C2BD9"), 18f, 2.1f))
         addView(icon, LayoutParams(Ui.dpi(if (video) 19f else 18f), Ui.dpi(if (video) 19f else 18f), Gravity.CENTER))
         loader.visibility = GONE
         addView(loader, LayoutParams(Ui.dpi(19f), Ui.dpi(19f), Gravity.CENTER))
@@ -377,15 +378,13 @@ class RecentCallBtn(ctx: Context, val video: Boolean) : FrameLayout(ctx) {
 
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
+        val r = Ui.dp(10f)
         if (video) {
-            // flat, no glow under it (26 Nov, the owner's templates)
-            // white with a thin lavender ring, so it still shows on the white card
-            p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
-            p.color = Color.WHITE; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
+            p.color = Ui.c("#111111"); c.drawRoundRect(0f, 0f, w, h, r, r, p)
         } else {
-            // the voice button white too, like the video one (owner, 27 Nov); its phone stays purple
-            p.color = RC.line; c.drawCircle(w / 2f, h / 2f, w / 2f, p)
-            p.color = Color.WHITE; c.drawCircle(w / 2f, h / 2f, w / 2f - Ui.dp(1f), p)
+            p.color = Ui.c("#E6DCFB"); c.drawRoundRect(0f, 0f, w, h, r, r, p)
+            val e = Ui.dp(1f)
+            p.color = Ui.c("#F3EFFC"); c.drawRoundRect(e, e, w - e, h - e, r - e, r - e, p)
         }
     }
 }

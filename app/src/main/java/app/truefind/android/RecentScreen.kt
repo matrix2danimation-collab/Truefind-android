@@ -42,8 +42,9 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     class Row(
         val otherId: String, val name: String, val age: String, val photo: String, val full: String, val verified: Boolean,
         val online: Boolean, val busy: Boolean, val lastSeen: String, val type: String, val out: Boolean, val status: String, val time: String,
+        val duration: Int = 0,
     ) {
-        val sig: String get() = listOf(otherId, name, photo, online, busy, lastSeen, time, status, type, out).joinToString("|")
+        val sig: String get() = listOf(otherId, name, photo, online, busy, lastSeen, time, status, type, out, duration).joinToString("|")
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -69,6 +70,9 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     private val scroll = ScrollView(ctx)
     private val column = RecentMaxWidth(ctx, 480f)
     private val listBox = LinearLayout(ctx)
+    private val seg = LinearLayout(ctx)
+    /** All / Voice / Video */
+    private var filter = "all"
     private val spinner = PullSpinner(ctx)
     private val rows = HashMap<String, RowView>()
     private val callBtns = ArrayList<Pair<String, RecentCallBtn>>()
@@ -98,17 +102,23 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         content.addView(column, LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL))
 
         // 27 Nov (owner): no purple behind the title any more — "Call Back" and its small line in black on the page
+        // 27 Nov (owner's "Recent" design): "Recent", its line, then All / Voice / Video on a light track
         val top = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(Ui.dpi(20f), Ui.dpi(36f), Ui.dpi(20f), Ui.dpi(6f))
-            contentDescription = "Call Back"
+            setPadding(Ui.dpi(20f), Ui.dpi(30f), Ui.dpi(20f), 0)
+            contentDescription = "Recent"
         }
-        top.addView(Tf.t(ctx, "Call Back", 20f, Ui.c("#111111")), LinearLayout.LayoutParams(-2, -2))
-        top.addView(Tf.t(ctx, "Your recent voice and video calls", 13.5f, Ui.c("#111111"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(4f) })
+        top.addView(Tf.t(ctx, "Recent", 21f, Ui.c("#111111")), LinearLayout.LayoutParams(-2, -2))
+        top.addView(Tf.t(ctx, "Your voice and video calls", 12f, Ui.c("#5F5673"), false), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(5f) })
+        seg.orientation = LinearLayout.HORIZONTAL
+        seg.background = Tf.box(Ui.c("#ECE8F4"), 12f, 0f, Color.TRANSPARENT)
+        seg.setPadding(Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f))
+        top.addView(seg, LinearLayout.LayoutParams(-1, Ui.dpi(44f)).apply { topMargin = Ui.dpi(16f) })
+        drawSeg()
         column.addView(top, LinearLayout.LayoutParams(-1, -2))
         listBox.orientation = LinearLayout.VERTICAL
         listBox.clipChildren = false; listBox.clipToPadding = false
-        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(28f); leftMargin = Ui.dpi(14f); rightMargin = Ui.dpi(14f) })
+        column.addView(listBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(4f); leftMargin = Ui.dpi(20f); rightMargin = Ui.dpi(20f) })
 
         // pull down at the top: the list loads again (five-dot True Find loader)
         spinner.elevation = Ui.dp(20f)
@@ -231,6 +241,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                 out = PR.truthy(c.opt("mine")),
                 status = if (stale) "missed" else status0,
                 time = PR.str(c.opt("at")),
+                duration = c.optInt("duration", 0),
             ))
         }
         return out
@@ -283,6 +294,37 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             return SimpleDateFormat("d MMM", IN).format(Date(at))
         }
 
+        /** TODAY / YESTERDAY / 25 NOV */
+        fun dayLabel(t: String?): String {
+            val at = Tf.ms(t, plainUtc = true)
+            if (at <= 0L) return "EARLIER"
+            val d = Calendar.getInstance().apply { timeInMillis = at }
+            val now = Calendar.getInstance()
+            fun same(a: Calendar, b: Calendar) = a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
+            if (same(d, now)) return "TODAY"
+            if (same(d, Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) })) return "YESTERDAY"
+            return SimpleDateFormat("d MMM yyyy", IN).format(Date(at)).uppercase(IN)
+        }
+
+        /** 9:40 pm */
+        fun clock(t: String?): String {
+            val at = Tf.ms(t, plainUtc = true)
+            return if (at <= 0L) "" else SimpleDateFormat("h:mm a", IN).format(Date(at)).lowercase(IN)
+        }
+
+        /** "seen 2 h ago", "seen yesterday", "seen 3 days ago" */
+        fun seenText(t: String?): String {
+            val at = Tf.ms(t, plainUtc = true)
+            if (at <= 0L) return ""
+            val m = (System.currentTimeMillis() - at) / 60000
+            if (m < 1) return "seen just now"
+            if (m < 60) return "seen $m min ago"
+            val h = m / 60
+            if (h < 24) return "seen $h h ago"
+            val dd = h / 24
+            return if (dd == 1L) "seen yesterday" else "seen $dd days ago"
+        }
+
         /** Online / Offline · 3h ago — never Busy / Free (owner, 23 Nov evening) */
         @Suppress("UNUSED_PARAMETER")
         fun statusOf(online: Boolean, busy: Boolean, lastSeen: String): Status =
@@ -303,24 +345,59 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
     }
 
     // ═════════════════ drawing the list ═════════════════
+    private fun drawSeg() {
+        val ctx = context
+        seg.removeAllViews()
+        for ((k, label) in listOf("all" to "All", "voice" to "Voice", "video" to "Video")) {
+            val on = filter == k
+            seg.addView(Tf.t(ctx, label, 12.5f, if (on) Ui.c("#111111") else Ui.c("#6B6880")).apply {
+                gravity = Gravity.CENTER
+                background = if (on) Tf.box(Color.WHITE, 9f, 0f, Color.TRANSPARENT) else null
+                elevation = if (on) Ui.dp(2f) else 0f
+                isClickable = true; isSelected = on
+                contentDescription = "$label calls"
+                setOnClickListener { if (filter != k) { filter = k; drawSeg(); render() } }
+            }, LinearLayout.LayoutParams(0, -1, 1f))
+        }
+    }
+
+    // ═════════════════ drawing the list ═════════════════
     private fun render() {
         val ctx = context
         listBox.removeAllViews()
         rows.clear(); callBtns.clear()
-        val list = calls
-        // 26 Nov (owner): all the calls sit together in ONE white card — no box per person, no lines between them
-        val oneCard = list != null && list.isNotEmpty()
-        listBox.background = if (oneCard) Tf.box(Color.WHITE, 18f, 1f, RC.line) else null
-        listBox.setPadding(0, if (oneCard) Ui.dpi(4f) else 0, 0, if (oneCard) Ui.dpi(4f) else 0)
+        listBox.background = null
+        listBox.setPadding(0, 0, 0, 0)
+        val all = calls
+        val list = all?.filter { filter == "all" || it.type == filter }
         when {
-            // loading: five grey boxes
-            list == null -> for (i in 0 until 5) listBox.addView(RecentShimmer(ctx, 16f, Ui.c("#F3EEFA"), Ui.c("#FBF8FE")), gapLp(i, Ui.dpi(78f)))
-            failed && list.isEmpty() -> listBox.addView(errorCard(), gapLp(0))
-            list.isEmpty() -> listBox.addView(emptyCard(), gapLp(0))
-            else -> list.forEachIndexed { i, r ->
-                val v = RowView(ctx, r)
-                rows[r.otherId] = v
-                listBox.addView(v, LinearLayout.LayoutParams(-1, -2))
+            all == null -> for (i in 0 until 5) listBox.addView(RecentShimmer(ctx, 16f, Ui.c("#EFEDF5"), Ui.c("#F9F8FC")), LinearLayout.LayoutParams(-1, Ui.dpi(72f)).apply { topMargin = Ui.dpi(if (i == 0) 20f else 8f) })
+            failed && all.isEmpty() -> listBox.addView(errorCard(), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(20f) })
+            all.isEmpty() -> listBox.addView(emptyCard(), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(20f) })
+            list!!.isEmpty() -> listBox.addView(Tf.t(ctx, if (filter == "voice") "No voice calls yet" else "No video calls yet", 14f, Ui.c("#6B6880"), false).apply { gravity = Gravity.CENTER },
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(40f) })
+            else -> {
+                // 27 Nov (owner): calls grouped by day — TODAY, YESTERDAY, then the date — each day in ONE white box,
+                // no lines between people; a new call simply joins its day's box
+                var day = ""
+                var card: LinearLayout? = null
+                for (r in list) {
+                    val d = dayLabel(r.time)
+                    if (d != day || card == null) {
+                        day = d
+                        listBox.addView(Tf.t(ctx, d, 10.5f, Ui.c("#6B6880")).apply { letterSpacing = 0.04f },
+                            LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(18f); bottomMargin = Ui.dpi(8f); leftMargin = Ui.dpi(2f) })
+                        card = LinearLayout(ctx).apply {
+                            orientation = LinearLayout.VERTICAL
+                            background = Tf.box(Color.WHITE, 16f, 1f, Ui.c("#EEEAF5"))
+                            setPadding(0, Ui.dpi(4f), 0, Ui.dpi(4f))
+                        }
+                        listBox.addView(card, LinearLayout.LayoutParams(-1, -2))
+                    }
+                    val v = RowView(ctx, r)
+                    rows[r.otherId] = v
+                    card.addView(v, LinearLayout.LayoutParams(-1, -2))
+                }
             }
         }
         refreshRowCalls()
@@ -377,35 +454,44 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             clipChildren = false; clipToPadding = false
             background = box
             box.setPicked(picked == r.otherId, false)
-            // the content sits 11 in from the box edge (13 on the left), in both looks (the web pads 1 less when the line is 2)
-            setPadding(Ui.dpi(13f), Ui.dpi(11f), Ui.dpi(11f), Ui.dpi(11f))
+            setPadding(Ui.dpi(10f), Ui.dpi(10f), Ui.dpi(10f), Ui.dpi(10f))
             val k = kindOf(r)
             val nm = r.name.ifEmpty { "Someone" }
-            // Recent never shows whether someone is online or offline (owner, 19 Nov): no status words, no status dot
-            contentDescription = "$nm. ${k.full}. Tap to see profile"
+            // 27 Nov (owner's Recent design): photo (or the first letter on a soft colour) with the status dot,
+            // name, "Voice · 12 min · 9:40 pm", and Online · Free / Online · Busy / Offline · seen …
+            val (stText, stColor, dot) = when {
+                r.online && r.busy -> Triple("Online · Busy", Ui.c("#DC2626"), Ui.c("#DC2626"))
+                r.online -> Triple("Online · Free", Ui.c("#16A34A"), Ui.c("#16A34A"))
+                else -> Triple(listOf("Offline", seenText(r.lastSeen)).filter { it.isNotEmpty() }.joinToString(" · "), Ui.c("#4A4560"), Ui.c("#9CA3AF"))
+            }
+            val kindWord = if (r.type == "video") "Video" else "Voice"
+            val mid = if (r.duration > 0 && r.status != "missed" && r.status != "declined") "${Math.max(1, (r.duration + 59) / 60)} min" else k.text
+            val line2 = listOf(kindWord, mid, clock(r.time)).filter { it.isNotEmpty() }.joinToString(" · ")
+            contentDescription = "$nm. $line2. $stText. Tap to see profile"
 
-            val face = RecentFace(ctx, 54f).apply { setPhoto(listOf(r.photo, r.full)) }
-            addView(face, LayoutParams(Ui.dpi(54f), Ui.dpi(54f)))
+            val face = FrameLayout(ctx).apply { clipChildren = false }
+            if (r.photo.isNotEmpty() || r.full.isNotEmpty()) {
+                face.addView(RecentFace(ctx, 44f).apply { setPhoto(listOf(r.photo, r.full)) }, FrameLayout.LayoutParams(Ui.dpi(44f), Ui.dpi(44f)))
+            } else {
+                val soft = intArrayOf(Ui.c("#E6DDFB"), Ui.c("#FBDDE6"), Ui.c("#DCE7FB"), Ui.c("#DDF3E4"), Ui.c("#FCE8D2"))
+                face.addView(Tf.t(ctx, nm.take(1).uppercase(), 14f, Ui.c("#3B2A5C")).apply {
+                    gravity = Gravity.CENTER
+                    background = Tf.circle(soft[Math.abs(r.otherId.hashCode()) % soft.size])
+                }, FrameLayout.LayoutParams(Ui.dpi(44f), Ui.dpi(44f)))
+            }
+            face.addView(View(ctx).apply {
+                background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(dot); setStroke(Ui.dpi(2f), Color.WHITE) }
+            }, FrameLayout.LayoutParams(Ui.dpi(11f), Ui.dpi(11f), Gravity.BOTTOM or Gravity.END).apply { bottomMargin = Ui.dpi(2f) })
+            addView(face, LayoutParams(Ui.dpi(44f), Ui.dpi(44f)))
 
             val col = LinearLayout(ctx).apply { orientation = VERTICAL }
-            // name, age (+ tick)
-            // name only — no age (owner, 26 Nov)
-            val nameT = Tf.t(ctx, nm, 16.5f, RC.ink).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
-            val l1 = RecentLine(ctx, Ui.dpi(24.75f)).add(nameT, shrinks = true)
-            if (r.verified) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, RC.purple, 16f, 2.2f)) }, 5f, Ui.dpi(16f), Ui.dpi(16f))
-            col.addView(l1, LayoutParams(-1, Ui.dpi(24.75f)))
-            // Outgoing / Incoming / Missed / No answer / Declined / You declined
-            // 26 Nov (owner): these two lines smaller — first 40 % (13.5 → 8.1, 12.5 → 7.5), then 15 % back up (→ 9.3, 8.6)
-            val kindT = Tf.t(ctx, k.text, 9.3f, if (k.color == RC.red) RC.red else RC.sub, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
-            val l2 = RecentLine(ctx, Ui.dpi(20.25f))
-                .add(ImageView(ctx).apply { setImageDrawable(Tf.lu(k.icon, k.color, 10f, 2.3f)) }, 0f, Ui.dpi(10f), Ui.dpi(10f))   // (26 Nov: 14 → 10, to go with the smaller words)
-                .add(kindT, 4f, shrinks = true)
-            col.addView(l2, LayoutParams(-1, Ui.dpi(20.25f)).apply { topMargin = Ui.dpi(2f) })
-            // the time of the call (no "Online · Free" / "Offline · …" before it)
-            val timeT = Tf.t(ctx, timeText(r.time), 8.6f, RC.gray, false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }
-            val l3 = RecentLine(ctx, Ui.dpi(19.5f))
-                .add(timeT, 0f, shrinks = true)
-            col.addView(l3, LayoutParams(-1, Ui.dpi(19.5f)).apply { topMargin = Ui.dpi(3f) })
+            val l1 = RecentLine(ctx, Ui.dpi(20f)).add(Tf.t(ctx, nm, 14f, Ui.c("#111111")).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END }, shrinks = true)
+            if (r.verified) l1.add(ImageView(ctx).apply { setImageDrawable(Tf.lu(Lu.BadgeCheck, RC.purple, 14f, 2.2f)) }, 4f, Ui.dpi(14f), Ui.dpi(14f))
+            col.addView(l1, LayoutParams(-1, Ui.dpi(20f)))
+            col.addView(Tf.t(ctx, line2, 12f, if (k.color == RC.red && r.duration <= 0) RC.red else Ui.c("#5F5673"), false).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END },
+                LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
+            col.addView(Tf.t(ctx, stText, 12f, stColor).apply { maxLines = 1; isSingleLine = true; ellipsize = TextUtils.TruncateAt.END },
+                LayoutParams(-1, -2).apply { topMargin = Ui.dpi(2f) })
             addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = Ui.dpi(12f) })
 
             for (type in listOf("voice", "video")) {
@@ -414,7 +500,7 @@ class RecentScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
                     setOnClickListener { startCall(r, type) }
                 }
                 callBtns.add("${r.otherId}-$type" to b)
-                addView(b, LayoutParams(Ui.dpi(42f), Ui.dpi(42f)).apply { leftMargin = Ui.dpi(12f) })
+                addView(b, LayoutParams(Ui.dpi(44f), Ui.dpi(44f)).apply { leftMargin = Ui.dpi(if (type == "voice") 8f else 6f) })
             }
             setOnClickListener { pick(r) }
         }
