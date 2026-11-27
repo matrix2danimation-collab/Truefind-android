@@ -236,7 +236,8 @@ object DefaultAvatar {
         val clip = Path().apply { addCircle(size / 2, size / 2, size / 2, Path.Direction.CW) }
         c.clipPath(clip)
         c.scale(size / 124f, size / 124f)
-        p.shader = RadialGradient(43.4f, 43.4f, 93f, Ui.c("#F5F3FF"), Ui.c("#C4B5FD"), Shader.TileMode.CLAMP)
+        // black and white (owner, 27 Nov; was lavender): light grey to darker grey, white figure
+        p.shader = RadialGradient(43.4f, 43.4f, 93f, Ui.c("#F2F2F2"), Ui.c("#9A9A9A"), Shader.TileMode.CLAMP)
         c.drawRect(0f, 0f, 124f, 124f, p)
         p.shader = null; p.color = Color.WHITE; p.alpha = (0.92f * 255).toInt()
         c.drawCircle(62f, 48f, 21f, p)

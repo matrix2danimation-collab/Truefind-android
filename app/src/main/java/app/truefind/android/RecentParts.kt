@@ -275,8 +275,8 @@ class RecentFace(ctx: Context, private val sizeDp: Float) : View(ctx) {
         val s = width.toFloat()
         val bw = Ui.dp(1.5f)
         p.shader = null
-        p.color = RC.line; c.drawCircle(s / 2f, s / 2f, s / 2f, p)
-        p.color = RC.soft; c.drawCircle(s / 2f, s / 2f, s / 2f - bw, p)
+        p.color = Ui.c("#E2E2E2"); c.drawCircle(s / 2f, s / 2f, s / 2f, p)   // grey ring (owner, 27 Nov: black and white)
+        p.color = Ui.c("#F2F2F2"); c.drawCircle(s / 2f, s / 2f, s / 2f - bw, p)
         val inner = s - 2f * bw
         val b = bmp
         if (b != null && !b.isRecycled) {
