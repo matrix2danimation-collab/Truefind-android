@@ -757,7 +757,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
         background = Tf.circle(Color.WHITE)
         elevation = Ui.dp(1.5f)
         contentDescription = "Back"
-        addView(ImageView(context).apply { setImageDrawable(PUi.lu(Lu.ArrowLeft, INK, 20f, 2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        addView(ImageView(context).apply { setImageDrawable(PUi.lu("<path d=\"M19 12H5\"/><path d=\"m12 19-7-7 7-7\"/>", INK, 20f, 2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         setOnClickListener { pages.historyBack() }
         Ui.pressable(this, .94f)
     }
@@ -919,7 +919,7 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             listRow(Lu.Lock, "Account privacy") { openPanel("privacy") },
             listRow(Lu.Bell, "Notification preferences") { openPanel("notifications") },
             listRow(Lu.HelpCircle, "Help & support") { openPanel("help") },
-            listRow(Lu.Info, "Terms & policies") { openPanel("legal") },
+            listRow(Lu.FileText, "Terms & policies") { openPanel("legal") },
         )), gap(12f))
         body.addView(listBox("", listOf(listRow(Lu.LogOut, "Log out") { openPanel("logout") })), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(20f) })
 
