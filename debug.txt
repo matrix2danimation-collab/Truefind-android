@@ -1,0 +1,793 @@
+== a01-overview
+11-28 13:03:31.084  3461  3461 I TFDBG   : tabbar center overview smooth=false laidOut=false
+11-28 13:03:31.492  3461  3461 I TFDBG   : tabbar place overview left=0 w=245 row=3190 bar=996 x=0 now=0
+11-28 13:03:33.039  3461  3767 I TFDBG   : slow frame #1 total=3883ms anim=0 layout=618 draw=7 sync=7 issue=1026 swap=137 gpu=151
+11-28 13:03:33.946  3461  3461 I TFDBG   : tabbar place overview left=0 w=245 row=3568 bar=996 x=0 now=0
+11-28 13:03:33.992  3461  3461 I TFDBG   : frames so far 1 (slow >100ms: 1, worst 3883ms)
+11-28 13:03:34.230  3461  3767 I TFDBG   : slow frame #2 total=2817ms anim=0 layout=51 draw=25 sync=0 issue=73 swap=103 gpu=102
+11-28 13:03:34.249  3461  3767 I TFDBG   : slow frame #3 total=250ms anim=0 layout=4 draw=0 sync=0 issue=2 swap=72 gpu=79
+11-28 13:03:34.496  3461  3461 I TFDBG   : preview open 
+11-28 13:03:35.991  3461  3461 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 3883ms)
+11-28 13:03:37.992  3461  3461 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 3883ms)
+11-28 13:03:39.993  3461  3461 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 3883ms)
+== a02-overview-end
+11-28 13:03:46.082  4448  4448 I TFDBG   : tabbar center overview smooth=false laidOut=false
+11-28 13:03:46.314  4448  4448 I TFDBG   : tabbar place overview left=0 w=245 row=3190 bar=996 x=0 now=0
+11-28 13:03:47.340  4448  4535 I TFDBG   : slow frame #1 total=2094ms anim=0 layout=247 draw=3 sync=0 issue=790 swap=109 gpu=109
+11-28 13:03:47.539  4448  4535 I TFDBG   : slow frame #2 total=1287ms anim=0 layout=0 draw=0 sync=0 issue=140 swap=38 gpu=37
+11-28 13:03:47.816  4448  4448 I TFDBG   : tabbar place overview left=0 w=245 row=3568 bar=996 x=0 now=0
+11-28 13:03:48.020  4448  4535 I TFDBG   : slow frame #3 total=636ms anim=0 layout=33 draw=13 sync=0 issue=66 swap=90 gpu=90
+11-28 13:03:48.196  4448  4448 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2094ms)
+11-28 13:03:49.054  4448  4535 I TFDBG   : slow frame #5 total=306ms anim=0 layout=0 draw=0 sync=2 issue=110 swap=187 gpu=187
+11-28 13:03:49.125  4448  4535 I TFDBG   : slow frame #6 total=350ms anim=0 layout=0 draw=0 sync=0 issue=20 swap=31 gpu=37
+11-28 13:03:49.170  4448  4535 I TFDBG   : slow frame #7 total=383ms anim=0 layout=0 draw=0 sync=0 issue=40 swap=4 gpu=14
+11-28 13:03:49.208  4448  4535 I TFDBG   : slow frame #8 total=166ms anim=0 layout=0 draw=0 sync=0 issue=41 swap=18 gpu=34
+11-28 13:03:50.195  4448  4448 I TFDBG   : preview open scrollend
+11-28 13:03:50.196  4448  4448 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 2094ms)
+11-28 13:03:52.196  4448  4448 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 2094ms)
+11-28 13:03:54.210  4448  4448 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 2094ms)
+== a03-growth
+11-28 13:03:58.432  4925  4925 I TFDBG   : tabbar center growth smooth=false laidOut=false
+11-28 13:03:58.653  4925  4925 I TFDBG   : tabbar place growth left=689 w=218 row=3190 bar=996 x=311 now=0
+11-28 13:03:59.959  4925  5004 I TFDBG   : slow frame #1 total=2778ms anim=0 layout=256 draw=7 sync=5 issue=1027 swap=139 gpu=139
+11-28 13:04:00.045  4925  5004 I TFDBG   : slow frame #2 total=1400ms anim=0 layout=0 draw=0 sync=24 issue=2 swap=15 gpu=23
+11-28 13:04:00.485  4925  4925 I TFDBG   : tabbar place growth left=689 w=218 row=3568 bar=996 x=311 now=311
+11-28 13:04:00.641  4925  4925 I TFDBG   : frames so far 2 (slow >100ms: 2, worst 2778ms)
+11-28 13:04:00.708  4925  5004 I TFDBG   : slow frame #3 total=651ms anim=0 layout=92 draw=12 sync=0 issue=76 swap=40 gpu=46
+11-28 13:04:01.577  4925  4925 I TFDBG   : preview open 
+11-28 13:04:02.642  4925  4925 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2778ms)
+11-28 13:04:04.643  4925  4925 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2778ms)
+11-28 13:04:06.643  4925  4925 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 2778ms)
+== a04-growth-more
+11-28 13:04:10.952  5212  5212 I TFDBG   : tabbar center growth smooth=false laidOut=false
+11-28 13:04:11.316  5212  5212 I TFDBG   : tabbar place growth left=689 w=218 row=3190 bar=996 x=311 now=0
+11-28 13:04:12.591  5212  5295 I TFDBG   : slow frame #1 total=3016ms anim=0 layout=308 draw=18 sync=4 issue=1065 swap=123 gpu=128
+11-28 13:04:13.220  5212  5212 I TFDBG   : tabbar place growth left=689 w=218 row=3568 bar=996 x=311 now=311
+11-28 13:04:13.285  5212  5295 I TFDBG   : slow frame #2 total=2066ms anim=1 layout=14 draw=6 sync=3 issue=10 swap=18 gpu=29
+11-28 13:04:13.457  5212  5212 I TFDBG   : frames so far 2 (slow >100ms: 2, worst 3016ms)
+11-28 13:04:13.768  5212  5295 I TFDBG   : slow frame #3 total=458ms anim=0 layout=121 draw=18 sync=0 issue=36 swap=93 gpu=92
+11-28 13:04:14.012  5212  5295 I TFDBG   : slow frame #5 total=138ms anim=0 layout=0 draw=2 sync=8 issue=31 swap=28 gpu=28
+11-28 13:04:14.110  5212  5295 I TFDBG   : slow frame #6 total=347ms anim=0 layout=1 draw=6 sync=2 issue=144 swap=72 gpu=72
+11-28 13:04:14.165  5212  5295 I TFDBG   : slow frame #7 total=350ms anim=0 layout=0 draw=0 sync=0 issue=27 swap=36 gpu=42
+11-28 13:04:14.234  5212  5295 I TFDBG   : slow frame #8 total=346ms anim=0 layout=0 draw=0 sync=2 issue=13 swap=51 gpu=51
+11-28 13:04:14.309  5212  5295 I TFDBG   : slow frame #9 total=216ms anim=0 layout=0 draw=0 sync=0 issue=9 swap=62 gpu=76
+11-28 13:04:15.190  5212  5212 I TFDBG   : preview open scroll
+11-28 13:04:15.458  5212  5212 I TFDBG   : frames so far 9 (slow >100ms: 8, worst 3016ms)
+11-28 13:04:17.458  5212  5212 I TFDBG   : frames so far 9 (slow >100ms: 8, worst 3016ms)
+== a05-verify-creators
+11-28 13:04:23.012  5745  5745 I TFDBG   : tabbar center verify smooth=false laidOut=false
+11-28 13:04:23.153  5745  5745 I TFDBG   : tabbar place verify left=923 w=194 row=3190 bar=996 x=533 now=0
+11-28 13:04:24.110  5745  5860 I TFDBG   : slow frame #1 total=2050ms anim=0 layout=153 draw=8 sync=0 issue=806 swap=70 gpu=84
+11-28 13:04:24.369  5745  5860 I TFDBG   : slow frame #2 total=1224ms anim=0 layout=0 draw=0 sync=0 issue=160 swap=14 gpu=14
+11-28 13:04:24.823  5745  5745 I TFDBG   : tabbar place verify left=923 w=257 row=3568 bar=996 x=564 now=533
+11-28 13:04:25.031  5745  5860 I TFDBG   : slow frame #3 total=750ms anim=0 layout=60 draw=35 sync=0 issue=100 swap=39 gpu=42
+11-28 13:04:25.230  5745  5860 I TFDBG   : slow frame #4 total=350ms anim=0 layout=16 draw=12 sync=34 issue=92 swap=47 gpu=59
+11-28 13:04:25.300  5745  5745 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 2050ms)
+11-28 13:04:25.314  5745  5860 I TFDBG   : slow frame #5 total=395ms anim=0 layout=1 draw=1 sync=9 issue=44 swap=68 gpu=68
+11-28 13:04:25.340  5745  5860 I TFDBG   : slow frame #6 total=268ms anim=0 layout=0 draw=0 sync=1 issue=3 swap=18 gpu=18
+11-28 13:04:26.080  5745  5745 I TFDBG   : preview open 
+11-28 13:04:27.300  5745  5745 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 2050ms)
+11-28 13:04:29.300  5745  5745 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 2050ms)
+== a06-verify-creator-more
+11-28 13:04:34.408  6048  6048 I TFDBG   : tabbar center verify smooth=false laidOut=false
+11-28 13:04:34.540  6048  6048 I TFDBG   : tabbar place verify left=923 w=194 row=3190 bar=996 x=533 now=0
+11-28 13:04:35.603  6048  6114 I TFDBG   : slow frame #1 total=1987ms anim=0 layout=178 draw=7 sync=0 issue=828 swap=129 gpu=130
+11-28 13:04:35.739  6048  6114 I TFDBG   : slow frame #2 total=1184ms anim=0 layout=0 draw=0 sync=3 issue=11 swap=14 gpu=14
+11-28 13:04:36.210  6048  6048 I TFDBG   : tabbar place verify left=923 w=257 row=3568 bar=996 x=564 now=533
+11-28 13:04:36.619  6048  6114 I TFDBG   : slow frame #3 total=766ms anim=0 layout=63 draw=20 sync=0 issue=124 swap=60 gpu=76
+11-28 13:04:36.702  6048  6114 I TFDBG   : slow frame #4 total=466ms anim=0 layout=2 draw=1 sync=11 issue=183 swap=64 gpu=71
+11-28 13:04:36.735  6048  6048 I TFDBG   : frames so far 4 (slow >100ms: 4, worst 1987ms)
+11-28 13:04:36.767  6048  6114 I TFDBG   : slow frame #5 total=483ms anim=0 layout=1 draw=0 sync=23 issue=2 swap=28 gpu=31
+11-28 13:04:36.776  6048  6114 I TFDBG   : slow frame #6 total=326ms anim=0 layout=0 draw=0 sync=0 issue=1 swap=28 gpu=27
+11-28 13:04:37.170  6048  6114 I TFDBG   : slow frame #8 total=133ms anim=0 layout=0 draw=0 sync=0 issue=44 swap=77 gpu=77
+11-28 13:04:37.229  6048  6114 I TFDBG   : slow frame #9 total=186ms anim=0 layout=0 draw=0 sync=33 issue=5 swap=31 gpu=31
+11-28 13:04:37.292  6048  6114 I TFDBG   : slow frame #10 total=211ms anim=0 layout=0 draw=16 sync=0 issue=8 swap=48 gpu=48
+11-28 13:04:37.354  6048  6114 I TFDBG   : slow frame #11 total=166ms anim=0 layout=0 draw=0 sync=0 issue=24 swap=38 gpu=46
+11-28 13:04:37.429  6048  6114 I TFDBG   : slow frame #12 total=169ms anim=0 layout=0 draw=0 sync=0 issue=23 swap=32 gpu=36
+11-28 13:04:37.438  6048  6114 I TFDBG   : slow frame #13 total=141ms anim=0 layout=0 draw=0 sync=0 issue=6 swap=35 gpu=35
+11-28 13:04:38.472  6048  6048 I TFDBG   : preview open scroll
+11-28 13:04:38.736  6048  6048 I TFDBG   : frames so far 13 (slow >100ms: 12, worst 1987ms)
+11-28 13:04:40.736  6048  6048 I TFDBG   : frames so far 13 (slow >100ms: 12, worst 1987ms)
+== a07-verify-reject
+11-28 13:04:45.075  6227  6227 I TFDBG   : tabbar center verify smooth=false laidOut=false
+11-28 13:04:45.161  6227  6227 I TFDBG   : tabbar place verify left=923 w=194 row=3190 bar=996 x=533 now=0
+11-28 13:04:45.964  6227  6287 I TFDBG   : slow frame #1 total=1319ms anim=0 layout=130 draw=6 sync=0 issue=610 swap=78 gpu=97
+11-28 13:04:46.076  6227  6287 I TFDBG   : slow frame #2 total=905ms anim=0 layout=0 draw=0 sync=0 issue=19 swap=26 gpu=26
+11-28 13:04:46.459  6227  6227 I TFDBG   : tabbar place verify left=923 w=257 row=3568 bar=996 x=564 now=533
+11-28 13:04:46.777  6227  6287 I TFDBG   : slow frame #3 total=684ms anim=0 layout=46 draw=29 sync=0 issue=126 swap=51 gpu=67
+11-28 13:04:46.878  6227  6287 I TFDBG   : slow frame #4 total=366ms anim=0 layout=2 draw=1 sync=3 issue=101 swap=47 gpu=60
+11-28 13:04:46.965  6227  6287 I TFDBG   : slow frame #5 total=445ms anim=0 layout=2 draw=2 sync=8 issue=45 swap=57 gpu=71
+11-28 13:04:46.979  6227  6287 I TFDBG   : slow frame #6 total=283ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=25 gpu=31
+11-28 13:04:47.102  6227  6227 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1319ms)
+11-28 13:04:47.898  6227  6287 I TFDBG   : slow frame #8 total=233ms anim=0 layout=0 draw=0 sync=0 issue=98 swap=38 gpu=55
+11-28 13:04:49.102  6227  6227 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 1319ms)
+11-28 13:04:49.135  6227  6227 I TFDBG   : preview open reject
+11-28 13:04:51.103  6227  6227 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 1319ms)
+11-28 13:04:53.103  6227  6227 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 1319ms)
+== a08-verify-hosts
+11-28 13:04:56.057  6396  6396 I TFDBG   : tabbar center verify smooth=false laidOut=false
+11-28 13:04:56.146  6396  6396 I TFDBG   : tabbar place verify left=923 w=194 row=3190 bar=996 x=533 now=0
+11-28 13:04:56.992  6396  6456 I TFDBG   : slow frame #1 total=1366ms anim=0 layout=116 draw=8 sync=0 issue=692 swap=67 gpu=79
+11-28 13:04:57.090  6396  6456 I TFDBG   : slow frame #2 total=968ms anim=0 layout=0 draw=0 sync=21 issue=1 swap=35 gpu=29
+11-28 13:04:57.456  6396  6396 I TFDBG   : tabbar place verify left=923 w=257 row=3568 bar=996 x=564 now=533
+11-28 13:04:57.778  6396  6456 I TFDBG   : slow frame #3 total=633ms anim=0 layout=33 draw=25 sync=0 issue=112 swap=43 gpu=53
+11-28 13:04:57.860  6396  6456 I TFDBG   : slow frame #4 total=366ms anim=0 layout=1 draw=1 sync=4 issue=128 swap=45 gpu=60
+11-28 13:04:57.932  6396  6456 I TFDBG   : slow frame #5 total=416ms anim=0 layout=34 draw=3 sync=3 issue=32 swap=48 gpu=61
+11-28 13:04:57.959  6396  6456 I TFDBG   : slow frame #6 total=236ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=19 gpu=27
+11-28 13:04:57.977  6396  6456 I TFDBG   : slow frame #7 total=122ms anim=0 layout=0 draw=0 sync=3 issue=7 swap=17 gpu=17
+11-28 13:04:58.081  6396  6396 I TFDBG   : frames so far 7 (slow >100ms: 7, worst 1366ms)
+11-28 13:05:00.082  6396  6396 I TFDBG   : frames so far 12 (slow >100ms: 7, worst 1366ms)
+11-28 13:05:00.143  6396  6396 I TFDBG   : preview open hosts
+11-28 13:05:02.083  6396  6396 I TFDBG   : frames so far 12 (slow >100ms: 7, worst 1366ms)
+11-28 13:05:04.084  6396  6396 I TFDBG   : frames so far 12 (slow >100ms: 7, worst 1366ms)
+== a09-verify-photos
+11-28 13:05:07.109  6551  6551 I TFDBG   : tabbar center verify smooth=false laidOut=false
+11-28 13:05:07.199  6551  6551 I TFDBG   : tabbar place verify left=923 w=194 row=3190 bar=996 x=533 now=0
+11-28 13:05:08.046  6551  6611 I TFDBG   : slow frame #1 total=1533ms anim=0 layout=134 draw=6 sync=0 issue=681 swap=78 gpu=89
+11-28 13:05:08.174  6551  6611 I TFDBG   : slow frame #2 total=983ms anim=0 layout=3 draw=0 sync=0 issue=19 swap=10 gpu=19
+11-28 13:05:08.563  6551  6551 I TFDBG   : tabbar place verify left=923 w=257 row=3568 bar=996 x=564 now=533
+11-28 13:05:08.901  6551  6611 I TFDBG   : slow frame #3 total=600ms anim=0 layout=48 draw=17 sync=0 issue=101 swap=53 gpu=63
+11-28 13:05:08.978  6551  6611 I TFDBG   : slow frame #4 total=383ms anim=0 layout=2 draw=1 sync=5 issue=151 swap=38 gpu=52
+11-28 13:05:09.011  6551  6611 I TFDBG   : slow frame #5 total=383ms anim=0 layout=2 draw=26 sync=5 issue=3 swap=28 gpu=37
+11-28 13:05:09.046  6551  6611 I TFDBG   : slow frame #6 total=266ms anim=0 layout=0 draw=0 sync=0 issue=0 swap=32 gpu=41
+11-28 13:05:09.132  6551  6551 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1533ms)
+11-28 13:05:09.855  6551  6611 I TFDBG   : slow frame #8 total=121ms anim=0 layout=6 draw=6 sync=0 issue=15 swap=45 gpu=51
+11-28 13:05:09.877  6551  6611 I TFDBG   : slow frame #9 total=166ms anim=0 layout=1 draw=0 sync=20 issue=14 swap=73 gpu=81
+11-28 13:05:11.133  6551  6551 I TFDBG   : frames so far 9 (slow >100ms: 8, worst 1533ms)
+11-28 13:05:11.177  6551  6551 I TFDBG   : preview open photos
+11-28 13:05:13.133  6551  6551 I TFDBG   : frames so far 9 (slow >100ms: 8, worst 1533ms)
+11-28 13:05:15.133  6551  6551 I TFDBG   : frames so far 9 (slow >100ms: 8, worst 1533ms)
+== a10-members
+11-28 13:05:18.007  6764  6764 I TFDBG   : tabbar center members smooth=false laidOut=false
+11-28 13:05:18.120  6764  6764 I TFDBG   : tabbar place members left=1133 w=247 row=3190 bar=996 x=769 now=0
+11-28 13:05:19.022  6764  6823 I TFDBG   : slow frame #1 total=1416ms anim=0 layout=166 draw=8 sync=0 issue=720 swap=67 gpu=77
+11-28 13:05:19.127  6764  6823 I TFDBG   : slow frame #2 total=1033ms anim=0 layout=0 draw=0 sync=10 issue=17 swap=76 gpu=49
+11-28 13:05:19.452  6764  6764 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:05:19.681  6764  6823 I TFDBG   : slow frame #3 total=532ms anim=0 layout=22 draw=7 sync=0 issue=20 swap=68 gpu=68
+11-28 13:05:19.764  6764  6823 I TFDBG   : slow frame #4 total=283ms anim=0 layout=2 draw=6 sync=10 issue=117 swap=45 gpu=56
+11-28 13:05:19.775  6764  6823 I TFDBG   : slow frame #5 total=283ms anim=0 layout=28 draw=1 sync=6 issue=1 swap=32 gpu=36
+11-28 13:05:19.824  6764  6823 I TFDBG   : slow frame #6 total=201ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=14 gpu=31
+11-28 13:05:20.054  6764  6764 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1416ms)
+11-28 13:05:21.053  6764  6764 I TFDBG   : preview open 
+11-28 13:05:22.054  6764  6764 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1416ms)
+11-28 13:05:24.054  6764  6764 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1416ms)
+== a11-members-search
+11-28 13:05:28.210  6962  6962 I TFDBG   : tabbar center members smooth=false laidOut=false
+11-28 13:05:28.295  6962  6962 I TFDBG   : tabbar place members left=1133 w=247 row=3190 bar=996 x=769 now=0
+11-28 13:05:29.260  6962  7024 I TFDBG   : slow frame #1 total=2167ms anim=0 layout=137 draw=9 sync=0 issue=782 swap=71 gpu=78
+11-28 13:05:29.801  6962  6962 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:05:30.019  6962  7024 I TFDBG   : slow frame #2 total=583ms anim=0 layout=61 draw=7 sync=0 issue=35 swap=36 gpu=52
+11-28 13:05:30.121  6962  7024 I TFDBG   : slow frame #3 total=268ms anim=0 layout=1 draw=1 sync=12 issue=117 swap=48 gpu=53
+11-28 13:05:30.145  6962  7024 I TFDBG   : slow frame #4 total=300ms anim=0 layout=3 draw=2 sync=8 issue=1 swap=44 gpu=43
+11-28 13:05:30.174  6962  7024 I TFDBG   : slow frame #5 total=233ms anim=0 layout=0 draw=0 sync=0 issue=0 swap=21 gpu=31
+11-28 13:05:30.240  6962  6962 I TFDBG   : frames so far 6 (slow >100ms: 5, worst 2167ms)
+11-28 13:05:32.241  6962  6962 I TFDBG   : frames so far 10 (slow >100ms: 5, worst 2167ms)
+11-28 13:05:32.265  6962  6962 I TFDBG   : preview open search
+11-28 13:05:34.242  6962  6962 I TFDBG   : frames so far 10 (slow >100ms: 5, worst 2167ms)
+11-28 13:05:36.241  6962  6962 I TFDBG   : frames so far 10 (slow >100ms: 5, worst 2167ms)
+== a12-members-phones
+11-28 13:05:39.307  7121  7121 I TFDBG   : tabbar center members smooth=false laidOut=false
+11-28 13:05:39.414  7121  7121 I TFDBG   : tabbar place members left=1133 w=247 row=3190 bar=996 x=769 now=0
+11-28 13:05:40.313  7121  7180 I TFDBG   : slow frame #1 total=1433ms anim=0 layout=139 draw=9 sync=0 issue=748 swap=70 gpu=75
+11-28 13:05:40.499  7121  7180 I TFDBG   : slow frame #2 total=1093ms anim=0 layout=4 draw=0 sync=1 issue=79 swap=31 gpu=31
+11-28 13:05:40.883  7121  7121 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:05:41.110  7121  7180 I TFDBG   : slow frame #3 total=583ms anim=0 layout=63 draw=7 sync=0 issue=32 swap=57 gpu=58
+11-28 13:05:41.214  7121  7180 I TFDBG   : slow frame #4 total=300ms anim=0 layout=1 draw=1 sync=19 issue=104 swap=65 gpu=77
+11-28 13:05:41.246  7121  7180 I TFDBG   : slow frame #5 total=323ms anim=0 layout=2 draw=2 sync=8 issue=2 swap=27 gpu=41
+11-28 13:05:41.270  7121  7180 I TFDBG   : slow frame #6 total=233ms anim=0 layout=0 draw=0 sync=0 issue=10 swap=19 gpu=27
+11-28 13:05:41.349  7121  7121 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1433ms)
+11-28 13:05:43.349  7121  7121 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1433ms)
+11-28 13:05:43.359  7121  7121 I TFDBG   : preview open phones
+11-28 13:05:45.349  7121  7121 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1433ms)
+11-28 13:05:47.350  7121  7121 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1433ms)
+== a13-member-sheet
+11-28 13:05:50.151  7279  7279 I TFDBG   : tabbar center members smooth=false laidOut=false
+11-28 13:05:50.242  7279  7279 I TFDBG   : tabbar place members left=1133 w=247 row=3190 bar=996 x=769 now=0
+11-28 13:05:51.065  7279  7340 I TFDBG   : slow frame #1 total=1366ms anim=0 layout=125 draw=9 sync=0 issue=653 swap=75 gpu=89
+11-28 13:05:51.207  7279  7340 I TFDBG   : slow frame #2 total=955ms anim=0 layout=0 draw=0 sync=32 issue=15 swap=47 gpu=47
+11-28 13:05:51.540  7279  7279 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:05:51.740  7279  7340 I TFDBG   : slow frame #3 total=544ms anim=0 layout=55 draw=11 sync=0 issue=23 swap=45 gpu=45
+11-28 13:05:51.823  7279  7340 I TFDBG   : slow frame #4 total=250ms anim=0 layout=4 draw=3 sync=21 issue=86 swap=55 gpu=63
+11-28 13:05:51.851  7279  7340 I TFDBG   : slow frame #5 total=250ms anim=0 layout=6 draw=0 sync=0 issue=3 swap=16 gpu=37
+11-28 13:05:51.884  7279  7340 I TFDBG   : slow frame #6 total=183ms anim=0 layout=0 draw=0 sync=4 issue=1 swap=21 gpu=24
+11-28 13:05:52.184  7279  7279 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1366ms)
+11-28 13:05:53.293  7279  7340 I TFDBG   : slow frame #10 total=267ms anim=0 layout=41 draw=16 sync=0 issue=10 swap=40 gpu=45
+11-28 13:05:53.348  7279  7340 I TFDBG   : slow frame #11 total=150ms anim=0 layout=0 draw=0 sync=16 issue=10 swap=48 gpu=61
+11-28 13:05:54.185  7279  7279 I TFDBG   : frames so far 11 (slow >100ms: 8, worst 1366ms)
+11-28 13:05:54.228  7279  7279 I TFDBG   : preview open member
+11-28 13:05:56.184  7279  7279 I TFDBG   : frames so far 11 (slow >100ms: 8, worst 1366ms)
+11-28 13:05:58.184  7279  7279 I TFDBG   : frames so far 11 (slow >100ms: 8, worst 1366ms)
+== a14-reports
+11-28 13:06:02.107  7450  7450 I TFDBG   : tabbar center reports smooth=false laidOut=false
+11-28 13:06:02.186  7450  7450 I TFDBG   : tabbar place reports left=1396 w=221 row=3190 bar=996 x=1019 now=0
+11-28 13:06:02.996  7450  7511 I TFDBG   : slow frame #1 total=1316ms anim=0 layout=129 draw=6 sync=0 issue=601 swap=108 gpu=118
+11-28 13:06:03.123  7450  7511 I TFDBG   : slow frame #2 total=933ms anim=0 layout=1 draw=0 sync=0 issue=3 swap=65 gpu=70
+11-28 13:06:03.446  7450  7450 I TFDBG   : tabbar place reports left=1459 w=284 row=3568 bar=996 x=1114 now=1019
+11-28 13:06:03.822  7450  7511 I TFDBG   : slow frame #3 total=700ms anim=0 layout=48 draw=12 sync=0 issue=231 swap=32 gpu=43
+11-28 13:06:03.929  7450  7511 I TFDBG   : slow frame #4 total=416ms anim=0 layout=1 draw=1 sync=8 issue=87 swap=36 gpu=48
+11-28 13:06:03.961  7450  7511 I TFDBG   : slow frame #5 total=433ms anim=0 layout=1 draw=29 sync=6 issue=2 swap=50 gpu=52
+11-28 13:06:03.964  7450  7511 I TFDBG   : slow frame #6 total=224ms anim=0 layout=0 draw=0 sync=0 issue=16 swap=25 gpu=21
+11-28 13:06:04.142  7450  7450 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1316ms)
+11-28 13:06:05.142  7450  7450 I TFDBG   : preview open 
+11-28 13:06:06.143  7450  7450 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1316ms)
+11-28 13:06:08.142  7450  7450 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1316ms)
+== a15-reports-chat
+11-28 13:06:10.819  7600  7600 I TFDBG   : tabbar center reports smooth=false laidOut=false
+11-28 13:06:10.902  7600  7600 I TFDBG   : tabbar place reports left=1396 w=221 row=3190 bar=996 x=1019 now=0
+11-28 13:06:11.710  7600  7660 I TFDBG   : slow frame #1 total=1316ms anim=0 layout=116 draw=15 sync=0 issue=643 swap=80 gpu=86
+11-28 13:06:11.845  7600  7660 I TFDBG   : slow frame #2 total=937ms anim=0 layout=0 draw=0 sync=0 issue=1 swap=32 gpu=57
+11-28 13:06:12.145  7600  7600 I TFDBG   : tabbar place reports left=1459 w=284 row=3568 bar=996 x=1114 now=1019
+11-28 13:06:12.461  7600  7660 I TFDBG   : slow frame #3 total=672ms anim=0 layout=39 draw=12 sync=0 issue=233 swap=31 gpu=31
+11-28 13:06:12.645  7600  7660 I TFDBG   : slow frame #4 total=425ms anim=0 layout=5 draw=8 sync=2 issue=91 swap=58 gpu=74
+11-28 13:06:12.662  7600  7660 I TFDBG   : slow frame #5 total=218ms anim=0 layout=0 draw=1 sync=3 issue=18 swap=8 gpu=19
+11-28 13:06:12.850  7600  7600 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1316ms)
+11-28 13:06:14.851  7600  7600 I TFDBG   : frames so far 9 (slow >100ms: 5, worst 1316ms)
+11-28 13:06:14.857  7600  7600 I TFDBG   : preview open chat
+11-28 13:06:16.850  7600  7600 I TFDBG   : frames so far 9 (slow >100ms: 5, worst 1316ms)
+== a16-reports-ban
+11-28 13:06:20.606  7762  7762 I TFDBG   : tabbar center reports smooth=false laidOut=false
+11-28 13:06:20.700  7762  7762 I TFDBG   : tabbar place reports left=1396 w=221 row=3190 bar=996 x=1019 now=0
+11-28 13:06:21.597  7762  7821 I TFDBG   : slow frame #1 total=1416ms anim=0 layout=87 draw=8 sync=1 issue=760 swap=92 gpu=101
+11-28 13:06:21.675  7762  7821 I TFDBG   : slow frame #2 total=979ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=16 gpu=16
+11-28 13:06:22.020  7762  7762 I TFDBG   : tabbar place reports left=1459 w=284 row=3568 bar=996 x=1114 now=1019
+11-28 13:06:22.314  7762  7821 I TFDBG   : slow frame #3 total=648ms anim=0 layout=54 draw=9 sync=0 issue=204 swap=31 gpu=46
+11-28 13:06:22.470  7762  7821 I TFDBG   : slow frame #4 total=383ms anim=0 layout=2 draw=1 sync=6 issue=78 swap=34 gpu=38
+11-28 13:06:22.479  7762  7821 I TFDBG   : slow frame #5 total=183ms anim=0 layout=0 draw=0 sync=2 issue=1 swap=32 gpu=32
+11-28 13:06:22.635  7762  7762 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1416ms)
+11-28 13:06:24.635  7762  7762 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1416ms)
+11-28 13:06:24.647  7762  7762 I TFDBG   : preview open ban
+11-28 13:06:26.635  7762  7762 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1416ms)
+== a17-experts
+11-28 13:06:30.401  7922  7922 I TFDBG   : tabbar center experts smooth=false laidOut=false
+11-28 13:06:30.486  7922  7922 I TFDBG   : tabbar place experts left=1633 w=217 row=3190 bar=996 x=1254 now=0
+11-28 13:06:31.218  7922  7979 I TFDBG   : slow frame #1 total=1233ms anim=0 layout=108 draw=6 sync=2 issue=574 swap=73 gpu=91
+11-28 13:06:31.303  7922  7979 I TFDBG   : slow frame #2 total=770ms anim=0 layout=0 draw=10 sync=0 issue=12 swap=8 gpu=10
+11-28 13:06:31.608  7922  7922 I TFDBG   : tabbar place experts left=1759 w=217 row=3568 bar=996 x=1380 now=1254
+11-28 13:06:31.974  7922  7979 I TFDBG   : slow frame #3 total=700ms anim=0 layout=26 draw=7 sync=0 issue=258 swap=48 gpu=62
+11-28 13:06:32.012  7922  7979 I TFDBG   : slow frame #4 total=350ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=8 gpu=8
+11-28 13:06:32.435  7922  7922 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 1233ms)
+11-28 13:06:33.436  7922  7922 I TFDBG   : preview open 
+11-28 13:06:34.435  7922  7922 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 1233ms)
+11-28 13:06:36.436  7922  7922 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 1233ms)
+== a18-experts-cases
+11-28 13:06:40.025  8086  8086 I TFDBG   : tabbar center experts smooth=false laidOut=false
+11-28 13:06:40.101  8086  8086 I TFDBG   : tabbar place experts left=1633 w=217 row=3190 bar=996 x=1254 now=0
+11-28 13:06:40.799  8086  8146 I TFDBG   : slow frame #1 total=1216ms anim=0 layout=93 draw=10 sync=0 issue=559 swap=74 gpu=82
+11-28 13:06:40.959  8086  8146 I TFDBG   : slow frame #2 total=869ms anim=0 layout=0 draw=0 sync=20 issue=13 swap=7 gpu=15
+11-28 13:06:41.234  8086  8086 I TFDBG   : tabbar place experts left=1759 w=217 row=3568 bar=996 x=1380 now=1254
+11-28 13:06:41.613  8086  8146 I TFDBG   : slow frame #3 total=687ms anim=0 layout=27 draw=11 sync=0 issue=281 swap=48 gpu=63
+11-28 13:06:41.646  8086  8146 I TFDBG   : slow frame #4 total=376ms anim=0 layout=0 draw=0 sync=0 issue=1 swap=35 gpu=13
+11-28 13:06:41.679  8086  8146 I TFDBG   : slow frame #5 total=375ms anim=0 layout=0 draw=0 sync=1 issue=4 swap=25 gpu=25
+11-28 13:06:42.050  8086  8086 I TFDBG   : frames so far 6 (slow >100ms: 5, worst 1216ms)
+11-28 13:06:44.050  8086  8086 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1216ms)
+11-28 13:06:44.068  8086  8086 I TFDBG   : preview open cases
+11-28 13:06:46.050  8086  8086 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1216ms)
+11-28 13:06:48.051  8086  8086 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1216ms)
+== a19-experts-all
+11-28 13:06:50.590  8243  8243 I TFDBG   : tabbar center experts smooth=false laidOut=false
+11-28 13:06:50.670  8243  8243 I TFDBG   : tabbar place experts left=1633 w=217 row=3190 bar=996 x=1254 now=0
+11-28 13:06:51.382  8243  8303 I TFDBG   : slow frame #1 total=1158ms anim=0 layout=119 draw=17 sync=0 issue=520 swap=78 gpu=78
+11-28 13:06:51.425  8243  8303 I TFDBG   : slow frame #2 total=750ms anim=0 layout=0 draw=0 sync=3 issue=4 swap=17 gpu=25
+11-28 13:06:51.766  8243  8243 I TFDBG   : tabbar place experts left=1759 w=217 row=3568 bar=996 x=1380 now=1254
+11-28 13:06:52.171  8243  8303 I TFDBG   : slow frame #3 total=747ms anim=0 layout=13 draw=11 sync=0 issue=298 swap=57 gpu=57
+11-28 13:06:52.215  8243  8303 I TFDBG   : slow frame #4 total=400ms anim=0 layout=0 draw=0 sync=0 issue=0 swap=22 gpu=32
+11-28 13:06:52.625  8243  8243 I TFDBG   : frames so far 5 (slow >100ms: 4, worst 1158ms)
+11-28 13:06:53.327  8243  8303 I TFDBG   : slow frame #7 total=152ms anim=0 layout=1 draw=0 sync=2 issue=30 swap=72 gpu=79
+11-28 13:06:54.625  8243  8243 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1158ms)
+11-28 13:06:54.645  8243  8243 I TFDBG   : preview open experts
+11-28 13:06:56.625  8243  8243 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1158ms)
+11-28 13:06:58.626  8243  8243 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1158ms)
+== a20-live
+11-28 13:07:01.135  8405  8405 I TFDBG   : tabbar center live smooth=false laidOut=false
+11-28 13:07:01.214  8405  8405 I TFDBG   : tabbar place live left=1866 w=166 row=3190 bar=996 x=1462 now=0
+11-28 13:07:01.969  8405  8466 I TFDBG   : slow frame #1 total=1260ms anim=0 layout=109 draw=8 sync=0 issue=589 swap=81 gpu=81
+11-28 13:07:02.083  8405  8466 I TFDBG   : slow frame #2 total=885ms anim=0 layout=0 draw=0 sync=0 issue=35 swap=15 gpu=28
+11-28 13:07:02.451  8405  8405 I TFDBG   : tabbar place live left=1992 w=229 row=3568 bar=996 x=1619 now=1462
+11-28 13:07:02.710  8405  8466 I TFDBG   : slow frame #3 total=600ms anim=0 layout=71 draw=7 sync=0 issue=155 swap=45 gpu=52
+11-28 13:07:02.811  8405  8466 I TFDBG   : slow frame #4 total=316ms anim=0 layout=1 draw=0 sync=4 issue=41 swap=52 gpu=61
+11-28 13:07:02.833  8405  8466 I TFDBG   : slow frame #5 total=340ms anim=0 layout=2 draw=0 sync=4 issue=3 swap=40 gpu=26
+11-28 13:07:02.849  8405  8466 I TFDBG   : slow frame #6 total=167ms anim=0 layout=28 draw=4 sync=0 issue=4 swap=16 gpu=21
+11-28 13:07:03.165  8405  8405 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1260ms)
+11-28 13:07:04.165  8405  8405 I TFDBG   : preview open 
+11-28 13:07:05.166  8405  8405 I TFDBG   : frames so far 9 (slow >100ms: 6, worst 1260ms)
+11-28 13:07:07.167  8405  8405 I TFDBG   : frames so far 11 (slow >100ms: 6, worst 1260ms)
+== a21-live-end
+11-28 13:07:11.063  8562  8562 I TFDBG   : tabbar center live smooth=false laidOut=false
+11-28 13:07:11.145  8562  8562 I TFDBG   : tabbar place live left=1866 w=166 row=3190 bar=996 x=1462 now=0
+11-28 13:07:11.953  8562  8619 I TFDBG   : slow frame #1 total=1283ms anim=0 layout=133 draw=4 sync=1 issue=624 swap=75 gpu=88
+11-28 13:07:12.138  8562  8619 I TFDBG   : slow frame #2 total=976ms anim=0 layout=0 draw=0 sync=6 issue=10 swap=132 gpu=132
+11-28 13:07:12.502  8562  8562 I TFDBG   : tabbar place live left=1992 w=229 row=3568 bar=996 x=1619 now=1462
+11-28 13:07:12.785  8562  8619 I TFDBG   : slow frame #3 total=789ms anim=0 layout=53 draw=9 sync=0 issue=173 swap=46 gpu=53
+11-28 13:07:12.878  8562  8619 I TFDBG   : slow frame #4 total=333ms anim=0 layout=6 draw=1 sync=4 issue=22 swap=48 gpu=58
+11-28 13:07:12.900  8562  8619 I TFDBG   : slow frame #5 total=133ms anim=0 layout=0 draw=0 sync=0 issue=2 swap=15 gpu=24
+11-28 13:07:13.097  8562  8562 I TFDBG   : frames so far 6 (slow >100ms: 5, worst 1283ms)
+11-28 13:07:15.098  8562  8562 I TFDBG   : frames so far 10 (slow >100ms: 5, worst 1283ms)
+11-28 13:07:15.105  8562  8562 I TFDBG   : preview open end
+11-28 13:07:17.099  8562  8562 I TFDBG   : frames so far 12 (slow >100ms: 5, worst 1283ms)
+== a22-payouts
+11-28 13:07:20.949  8721  8721 I TFDBG   : tabbar center payouts smooth=false laidOut=false
+11-28 13:07:21.026  8721  8721 I TFDBG   : tabbar place payouts left=2048 w=223 row=3190 bar=996 x=1672 now=0
+11-28 13:07:21.876  8721  8794 I TFDBG   : slow frame #1 total=1388ms anim=0 layout=115 draw=8 sync=0 issue=673 swap=86 gpu=92
+11-28 13:07:22.014  8721  8794 I TFDBG   : slow frame #2 total=983ms anim=0 layout=4 draw=0 sync=0 issue=22 swap=51 gpu=51
+11-28 13:07:22.348  8721  8721 I TFDBG   : tabbar place payouts left=2237 w=286 row=3568 bar=996 x=1893 now=1672
+11-28 13:07:22.634  8721  8794 I TFDBG   : slow frame #3 total=666ms anim=0 layout=43 draw=13 sync=0 issue=151 swap=74 gpu=83
+11-28 13:07:22.768  8721  8794 I TFDBG   : slow frame #4 total=333ms anim=0 layout=1 draw=1 sync=3 issue=31 swap=53 gpu=56
+11-28 13:07:22.829  8721  8794 I TFDBG   : slow frame #5 total=416ms anim=0 layout=0 draw=0 sync=1 issue=81 swap=30 gpu=36
+11-28 13:07:22.840  8721  8794 I TFDBG   : slow frame #6 total=226ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=26 gpu=28
+11-28 13:07:22.983  8721  8721 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1388ms)
+11-28 13:07:23.985  8721  8721 I TFDBG   : preview open 
+11-28 13:07:24.983  8721  8721 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1388ms)
+11-28 13:07:26.984  8721  8721 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1388ms)
+== a23-payouts-reject
+11-28 13:07:29.815  8885  8885 I TFDBG   : tabbar center payouts smooth=false laidOut=false
+11-28 13:07:29.910  8885  8885 I TFDBG   : tabbar place payouts left=2048 w=223 row=3190 bar=996 x=1672 now=0
+11-28 13:07:30.920  8885  8945 I TFDBG   : slow frame #1 total=1017ms anim=0 layout=0 draw=0 sync=0 issue=69 swap=16 gpu=34
+11-28 13:07:31.227  8885  8885 I TFDBG   : tabbar place payouts left=2237 w=286 row=3568 bar=996 x=1893 now=1672
+11-28 13:07:31.523  8885  8945 I TFDBG   : slow frame #2 total=633ms anim=0 layout=38 draw=12 sync=0 issue=133 swap=52 gpu=58
+11-28 13:07:31.650  8885  8945 I TFDBG   : slow frame #3 total=350ms anim=0 layout=1 draw=33 sync=2 issue=89 swap=47 gpu=65
+11-28 13:07:31.661  8885  8945 I TFDBG   : slow frame #4 total=396ms anim=0 layout=0 draw=0 sync=1 issue=13 swap=65 gpu=64
+11-28 13:07:31.710  8885  8945 I TFDBG   : slow frame #5 total=251ms anim=0 layout=1 draw=0 sync=1 issue=8 swap=24 gpu=27
+11-28 13:07:31.732  8885  8945 I TFDBG   : slow frame #6 total=136ms anim=0 layout=0 draw=0 sync=0 issue=9 swap=13 gpu=27
+11-28 13:07:31.854  8885  8885 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1017ms)
+11-28 13:07:32.518  8885  8945 I TFDBG   : slow frame #8 total=116ms anim=0 layout=0 draw=0 sync=0 issue=38 swap=49 gpu=63
+11-28 13:07:33.854  8885  8885 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 1017ms)
+11-28 13:07:33.866  8885  8885 I TFDBG   : preview open reject
+11-28 13:07:35.854  8885  8885 I TFDBG   : frames so far 8 (slow >100ms: 7, worst 1017ms)
+== a24-payouts-paid
+11-28 13:07:39.948  9043  9043 I TFDBG   : tabbar center payouts smooth=false laidOut=false
+11-28 13:07:40.049  9043  9043 I TFDBG   : tabbar place payouts left=2048 w=223 row=3190 bar=996 x=1672 now=0
+11-28 13:07:40.752  9043  9103 I TFDBG   : slow frame #1 total=1200ms anim=0 layout=125 draw=5 sync=0 issue=546 swap=67 gpu=74
+11-28 13:07:40.862  9043  9103 I TFDBG   : slow frame #2 total=844ms anim=8 layout=0 draw=0 sync=0 issue=33 swap=17 gpu=17
+11-28 13:07:41.223  9043  9043 I TFDBG   : tabbar place payouts left=2237 w=286 row=3568 bar=996 x=1893 now=1672
+11-28 13:07:41.458  9043  9103 I TFDBG   : slow frame #3 total=583ms anim=0 layout=62 draw=13 sync=0 issue=121 swap=49 gpu=58
+11-28 13:07:41.617  9043  9103 I TFDBG   : slow frame #4 total=283ms anim=0 layout=1 draw=1 sync=3 issue=36 swap=57 gpu=68
+11-28 13:07:41.672  9043  9103 I TFDBG   : slow frame #5 total=383ms anim=0 layout=0 draw=0 sync=0 issue=106 swap=31 gpu=37
+11-28 13:07:41.690  9043  9103 I TFDBG   : slow frame #6 total=266ms anim=0 layout=0 draw=0 sync=2 issue=2 swap=19 gpu=34
+11-28 13:07:41.986  9043  9043 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1200ms)
+11-28 13:07:43.987  9043  9043 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1200ms)
+11-28 13:07:44.002  9043  9043 I TFDBG   : preview open paid
+11-28 13:07:45.986  9043  9043 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1200ms)
+11-28 13:07:47.986  9043  9043 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1200ms)
+== a25-payouts-export
+11-28 13:07:50.679  9209  9209 I TFDBG   : tabbar center payouts smooth=false laidOut=false
+11-28 13:07:50.755  9209  9209 I TFDBG   : tabbar place payouts left=2048 w=223 row=3190 bar=996 x=1672 now=0
+11-28 13:07:51.533  9209  9270 I TFDBG   : slow frame #1 total=1283ms anim=0 layout=121 draw=5 sync=0 issue=605 swap=69 gpu=89
+11-28 13:07:51.717  9209  9270 I TFDBG   : slow frame #2 total=947ms anim=0 layout=0 draw=0 sync=0 issue=80 swap=28 gpu=28
+11-28 13:07:52.045  9209  9209 I TFDBG   : tabbar place payouts left=2237 w=286 row=3568 bar=996 x=1893 now=1672
+11-28 13:07:52.356  9209  9270 I TFDBG   : slow frame #3 total=650ms anim=0 layout=35 draw=9 sync=0 issue=128 swap=69 gpu=83
+11-28 13:07:52.458  9209  9270 I TFDBG   : slow frame #4 total=351ms anim=0 layout=1 draw=1 sync=6 issue=91 swap=46 gpu=50
+11-28 13:07:52.487  9209  9270 I TFDBG   : slow frame #5 total=387ms anim=0 layout=0 draw=0 sync=0 issue=15 swap=40 gpu=38
+11-28 13:07:52.508  9209  9270 I TFDBG   : slow frame #6 total=216ms anim=0 layout=0 draw=0 sync=5 issue=10 swap=12 gpu=12
+11-28 13:07:52.712  9209  9209 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1283ms)
+11-28 13:07:54.713  9209  9209 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1283ms)
+11-28 13:07:54.739  9209  9209 I TFDBG   : preview open export
+11-28 13:07:56.713  9209  9209 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1283ms)
+== a26-support
+11-28 13:08:00.592  9366  9366 I TFDBG   : tabbar center support smooth=false laidOut=false
+11-28 13:08:00.682  9366  9366 I TFDBG   : tabbar place support left=2287 w=223 row=3190 bar=996 x=1911 now=0
+11-28 13:08:01.477  9366  9426 I TFDBG   : slow frame #1 total=1316ms anim=0 layout=129 draw=14 sync=0 issue=610 swap=73 gpu=96
+11-28 13:08:01.567  9366  9426 I TFDBG   : slow frame #2 total=900ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=24 gpu=36
+11-28 13:08:01.791  9366  9366 I TFDBG   : tabbar place support left=2539 w=286 row=3568 bar=996 x=2195 now=1911
+11-28 13:08:01.886  9366  9426 I TFDBG   : slow frame #3 total=316ms anim=0 layout=28 draw=7 sync=0 issue=12 swap=25 gpu=41
+11-28 13:08:01.977  9366  9426 I TFDBG   : slow frame #4 total=123ms anim=0 layout=0 draw=0 sync=0 issue=20 swap=37 gpu=37
+11-28 13:08:01.985  9366  9426 I TFDBG   : slow frame #5 total=123ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=29 gpu=25
+11-28 13:08:02.039  9366  9426 I TFDBG   : slow frame #6 total=102ms anim=0 layout=0 draw=0 sync=0 issue=8 swap=15 gpu=21
+11-28 13:08:02.641  9366  9366 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1316ms)
+11-28 13:08:03.642  9366  9366 I TFDBG   : preview open 
+11-28 13:08:04.641  9366  9366 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1316ms)
+11-28 13:08:06.641  9366  9366 I TFDBG   : frames so far 10 (slow >100ms: 6, worst 1316ms)
+== a27-support-thread
+11-28 13:08:10.209  9516  9516 I TFDBG   : tabbar center support smooth=false laidOut=false
+11-28 13:08:10.334  9516  9516 I TFDBG   : tabbar place support left=2287 w=223 row=3190 bar=996 x=1911 now=0
+11-28 13:08:11.166  9516  9576 I TFDBG   : slow frame #1 total=1383ms anim=0 layout=123 draw=4 sync=0 issue=679 swap=73 gpu=93
+11-28 13:08:11.223  9516  9576 I TFDBG   : slow frame #2 total=933ms anim=0 layout=0 draw=0 sync=0 issue=17 swap=28 gpu=35
+11-28 13:08:11.461  9516  9516 I TFDBG   : tabbar place support left=2539 w=286 row=3568 bar=996 x=2195 now=1911
+11-28 13:08:11.582  9516  9576 I TFDBG   : slow frame #3 total=339ms anim=0 layout=23 draw=11 sync=0 issue=16 swap=32 gpu=32
+11-28 13:08:11.650  9516  9576 I TFDBG   : slow frame #4 total=150ms anim=0 layout=0 draw=0 sync=0 issue=13 swap=36 gpu=41
+11-28 13:08:11.673  9516  9576 I TFDBG   : slow frame #5 total=118ms anim=0 layout=0 draw=0 sync=0 issue=1 swap=16 gpu=20
+11-28 13:08:11.735  9516  9576 I TFDBG   : slow frame #6 total=101ms anim=0 layout=0 draw=0 sync=1 issue=20 swap=14 gpu=32
+11-28 13:08:12.252  9516  9516 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1383ms)
+11-28 13:08:13.264  9516  9576 I TFDBG   : slow frame #11 total=216ms anim=0 layout=9 draw=2 sync=0 issue=82 swap=35 gpu=51
+11-28 13:08:13.325  9516  9576 I TFDBG   : slow frame #12 total=166ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=36 gpu=43
+11-28 13:08:13.364  9516  9516 I TFDBG   : tabbar place support left=2539 w=286 row=3568 bar=996 x=2195 now=2195
+11-28 13:08:13.439  9516  9576 I TFDBG   : slow frame #13 total=166ms anim=0 layout=1 draw=0 sync=3 issue=58 swap=67 gpu=78
+11-28 13:08:13.459  9516  9576 I TFDBG   : slow frame #14 total=183ms anim=0 layout=4 draw=2 sync=0 issue=5 swap=40 gpu=55
+11-28 13:08:14.253  9516  9516 I TFDBG   : frames so far 14 (slow >100ms: 10, worst 1383ms)
+11-28 13:08:14.262  9516  9516 I TFDBG   : preview open thread
+11-28 13:08:16.254  9516  9516 I TFDBG   : frames so far 14 (slow >100ms: 10, worst 1383ms)
+11-28 13:08:18.255  9516  9516 I TFDBG   : frames so far 14 (slow >100ms: 10, worst 1383ms)
+== a28-support-deletion
+11-28 13:08:21.101  9685  9685 I TFDBG   : tabbar center support smooth=false laidOut=false
+11-28 13:08:21.200  9685  9685 I TFDBG   : tabbar place support left=2287 w=223 row=3190 bar=996 x=1911 now=0
+11-28 13:08:22.022  9685  9747 I TFDBG   : slow frame #1 total=1302ms anim=0 layout=124 draw=8 sync=0 issue=648 swap=78 gpu=78
+11-28 13:08:22.163  9685  9747 I TFDBG   : slow frame #2 total=969ms anim=0 layout=0 draw=0 sync=0 issue=15 swap=21 gpu=30
+11-28 13:08:22.481  9685  9685 I TFDBG   : tabbar place support left=2539 w=286 row=3568 bar=996 x=2195 now=1911
+11-28 13:08:22.565  9685  9747 I TFDBG   : slow frame #3 total=395ms anim=0 layout=16 draw=6 sync=0 issue=14 swap=29 gpu=29
+11-28 13:08:22.759  9685  9747 I TFDBG   : slow frame #4 total=245ms anim=0 layout=0 draw=0 sync=0 issue=59 swap=89 gpu=89
+11-28 13:08:22.785  9685  9747 I TFDBG   : slow frame #5 total=185ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=22 gpu=35
+11-28 13:08:22.824  9685  9747 I TFDBG   : slow frame #6 total=167ms anim=0 layout=0 draw=0 sync=6 issue=1 swap=22 gpu=38
+11-28 13:08:23.151  9685  9685 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1302ms)
+11-28 13:08:24.183  9685  9747 I TFDBG   : slow frame #10 total=250ms anim=0 layout=9 draw=2 sync=0 issue=135 swap=37 gpu=40
+11-28 13:08:24.228  9685  9685 I TFDBG   : tabbar place support left=2539 w=286 row=3568 bar=996 x=2195 now=2195
+11-28 13:08:24.252  9685  9747 I TFDBG   : slow frame #11 total=218ms anim=0 layout=0 draw=0 sync=29 issue=3 swap=21 gpu=21
+11-28 13:08:24.292  9685  9747 I TFDBG   : slow frame #12 total=116ms anim=0 layout=7 draw=2 sync=0 issue=1 swap=46 gpu=55
+11-28 13:08:25.151  9685  9685 I TFDBG   : frames so far 12 (slow >100ms: 9, worst 1302ms)
+11-28 13:08:25.161  9685  9685 I TFDBG   : preview open deletion
+11-28 13:08:27.152  9685  9685 I TFDBG   : frames so far 12 (slow >100ms: 9, worst 1302ms)
+11-28 13:08:29.152  9685  9685 I TFDBG   : frames so far 12 (slow >100ms: 9, worst 1302ms)
+== a29-errors
+11-28 13:08:31.866  9865  9865 I TFDBG   : tabbar center errors smooth=false laidOut=false
+11-28 13:08:32.063  9865  9865 I TFDBG   : tabbar place errors left=2526 w=197 row=3190 bar=996 x=2137 now=0
+11-28 13:08:32.781  9865  9924 I TFDBG   : slow frame #1 total=1316ms anim=0 layout=143 draw=8 sync=0 issue=597 swap=76 gpu=98
+11-28 13:08:32.881  9865  9924 I TFDBG   : slow frame #2 total=900ms anim=0 layout=0 draw=15 sync=8 issue=6 swap=49 gpu=52
+11-28 13:08:33.178  9865  9865 I TFDBG   : tabbar place errors left=2841 w=260 row=3568 bar=996 x=2484 now=2137
+11-28 13:08:33.291  9865  9924 I TFDBG   : slow frame #3 total=450ms anim=0 layout=40 draw=14 sync=0 issue=19 swap=30 gpu=39
+11-28 13:08:33.390  9865  9924 I TFDBG   : slow frame #4 total=150ms anim=0 layout=0 draw=1 sync=0 issue=31 swap=33 gpu=48
+11-28 13:08:33.418  9865  9924 I TFDBG   : slow frame #5 total=136ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=30 gpu=29
+11-28 13:08:33.428  9865  9924 I TFDBG   : slow frame #6 total=117ms anim=0 layout=0 draw=0 sync=0 issue=2 swap=26 gpu=28
+11-28 13:08:33.933  9865  9865 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1316ms)
+11-28 13:08:34.932  9865  9865 I TFDBG   : preview open 
+11-28 13:08:35.932  9865  9865 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1316ms)
+11-28 13:08:37.932  9865  9865 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1316ms)
+== a30-errors-details
+11-28 13:08:40.416 10018 10018 I TFDBG   : tabbar center errors smooth=false laidOut=false
+11-28 13:08:40.567 10018 10018 I TFDBG   : tabbar place errors left=2526 w=197 row=3190 bar=996 x=2137 now=0
+11-28 13:08:41.544 10018 10078 I TFDBG   : slow frame #1 total=1450ms anim=0 layout=130 draw=8 sync=0 issue=739 swap=74 gpu=93
+11-28 13:08:41.564 10018 10078 I TFDBG   : slow frame #2 total=993ms anim=0 layout=0 draw=0 sync=0 issue=44 swap=27 gpu=32
+11-28 13:08:41.862 10018 10018 I TFDBG   : tabbar place errors left=2841 w=260 row=3568 bar=996 x=2484 now=2137
+11-28 13:08:41.969 10018 10078 I TFDBG   : slow frame #3 total=462ms anim=0 layout=39 draw=12 sync=0 issue=19 swap=49 gpu=48
+11-28 13:08:42.076 10018 10078 I TFDBG   : slow frame #5 total=168ms anim=0 layout=0 draw=0 sync=0 issue=44 swap=42 gpu=41
+11-28 13:08:42.123 10018 10078 I TFDBG   : slow frame #6 total=119ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=15 gpu=29
+11-28 13:08:42.152 10018 10078 I TFDBG   : slow frame #7 total=116ms anim=0 layout=0 draw=0 sync=0 issue=1 swap=45 gpu=59
+11-28 13:08:42.511 10018 10018 I TFDBG   : frames so far 9 (slow >100ms: 6, worst 1450ms)
+11-28 13:08:43.317 10018 10078 I TFDBG   : slow frame #11 total=183ms anim=0 layout=0 draw=0 sync=0 issue=115 swap=41 gpu=46
+11-28 13:08:44.511 10018 10018 I TFDBG   : frames so far 11 (slow >100ms: 7, worst 1450ms)
+11-28 13:08:44.598 10018 10018 I TFDBG   : preview open details
+11-28 13:08:46.511 10018 10018 I TFDBG   : frames so far 11 (slow >100ms: 7, worst 1450ms)
+== a31-settings
+11-28 13:08:50.971 10208 10208 I TFDBG   : tabbar center settings smooth=false laidOut=false
+11-28 13:08:51.116 10208 10208 I TFDBG   : tabbar place settings left=2739 w=222 row=3190 bar=996 x=2216 now=0
+11-28 13:08:52.068 10208 10307 I TFDBG   : slow frame #1 total=1711ms anim=0 layout=158 draw=5 sync=0 issue=752 swap=102 gpu=102
+11-28 13:08:52.202 10208 10307 I TFDBG   : slow frame #2 total=1034ms anim=0 layout=0 draw=0 sync=26 issue=4 swap=10 gpu=27
+11-28 13:08:52.516 10208 10208 I TFDBG   : tabbar place settings left=3117 w=222 row=3568 bar=996 x=2594 now=2216
+11-28 13:08:52.799 10208 10307 I TFDBG   : slow frame #3 total=685ms anim=0 layout=40 draw=11 sync=0 issue=182 swap=32 gpu=37
+11-28 13:08:52.799 10208 10307 I TFDBG   : slow frame #4 total=271ms anim=7 layout=0 draw=0 sync=5 issue=2 swap=33 gpu=28
+11-28 13:08:52.985 10208 10307 I TFDBG   : slow frame #5 total=365ms anim=0 layout=0 draw=0 sync=3 issue=100 swap=56 gpu=56
+11-28 13:08:52.995 10208 10307 I TFDBG   : slow frame #6 total=217ms anim=0 layout=0 draw=0 sync=2 issue=1 swap=28 gpu=31
+11-28 13:08:53.061 10208 10208 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1711ms)
+11-28 13:08:54.060 10208 10208 I TFDBG   : preview open 
+11-28 13:08:55.061 10208 10208 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1711ms)
+11-28 13:08:57.061 10208 10208 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1711ms)
+== a32-settings-changed
+11-28 13:08:59.900 10410 10410 I TFDBG   : tabbar center settings smooth=false laidOut=false
+11-28 13:08:59.996 10410 10410 I TFDBG   : tabbar place settings left=2739 w=222 row=3190 bar=996 x=2216 now=0
+11-28 13:09:00.834 10410 10471 I TFDBG   : slow frame #1 total=1350ms anim=0 layout=149 draw=12 sync=0 issue=623 swap=114 gpu=115
+11-28 13:09:00.999 10410 10471 I TFDBG   : slow frame #2 total=1017ms anim=0 layout=0 draw=0 sync=42 issue=17 swap=58 gpu=66
+11-28 13:09:01.436 10410 10410 I TFDBG   : tabbar place settings left=3117 w=222 row=3568 bar=996 x=2594 now=2216
+11-28 13:09:01.682 10410 10471 I TFDBG   : slow frame #3 total=767ms anim=0 layout=51 draw=13 sync=0 issue=142 swap=35 gpu=34
+11-28 13:09:01.852 10410 10471 I TFDBG   : slow frame #4 total=353ms anim=0 layout=0 draw=0 sync=0 issue=66 swap=67 gpu=76
+11-28 13:09:01.864 10410 10471 I TFDBG   : slow frame #5 total=198ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=31 gpu=25
+11-28 13:09:01.943 10410 10410 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1350ms)
+11-28 13:09:02.592 10410 10471 I TFDBG   : slow frame #6 total=124ms anim=0 layout=24 draw=9 sync=0 issue=5 swap=20 gpu=20
+11-28 13:09:03.944 10410 10410 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1350ms)
+11-28 13:09:04.019 10410 10410 I TFDBG   : preview open change
+11-28 13:09:05.943 10410 10410 I TFDBG   : frames so far 6 (slow >100ms: 6, worst 1350ms)
+== a33-settings-confirm
+11-28 13:09:09.712 10561 10561 I TFDBG   : tabbar center settings smooth=false laidOut=false
+11-28 13:09:09.787 10561 10561 I TFDBG   : tabbar place settings left=2739 w=222 row=3190 bar=996 x=2216 now=0
+11-28 13:09:10.515 10561 10621 I TFDBG   : slow frame #1 total=1240ms anim=0 layout=118 draw=5 sync=0 issue=529 swap=114 gpu=125
+11-28 13:09:10.718 10561 10621 I TFDBG   : slow frame #2 total=926ms anim=0 layout=0 draw=0 sync=34 issue=84 swap=31 gpu=31
+11-28 13:09:11.030 10561 10561 I TFDBG   : tabbar place settings left=3117 w=222 row=3568 bar=996 x=2594 now=2216
+11-28 13:09:11.286 10561 10621 I TFDBG   : slow frame #3 total=700ms anim=0 layout=59 draw=11 sync=0 issue=151 swap=33 gpu=52
+11-28 13:09:11.461 10561 10621 I TFDBG   : slow frame #4 total=367ms anim=0 layout=0 draw=0 sync=0 issue=78 swap=64 gpu=72
+11-28 13:09:11.479 10561 10621 I TFDBG   : slow frame #5 total=216ms anim=0 layout=0 draw=0 sync=1 issue=2 swap=25 gpu=37
+11-28 13:09:11.742 10561 10561 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1240ms)
+11-28 13:09:12.416 10561 10621 I TFDBG   : slow frame #6 total=150ms anim=0 layout=25 draw=11 sync=0 issue=5 swap=25 gpu=37
+11-28 13:09:13.742 10561 10561 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1240ms)
+11-28 13:09:13.825 10561 10561 I TFDBG   : preview open confirm
+11-28 13:09:15.742 10561 10561 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1240ms)
+11-28 13:09:17.742 10561 10561 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1240ms)
+== a34-system
+11-28 13:09:20.611 10724 10724 I TFDBG   : tabbar center system smooth=false laidOut=false
+11-28 13:09:20.798 10724 10724 I TFDBG   : tabbar place system left=2977 w=213 row=3190 bar=996 x=2216 now=0
+11-28 13:09:21.651 10724 10782 I TFDBG   : slow frame #1 total=1466ms anim=0 layout=134 draw=16 sync=0 issue=669 swap=107 gpu=115
+11-28 13:09:21.831 10724 10782 I TFDBG   : slow frame #2 total=1067ms anim=0 layout=0 draw=0 sync=48 issue=73 swap=11 gpu=12
+11-28 13:09:22.187 10724 10724 I TFDBG   : tabbar place system left=3355 w=213 row=3568 bar=996 x=2594 now=2216
+11-28 13:09:22.301 10724 10782 I TFDBG   : slow frame #3 total=583ms anim=0 layout=55 draw=14 sync=0 issue=14 swap=31 gpu=43
+11-28 13:09:22.395 10724 10782 I TFDBG   : slow frame #4 total=168ms anim=0 layout=0 draw=0 sync=0 issue=33 swap=54 gpu=63
+11-28 13:09:22.453 10724 10782 I TFDBG   : slow frame #5 total=150ms anim=0 layout=0 draw=18 sync=0 issue=3 swap=16 gpu=20
+11-28 13:09:22.554 10724 10782 I TFDBG   : slow frame #6 total=237ms anim=0 layout=0 draw=0 sync=0 issue=86 swap=71 gpu=71
+11-28 13:09:22.564 10724 10782 I TFDBG   : slow frame #7 total=200ms anim=0 layout=0 draw=0 sync=0 issue=2 swap=27 gpu=27
+11-28 13:09:22.607 10724 10782 I TFDBG   : slow frame #8 total=200ms anim=0 layout=0 draw=0 sync=3 issue=6 swap=26 gpu=39
+11-28 13:09:22.716 10724 10724 I TFDBG   : frames so far 8 (slow >100ms: 8, worst 1466ms)
+11-28 13:09:23.715 10724 10724 I TFDBG   : preview open 
+11-28 13:09:24.715 10724 10724 I TFDBG   : frames so far 8 (slow >100ms: 8, worst 1466ms)
+11-28 13:09:26.715 10724 10724 I TFDBG   : frames so far 8 (slow >100ms: 8, worst 1466ms)
+== a35-system-jobs
+11-28 13:09:29.716 10877 10877 I TFDBG   : tabbar center system smooth=false laidOut=false
+11-28 13:09:29.885 10877 10877 I TFDBG   : tabbar place system left=2977 w=213 row=3190 bar=996 x=2216 now=0
+11-28 13:09:30.826 10877 10937 I TFDBG   : slow frame #1 total=1483ms anim=0 layout=147 draw=17 sync=0 issue=730 swap=82 gpu=92
+11-28 13:09:30.962 10877 10937 I TFDBG   : slow frame #2 total=1101ms anim=0 layout=0 draw=0 sync=0 issue=54 swap=42 gpu=51
+11-28 13:09:31.320 10877 10877 I TFDBG   : tabbar place system left=3355 w=213 row=3568 bar=996 x=2594 now=2216
+11-28 13:09:31.436 10877 10937 I TFDBG   : slow frame #3 total=550ms anim=0 layout=60 draw=12 sync=0 issue=14 swap=37 gpu=46
+11-28 13:09:31.554 10877 10937 I TFDBG   : slow frame #4 total=166ms anim=0 layout=0 draw=0 sync=0 issue=40 swap=42 gpu=51
+11-28 13:09:31.629 10877 10937 I TFDBG   : slow frame #5 total=251ms anim=0 layout=0 draw=0 sync=0 issue=74 swap=46 gpu=51
+11-28 13:09:31.664 10877 10937 I TFDBG   : slow frame #6 total=235ms anim=0 layout=11 draw=7 sync=0 issue=3 swap=25 gpu=34
+11-28 13:09:31.677 10877 10937 I TFDBG   : slow frame #7 total=143ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=29 gpu=26
+11-28 13:09:31.726 10877 10937 I TFDBG   : slow frame #8 total=116ms anim=0 layout=0 draw=0 sync=0 issue=12 swap=29 gpu=43
+11-28 13:09:31.823 10877 10877 I TFDBG   : frames so far 8 (slow >100ms: 8, worst 1483ms)
+11-28 13:09:32.991 10877 10937 I TFDBG   : slow frame #13 total=102ms anim=0 layout=0 draw=0 sync=1 issue=8 swap=37 gpu=37
+11-28 13:09:33.009 10877 10937 I TFDBG   : slow frame #14 total=116ms anim=0 layout=0 draw=0 sync=1 issue=4 swap=40 gpu=41
+11-28 13:09:33.096 10877 10937 I TFDBG   : slow frame #15 total=166ms anim=0 layout=0 draw=0 sync=1 issue=16 swap=44 gpu=61
+11-28 13:09:33.147 10877 10937 I TFDBG   : slow frame #16 total=150ms anim=0 layout=0 draw=0 sync=1 issue=6 swap=34 gpu=42
+11-28 13:09:33.148 10877 10937 I TFDBG   : slow frame #17 total=142ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=44 gpu=43
+11-28 13:09:33.824 10877 10877 I TFDBG   : frames so far 17 (slow >100ms: 13, worst 1483ms)
+11-28 13:09:33.824 10877 10877 I TFDBG   : preview open details
+11-28 13:09:35.823 10877 10877 I TFDBG   : frames so far 17 (slow >100ms: 13, worst 1483ms)
+== a36-system-end
+11-28 13:09:39.848 11037 11037 I TFDBG   : tabbar place system left=2977 w=213 row=3190 bar=996 x=2216 now=0
+11-28 13:09:40.795 11037 11094 I TFDBG   : slow frame #1 total=1500ms anim=0 layout=154 draw=20 sync=0 issue=729 swap=97 gpu=107
+11-28 13:09:40.894 11037 11094 I TFDBG   : slow frame #2 total=1066ms anim=0 layout=0 draw=0 sync=16 issue=4 swap=61 gpu=70
+11-28 13:09:41.279 11037 11037 I TFDBG   : tabbar place system left=3355 w=213 row=3568 bar=996 x=2594 now=2216
+11-28 13:09:41.389 11037 11094 I TFDBG   : slow frame #3 total=556ms anim=0 layout=37 draw=11 sync=0 issue=16 swap=30 gpu=30
+11-28 13:09:41.484 11037 11094 I TFDBG   : slow frame #4 total=167ms anim=0 layout=0 draw=0 sync=3 issue=41 swap=64 gpu=66
+11-28 13:09:41.563 11037 11094 I TFDBG   : slow frame #5 total=167ms anim=0 layout=0 draw=0 sync=0 issue=6 swap=22 gpu=28
+11-28 13:09:41.637 11037 11094 I TFDBG   : slow frame #6 total=266ms anim=0 layout=0 draw=0 sync=1 issue=79 swap=46 gpu=58
+11-28 13:09:41.678 11037 11094 I TFDBG   : slow frame #7 total=172ms anim=0 layout=0 draw=0 sync=1 issue=1 swap=31 gpu=25
+11-28 13:09:41.723 11037 11094 I TFDBG   : slow frame #8 total=200ms anim=0 layout=0 draw=0 sync=3 issue=4 swap=26 gpu=35
+11-28 13:09:41.728 11037 11094 I TFDBG   : slow frame #9 total=101ms anim=0 layout=0 draw=0 sync=0 issue=11 swap=31 gpu=31
+11-28 13:09:41.768 11037 11037 I TFDBG   : frames so far 9 (slow >100ms: 9, worst 1500ms)
+11-28 13:09:42.540 11037 11094 I TFDBG   : slow frame #13 total=150ms anim=0 layout=0 draw=0 sync=2 issue=8 swap=30 gpu=36
+11-28 13:09:42.575 11037 11094 I TFDBG   : slow frame #14 total=150ms anim=0 layout=0 draw=0 sync=0 issue=11 swap=46 gpu=60
+11-28 13:09:42.637 11037 11094 I TFDBG   : slow frame #15 total=134ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=32 gpu=45
+11-28 13:09:42.679 11037 11094 I TFDBG   : slow frame #16 total=151ms anim=0 layout=0 draw=0 sync=0 issue=12 swap=50 gpu=30
+11-28 13:09:42.697 11037 11094 I TFDBG   : slow frame #17 total=133ms anim=0 layout=0 draw=0 sync=0 issue=2 swap=37 gpu=45
+11-28 13:09:43.768 11037 11037 I TFDBG   : frames so far 17 (slow >100ms: 14, worst 1500ms)
+11-28 13:09:43.768 11037 11037 I TFDBG   : preview open scrollend
+11-28 13:09:45.768 11037 11037 I TFDBG   : frames so far 17 (slow >100ms: 14, worst 1500ms)
+== a37-health
+11-28 13:09:49.550 11194 11194 I TFDBG   : tabbar center health smooth=false laidOut=false
+11-28 13:09:49.652 11194 11194 I TFDBG   : tabbar place health left=261 w=204 row=3190 bar=996 x=0 now=0
+11-28 13:09:50.419 11194 11254 I TFDBG   : slow frame #1 total=1283ms anim=0 layout=125 draw=7 sync=0 issue=578 swap=109 gpu=113
+11-28 13:09:50.577 11194 11254 I TFDBG   : slow frame #2 total=950ms anim=0 layout=0 draw=0 sync=40 issue=4 swap=12 gpu=30
+11-28 13:09:50.864 11194 11194 I TFDBG   : tabbar place health left=261 w=204 row=3568 bar=996 x=0 now=0
+11-28 13:09:51.009 11194 11254 I TFDBG   : slow frame #3 total=460ms anim=0 layout=54 draw=10 sync=0 issue=47 swap=52 gpu=52
+11-28 13:09:51.586 11194 11194 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1283ms)
+11-28 13:09:52.587 11194 11194 I TFDBG   : preview open 
+11-28 13:09:53.586 11194 11194 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1283ms)
+11-28 13:09:55.587 11194 11194 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1283ms)
+== a38-health-more
+11-28 13:09:59.324 11349 11349 I TFDBG   : tabbar center health smooth=false laidOut=false
+11-28 13:09:59.430 11349 11349 I TFDBG   : tabbar place health left=261 w=204 row=3190 bar=996 x=0 now=0
+11-28 13:10:00.269 11349 11409 I TFDBG   : slow frame #1 total=1386ms anim=0 layout=121 draw=6 sync=0 issue=639 swap=116 gpu=137
+11-28 13:10:00.444 11349 11409 I TFDBG   : slow frame #2 total=1033ms anim=0 layout=0 draw=0 sync=0 issue=106 swap=4 gpu=18
+11-28 13:10:00.750 11349 11349 I TFDBG   : tabbar place health left=261 w=204 row=3568 bar=996 x=0 now=0
+11-28 13:10:00.933 11349 11409 I TFDBG   : slow frame #3 total=553ms anim=0 layout=65 draw=10 sync=0 issue=51 swap=84 gpu=88
+11-28 13:10:01.371 11349 11349 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1386ms)
+11-28 13:10:02.085 11349 11409 I TFDBG   : slow frame #7 total=107ms anim=0 layout=0 draw=0 sync=0 issue=21 swap=21 gpu=21
+11-28 13:10:02.088 11349 11409 I TFDBG   : slow frame #8 total=130ms anim=0 layout=0 draw=0 sync=0 issue=8 swap=31 gpu=22
+11-28 13:10:02.142 11349 11409 I TFDBG   : slow frame #9 total=115ms anim=0 layout=0 draw=0 sync=4 issue=1 swap=28 gpu=27
+11-28 13:10:02.216 11349 11409 I TFDBG   : slow frame #10 total=121ms anim=0 layout=0 draw=1 sync=0 issue=22 swap=26 gpu=33
+11-28 13:10:02.288 11349 11409 I TFDBG   : slow frame #11 total=116ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=42 gpu=47
+11-28 13:10:02.289 11349 11409 I TFDBG   : slow frame #12 total=136ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=36 gpu=34
+11-28 13:10:03.371 11349 11349 I TFDBG   : frames so far 13 (slow >100ms: 9, worst 1386ms)
+11-28 13:10:03.372 11349 11349 I TFDBG   : preview open scroll
+11-28 13:10:05.371 11349 11349 I TFDBG   : frames so far 13 (slow >100ms: 9, worst 1386ms)
+== a39-health-end
+11-28 13:10:09.047 11499 11499 I TFDBG   : tabbar center health smooth=false laidOut=false
+11-28 13:10:09.147 11499 11499 I TFDBG   : tabbar place health left=261 w=204 row=3190 bar=996 x=0 now=0
+11-28 13:10:09.879 11499 11557 I TFDBG   : slow frame #1 total=1233ms anim=0 layout=136 draw=5 sync=0 issue=525 swap=108 gpu=126
+11-28 13:10:09.922 11499 11557 I TFDBG   : slow frame #2 total=778ms anim=0 layout=0 draw=0 sync=1 issue=1 swap=11 gpu=11
+11-28 13:10:10.265 11499 11499 I TFDBG   : tabbar place health left=261 w=204 row=3568 bar=996 x=0 now=0
+11-28 13:10:10.481 11499 11557 I TFDBG   : slow frame #3 total=550ms anim=0 layout=29 draw=10 sync=0 issue=84 swap=81 gpu=90
+11-28 13:10:11.083 11499 11499 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1233ms)
+11-28 13:10:11.853 11499 11557 I TFDBG   : slow frame #8 total=184ms anim=0 layout=0 draw=0 sync=0 issue=51 swap=49 gpu=53
+11-28 13:10:11.918 11499 11557 I TFDBG   : slow frame #9 total=183ms anim=0 layout=0 draw=0 sync=0 issue=16 swap=27 gpu=36
+11-28 13:10:11.928 11499 11557 I TFDBG   : slow frame #10 total=186ms anim=0 layout=0 draw=0 sync=0 issue=4 swap=38 gpu=39
+11-28 13:10:11.999 11499 11557 I TFDBG   : slow frame #11 total=133ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=36 gpu=43
+11-28 13:10:12.029 11499 11557 I TFDBG   : slow frame #12 total=133ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=32 gpu=53
+11-28 13:10:13.083 11499 11499 I TFDBG   : frames so far 12 (slow >100ms: 8, worst 1233ms)
+11-28 13:10:13.084 11499 11499 I TFDBG   : preview open scrollend
+11-28 13:10:15.083 11499 11499 I TFDBG   : frames so far 12 (slow >100ms: 8, worst 1233ms)
+11-28 13:10:17.084 11499 11499 I TFDBG   : frames so far 12 (slow >100ms: 8, worst 1233ms)
+== a40-health-week
+11-28 13:10:19.972 11658 11658 I TFDBG   : tabbar center health smooth=false laidOut=false
+11-28 13:10:20.071 11658 11658 I TFDBG   : tabbar place health left=261 w=204 row=3190 bar=996 x=0 now=0
+11-28 13:10:20.783 11658 11720 I TFDBG   : slow frame #1 total=1208ms anim=0 layout=111 draw=14 sync=0 issue=538 swap=68 gpu=99
+11-28 13:10:20.847 11658 11720 I TFDBG   : slow frame #2 total=783ms anim=0 layout=0 draw=0 sync=24 issue=1 swap=6 gpu=17
+11-28 13:10:21.139 11658 11658 I TFDBG   : tabbar place health left=261 w=204 row=3568 bar=996 x=0 now=0
+11-28 13:10:21.290 11658 11720 I TFDBG   : slow frame #3 total=483ms anim=0 layout=56 draw=11 sync=0 issue=49 swap=73 gpu=82
+11-28 13:10:22.017 11658 11658 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1208ms)
+11-28 13:10:22.665 11658 11720 I TFDBG   : slow frame #4 total=132ms anim=0 layout=19 draw=8 sync=0 issue=2 swap=40 gpu=40
+11-28 13:10:23.014 11658 11720 I TFDBG   : slow frame #5 total=166ms anim=0 layout=31 draw=10 sync=0 issue=4 swap=20 gpu=29
+11-28 13:10:24.017 11658 11658 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1208ms)
+11-28 13:10:24.081 11658 11658 I TFDBG   : preview open week
+11-28 13:10:26.016 11658 11658 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1208ms)
+11-28 13:10:28.016 11658 11658 I TFDBG   : frames so far 5 (slow >100ms: 5, worst 1208ms)
+== a41-health-alerts
+11-28 13:10:31.760 11815 11815 I TFDBG   : tabbar center health smooth=false laidOut=false
+11-28 13:10:31.845 11815 11815 I TFDBG   : tabbar place health left=261 w=204 row=3190 bar=996 x=0 now=0
+11-28 13:10:32.545 11815 11875 I TFDBG   : slow frame #1 total=1190ms anim=0 layout=115 draw=6 sync=3 issue=531 swap=83 gpu=83
+11-28 13:10:32.656 11815 11875 I TFDBG   : slow frame #2 total=800ms anim=0 layout=0 draw=0 sync=5 issue=1 swap=18 gpu=21
+11-28 13:10:32.962 11815 11815 I TFDBG   : tabbar place health left=261 w=204 row=3568 bar=996 x=0 now=0
+11-28 13:10:33.126 11815 11875 I TFDBG   : slow frame #3 total=496ms anim=0 layout=49 draw=15 sync=0 issue=56 swap=57 gpu=57
+11-28 13:10:33.798 11815 11815 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1190ms)
+11-28 13:10:34.832 11815 11875 I TFDBG   : slow frame #6 total=183ms anim=0 layout=23 draw=6 sync=0 issue=4 swap=51 gpu=55
+11-28 13:10:34.849 11815 11875 I TFDBG   : slow frame #7 total=127ms anim=0 layout=0 draw=0 sync=0 issue=19 swap=62 gpu=58
+11-28 13:10:35.798 11815 11815 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1190ms)
+11-28 13:10:35.807 11815 11815 I TFDBG   : preview open alerts
+11-28 13:10:37.798 11815 11815 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1190ms)
+11-28 13:10:39.798 11815 11815 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1190ms)
+== a42-pages
+11-28 13:10:43.659 11980 11980 I TFDBG   : tabbar center pages smooth=false laidOut=false
+11-28 13:10:43.804 11980 11980 I TFDBG   : tabbar place pages left=481 w=192 row=3190 bar=996 x=90 now=0
+11-28 13:10:44.660 11980 12039 I TFDBG   : slow frame #1 total=1366ms anim=0 layout=149 draw=4 sync=0 issue=682 swap=87 gpu=102
+11-28 13:10:44.701 11980 12039 I TFDBG   : slow frame #2 total=933ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=36 gpu=47
+11-28 13:10:44.993 11980 11980 I TFDBG   : tabbar place pages left=481 w=192 row=3568 bar=996 x=90 now=90
+11-28 13:10:45.169 11980 12039 I TFDBG   : slow frame #3 total=526ms anim=0 layout=27 draw=9 sync=0 issue=36 swap=104 gpu=104
+11-28 13:10:45.712 11980 11980 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1366ms)
+11-28 13:10:46.712 11980 11980 I TFDBG   : preview open 
+11-28 13:10:47.713 11980 11980 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1366ms)
+11-28 13:10:49.713 11980 11980 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1366ms)
+== a43-pages-more
+11-28 13:10:53.366 12136 12136 I TFDBG   : tabbar center pages smooth=false laidOut=false
+11-28 13:10:53.448 12136 12136 I TFDBG   : tabbar place pages left=481 w=192 row=3190 bar=996 x=90 now=0
+11-28 13:10:54.259 12136 12197 I TFDBG   : slow frame #1 total=1323ms anim=0 layout=116 draw=15 sync=0 issue=600 swap=109 gpu=121
+11-28 13:10:54.418 12136 12197 I TFDBG   : slow frame #2 total=967ms anim=0 layout=0 draw=0 sync=11 issue=39 swap=38 gpu=50
+11-28 13:10:54.714 12136 12136 I TFDBG   : tabbar place pages left=481 w=192 row=3568 bar=996 x=90 now=90
+11-28 13:10:54.877 12136 12197 I TFDBG   : slow frame #3 total=557ms anim=0 layout=50 draw=9 sync=0 issue=39 swap=95 gpu=94
+11-28 13:10:55.415 12136 12136 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1323ms)
+11-28 13:10:56.200 12136 12197 I TFDBG   : slow frame #9 total=115ms anim=0 layout=0 draw=0 sync=0 issue=18 swap=24 gpu=24
+11-28 13:10:56.211 12136 12197 I TFDBG   : slow frame #10 total=129ms anim=0 layout=0 draw=0 sync=0 issue=15 swap=28 gpu=48
+11-28 13:10:56.247 12136 12197 I TFDBG   : slow frame #11 total=106ms anim=0 layout=0 draw=27 sync=0 issue=2 swap=26 gpu=16
+11-28 13:10:56.302 12136 12197 I TFDBG   : slow frame #13 total=105ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=41 gpu=40
+11-28 13:10:57.415 12136 12136 I TFDBG   : frames so far 13 (slow >100ms: 7, worst 1323ms)
+11-28 13:10:57.416 12136 12136 I TFDBG   : preview open scroll
+11-28 13:10:59.415 12136 12136 I TFDBG   : frames so far 13 (slow >100ms: 7, worst 1323ms)
+11-28 13:11:01.416 12136 12136 I TFDBG   : frames so far 13 (slow >100ms: 7, worst 1323ms)
+== a44-page-detail
+11-28 13:11:04.057 12294 12294 I TFDBG   : tabbar center pages smooth=false laidOut=false
+11-28 13:11:04.135 12294 12294 I TFDBG   : tabbar place pages left=481 w=192 row=3190 bar=996 x=90 now=0
+11-28 13:11:04.953 12294 12354 I TFDBG   : slow frame #1 total=1317ms anim=0 layout=99 draw=7 sync=0 issue=626 swap=106 gpu=126
+11-28 13:11:05.016 12294 12354 I TFDBG   : slow frame #2 total=903ms anim=0 layout=0 draw=0 sync=0 issue=8 swap=16 gpu=29
+11-28 13:11:05.296 12294 12294 I TFDBG   : tabbar place pages left=481 w=192 row=3568 bar=996 x=90 now=90
+11-28 13:11:05.460 12294 12354 I TFDBG   : slow frame #3 total=466ms anim=0 layout=49 draw=13 sync=0 issue=38 swap=88 gpu=100
+11-28 13:11:06.085 12294 12294 I TFDBG   : frames so far 3 (slow >100ms: 3, worst 1317ms)
+11-28 13:11:07.064 12294 12354 I TFDBG   : slow frame #6 total=136ms anim=0 layout=15 draw=4 sync=0 issue=26 swap=53 gpu=58
+11-28 13:11:07.151 12294 12354 I TFDBG   : slow frame #7 total=216ms anim=0 layout=0 draw=0 sync=5 issue=53 swap=59 gpu=76
+11-28 13:11:08.085 12294 12294 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1317ms)
+11-28 13:11:08.115 12294 12294 I TFDBG   : preview open page
+11-28 13:11:10.085 12294 12294 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1317ms)
+11-28 13:11:12.085 12294 12294 I TFDBG   : frames so far 7 (slow >100ms: 5, worst 1317ms)
+== a45-issues-calls
+11-28 13:11:15.971 12458 12458 I TFDBG   : tabbar center errors smooth=false laidOut=false
+11-28 13:11:16.114 12458 12458 I TFDBG   : tabbar place errors left=2526 w=197 row=3190 bar=996 x=2137 now=0
+11-28 13:11:16.998 12458 12516 I TFDBG   : slow frame #1 total=1450ms anim=0 layout=137 draw=16 sync=0 issue=689 swap=68 gpu=85
+11-28 13:11:17.094 12458 12516 I TFDBG   : slow frame #2 total=1000ms anim=0 layout=0 draw=0 sync=2 issue=26 swap=20 gpu=44
+11-28 13:11:17.411 12458 12458 I TFDBG   : tabbar place errors left=2841 w=260 row=3568 bar=996 x=2484 now=2137
+11-28 13:11:17.507 12458 12516 I TFDBG   : slow frame #3 total=469ms anim=0 layout=46 draw=9 sync=0 issue=12 swap=53 gpu=52
+11-28 13:11:17.615 12458 12516 I TFDBG   : slow frame #5 total=150ms anim=0 layout=0 draw=0 sync=0 issue=22 swap=43 gpu=57
+11-28 13:11:17.630 12458 12516 I TFDBG   : slow frame #6 total=113ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=39 gpu=31
+11-28 13:11:17.685 12458 12516 I TFDBG   : slow frame #7 total=121ms anim=0 layout=0 draw=0 sync=1 issue=3 swap=11 gpu=19
+11-28 13:11:18.049 12458 12458 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1450ms)
+11-28 13:11:18.698 12458 12516 I TFDBG   : slow frame #8 total=133ms anim=0 layout=21 draw=6 sync=0 issue=2 swap=24 gpu=39
+11-28 13:11:20.048 12458 12458 I TFDBG   : frames so far 9 (slow >100ms: 7, worst 1450ms)
+11-28 13:11:20.117 12458 12458 I TFDBG   : preview open calls
+11-28 13:11:22.048 12458 12458 I TFDBG   : frames so far 9 (slow >100ms: 7, worst 1450ms)
+11-28 13:11:24.049 12458 12458 I TFDBG   : frames so far 9 (slow >100ms: 7, worst 1450ms)
+== a46-issue-details
+11-28 13:11:26.691 12617 12617 I TFDBG   : tabbar center errors smooth=false laidOut=false
+11-28 13:11:26.834 12617 12617 I TFDBG   : tabbar place errors left=2526 w=197 row=3190 bar=996 x=2137 now=0
+11-28 13:11:27.675 12617 12677 I TFDBG   : slow frame #1 total=1367ms anim=0 layout=137 draw=14 sync=0 issue=663 swap=67 gpu=74
+11-28 13:11:27.760 12617 12677 I TFDBG   : slow frame #2 total=952ms anim=0 layout=0 draw=0 sync=0 issue=31 swap=12 gpu=27
+11-28 13:11:28.055 12617 12617 I TFDBG   : tabbar place errors left=2841 w=260 row=3568 bar=996 x=2484 now=2137
+11-28 13:11:28.166 12617 12677 I TFDBG   : slow frame #3 total=401ms anim=0 layout=59 draw=9 sync=0 issue=24 swap=24 gpu=30
+11-28 13:11:28.245 12617 12677 I TFDBG   : slow frame #4 total=137ms anim=0 layout=0 draw=0 sync=0 issue=14 swap=38 gpu=43
+11-28 13:11:28.274 12617 12677 I TFDBG   : slow frame #5 total=134ms anim=0 layout=0 draw=0 sync=1 issue=5 swap=19 gpu=28
+11-28 13:11:28.302 12617 12677 I TFDBG   : slow frame #6 total=106ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=16 gpu=27
+11-28 13:11:28.760 12617 12617 I TFDBG   : frames so far 8 (slow >100ms: 6, worst 1367ms)
+11-28 13:11:29.564 12617 12677 I TFDBG   : slow frame #10 total=184ms anim=0 layout=0 draw=0 sync=0 issue=99 swap=55 gpu=61
+11-28 13:11:30.760 12617 12617 I TFDBG   : frames so far 10 (slow >100ms: 7, worst 1367ms)
+11-28 13:11:30.848 12617 12617 I TFDBG   : preview open details
+11-28 13:11:32.760 12617 12617 I TFDBG   : frames so far 10 (slow >100ms: 7, worst 1367ms)
+11-28 13:11:34.761 12617 12617 I TFDBG   : frames so far 10 (slow >100ms: 7, worst 1367ms)
+== a47-crash-groups
+11-28 13:11:38.494 12786 12786 I TFDBG   : tabbar center errors smooth=false laidOut=false
+11-28 13:11:38.615 12786 12786 I TFDBG   : tabbar place errors left=2526 w=197 row=3190 bar=996 x=2137 now=0
+11-28 13:11:39.434 12786 12846 I TFDBG   : slow frame #1 total=1366ms anim=0 layout=140 draw=10 sync=0 issue=637 swap=69 gpu=85
+11-28 13:11:39.573 12786 12846 I TFDBG   : slow frame #2 total=950ms anim=0 layout=0 draw=0 sync=2 issue=32 swap=27 gpu=23
+11-28 13:11:39.844 12786 12786 I TFDBG   : tabbar place errors left=2841 w=260 row=3568 bar=996 x=2484 now=2137
+11-28 13:11:39.942 12786 12846 I TFDBG   : slow frame #3 total=433ms anim=0 layout=44 draw=14 sync=0 issue=9 swap=45 gpu=48
+11-28 13:11:40.040 12786 12846 I TFDBG   : slow frame #5 total=150ms anim=0 layout=0 draw=0 sync=0 issue=34 swap=31 gpu=40
+11-28 13:11:40.056 12786 12846 I TFDBG   : slow frame #6 total=119ms anim=0 layout=0 draw=9 sync=0 issue=1 swap=25 gpu=26
+11-28 13:11:40.121 12786 12846 I TFDBG   : slow frame #7 total=116ms anim=0 layout=0 draw=0 sync=0 issue=15 swap=22 gpu=31
+11-28 13:11:40.561 12786 12786 I TFDBG   : frames so far 9 (slow >100ms: 6, worst 1366ms)
+11-28 13:11:41.461 12786 12846 I TFDBG   : slow frame #11 total=116ms anim=0 layout=8 draw=2 sync=0 issue=3 swap=18 gpu=33
+11-28 13:11:42.560 12786 12786 I TFDBG   : frames so far 11 (slow >100ms: 7, worst 1366ms)
+11-28 13:11:42.579 12786 12786 I TFDBG   : preview open crashes
+11-28 13:11:44.560 12786 12786 I TFDBG   : frames so far 11 (slow >100ms: 7, worst 1366ms)
+11-28 13:11:46.561 12786 12786 I TFDBG   : frames so far 11 (slow >100ms: 7, worst 1366ms)
+== a48-member-use
+11-28 13:11:51.536 12945 12945 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:11:51.673 12945 13005 I TFDBG   : slow frame #3 total=566ms anim=0 layout=49 draw=10 sync=0 issue=21 swap=59 gpu=75
+11-28 13:11:51.745 12945 13005 I TFDBG   : slow frame #4 total=187ms anim=0 layout=0 draw=0 sync=2 issue=30 swap=46 gpu=52
+11-28 13:11:51.837 12945 13005 I TFDBG   : slow frame #5 total=250ms anim=0 layout=3 draw=2 sync=28 issue=15 swap=45 gpu=59
+11-28 13:11:51.866 12945 13005 I TFDBG   : slow frame #6 total=183ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=25 gpu=25
+11-28 13:11:51.881 12945 13005 I TFDBG   : slow frame #7 total=120ms anim=0 layout=0 draw=0 sync=0 issue=7 swap=21 gpu=30
+11-28 13:11:52.228 12945 12945 I TFDBG   : frames so far 7 (slow >100ms: 7, worst 1350ms)
+11-28 13:11:53.342 12945 13005 I TFDBG   : slow frame #10 total=267ms anim=0 layout=39 draw=22 sync=0 issue=10 swap=39 gpu=45
+11-28 13:11:53.356 12945 13005 I TFDBG   : slow frame #11 total=121ms anim=0 layout=1 draw=0 sync=2 issue=5 swap=51 gpu=50
+11-28 13:11:53.651 12945 13005 I TFDBG   : slow frame #14 total=134ms anim=0 layout=0 draw=0 sync=0 issue=17 swap=59 gpu=66
+11-28 13:11:53.714 12945 13005 I TFDBG   : slow frame #15 total=176ms anim=0 layout=0 draw=0 sync=1 issue=6 swap=56 gpu=55
+11-28 13:11:53.735 12945 13005 I TFDBG   : slow frame #16 total=209ms anim=0 layout=0 draw=0 sync=0 issue=5 swap=60 gpu=52
+11-28 13:11:53.845 12945 13005 I TFDBG   : slow frame #17 total=200ms anim=0 layout=0 draw=0 sync=1 issue=17 swap=55 gpu=71
+11-28 13:11:53.858 12945 13005 I TFDBG   : slow frame #18 total=200ms anim=0 layout=0 draw=0 sync=1 issue=7 swap=51 gpu=57
+11-28 13:11:53.932 12945 13005 I TFDBG   : slow frame #19 total=200ms anim=0 layout=0 draw=0 sync=0 issue=9 swap=49 gpu=62
+11-28 13:11:54.227 12945 12945 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:11:54.268 12945 12945 I TFDBG   : preview open member:use
+11-28 13:11:56.227 12945 12945 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:11:58.228 12945 12945 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:12:00.229 12945 12945 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+== a49-member-payments
+11-28 13:12:04.167 13110 13171 I TFDBG   : slow frame #1 total=1466ms anim=0 layout=148 draw=7 sync=0 issue=753 swap=66 gpu=76
+11-28 13:12:04.271 13110 13171 I TFDBG   : slow frame #2 total=1051ms anim=0 layout=0 draw=0 sync=17 issue=18 swap=34 gpu=49
+11-28 13:12:04.615 13110 13110 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:12:04.828 13110 13171 I TFDBG   : slow frame #3 total=530ms anim=0 layout=35 draw=13 sync=0 issue=28 swap=51 gpu=51
+11-28 13:12:04.922 13110 13171 I TFDBG   : slow frame #4 total=271ms anim=0 layout=1 draw=1 sync=7 issue=101 swap=43 gpu=65
+11-28 13:12:04.922 13110 13171 I TFDBG   : slow frame #5 total=259ms anim=0 layout=2 draw=4 sync=8 issue=1 swap=32 gpu=32
+11-28 13:12:04.956 13110 13171 I TFDBG   : slow frame #6 total=201ms anim=0 layout=0 draw=0 sync=0 issue=7 swap=11 gpu=17
+11-28 13:12:05.168 13110 13110 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1466ms)
+11-28 13:12:06.282 13110 13171 I TFDBG   : slow frame #10 total=239ms anim=0 layout=37 draw=14 sync=0 issue=8 swap=38 gpu=38
+11-28 13:12:06.282 13110 13171 I TFDBG   : slow frame #11 total=119ms anim=0 layout=0 draw=0 sync=1 issue=5 swap=56 gpu=54
+11-28 13:12:06.593 13110 13171 I TFDBG   : slow frame #14 total=152ms anim=0 layout=0 draw=0 sync=0 issue=7 swap=53 gpu=71
+11-28 13:12:06.669 13110 13171 I TFDBG   : slow frame #15 total=172ms anim=0 layout=0 draw=0 sync=1 issue=6 swap=46 gpu=36
+11-28 13:12:06.692 13110 13171 I TFDBG   : slow frame #16 total=181ms anim=0 layout=0 draw=0 sync=0 issue=13 swap=61 gpu=46
+11-28 13:12:06.750 13110 13171 I TFDBG   : slow frame #17 total=182ms anim=0 layout=0 draw=0 sync=2 issue=19 swap=44 gpu=43
+11-28 13:12:06.813 13110 13171 I TFDBG   : slow frame #18 total=200ms anim=0 layout=0 draw=0 sync=0 issue=13 swap=49 gpu=53
+11-28 13:12:06.877 13110 13171 I TFDBG   : slow frame #19 total=171ms anim=0 layout=0 draw=0 sync=0 issue=12 swap=46 gpu=46
+11-28 13:12:07.169 13110 13110 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1466ms)
+11-28 13:12:07.209 13110 13110 I TFDBG   : preview open member:payments
+11-28 13:12:09.170 13110 13110 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1466ms)
+11-28 13:12:11.171 13110 13110 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1466ms)
+== a50-member-calls
+11-28 13:12:16.046 13268 13329 I TFDBG   : slow frame #1 total=1351ms anim=0 layout=121 draw=9 sync=0 issue=674 swap=81 gpu=87
+11-28 13:12:16.167 13268 13329 I TFDBG   : slow frame #2 total=923ms anim=0 layout=0 draw=0 sync=0 issue=16 swap=22 gpu=30
+11-28 13:12:16.525 13268 13268 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:12:16.760 13268 13329 I TFDBG   : slow frame #3 total=584ms anim=0 layout=47 draw=10 sync=0 issue=35 swap=57 gpu=75
+11-28 13:12:16.840 13268 13329 I TFDBG   : slow frame #4 total=288ms anim=0 layout=3 draw=23 sync=2 issue=120 swap=44 gpu=65
+11-28 13:12:16.871 13268 13329 I TFDBG   : slow frame #5 total=266ms anim=0 layout=1 draw=1 sync=7 issue=1 swap=26 gpu=40
+11-28 13:12:16.888 13268 13329 I TFDBG   : slow frame #6 total=191ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=35 gpu=27
+11-28 13:12:17.155 13268 13268 I TFDBG   : frames so far 7 (slow >100ms: 6, worst 1351ms)
+11-28 13:12:18.232 13268 13329 I TFDBG   : slow frame #10 total=251ms anim=0 layout=37 draw=14 sync=0 issue=7 swap=39 gpu=41
+11-28 13:12:18.296 13268 13329 I TFDBG   : slow frame #11 total=126ms anim=0 layout=0 draw=0 sync=13 issue=14 swap=49 gpu=49
+11-28 13:12:18.567 13268 13329 I TFDBG   : slow frame #14 total=119ms anim=0 layout=0 draw=0 sync=0 issue=18 swap=45 gpu=45
+11-28 13:12:18.593 13268 13329 I TFDBG   : slow frame #15 total=150ms anim=0 layout=0 draw=0 sync=1 issue=7 swap=35 gpu=38
+11-28 13:12:18.670 13268 13329 I TFDBG   : slow frame #16 total=183ms anim=0 layout=0 draw=0 sync=1 issue=22 swap=49 gpu=62
+11-28 13:12:18.768 13268 13329 I TFDBG   : slow frame #17 total=183ms anim=0 layout=1 draw=9 sync=0 issue=5 swap=57 gpu=73
+11-28 13:12:18.833 13268 13329 I TFDBG   : slow frame #18 total=183ms anim=0 layout=0 draw=0 sync=1 issue=6 swap=53 gpu=58
+11-28 13:12:18.848 13268 13329 I TFDBG   : slow frame #19 total=179ms anim=0 layout=0 draw=0 sync=0 issue=11 swap=55 gpu=55
+11-28 13:12:19.155 13268 13268 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1351ms)
+11-28 13:12:19.203 13268 13268 I TFDBG   : preview open member:calls
+11-28 13:12:21.156 13268 13268 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1351ms)
+11-28 13:12:23.157 13268 13268 I TFDBG   : frames so far 19 (slow >100ms: 14, worst 1351ms)
+== a51-member-problems
+11-28 13:12:28.406 13427 13427 I TFDBG   : tabbar place members left=1196 w=247 row=3568 bar=996 x=832 now=769
+11-28 13:12:28.543 13427 13488 I TFDBG   : slow frame #3 total=546ms anim=0 layout=57 draw=9 sync=0 issue=27 swap=62 gpu=62
+11-28 13:12:28.638 13427 13488 I TFDBG   : slow frame #4 total=200ms anim=0 layout=0 draw=0 sync=0 issue=23 swap=53 gpu=62
+11-28 13:12:28.718 13427 13488 I TFDBG   : slow frame #5 total=255ms anim=0 layout=5 draw=2 sync=14 issue=29 swap=46 gpu=54
+11-28 13:12:28.727 13427 13488 I TFDBG   : slow frame #6 total=185ms anim=0 layout=0 draw=0 sync=0 issue=3 swap=29 gpu=34
+11-28 13:12:28.782 13427 13488 I TFDBG   : slow frame #7 total=150ms anim=0 layout=0 draw=0 sync=0 issue=8 swap=39 gpu=44
+11-28 13:12:29.035 13427 13427 I TFDBG   : frames so far 7 (slow >100ms: 7, worst 1350ms)
+11-28 13:12:30.151 13427 13488 I TFDBG   : slow frame #10 total=266ms anim=0 layout=43 draw=14 sync=0 issue=8 swap=48 gpu=58
+11-28 13:12:30.165 13427 13488 I TFDBG   : slow frame #11 total=113ms anim=0 layout=1 draw=0 sync=1 issue=2 swap=52 gpu=45
+11-28 13:12:30.415 13427 13488 I TFDBG   : slow frame #14 total=117ms anim=0 layout=0 draw=0 sync=0 issue=8 swap=45 gpu=56
+11-28 13:12:30.528 13427 13488 I TFDBG   : slow frame #15 total=169ms anim=0 layout=0 draw=0 sync=0 issue=19 swap=51 gpu=59
+11-28 13:12:30.589 13427 13488 I TFDBG   : slow frame #16 total=171ms anim=0 layout=0 draw=0 sync=1 issue=10 swap=48 gpu=48
+11-28 13:12:30.663 13427 13488 I TFDBG   : slow frame #17 total=202ms anim=0 layout=0 draw=0 sync=1 issue=7 swap=55 gpu=72
+11-28 13:12:30.681 13427 13488 I TFDBG   : slow frame #18 total=185ms anim=0 layout=0 draw=0 sync=0 issue=6 swap=66 gpu=75
+11-28 13:12:30.748 13427 13488 I TFDBG   : slow frame #19 total=204ms anim=0 layout=7 draw=0 sync=0 issue=17 swap=54 gpu=60
+11-28 13:12:31.036 13427 13427 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:12:31.072 13427 13427 I TFDBG   : preview open member:problems
+11-28 13:12:33.037 13427 13427 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:12:35.036 13427 13427 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
+11-28 13:12:37.036 13427 13427 I TFDBG   : frames so far 19 (slow >100ms: 15, worst 1350ms)
