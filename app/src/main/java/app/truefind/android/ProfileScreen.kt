@@ -738,166 +738,225 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
     private fun cardBox(radius: Float = 18f) = Tf.box(Color.WHITE, radius, 1f, PC.line)
 
+    // ═════════════════ 28 Nov (owner): the page laid out like Blinkit's "Your account", in light purple ═════════════════
+    private val TOP = Ui.c("#D9CCFA")
+    private val PAGE = Ui.c("#F4F2FA")
+    private val INK = Ui.c("#111111")
+    private val GREY = Ui.c("#6B6880")
+    private var photoSheetBox: LinearLayout? = null
+    private var photoSheetClose: (() -> Unit)? = null
+    /** the bar that stays at the top once the name has scrolled away (Blinkit: "← Profile") */
+    private val stickBar = LinearLayout(ctx).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+        setBackgroundColor(Ui.c("#D9CCFA")); elevation = Ui.dp(3f); alpha = 0f; visibility = GONE
+        setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(8f)); isClickable = true
+    }
+    private var nameBottom = Ui.dpi(260f)
+
+    private fun roundBack(): View = FrameLayout(context).apply {
+        background = Tf.circle(Color.WHITE)
+        elevation = Ui.dp(1.5f)
+        contentDescription = "Back"
+        addView(ImageView(context).apply { setImageDrawable(PUi.lu(Lu.ArrowLeft, INK, 20f, 2f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        setOnClickListener { pages.historyBack() }
+        Ui.pressable(this, .94f)
+    }
+
+    private fun setupStick() {
+        if (stickBar.parent != null) return
+        stickBar.addView(roundBack(), LinearLayout.LayoutParams(Ui.dpi(40f), Ui.dpi(40f)))
+        stickBar.addView(Tf.t(context, "Profile", 17f, INK), LinearLayout.LayoutParams(-2, -2).apply { leftMargin = Ui.dpi(14f) })
+        addView(stickBar, LayoutParams(-1, -2, Gravity.TOP))
+        scroll.viewTreeObserver.addOnScrollChangedListener {
+            val on = scroll.scrollY > nameBottom
+            if (on && stickBar.visibility != VISIBLE) { stickBar.visibility = VISIBLE; stickBar.animate().alpha(1f).setDuration(160).start() }
+            else if (!on && stickBar.visibility == VISIBLE && stickBar.alpha > 0f) stickBar.animate().alpha(0f).setDuration(140).withEndAction { if (scroll.scrollY <= nameBottom) stickBar.visibility = GONE }.start()
+        }
+    }
+
+    /** one line of a list: icon, words, (value), arrow — it sinks a little under the finger (the owner's Blinkit video) */
+    private fun listRow(icon: String, label: String, value: String = "", valueColor: Int = GREY, arrow: Boolean = true, onClick: (() -> Unit)? = null): LinearLayout {
+        val ctx = context
+        val r = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            setPadding(Ui.dpi(16f), 0, Ui.dpi(14f), 0); minimumHeight = Ui.dpi(52f)
+            background = Tf.box(Color.WHITE, 12f)
+            contentDescription = if (value.isNotEmpty()) "$label: $value" else label
+        }
+        r.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(icon, INK, 21f, 1.7f)) }, LinearLayout.LayoutParams(Ui.dpi(22f), Ui.dpi(22f)).apply { rightMargin = Ui.dpi(14f) })
+        r.addView(Tf.t(ctx, label, 15f, INK, false).lineH(20f).ell(), LinearLayout.LayoutParams(0, -2, 1f))
+        if (value.isNotEmpty()) r.addView(Tf.t(ctx, value, 13.5f, valueColor, valueColor != GREY).lineH(18f).ell(), LinearLayout.LayoutParams(-2, -2).apply { leftMargin = Ui.dpi(8f); rightMargin = Ui.dpi(if (arrow) 6f else 2f) })
+        if (arrow) r.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.ChevronRight, Ui.c("#9C98A8"), 18f, 2f)) }, LinearLayout.LayoutParams(Ui.dpi(18f), Ui.dpi(18f)))
+        if (onClick != null) { r.setOnClickListener { onClick() }; Ui.pressable(r, .96f) }
+        return r
+    }
+
+    /** a white box with a title and lines (thin lines between them) */
+    private fun listBox(title: String, rows: List<View>): LinearLayout {
+        val ctx = context
+        val b = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = Tf.box(Color.WHITE, 16f); clipChildren = false }
+        if (title.isNotEmpty()) b.addView(Tf.t(ctx, title, 17f, INK).lineH(22f), LinearLayout.LayoutParams(-1, -2).apply { leftMargin = Ui.dpi(16f); topMargin = Ui.dpi(16f); bottomMargin = Ui.dpi(10f) })
+        rows.forEachIndexed { i, v ->
+            if (i > 0 || title.isNotEmpty()) b.addView(View(ctx).apply { setBackgroundColor(Ui.c("#F0EDF6")) }, LinearLayout.LayoutParams(-1, Ui.dpi(1f)))
+            b.addView(v, LinearLayout.LayoutParams(-1, Ui.dpi(52f)))
+        }
+        return b
+    }
+
     fun renderPage() {
         val p = profile ?: return
         val ctx = context
         center.visibility = GONE
+        setupStick()
         pageCol.removeAllViews()
-        // ── purple top: back, the page name, settings, then photo + name ──
-        val sec = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(96f) }
+        pageCol.setBackgroundColor(PAGE)
+
+        // ── the top: light purple fading into the page, round back button, big photo, name, Online · place ──
+        val top = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(TOP, Ui.c("#E9E1FC"), PAGE))
+            setPadding(Ui.dpi(16f), Ui.dpi(8f), Ui.dpi(16f), Ui.dpi(18f))
+            clipChildren = false
+        }
+        val bar = FrameLayout(ctx)
+        bar.addView(roundBack(), FrameLayout.LayoutParams(Ui.dpi(42f), Ui.dpi(42f), Gravity.START or Gravity.CENTER_VERTICAL))
+        top.addView(bar, LinearLayout.LayoutParams(-1, Ui.dpi(48f)))
+
         val av = FrameLayout(ctx).apply { contentDescription = "Profile photo"; clipChildren = false }
-        val ring = FrameLayout(ctx).apply { background = Tf.circle(Color.TRANSPARENT, 2f, PC.dash); setPadding(Ui.dpi(5f), Ui.dpi(5f), Ui.dpi(5f), Ui.dpi(5f)) }
-        val face = PImg(ctx, round = true).apply { placeholder = Ui.c("#E9DDFB") }
+        val ring = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE); setPadding(Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f), Ui.dpi(4f)) }
+        val face = PImg(ctx, round = true).apply { placeholder = Color.WHITE }
         face.set(avatarRaws)
         ring.addView(face, FrameLayout.LayoutParams(-1, -1))
-        av.addView(ring, FrameLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(84f)))
-        val cam = FrameLayout(ctx).apply { background = Tf.circle(Color.WHITE, 2f, PC.head) }
-        if (uploadingAvatar) cam.addView(TfLoader(ctx, 12f, PC.head), FrameLayout.LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.CENTER))
-        else cam.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Camera, PC.head, 14f, 2.1f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-        av.addView(cam, FrameLayout.LayoutParams(Ui.dpi(28f), Ui.dpi(28f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = -Ui.dpi(2f); bottomMargin = -Ui.dpi(2f) })
+        av.addView(ring, FrameLayout.LayoutParams(Ui.dpi(104f), Ui.dpi(104f)))
+        val cam = FrameLayout(ctx).apply { background = Tf.circle(PC.head, 2f, Color.WHITE) }
+        if (uploadingAvatar) cam.addView(TfLoader(ctx, 12f, Color.WHITE), FrameLayout.LayoutParams(Ui.dpi(12f), Ui.dpi(12f), Gravity.CENTER))
+        else cam.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Camera, Color.WHITE, 14f, 2.1f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        av.addView(cam, FrameLayout.LayoutParams(Ui.dpi(30f), Ui.dpi(30f), Gravity.END or Gravity.BOTTOM).apply { rightMargin = Ui.dpi(2f); bottomMargin = Ui.dpi(4f) })
         av.setOnClickListener { avatarSheet() }
-        // hold: the photo big, like Instagram (owner, 21 Nov); when the finger lifts, the pencil shows as before
-        // (owner, 19 Nov). No photo yet: the pencil at once, as before.
-        // (no approved photo yet: the main photo still in review shows big on the hold — it is the member's own photo; owner, 25 Nov)
         val peekRaws = avatarRaws.ifEmpty { listOfNotNull(photos.firstOrNull { it.pending }?.ref?.takeIf { it.isNotBlank() }) }
         PhotoPeek.attach(av, peekRaws, { face.bitmap }, this@ProfileScreen, .97f, onEmpty = { showPencil(av) }, onClosed = { showPencil(av) })
-        sec.addView(av, LinearLayout.LayoutParams(Ui.dpi(84f), Ui.dpi(84f)).apply { rightMargin = Ui.dpi(16f) })
-        val who = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
-        val nameRow = ShrinkRow(ctx, Ui.dpi(6f))
-        nameRow.addView(Tf.t(ctx, name.ifEmpty { "Your name" }, 20f, Color.WHITE).lineH(24f).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-        if (vInfo.verified) nameRow.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.BadgeCheck, PC.head, 20f, 2f, "#fff")); contentDescription = "Verified"; layoutParams = ViewGroup.LayoutParams(Ui.dpi(20f), Ui.dpi(20f)) })
-        who.addView(nameRow, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = Ui.dpi(6f) })
-        val pills = FlowRow(ctx, Ui.dpi(8f), Ui.dpi(8f))
-        val online = Tf.t(ctx, "Online", 12.5f, Color.WHITE, false).lineH(16f).apply {
-            gravity = Gravity.CENTER_VERTICAL; background = Tf.box(PC.deep, 11f); setPadding(Ui.dpi(8f), 0, Ui.dpi(10f), 0)
-            compoundDrawablePadding = Ui.dpi(6f); setCompoundDrawablesWithIntrinsicBounds(DotDrawable(PC.online, 8f), null, null, null)
-            layoutParams = ViewGroup.LayoutParams(-2, Ui.dpi(22f))
-        }
-        pills.addView(wrapH(online, 28f))
-        // Dashboard: same pill shape as Online, a little bigger — opens My Dashboard
-        val dash = Tf.t(ctx, "Dashboard", 13.5f, Color.WHITE).lineH(18f).apply {
-            gravity = Gravity.CENTER_VERTICAL; background = Tf.box(PC.deep, 14f, 1f, Color.argb(56, 255, 255, 255)); setPadding(Ui.dpi(10f), 0, Ui.dpi(8f), 0)
-            compoundDrawablePadding = Ui.dpi(6f)
-            setCompoundDrawablesWithIntrinsicBounds(PUi.lu(Lu.LayoutDashboard, PC.onHead, 15f, 2.1f), null, PUi.lu(Lu.ChevronRight, PC.onHead, 14f, 2.2f), null)
-            layoutParams = ViewGroup.LayoutParams(-2, Ui.dpi(28f))
-        }
-        val dashBtn = wrapH(dash, 28f).apply { contentDescription = "Open my dashboard"; setOnClickListener { pages.go("/dashboard") }; Ui.pressable(this, .97f) }
-        pills.addView(dashBtn)
-        who.addView(pills, LinearLayout.LayoutParams(-1, -2))
+        top.addView(av, LinearLayout.LayoutParams(Ui.dpi(104f), Ui.dpi(104f)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = -Ui.dpi(6f) })
+        top.addView(Tf.t(ctx, name.ifEmpty { "Your name" }, 24f, INK).lineH(30f).apply { gravity = Gravity.CENTER; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(10f) })
         val loc = locationText
-        if (loc.isNotEmpty()) {
-            // the place: pin first, then the text (it may shrink), then the arrow
-            val lb = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; minimumHeight = Ui.dpi(44f); setOnClickListener { openEdit() }; Ui.pressable(this, .97f) }
-            lb.addView(PUi.icon(ctx, PUi.lu(Lu.MapPin, PC.onHead, 15f), 15f), LinearLayout.LayoutParams(Ui.dpi(15f), Ui.dpi(15f)).apply { rightMargin = Ui.dpi(6f) })
-            val lr = ShrinkRow(ctx, Ui.dpi(6f))
-            lr.addView(Tf.t(ctx, loc, 13.5f, Color.WHITE, false).lineH(18f).ell())
-            lr.addView(PUi.icon(ctx, PUi.lu(Lu.ChevronRight, PC.onHead, 14f, 2.2f), 14f).apply { layoutParams = ViewGroup.LayoutParams(Ui.dpi(14f), Ui.dpi(14f)) })
-            lb.addView(lr, LinearLayout.LayoutParams(-2, -2))
-            who.addView(lb, LinearLayout.LayoutParams(-2, Ui.dpi(44f)))
+        val sub = Tf.t(ctx, listOf("Online", loc).filter { it.isNotEmpty() }.joinToString(" · "), 13.5f, Ui.c("#5F5673"), false).lineH(18f).apply {
+            gravity = Gravity.CENTER; compoundDrawablePadding = Ui.dpi(6f)
+            setCompoundDrawablesWithIntrinsicBounds(DotDrawable(PC.online, 7f), null, null, null)
         }
-        sec.addView(who, LinearLayout.LayoutParams(0, -2, 1f))
-        val head = PUi.pageHead(ctx, "Profile",
-            PUi.headBtn(ctx, "Back", PUi.lu(Lu.ChevronLeft, Color.WHITE, 22f, 2.2f)) { pages.historyBack() },
-            PUi.headBtn(ctx, "Settings", PUi.lu(Lu.Settings, Color.WHITE, 20f)) { openDrawer(null) },
-            listOf(sec), pad = 84f, ring = true)
-        pageCol.addView(head, LinearLayout.LayoutParams(-1, -2))
+        top.addView(sub, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = Ui.dpi(4f) })
+        pageCol.addView(top, LinearLayout.LayoutParams(-1, -2))
+        top.post { nameBottom = (top.bottom - Ui.dpi(40f)).coerceAtLeast(Ui.dpi(120f)) }
 
-        // ── the white part (followers card sits half on the purple top) ──
-        val body = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            background = InsetDrawable(Tf.topRound(PC.ground, 28f), 0, Ui.dpi(36f), 0, 0)
-            setPadding(Ui.dpi(16f), 0, Ui.dpi(16f), Ui.dpi(28f))
+        val body = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(Ui.dpi(14f), 0, Ui.dpi(14f), Ui.dpi(20f)); clipChildren = false }
+
+        // ── the light purple banner: the bio (Blinkit's "Add your birthday") ──
+        val bioText = PR.s(p, "bio")
+        val ban = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Ui.c("#F1EAFF"), Ui.c("#E4D7FC"))).apply { cornerRadius = Ui.dp(16f) }
+            setPadding(Ui.dpi(16f), Ui.dpi(14f), Ui.dpi(14f), Ui.dpi(14f))
+            contentDescription = if (bioText.isEmpty()) "Add your bio" else "Your bio: $bioText. Edit"
+            setOnClickListener { bioSheet() }; Ui.pressable(this, .97f)
         }
+        val bc = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        bc.addView(Tf.t(ctx, if (bioText.isEmpty()) "Add your bio" else "Your bio", 15.5f, INK).lineH(20f))
+        if (bioText.isNotEmpty()) bc.addView(Tf.t(ctx, bioText, 13.5f, Ui.c("#4A4560"), false).lineH(18f).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(3f) })
+        bc.addView(Tf.t(ctx, if (bioText.isEmpty()) "Write a few words ▸" else "Edit ▸", 13.5f, PC.head).lineH(18f), LinearLayout.LayoutParams(-2, -2).apply { topMargin = Ui.dpi(5f) })
+        ban.addView(bc, LinearLayout.LayoutParams(0, -2, 1f))
+        ban.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Pencil, Ui.c("#8B5CF6"), 34f, 1.5f, "#EDE5FE")) }, LinearLayout.LayoutParams(Ui.dpi(40f), Ui.dpi(40f)).apply { leftMargin = Ui.dpi(10f) })
+        body.addView(ban, LinearLayout.LayoutParams(-1, -2))
+
+        // ── three tiles: Edit Profile, Share Profile, Dashboard ──
+        val tiles = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
+        listOf(Triple(Lu.Pencil, "Edit Profile") { openEdit() }, Triple(Lu.Share2, "Share Profile") { share() }, Triple(Lu.LayoutDashboard, "Dashboard") { pages.go("/dashboard") }).forEachIndexed { i, (ic, t, go) ->
+            val tile = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+                background = Tf.box(Color.WHITE, 16f); setPadding(Ui.dpi(4f), Ui.dpi(14f), Ui.dpi(4f), Ui.dpi(12f))
+                contentDescription = t; setOnClickListener { go() }; Ui.pressable(this, .95f)
+            }
+            tile.addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(ic, INK, 30f, 1.5f, "#F3EFFC")) }, LinearLayout.LayoutParams(Ui.dpi(34f), Ui.dpi(34f)).apply { bottomMargin = Ui.dpi(8f) })
+            tile.addView(Tf.t(ctx, t, 14f, INK, false).lineH(18f).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            tiles.addView(tile, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i > 0) leftMargin = Ui.dpi(9f) })
+        }
+        body.addView(tiles, gap(12f))
+
+        // ── Followers · Following, then Templates (outlined, NEW) ──
         val fol = followCounts?.get(0) ?: PR.countOf(p, listOf("followers_count", "followers"))
         val fwg = followCounts?.get(1) ?: PR.countOf(p, listOf("following_count", "following"))
-        val counts = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = cardBox() }
+        val fr = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; background = Tf.box(Color.WHITE, 16f) }
         listOf(Triple("followers", "Followers", fol), Triple("following", "Following", fwg)).forEachIndexed { i, (id, text, n) ->
-            if (i == 1) counts.addView(View(ctx).apply { setBackgroundColor(PC.line) }, LinearLayout.LayoutParams(Ui.dpi(1f), Ui.dpi(34f)))
-            val b = LinearLayout(ctx).apply {
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; contentDescription = "$text: $n. Open the list"
-                setOnClickListener { openPeople(id) }; Ui.pressable(this, .97f)
-            }
-            b.addView(Tf.t(ctx, n.toString(), 20f, PC.head).lineH(24f).apply { gravity = Gravity.CENTER })
-            b.addView(Tf.t(ctx, text, 12.5f, PC.sub, false).lineH(16f).apply {
-                gravity = Gravity.CENTER_VERTICAL; compoundDrawablePadding = Ui.dpi(2f)
-                setCompoundDrawablesWithIntrinsicBounds(null, null, PUi.lu(Lu.ChevronRight, PC.sub, 13f, 2.2f), null)
-            }, LinearLayout.LayoutParams(-2, -2))
-            counts.addView(b, LinearLayout.LayoutParams(0, -1, 1f))
+            if (i == 1) fr.addView(View(ctx).apply { setBackgroundColor(Ui.c("#F0EDF6")) }, LinearLayout.LayoutParams(Ui.dpi(1f), -1).apply { topMargin = Ui.dpi(12f); bottomMargin = Ui.dpi(12f) })
+            val c = listRow(if (i == 0) Lu.Users else Lu.User, text, n.toString(), PC.head) { openPeople(id) }
+            fr.addView(c, LinearLayout.LayoutParams(0, -1, 1f))
         }
-        body.addView(counts, LinearLayout.LayoutParams(-1, Ui.dpi(68f)))
-        // Edit Profile + Share
-        val btns = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        btns.addView(flatBtn("Edit Profile", Lu.Pencil, PC.head, Color.WHITE) { openEdit() }, LinearLayout.LayoutParams(0, Ui.dpi(46f), 1f).apply { rightMargin = Ui.dpi(10f) })
-        btns.addView(flatBtn("Share", Lu.Share2, PC.share, PC.head) { share() }, LinearLayout.LayoutParams(0, Ui.dpi(46f), 1f))
-        body.addView(btns, gap())
-        // Bio
-        val bio = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(8f), Ui.dpi(14f)) }
-        val pen = FrameLayout(ctx).apply {
-            contentDescription = "Edit bio"; setOnClickListener { bioSheet() }; Ui.pressable(this, .97f)
-            addView(ImageView(ctx).apply { setImageDrawable(PUi.lu(Lu.Pencil, PC.head, 17f)) }, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-            layoutParams = LinearLayout.LayoutParams(Ui.dpi(44f), Ui.dpi(44f))
-        }
-        bio.addView(PUi.secHead(ctx, Lu.User, "Bio", pen))
-        val bioText = PR.s(p, "bio")
-        bio.addView(PUi.para(ctx, bioText.ifEmpty { "Write a few words about yourself" }, 14.5f, if (bioText.isNotEmpty()) PC.text else PC.sub, 20f).apply { setPadding(0, 0, Ui.dpi(6f), 0) })
-        body.addView(bio, gap())
-        // Photos: 1 big main + 4 small (max 5)
+        body.addView(fr, LinearLayout.LayoutParams(-1, Ui.dpi(52f)).apply { topMargin = Ui.dpi(12f) })
+        val tpl = listRow(Lu.Crown, "Templates") { openShopAll("template") }
+        tpl.background = Tf.box(Color.WHITE, 16f, 1.5f, Ui.c("#6C2BD9"))
+        tpl.addView(Tf.t(ctx, "NEW", 11.5f, Color.WHITE).apply { gravity = Gravity.CENTER; background = Tf.box(PC.head, 6f); setPadding(Ui.dpi(8f), 0, Ui.dpi(8f), 0) },
+            tpl.childCount - 1, LinearLayout.LayoutParams(-2, Ui.dpi(22f)).apply { rightMargin = Ui.dpi(8f) })
+        body.addView(tpl, LinearLayout.LayoutParams(-1, Ui.dpi(52f)).apply { topMargin = Ui.dpi(12f) })
+
+        // ── Your information ──
         val ph = photos
-        val pc = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
-        val countPill = Tf.t(ctx, "${ph.size} / ${PR.MAX_PHOTOS}", 12.5f, PC.head).apply { gravity = Gravity.CENTER; background = Tf.box(PC.tint, 8f); setPadding(Ui.dpi(9f), 0, Ui.dpi(9f), 0); layoutParams = LinearLayout.LayoutParams(-2, Ui.dpi(24f)) }
-        pc.addView(PUi.secHead(ctx, Lu.Image, "Photos", countPill))
+        val vi = vInfo
+        val (vt, vfg) = if (vi.verified) "Verified" to PC.nGreen else if (vi.pending) "In review" to PC.amber else "Not verified" to GREY
+        val mine = interests
+        body.addView(listBox("Your information", listOf(
+            listRow(Lu.Image, "Photos", "${ph.size} / ${PR.MAX_PHOTOS}") { photoSheet() },
+            listRow(Lu.User, "Avatar") { openShopAll("avatar") },
+            listRow(Lu.Heart, "Interests", if (mine.isEmpty()) "" else mine.size.toString()) { interestSheet() },
+            listRow(Lu.MapPin, "Location", loc) { openEdit() },
+            listRow(Lu.CalendarDays, "Joined", PR.fmtDate(joinedAt).ifEmpty { "—" }, arrow = false),
+            listRow(Lu.ShieldCheck, "Verification", vt, vfg) { openDrawer("verification") },
+            listRow(Lu.Settings, "Settings") { openDrawer(null) },
+        )), gap(12f))
+
+        // ── Other information (owner's second Blinkit picture) ──
+        body.addView(listBox("Other information", listOf(
+            listRow(Lu.Share2, "Share the app") { openPanel("refer") },
+            listRow(Lu.Star, "Become a creator") { openPanel("apply") },
+            listRow(Lu.Lock, "Account privacy") { openPanel("privacy") },
+            listRow(Lu.Bell, "Notification preferences") { openPanel("notifications") },
+            listRow(Lu.HelpCircle, "Help & support") { openPanel("help") },
+            listRow(Lu.Info, "Terms & policies") { openPanel("legal") },
+        )), gap(12f))
+        body.addView(listBox("", listOf(listRow(Lu.LogOut, "Log out") { openPanel("logout") })), LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(20f) })
+
+        // ── True Find + the version, grey, at the very bottom ──
+        val foot = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        foot.addView(Tf.t(ctx, "True Find", 30f, Ui.c("#B9B4C6")).lineH(36f))
+        val ver = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+        if (ver.isNotEmpty()) foot.addView(Tf.t(ctx, "v$ver", 14f, Ui.c("#B9B4C6")).lineH(18f))
+        body.addView(foot, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(40f); bottomMargin = Ui.dpi(20f) })
+
+        pageCol.addView(body, LinearLayout.LayoutParams(-1, -2))
+        pageCol.addView(View(ctx), LinearLayout.LayoutParams(-1, 0, 1f))
+        fillPhotoSheet()
+    }
+
+    private fun gap(dp: Float) = LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(dp) }
+
+    /** Photos (1 big + 4 small, the "only real photos" note) — now in a sheet from the "Photos" line */
+    private fun photoSheet() {
+        val box = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        photoSheetBox = box
+        fillPhotoSheet()
+        photoSheetClose = PUi.sheet(pages.layer, "Photos", "${photos.size} / ${PR.MAX_PHOTOS} · the first one is your main photo", box) { photoSheetBox = null; photoSheetClose = null }
+    }
+
+    private fun fillPhotoSheet() {
+        val box = photoSheetBox ?: return
+        val ctx = context
+        box.removeAllViews()
+        val ph = photos
         val grid = PhotoGrid(ctx)
         for (i in 0 until PR.MAX_PHOTOS) grid.addView(photoCell(ph.getOrNull(i), i, ph.size))
-        pc.addView(grid, LinearLayout.LayoutParams(-1, -2))
+        box.addView(grid, LinearLayout.LayoutParams(-1, -2))
         val note = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, Ui.dpi(12f), 0, 0) }
         note.addView(PUi.icon(ctx, PUi.lu(Lu.ShieldCheck, PC.nGreen, 16f), 16f), LinearLayout.LayoutParams(Ui.dpi(16f), Ui.dpi(16f)).apply { rightMargin = Ui.dpi(10f); topMargin = Ui.dpi(1f) })
         note.addView(PUi.para(ctx, "Only real photos of you. Our team checks every new photo before others can see it. AI-made or fake photos are rejected.", 12.5f, PC.sub, 17f), LinearLayout.LayoutParams(0, -2, 1f))
-        pc.addView(View(ctx).apply { setBackgroundColor(Ui.c("#EEE8F7")) }, LinearLayout.LayoutParams(-1, Ui.dpi(1f)).apply { topMargin = Ui.dpi(12f) })
-        pc.addView(note)
-        body.addView(pc, gap())
-        // Avatar and Templates: to buy with coins (the shop)
-        body.addView(avatarSpace(), gap())
-        body.addView(templateSpace(), gap())
-        // Interests
-        val ic = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; background = cardBox(); setPadding(Ui.dpi(14f), Ui.dpi(8f), Ui.dpi(14f), Ui.dpi(14f)) }
-        val editI = Tf.t(ctx, "Edit", 14f, PC.head).apply {
-            gravity = Gravity.CENTER_VERTICAL; compoundDrawablePadding = Ui.dpi(2f)
-            setCompoundDrawablesWithIntrinsicBounds(null, null, PUi.lu(Lu.ChevronRight, PC.head, 16f, 2.2f), null)
-            setOnClickListener { interestSheet() }; Ui.pressable(this, .97f)
-            layoutParams = LinearLayout.LayoutParams(-2, Ui.dpi(44f))
-        }
-        ic.addView(PUi.secHead(ctx, Lu.Heart, "Interests", editI))
-        val chips = FlowRow(ctx, Ui.dpi(8f), 0)
-        val mine = interests
-        for (k in mine) {
-            val inner = PR.INTERESTS.firstOrNull { it.first.lowercase() == k.lowercase() }?.second ?: Lu.Sparkles
-            val chip = Tf.t(ctx, k, 13.5f, Color.WHITE).apply {
-                gravity = Gravity.CENTER_VERTICAL; background = Tf.box(PC.head, 16f); setPadding(Ui.dpi(11f), 0, Ui.dpi(14f), 0)
-                compoundDrawablePadding = Ui.dpi(6f); setCompoundDrawablesWithIntrinsicBounds(PUi.lu(inner, Color.WHITE, 15f), null, null, null)
-                layoutParams = ViewGroup.LayoutParams(-2, Ui.dpi(32f))
-            }
-            chips.addView(wrapH(chip, 44f))
-        }
-        if (mine.size < PR.INTERESTS.size) {
-            val add = Tf.t(ctx, if (mine.isNotEmpty()) "Add more" else "Add your interests", 13.5f, PC.head).apply {
-                gravity = Gravity.CENTER_VERTICAL; background = Tf.dashedBox(Color.WHITE, 16f, 1.5f, PC.dash); setPadding(Ui.dpi(10f), 0, Ui.dpi(12f), 0)
-                compoundDrawablePadding = Ui.dpi(4f); setCompoundDrawablesWithIntrinsicBounds(PUi.lu(Lu.Plus, PC.head, 14f, 2.2f), null, null, null)
-                layoutParams = ViewGroup.LayoutParams(-2, Ui.dpi(32f))
-            }
-            chips.addView(wrapH(add, 44f).apply { setOnClickListener { interestSheet() }; Ui.pressable(this, .97f) })
-        }
-        ic.addView(chips, LinearLayout.LayoutParams(-1, -2))
-        body.addView(ic, gap())
-        // Joined + Verification
-        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
-        row.addView(infoCard(Lu.CalendarDays, PC.tint, PC.head, "Joined", PR.fmtDate(joinedAt).ifEmpty { "—" }, PC.ink, null), LinearLayout.LayoutParams(0, Ui.dpi(68f), 1f).apply { rightMargin = Ui.dpi(10f) })
-        val vi = vInfo
-        val (vt, vbg, vfg) = if (vi.verified) Triple("Verified", PC.greenBg, PC.nGreen) else if (vi.pending) Triple("In review", PC.amberBg, PC.amber) else Triple("Not verified", Ui.c("#EEEAF4"), PC.sub)
-        row.addView(infoCard(Lu.ShieldCheck, vbg, vfg, "Verification", vt, vfg) { openDrawer("verification") }.apply { contentDescription = "Verification: $vt" },
-            LinearLayout.LayoutParams(0, Ui.dpi(68f), 1f))
-        body.addView(row, gap())
-        pageCol.addView(body, LinearLayout.LayoutParams(-1, -2).apply { topMargin = -Ui.dpi(64f) })
-        pageCol.addView(View(ctx), LinearLayout.LayoutParams(-1, 0, 1f))
+        box.addView(note)
     }
 
     private fun gap() = LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(14f) }
@@ -1089,6 +1148,8 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
             "delete" -> doDelete()
             "toast" -> say("Photo added. Our team will check it soon.")
             "scroll" -> scroll.scrollTo(0, pageCol.height)
+            "mid" -> scroll.scrollTo(0, Ui.dpi(560f))
+            "photos" -> photoSheet()
             // hold on the main photo / on the profile photo (the big photo stays: no finger is lifted)
             "peek", "peek-avatar" -> {
                 val found = ArrayList<View>()
