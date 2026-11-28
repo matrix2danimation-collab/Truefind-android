@@ -26,6 +26,7 @@ shot() {
 }
 shot 01-truefind 7 --es tf_wallet tf
 shot 02-first-offer 7 --es tf_wallet tf-new
+shot 01b-bottom 10 --es tf_wallet tf --es tf_open bottom
 shot 03-pack-tapped 8 --es tf_wallet tf --es tf_open pick
 shot 03b-pack-tapped-twice 10 --es tf_wallet tf --es tf_open unpick
 shot 04-offer-tapped 8 --es tf_wallet tf-new --es tf_open pick

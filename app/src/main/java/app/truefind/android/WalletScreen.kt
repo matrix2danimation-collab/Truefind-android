@@ -821,7 +821,8 @@ class WalletScreen(
             }
             body.addView(packagesHead(!offerOn), WV.lp(WV.MATCH, WV.WRAP, l = 4f, t = if (offerOn) 30f else 0f))
             body.addView(packsSection(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
-            body.addView(termsLine(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
+            body.addView(trustGrid(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
+            body.addView(termsLine(), WV.lp(WV.MATCH, WV.WRAP, t = 16f))
             noteBox()?.let { section(it) }
         }
         if (coinsView && secret) secretSections()
@@ -1125,6 +1126,36 @@ class WalletScreen(
     }
 
     /** "By continuing you agree to the Terms of Service and Privacy Policy" — the two names in dark purple. */
+    /** under the packs (owner's pick 3.3.4, 28 Nov): 2 × 2 — a green sign in a soft green circle, a bold line, a small grey line */
+    private fun trustGrid(): View {
+        val ctx = context
+        val items = listOf(
+            Triple(Lu.ShieldCheck, "100% secure", "Paid via Google Play"),
+            Triple("<path d=\"M13 2 3 14h9l-1 8 10-12h-9z\"/>", "Instant coins", "Added right after payment"),
+            Triple(Lu.Lock, "Safe & private", "We never see card details"),
+            Triple(Lu.Headphones, "Help & support", "Write to us anytime"),
+        )
+        val grid = WV.box(ctx, true)
+        items.chunked(2).forEachIndexed { ri, pair ->
+            val row = WV.box(ctx, false)
+            pair.forEachIndexed { ci, (ic, t, sub) ->
+                val cell = WV.box(ctx, false, Gravity.TOP)
+                cell.contentDescription = "$t. $sub"
+                val dot = android.widget.FrameLayout(ctx).apply { background = Tf.circle(Ui.c("#E7F8EE")) }
+                dot.addView(android.widget.ImageView(ctx).apply { setImageDrawable(Tf.lu(ic, Ui.c("#16A34A"), 15f, 2.3f)) }, android.widget.FrameLayout.LayoutParams(Ui.dpi(15f), Ui.dpi(15f), Gravity.CENTER))
+                cell.addView(dot, WV.lp(Ui.dpi(30f), Ui.dpi(30f)))
+                val col = WV.box(ctx, true)
+                col.addView(WV.text(ctx, t, 14f, Ui.c("#111111"), true, 18f).apply { maxLines = 1 }, WV.lp(WV.MATCH, WV.WRAP))
+                col.addView(WV.text(ctx, sub, 12f, Ui.c("#6B6880"), false, 16f).apply { maxLines = 2 }, WV.lp(WV.MATCH, WV.WRAP, t = 1f))
+                cell.addView(col, WV.lp(0, WV.WRAP, l = 10f, weight = 1f))
+                row.addView(cell, WV.lp(0, WV.WRAP, l = if (ci == 1) 10f else 0f, weight = 1f))
+            }
+            grid.addView(row, WV.lp(WV.MATCH, WV.WRAP, t = if (ri == 1) 16f else 0f))
+        }
+        grid.setPadding(Ui.dpi(4f), 0, Ui.dpi(4f), 0)
+        return grid
+    }
+
     private fun termsLine(): View {
         val sb = android.text.SpannableStringBuilder("By continuing you agree to the ")
         fun bold(w: String) {
@@ -2529,6 +2560,7 @@ class WalletScreen(
             "pick" -> pick(if (offerOn) "n49" else "c399")
             "pickbig" -> pick("c12999")
             "unpick" -> { pick("c399"); main.postDelayed({ pick("c399") }, 1500) }
+            "bottom" -> main.postDelayed({ scroll.fullScroll(View.FOCUS_DOWN) }, 800)
             "plan" -> pickPlan("starter")
             "planpay" -> { pickPlan("starter"); main.postDelayed({ buyPlan("starter") }, 600) }   // the plan's button with no payment gateway yet
             "soon" -> { isAdmin = false; openBuy(WData.findPack("c399")) }
