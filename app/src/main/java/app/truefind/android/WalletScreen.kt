@@ -239,7 +239,7 @@ class WalletScreen(
         page.clipChildren = false
         scroll.addView(page, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         scroll.overScrollMode = View.OVER_SCROLL_NEVER
-        scroll.onShift = { px -> for (i in 1 until body.childCount) body.getChildAt(i).translationY = px }
+        scroll.onShift = { px -> for (i in 0 until body.childCount) body.getChildAt(i).translationY = px }
         addView(scroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
         // Wallet top (owner, 27 Nov — the approved design): a flat purple card with round bottom corners, "Wallet",
@@ -813,8 +813,13 @@ class WalletScreen(
         if (coinsView && !secret) {
             // design 1 (owner, 27 Nov): the New user offer box first, then "Coin packages ...... Transaction history ▤",
             // then the packs
-            if (offerOn) body.addView(offerCard(), WV.lp(WV.MATCH, WV.WRAP, l = 2f, r = 2f))
-            body.addView(packagesHead(), WV.lp(WV.MATCH, WV.WRAP, l = 4f, t = if (offerOn) 30f else 0f))
+            // 28 Nov (owner): "Transaction history" sits above the New user offer box; the whole content (the offer box
+            // too) moves with the springy scroll
+            if (offerOn) {
+                body.addView(WV.box(ctx, false, Gravity.END).apply { addView(historyLink()) }, WV.lp(WV.MATCH, WV.WRAP, r = 4f))
+                body.addView(offerCard(), WV.lp(WV.MATCH, WV.WRAP, l = 2f, r = 2f, t = 14f))
+            }
+            body.addView(packagesHead(!offerOn), WV.lp(WV.MATCH, WV.WRAP, l = 4f, t = if (offerOn) 30f else 0f))
             body.addView(packsSection(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
             body.addView(termsLine(), WV.lp(WV.MATCH, WV.WRAP, t = 22f))
             noteBox()?.let { section(it) }
@@ -893,10 +898,10 @@ class WalletScreen(
     }
 
     /** "Coin packages" (big, black) on the left, "Transaction history ▤" on the right (design 1). */
-    private fun packagesHead(): View {
+    private fun packagesHead(withHistory: Boolean = true): View {
         val r = WV.box(context, false, Gravity.CENTER_VERTICAL)
         r.addView(WV.text(context, "Coin packages", 21f, Ui.c("#111111"), true, 26f).apply { maxLines = 1 }, WV.lp(0, WV.WRAP, weight = 1f))
-        r.addView(historyLink(), WV.lp(WV.WRAP, WV.WRAP, l = 8f))
+        if (withHistory) r.addView(historyLink(), WV.lp(WV.WRAP, WV.WRAP, l = 8f))
         return r
     }
 
@@ -1115,7 +1120,7 @@ class WalletScreen(
     /** All packs, biggest on top (owner, 27 Nov), with a little more room under the offer box. */
     private fun packsSection(): View {
         val s = WV.box(context, true)
-        s.addView(packGrid(WData.PACKS, false, 14f), WV.lp(WV.MATCH, WV.WRAP))
+        s.addView(packGrid(WData.PACKS, false, 24f), WV.lp(WV.MATCH, WV.WRAP, t = 10f))
         return s
     }
 
@@ -1146,7 +1151,7 @@ class WalletScreen(
             for (j in 0 until 3) {
                 val p = chunk.getOrNull(j)
                 val v: View = if (p != null) PackTile(p, offer).also { it.on = picked?.id == p.id; packTiles[p.id] = it } else Space(context)
-                r.addView(v, WV.lp(0, Ui.dpi(if (offer) 162f else 156f), l = if (j > 0) if (offer) 8f else 10f else 0f, weight = 1f))
+                r.addView(v, WV.lp(0, Ui.dpi(if (offer) 176f else 189f), l = if (j > 0) if (offer) 8f else 10f else 0f, weight = 1f))
             }
             grid.addView(r, WV.lp(WV.MATCH, WV.WRAP, t = if (i > 0) rowGap else 0f))
         }
@@ -1188,7 +1193,8 @@ class WalletScreen(
             contentDescription = "${wRupees(p.coins)} coins for ₹${wRupees(p.price)}" +
                 (if (WData.offPct(p) > 0) ", ${WData.offPct(p)}% off" else "") + (p.tag?.let { ", $it" } ?: "")
             val col = WV.box(context, true, Gravity.CENTER_HORIZONTAL)
-            col.setPadding(0, Ui.dpi(if (offer) 24f else 18f), 0, 0)
+            // 28 Nov (owner): room at the top for the % OFF band (and the tag pill above it) so nothing covers the coins
+            col.setPadding(0, Ui.dpi(if (offer) 38f else 47f), 0, 0)
             col.addView(android.widget.ImageView(context).apply {
                 setImageResource(PILES[(p.art - 1).coerceIn(0, PILES.size - 1)])
                 scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
@@ -1211,14 +1217,16 @@ class WalletScreen(
             // design 1: a gold "18% / OFF" band hangs from the top edge of each offer card (the true discount from
             // the struck-out price, never more)
             val off = WData.offPct(p)
-            if (offer && off > 0) addView(MoreBandView(context, off, "OFF"), LayoutParams(Ui.dpi(36f), Ui.dpi(40f), Gravity.TOP or Gravity.START).apply {
-                leftMargin = Ui.dpi(6f); topMargin = Ui.dpi(-1f)
+            // 28 Nov (owner): smaller band, below the tag pill, never over the coins
+            val bandTop = if (p.tag != null) 11f else -1f
+            if (offer && off > 0) addView(MoreBandView(context, off, "OFF"), LayoutParams(Ui.dpi(30f), Ui.dpi(34f), Gravity.TOP or Gravity.START).apply {
+                leftMargin = Ui.dpi(6f); topMargin = Ui.dpi(bandTop)
             })
-            // a regular pack, when chosen: a purple "20% / OFF" band in the same place (design 1)
+            // a regular pack: a purple "20% / OFF" band in the same place — shown from the start, not only when tapped (owner, 28 Nov)
             if (!offer && off > 0) {
                 offBand = MoreBandView(context, off, "OFF", Ui.c("#B65CF0"), Ui.c("#8B2FE0"), Ui.c("#5B1A9E"))
-                addView(offBand, LayoutParams(Ui.dpi(36f), Ui.dpi(40f), Gravity.TOP or Gravity.START).apply {
-                    leftMargin = Ui.dpi(6f); topMargin = Ui.dpi(-1f)
+                addView(offBand, LayoutParams(Ui.dpi(30f), Ui.dpi(34f), Gravity.TOP or Gravity.START).apply {
+                    leftMargin = Ui.dpi(6f); topMargin = Ui.dpi(bandTop)
                 })
             }
             // the tag sits on the top edge, in the middle: a purple pill, white words, a gold star on "Best deal"
@@ -1253,7 +1261,6 @@ class WalletScreen(
             priceTv?.setTextColor(if (on) Color.WHITE else Ui.c("#5F5673"))
             wasTv?.setTextColor(if (on) Color.argb(210, 255, 255, 255) else Ui.c("#9A93AE"))
             tick.visibility = if (on) View.VISIBLE else View.GONE
-            offBand?.visibility = if (on) View.VISIBLE else View.GONE
             isSelected = on
         }
     }
