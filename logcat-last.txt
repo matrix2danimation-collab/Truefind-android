@@ -1,0 +1,323 @@
+--------- beginning of main
+11-28 13:11:04.674   520  2386 W InputManager-JNI: Input channel object 'bd66f1e app.truefind.android/app.truefind.android.MainActivity (client)' was disposed without first being removed with the input manager!
+11-28 13:11:04.676   520   765 D ConnectivityService: releasing NetworkRequest [ REQUEST id=229, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ] (release request)
+11-28 13:11:04.676   520  2390 I ImeTracker: app.truefind.android:57cd31e6: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_REMOVE_CLIENT
+11-28 13:11:04.676   520  2390 I ImeTracker: app.truefind.android:57cd31e6: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-28 13:11:04.676   336   336 I Zygote  : Process 9447 exited due to signal 9 (Killed)
+11-28 13:11:04.681  1704  1704 I GsaVoiceInteractionSrv: Handling ACTION_START_HOTWORD
+11-28 13:11:04.684  1704  2428 I GsaVoiceInteractionSrv: disregardVoiceMatch: false
+--------- beginning of system
+11-28 13:11:04.690   520   543 W WindowManager: Failed to deliver inset control state change to w=Window{bd66f1e u0 app.truefind.android/app.truefind.android.MainActivity EXITING}
+11-28 13:11:04.690   520   543 W WindowManager: android.os.DeadObjectException
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.BinderProxy.transactNative(Native Method)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.view.IWindow$Stub$Proxy.insetsControlChanged(IWindow.java:479)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowState.notifyInsetsControlChanged(WindowState.java:3802)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController.lambda$notifyPendingInsetsControlChanged$3(InsetsStateController.java:343)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController.$r8$lambda$8yykPRG1GyNq_J17QvL9d5xANMc(InsetsStateController.java:0)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController$$ExternalSyntheticLambda2.run(R8$$SyntheticClass:0)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowAnimator.executeAfterPrepareSurfacesRunnables(WindowAnimator.java:294)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:811)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:756)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.Handler.handleCallback(Handler.java:958)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.Looper.loop(Looper.java:294)
+11-28 13:11:04.690   520   543 W WindowManager: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 13:11:04.690   520   543 W WindowManager: 	at com.android.server.ServiceThread.run(ServiceThread.java:46)
+11-28 13:11:04.739   520   899 D CompatibilityChangeReporter: Compat change id reported: 161252188; UID 10192; state: DISABLED
+11-28 13:11:04.739   520   899 W ActivityTaskManager: callingPackage for (uid=2000, pid=9535) has no WPC
+11-28 13:11:04.739   520   899 D CompatibilityChangeReporter: Compat change id reported: 265464455; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 265452344; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 266124927; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 265451093; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 265456536; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 255940284; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 236283604; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 263959004; UID 10192; state: DISABLED
+11-28 13:11:04.740   520   899 D CompatibilityChangeReporter: Compat change id reported: 264304459; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 264301586; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 254631730; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 273509367; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 263259275; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 174042980; UID 10192; state: DISABLED
+11-28 13:11:04.741   520   899 D CompatibilityChangeReporter: Compat change id reported: 174042936; UID 10192; state: DISABLED
+11-28 13:11:04.742   520   899 D CompatibilityChangeReporter: Compat change id reported: 181136395; UID 10192; state: DISABLED
+11-28 13:11:04.742   520   899 D CompatibilityChangeReporter: Compat change id reported: 194480991; UID 10192; state: ENABLED
+11-28 13:11:04.744   520   899 D CompatibilityChangeReporter: Compat change id reported: 197654537; UID 10192; state: ENABLED
+11-28 13:11:04.744   520   899 D CompatibilityChangeReporter: Compat change id reported: 205907456; UID 10192; state: ENABLED
+11-28 13:11:04.746   520   899 I ActivityTaskManager: Add Task{c886ac2 #44 type=standard A=10192:app.truefind.android} to hidden list because adding Task{1d5e7bf #45 type=standard A=10192:app.truefind.android}
+11-28 13:11:04.746   836   878 D SplashScreenView: Build android.window.SplashScreenView{9fb74bb V.E...... ......ID 0,0-0,0}
+11-28 13:11:04.746   836   878 D SplashScreenView: Icon: view: null drawable: null size: 0
+11-28 13:11:04.746   836   878 D SplashScreenView: Branding: view: android.view.View{143ddd8 G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+11-28 13:11:04.750   520   899 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=app.truefind.android/.MainActivity (has extras)} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+11-28 13:11:04.755   520   542 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10192; state: DISABLED
+11-28 13:11:04.756   520   550 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10192; state: ENABLED
+11-28 13:11:04.763   336   336 D Zygote  : Forked child process 9539
+11-28 13:11:04.766   520   550 I ActivityManager: Start proc 9539:app.truefind.android/u0a192 for next-top-activity {app.truefind.android/app.truefind.android.MainActivity}
+11-28 13:11:04.811   520   550 W ActivityManager: Slow operation: 57ms so far, now at startProcess: done updating pids map
+11-28 13:11:04.811   520   949 D CoreBackPreview: Window{40b40db u0 Splash Screen app.truefind.android}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@188d6b6, mPriority=0, mIsAnimationCallback=false}
+11-28 13:11:04.835  9539  9539 I ruefind.android: Late-enabling -Xcheck:jni
+11-28 13:11:04.850  9539  9539 I ruefind.android: Using CollectorTypeCC GC.
+11-28 13:11:04.850  9539  9539 W ruefind.android: Unexpected CPU variant for x86: x86_64.
+11-28 13:11:04.850  9539  9539 W ruefind.android: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-28 13:11:04.858   520   604 D CompatibilityChangeReporter: Compat change id reported: 265195908; UID 10192; state: ENABLED
+11-28 13:11:04.891   410   430 I adbd    : jdwp connection from 9539
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil:  query= size=15
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=cruise ship outbreak,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=cruise ship outbreak searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 103325d0-3d67-4509-b00b-48288bf4ccb0
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=virgil miller death gayle king,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=virgil miller death gayle king searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 385a39be-eb81-4e1e-afed-b80ad819ca22
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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,suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=true,is_personal=false,suggest_raw_text=nate hobbs,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=Nate Hobbs searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: deeb6c57-0b7f-42b3-8483-5abc9d1efba5
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=donald trump iran war,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=donald trump iran war searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 5c93bbc2-57ce-4805-aa16-60b1de3d3419
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=wormholes,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=wormholes searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: ea86284d-a232-4087-90db-035dfe97b4a0
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=thanksgiving storm weather forecast,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=thanksgiving storm weather forecast searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: b845563d-32fe-4af5-9475-260a15097162
+11-28 13:11:04.894  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=omega moonswatch silver snowflake,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=omega moonswatch silver snowflake searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: a0d56e0e-bbcc-499f-92c5-59e119fd3045
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=kaley cuoco thanksgiving family photos,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=kaley cuoco thanksgiving family photos searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 37604d99-d037-4b48-8330-28ed4a086b3f
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=hiromi itoh cubs,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=hiromi itoh cubs searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: f6d15bf3-63e7-41bb-a6c3-380fd7bb603a
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=lowes buckets black friday,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=lowes buckets black friday searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 8037b4f2-0e09-4df7-b255-c66d0e7dc282
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=king jarrah tree chainsaw vandalism,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=king jarrah tree chainsaw vandalism searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: de7cb9ac-0cb8-4fdc-99bd-a8b0ee54ccfd
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=extra_tall_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{bitmap_url=data:image/jpeg;base64,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
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=bills chiefs game,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=bills chiefs game searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 65796275-2be1-4ab4-b13e-56642792cceb
+11-28 13:11:04.895  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=mega millions jackpot,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=mega millions jackpot searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: bf8dc9c9-52d8-4d92-adf3-3d57161f36ba
+11-28 13:11:04.896  1098  1098 D SearchTargetUtil: layoutType=short_icon_row resultType=131072 packageName=com.google.android.googlequicksearchbox extras=Bundle{suggestion_type=33,suggest_truncate_start=false,is_answer=false,is_entity=false,is_personal=false,suggest_raw_text=hollow knight silksong dlc,group_id=web356181,response_id=17d83a8e-945a-4849-8168-e4dfc5947872,support_query_builder=false,} searchAction=hollow knight silksong dlc searchActionExtras=Bundle{learn_more_url=https://support.google.com/websearch/answer/106230?hl=106230,suggestion_action_text=Report this,should_start_for_result=true,allow_pinning=true,skip_logging_in_target_handler=false,suggestion_action_rpc=2,}ParentID: null targetID: 6421f771-2e89-4540-9172-5f96238c3bf3
+11-28 13:11:04.917  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+11-28 13:11:04.917  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+11-28 13:11:04.922   520  2390 D CompatibilityChangeReporter: Compat change id reported: 170503758; UID 10192; state: ENABLED
+11-28 13:11:04.928  9539  9539 W ziparchive: Unable to open '/data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/base.dm': No such file or directory
+11-28 13:11:04.928  9539  9539 W ziparchive: Unable to open '/data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/base.dm': No such file or directory
+11-28 13:11:04.956  1704  1704 I GsaVoiceInteractionSrv: Handling ACTION_STOP_HOTWORD
+11-28 13:11:04.966   520   539 V WindowManager: Sent Transition #72 createdAt=11-28 13:11:04.629 via request=TransitionRequestInfo { type = CLOSE, triggerTask = TaskInfo{userId=0 taskId=44 displayId=0 isRunning=false baseIntent=Intent { flg=0x10000000 cmp=app.truefind.android/.MainActivity } baseActivity=null topActivity=null origActivity=null realActivity=ComponentInfo{app.truefind.android/app.truefind.android.MainActivity} numActivities=0 lastActiveTime=614875 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{a5933ca Task{c886ac2 #44 type=standard A=10192:app.truefind.android}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=null launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-28 13:11:04.966   520   539 V WindowManager:     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+11-28 13:11:04.966   520   539 V WindowManager:     info={id=72 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{7d432bc Task{1d5e7bf #45 type=standard A=10192:app.truefind.android}}} m=OPEN f=MOVE_TO_TOP leash=Surface(name=Task=45)/@0x7e8068e sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{a5933ca Task{c886ac2 #44 type=standard A=10192:app.truefind.android}}} m=CLOSE f=NONE leash=Surface(name=Task=44)/@0x96739be sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{fbda35b token=android.os.Binder@6cf5147})/@0xf92d1f sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-28 13:11:04.967   836   867 V WindowManagerShell: onTransitionReady android.os.BinderProxy@7a09d9f: {id=72 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@34abb1c} m=OPEN f=MOVE_TO_TOP leash=Surface(name=Task=45)/@0x948ff0 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f7c6325} m=CLOSE f=NONE leash=Surface(name=Task=44)/@0x6bc9969 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{fbda35b token=android.os.Binder@6cf5147})/@0x5417fee sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-28 13:11:04.967   836   867 V WindowManagerShell: Playing animation for (#72)android.os.BinderProxy@7a09d9f@0
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultMixedHandler@8b586db
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.keyguard.KeyguardTransitionHandler@cc35578
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.activityembedding.ActivityEmbeddingController@6062451
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.recents.RecentsTransitionHandler@75454b6
+11-28 13:11:04.967   836   867 V ShellRecents: RecentsTransitionHandler.startAnimation: no controller found
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.pip.PipTransition@b7bb5b7
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.splitscreen.StageCoordinator@7945124
+11-28 13:11:04.967   836   867 V WindowManagerShell:  try handler com.android.wm.shell.transition.RemoteTransitionHandler@b7b48d
+11-28 13:11:04.967   836   867 V WindowManagerShell: Transition doesn't have explicit remote, search filters for match for {id=72 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@34abb1c} m=OPEN f=MOVE_TO_TOP leash=Surface(name=Task=45)/@0x948ff0 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f7c6325} m=CLOSE f=NONE leash=Surface(name=Task=44)/@0x6bc9969 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{fbda35b token=android.os.Binder@6cf5147})/@0x5417fee sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-28 13:11:04.967   836   867 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x0 checks=[{atype=dream independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=ANY topActivity=null},{atype=home independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@53a75f5, appThread = android.app.IApplicationThread$Stub$Proxy@a530f8a, debugName = LauncherToDream }}
+11-28 13:11:04.968   836   867 V WindowManagerShell:  Checking filter Pair{{types=[] flags=0x0] notFlags=0x100 checks=[{atype=home independent=true modes=[OPEN,TO_FRONT] flags=NONE mustBeTask=false order=TOP topActivity=ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}},{atype=standard independent=true modes=[CLOSE,TO_BACK] flags=NONE mustBeTask=false order=ANY topActivity=null}]} RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@2d5d9fb, appThread = android.app.IApplicationThread$Stub$Proxy@9a7a18, debugName = QuickstepLaunchHome }}
+11-28 13:11:04.968   836   867 V WindowManagerShell:  Delegate animation for #72 to null
+11-28 13:11:04.968   836   867 V WindowManagerShell:  try handler com.android.wm.shell.transition.DefaultTransitionHandler@9490642
+11-28 13:11:04.968   836   867 V WindowManagerShell: start default transition animation, info = {id=72 t=CLOSE f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{android.window.IWindowContainerToken$Stub$Proxy@34abb1c} m=OPEN f=MOVE_TO_TOP leash=Surface(name=Task=45)/@0x948ff0 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{android.window.IWindowContainerToken$Stub$Proxy@f7c6325} m=CLOSE f=NONE leash=Surface(name=Task=44)/@0x6bc9969 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{null m=TO_FRONT f=IS_WALLPAPER leash=Surface(name=WallpaperWindowToken{fbda35b token=android.os.Binder@6cf5147})/@0x5417fee sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-28 13:11:04.968   836   867 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@bd66d08 animAttr=0xb type=CLOSE isEntrance=false
+11-28 13:11:04.969   836   867 V WindowManagerShell: loadAnimation: anim=android.view.animation.AnimationSet@b759ec6 animAttr=0xa type=CLOSE isEntrance=true
+11-28 13:11:04.969   520   543 W WindowManager: Failed to deliver inset control state change to w=Window{bd66f1e u0 app.truefind.android/app.truefind.android.MainActivity EXITING}
+11-28 13:11:04.969   520   543 W WindowManager: android.os.DeadObjectException
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.BinderProxy.transactNative(Native Method)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.view.IWindow$Stub$Proxy.insetsControlChanged(IWindow.java:479)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowState.notifyInsetsControlChanged(WindowState.java:3802)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController.lambda$notifyPendingInsetsControlChanged$3(InsetsStateController.java:343)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController.$r8$lambda$8yykPRG1GyNq_J17QvL9d5xANMc(InsetsStateController.java:0)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.InsetsStateController$$ExternalSyntheticLambda2.run(R8$$SyntheticClass:0)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowAnimator.executeAfterPrepareSurfacesRunnables(WindowAnimator.java:294)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:811)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:756)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer$Traverser.run(WindowSurfacePlacer.java:57)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.Handler.handleCallback(Handler.java:958)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.Looper.loopOnce(Looper.java:205)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.Looper.loop(Looper.java:294)
+11-28 13:11:04.969   520   543 W WindowManager: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+11-28 13:11:04.969   520   543 W WindowManager: 	at com.android.server.ServiceThread.run(ServiceThread.java:46)
+11-28 13:11:04.970   836   867 V WindowManagerShell:  animated by com.android.wm.shell.transition.DefaultTransitionHandler@9490642
+11-28 13:11:04.992   836   867 V WindowManagerShell: Transition animation finished (aborted=false), notifying core (#72)android.os.BinderProxy@7a09d9f@0
+11-28 13:11:04.993   520  2390 W WindowManager: Exception thrown during dispatchAppVisibility Window{bd66f1e u0 app.truefind.android/app.truefind.android.MainActivity EXITING}
+11-28 13:11:04.993   520  2390 W WindowManager: android.os.DeadObjectException
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.os.BinderProxy.transactNative(Native Method)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.view.IWindow$Stub$Proxy.dispatchAppVisibility(IWindow.java:546)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.WindowState.sendAppVisibilityToClients(WindowState.java:3271)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.sendAppVisibilityToClients(WindowContainer.java:1221)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.WindowToken.setClientVisible(WindowToken.java:409)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.ActivityRecord.setClientVisible(ActivityRecord.java:6946)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.ActivityRecord.postApplyAnimation(ActivityRecord.java:5637)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.ActivityRecord.commitVisibility(ActivityRecord.java:5580)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.Transition.finishTransition(Transition.java:1151)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.TransitionController.finishTransition(TransitionController.java:868)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.WindowOrganizerController.finishTransition(WindowOrganizerController.java:396)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.window.IWindowOrganizerController$Stub.onTransact(IWindowOrganizerController.java:286)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at com.android.server.wm.WindowOrganizerController.onTransact(WindowOrganizerController.java:181)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-28 13:11:04.993   520  2390 W WindowManager: 	at android.os.Binder.execTransact(Binder.java:1275)
+11-28 13:11:04.993   520  2390 I Process : Sending signal. PID: 9447 SIG: 9
+11-28 13:11:04.993   520   539 V WindowManager: Finish Transition #72: created at 11-28 13:11:04.629 collect-started=0.025ms request-sent=0.068ms started=5.491ms ready=279.781ms sent=336.527ms finished=363.814ms
+11-28 13:11:04.997   520  2390 W WindowManager: Failed to deliver inset control state change to w=Window{bd66f1e u0 app.truefind.android/app.truefind.android.MainActivity EXITING}
+11-28 13:11:04.997   520  2390 W WindowManager: android.os.DeadObjectException
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.os.BinderProxy.transactNative(Native Method)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.os.BinderProxy.transact(BinderProxy.java:584)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.view.IWindow$Stub$Proxy.insetsControlChanged(IWindow.java:479)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowState.notifyInsetsControlChanged(WindowState.java:3802)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.InsetsStateController.lambda$notifyPendingInsetsControlChanged$3(InsetsStateController.java:343)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.InsetsStateController.$r8$lambda$8yykPRG1GyNq_J17QvL9d5xANMc(InsetsStateController.java:0)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.InsetsStateController$$ExternalSyntheticLambda2.run(R8$$SyntheticClass:0)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowAnimator.executeAfterPrepareSurfacesRunnables(WindowAnimator.java:294)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacementNoTrace(RootWindowContainer.java:811)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.RootWindowContainer.performSurfacePlacement(RootWindowContainer.java:756)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacementLoop(WindowSurfacePlacer.java:177)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:126)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowSurfacePlacer.performSurfacePlacement(WindowSurfacePlacer.java:115)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowState.setupWindowForRemoveOnExit(WindowState.java:2538)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowState.removeIfPossible(WindowState.java:2498)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowToken.removeAllWindowsIfPossible(WindowToken.java:249)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.ActivityRecord.removeIfPossible(ActivityRecord.java:4259)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.ActivityRecord.handleCompleteDeferredRemoval(ActivityRecord.java:4266)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.TaskFragment.handleCompleteDeferredRemoval(TaskFragment.java:2844)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowContainer.handleCompleteDeferredRemoval(WindowContainer.java:1396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.DisplayContent.handleCompleteDeferredRemoval(DisplayContent.java:3382)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.Transition.finishTransition(Transition.java:1322)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.TransitionController.finishTransition(TransitionController.java:868)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowOrganizerController.finishTransition(WindowOrganizerController.java:396)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.window.IWindowOrganizerController$Stub.onTransact(IWindowOrganizerController.java:286)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at com.android.server.wm.WindowOrganizerController.onTransact(WindowOrganizerController.java:181)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.os.Binder.execTransactInternal(Binder.java:1344)
+11-28 13:11:04.997   520  2390 W WindowManager: 	at android.os.Binder.execTransact(Binder.java:1275)
+11-28 13:11:04.999   520   542 W ActivityManager: setHasOverlayUi called on unknown pid: 9447
+11-28 13:11:05.000   836   867 V WindowManagerShell: Track 0 became idle
+11-28 13:11:05.006   836   867 V WindowManagerShell: All active transition animations finished
+11-28 13:11:05.030   399   399 E BpTransactionCompletedListener: Failed to transact (-32)
+11-28 13:11:05.195  9539  9539 D nativeloader: Configuring clns-6 for other apk /data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/lib/x86_64:/data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/app.truefind.android
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment: Currently set values for:
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment: ANGLE GameManagerService for app.truefind.android: false
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment: app.truefind.android is not listed in per-application setting
+11-28 13:11:05.200  9539  9539 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+11-28 13:11:05.209  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10192; state: ENABLED
+11-28 13:11:05.217  9539  9539 D SessionsDependencies: Dependency to CRASHLYTICS added.
+11-28 13:11:05.224  9539  9539 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+11-28 13:11:05.231  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 3400644; UID 10192; state: ENABLED
+11-28 13:11:05.234  9539  9539 I FirebaseCrashlytics: Initializing Firebase Crashlytics 19.4.4 for app.truefind.android
+11-28 13:11:05.241  9539  9539 D SessionsDependencies: Subscriber CRASHLYTICS registered.
+11-28 13:11:05.270  9539  9562 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-28 13:11:05.270  9539  9562 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-28 13:11:05.271   520  2390 D CompatibilityChangeReporter: Compat change id reported: 271850009; UID 10192; state: ENABLED
+11-28 13:11:05.271   520  2390 D CompatibilityChangeReporter: Compat change id reported: 253665015; UID 10192; state: ENABLED
+11-28 13:11:05.271   520  2390 D CompatibilityChangeReporter: Compat change id reported: 194532703; UID 10192; state: ENABLED
+11-28 13:11:05.276  9539  9539 D FirebaseSessions: Initializing Firebase Sessions SDK.
+11-28 13:11:05.284  9539  9567 I FirebaseCrashlytics: No version control information found
+11-28 13:11:05.284  9539  9539 I FirebaseInitProvider: FirebaseApp initialization successful
+11-28 13:11:05.289   520  2390 I ActivityManager: Flag disabled. Ignoring finishAttachApplication from uid: 10192. pid: 9539
+11-28 13:11:05.305  9539  9571 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+11-28 13:11:05.306  9539  9571 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+11-28 13:11:05.307  9539  9571 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+11-28 13:11:05.351  9539  9563 D LifecycleServiceBinder: Binding service to application.
+11-28 13:11:05.353   520  2390 D CompatibilityChangeReporter: Compat change id reported: 261072174; UID 10192; state: ENABLED
+11-28 13:11:05.377  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+11-28 13:11:05.388  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+11-28 13:11:05.496  9539  9577 W PathParser: Points are too far apart 4.010396595255705
+11-28 13:11:05.497  9539  9577 W PathParser: Points are too far apart 4.010396595255705
+11-28 13:11:05.499  9539  9577 W PathParser: Points are too far apart 4.010396595255705
+11-28 13:11:05.500  9539  9577 W PathParser: Points are too far apart 4.010396595255705
+11-28 13:11:05.567   520   566 V DisplayPowerController2[0]: Brightness [0.05] reason changing to: 'manual [ dim ]', previous reason: 'manual'.
+11-28 13:11:05.567   520   566 I DisplayPowerController2[0]: BrightnessEvent: disp=0, physDisp=local:4619827259835644672, brt=0.05, initBrt=0.39763778, rcmdBrt=NaN, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=1.0, hbmMode=off, rbcStrength=0, thrmMax=1.0, powerFactor=1.0, wasShortTermModelActive=false, flags=, reason=manual [ dim ], autoBrightness=false, strategy=InvalidBrightnessStrategy
+11-28 13:11:05.600  9539  9539 W PathParser: Points are too far apart 4.000000000000002
+11-28 13:11:05.625  9539  9539 W PathParser: Points are too far apart 4.000003365909959
+11-28 13:11:05.850  9539  9539 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+11-28 13:11:05.850  9539  9539 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+11-28 13:11:05.851  9539  9564 D SessionLifecycleClient: Queued message 1. Queue size 1
+11-28 13:11:05.854  9539  9539 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+11-28 13:11:05.856  9539  9539 W OpenGLRenderer: Unknown dataspace 0
+11-28 13:11:05.861  9539  9539 I Choreographer: Skipped 33 frames!  The application may be doing too much work on its main thread.
+11-28 13:11:05.926   520  2390 D CoreBackPreview: Window{792d6ab u0 app.truefind.android/app.truefind.android.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8fa82c6, mPriority=0, mIsAnimationCallback=false}
+11-28 13:11:05.964  9539  9569 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+11-28 13:11:05.992   134   134 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 13:11:05.992  9539  9569 I Gralloc4: mapper 4.x is not supported
+--------- beginning of kernel
+11-28 13:11:06.188     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-28 13:11:06.972  9539  9589 E SurfaceSyncGroup: Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(wmsSync-VRI[MainActivity]#0) as ready
+11-28 13:11:06.974   520   539 W ziparchive: Unable to open '/data/app/~~aLaXxNgG-J7lL7N6uvZcXA==/app.truefind.android-FKAcROTXYGsCsfnumbGd0Q==/base.dm': No such file or directory
+11-28 13:11:06.974   520   539 I ActivityTaskManager: Displayed app.truefind.android/.MainActivity for user 0: +2s235ms
+11-28 13:11:06.975  9539  9589 E SurfaceSyncGroup: Failed to receive transaction ready in 1000ms. Marking SurfaceSyncGroup(VRI[MainActivity]#1) as ready
+11-28 13:11:07.088   836   876 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda17@562a197
+11-28 13:11:07.088   520   899 D CoreBackPreview: Window{40b40db u0 Splash Screen app.truefind.android EXITING}: Setting back callback null
+11-28 13:11:07.096   520  1750 W InputManager-JNI: Input channel object '40b40db Splash Screen app.truefind.android (client)' was disposed without first being removed with the input manager!
+11-28 13:11:07.168  1098  2216 D OneSearchSuggestProvider: Shut down the binder channel
+11-28 13:11:07.230  1098  2807 I IPCThreadState: oneway function results for code 2 on binder at 0x77d6b6741c00 will be dropped but finished with status UNKNOWN_TRANSACTION
+11-28 13:11:07.230  1098  1126 I ImeTracker: com.google.android.apps.nexuslauncher:9c4ea2ca: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-28 13:11:07.230  1098  1126 I ImeTracker: com.google.android.apps.nexuslauncher:9c4ea2ca: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-28 13:11:07.299   836   867 W Looper  : Slow delivery took 36ms wmshell.main h=android.os.Handler c=com.android.wm.shell.pip.PinnedStackListenerForwarder$PinnedTaskListenerImpl$$ExternalSyntheticLambda1@5c55f95 m=0
+11-28 13:11:07.805  9539  9539 D SessionLifecycleService: Service created on process 9539
+11-28 13:11:07.806  9539  9539 D SessionLifecycleService: Service bound to new client on process 9539
+11-28 13:11:07.815  9539  9552 I OpenGLRenderer: Davey! duration=2499ms; Flags=1, FrameTimelineVsyncId=40571, IntendedVsync=630248953098, Vsync=630798953076, InputEventId=0, HandleInputStart=630813156409, AnimationStart=630813159434, PerformTraversalsStart=630813764853, DrawStart=630964671716, FrameDeadline=630265619764, FrameInterval=630812947219, FrameStartTime=16666666, SyncQueued=631043035160, SyncStart=631043486300, IssueDrawCommandsStart=631048295281, SwapBuffers=632573695028, FrameCompleted=632749172993, DequeueBufferDuration=2926, QueueBufferDuration=270333, GpuCompleted=632749172993, SwapBuffersCompleted=632739530300, DisplayPresentTime=0, CommandSubmissionCompleted=632573695028, 
+11-28 13:11:07.816   520  2386 D ConnectivityService: requestNetwork for uid/pid:10192/9539 activeRequest: null callbackRequest: 230 [NetworkRequest [ REQUEST id=231, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647
+11-28 13:11:07.817  9539  9594 D SessionLifecycleService: App has not yet foregrounded. Using previously stored session.
+11-28 13:11:07.818  9539  9594 D SessionLifecycleService: Client android.os.Messenger@1ff7990 bound at 632758. Clients: 1
+11-28 13:11:07.818   520   765 D ConnectivityService: NetReassign [231 : null → 100] [c 1] [a 0] [i 1]
+11-28 13:11:07.818   520   758 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=231, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-28 13:11:07.818   520   758 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=231, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-28 13:11:07.818   520   758 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=231, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-28 13:11:07.818   520   758 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=231, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10192 RequestorUid: 10192 RequestorPkg: app.truefind.android UnderlyingNetworks: Null] ]
+11-28 13:11:07.825  9539  9539 I Choreographer: Skipped 113 frames!  The application may be doing too much work on its main thread.
+11-28 13:11:07.838   836   867 W Looper  : Drained
+11-28 13:11:07.851   520  2386 D CompatibilityChangeReporter: Compat change id reported: 214016041; UID 10192; state: ENABLED
+11-28 13:11:07.851   520  2386 I ImeTracker: app.truefind.android:5e6e17db: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-28 13:11:07.851   520  2386 I ImeTracker: app.truefind.android:5e6e17db: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-28 13:11:07.854  1553  1553 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3227 
+11-28 13:11:07.855  1553  1553 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 0, unlocked = true
+11-28 13:11:07.855  1553  1553 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=app.truefind.android fieldId=0 fieldName=null extras=null}, false)
+11-28 13:11:07.855  1553  1553 I GoogleInputMethodService: GoogleInputMethodService.shouldHideHeaderOnInitialState():4008 ShouldHideHeaderOnInitialState = false
+11-28 13:11:07.855  1553  1553 I GoogleInputMethodService: GoogleInputMethodService.updateDeviceLockedStatus():2087 repeatCheckTimes = 2, unlocked = true
+11-28 13:11:07.856  9539  9539 D SessionLifecycleClient: Connected to SessionLifecycleService. Queue size 1
+11-28 13:11:07.868  9539  9564 D SessionLifecycleClient: Sending lifecycle 1 to service
+11-28 13:11:07.872  9539  9594 D SessionLifecycleService: Activity foregrounding at 632820.
+11-28 13:11:07.872  9539  9594 D SessionLifecycleService: Cold start detected.
+11-28 13:11:07.874  9539  9594 D SessionLifecycleService: Generated new session.
+11-28 13:11:07.874  9539  9594 D SessionLifecycleService: Broadcasting new session
+11-28 13:11:07.877  9539  9563 D SessionFirelogPublisher: Data Collection is enabled for at least one Subscriber
+11-28 13:11:07.896  9539  9553 I OpenGLRenderer: Davey! duration=1951ms; Flags=0, FrameTimelineVsyncId=40609, IntendedVsync=630882286406, Vsync=632765619664, InputEventId=0, HandleInputStart=632777470235, AnimationStart=632777473160, PerformTraversalsStart=632777706645, DrawStart=632777976408, FrameDeadline=632782286330, FrameInterval=632777040113, FrameStartTime=16666666, SyncQueued=632778334315, SyncStart=632778386713, IssueDrawCommandsStart=632778500064, SwapBuffers=632779314332, FrameCompleted=632833413665, DequeueBufferDuration=3708, QueueBufferDuration=3954250, GpuCompleted=632833413665, SwapBuffersCompleted=632826459258, DisplayPresentTime=0, CommandSubmissionCompleted=632779314332, 
+11-28 13:11:07.967  9539  9564 D EventGDTLogger: Session Event Type: SESSION_START
+11-28 13:11:07.967  9539  9564 D SessionFirelogPublisher: Successfully logged Session Start event.
+11-28 13:11:08.127  9539  9539 D SessionLifecycleClient: Session update received.
+11-28 13:11:08.145  9539  9563 D SessionLifecycleClient: Notified CRASHLYTICS of new session e37bf8f9d8904155ab10554356136010
+11-28 13:11:08.753   520  3470 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-28 13:11:08.830  9539  9539 D AutofillManager: notifyViewEnteredForFillDialog:1073741824
+11-28 13:11:09.272  9539  9569 D EGL_emulation: app_time_stats: avg=297.05ms min=85.61ms max=784.52ms count=5
+11-28 13:11:10.292  9539  9569 D EGL_emulation: app_time_stats: avg=55.09ms min=11.14ms max=294.41ms count=17
+11-28 13:11:11.347  9539  9569 D EGL_emulation: app_time_stats: avg=35.54ms min=17.29ms max=153.55ms count=27
+11-28 13:11:11.417  9539  9602 D ProfileInstaller: Installing profile for app.truefind.android
+11-28 13:11:12.375  9539  9569 D EGL_emulation: app_time_stats: avg=30.74ms min=12.25ms max=49.09ms count=30
+11-28 13:11:13.258   836   836 D StatusBarIconController: ignoring old pipeline callbacks, because the new mobile icons are enabled
+11-28 13:11:13.384  9539  9569 D EGL_emulation: app_time_stats: avg=35.00ms min=16.87ms max=143.08ms count=26
+11-28 13:11:13.396   836   886 D EGL_emulation: app_time_stats: avg=13374.96ms min=13374.96ms max=13374.96ms count=1
+11-28 13:11:14.405  9539  9569 D EGL_emulation: app_time_stats: avg=29.65ms min=12.52ms max=41.35ms count=30
+11-28 13:11:15.417  9539  9569 D EGL_emulation: app_time_stats: avg=35.10ms min=16.40ms max=144.92ms count=26
+11-28 13:11:16.427  9539  9569 D EGL_emulation: app_time_stats: avg=33.14ms min=8.32ms max=52.57ms count=26
+11-28 13:11:17.542  9539  9569 D EGL_emulation: app_time_stats: avg=42.81ms min=11.11ms max=164.00ms count=23
+11-28 13:11:18.547  9539  9569 D EGL_emulation: app_time_stats: avg=27.13ms min=5.01ms max=40.91ms count=31
+11-28 13:11:19.058   520  2386 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10192; state: DISABLED
+11-28 13:11:19.058   520  2386 D CompatibilityChangeReporter: Compat change id reported: 273564678; UID 10192; state: DISABLED
+11-28 13:11:19.059   520  2386 D CompatibilityChangeReporter: Compat change id reported: 184838306; UID 10192; state: DISABLED
+11-28 13:11:19.059   520  2386 D CompatibilityChangeReporter: Compat change id reported: 185004937; UID 10192; state: DISABLED
+11-28 13:11:19.177   520  2386 I ActivityManager: Broadcasting: Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }
+11-28 13:11:19.178   520  2386 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.CLOSE_SYSTEM_DIALOGS flg=0x400000 }: 0
+11-28 13:11:19.178   520   539 D AutofillManagerService: Close system dialogs
+11-28 13:11:19.180   836   836 I vol.VolumeDialogImpl: mDialog.dismiss() reason: volume_controller from: com.android.systemui.volume.VolumeDialogImpl$7.onDismissRequested:3
+11-28 13:11:19.206   520   539 I ActivityManager: Broadcast completed: result=0
+11-28 13:11:19.560  9539  9569 D EGL_emulation: app_time_stats: avg=34.61ms min=13.78ms max=138.97ms count=25
+11-28 13:11:20.412  9613  9613 W BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+11-28 13:11:20.412  9613  9613 W ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+11-28 13:11:20.484   134   134 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+11-28 13:11:20.487  9613  9614 I Gralloc4: mapper 4.x is not supported
+11-28 13:11:20.675     0     0 I servicemanager: Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest.
+11-28 13:11:20.567  9539  9569 D EGL_emulation: app_time_stats: avg=31.42ms min=8.50ms max=60.30ms count=28
+11-28 13:11:21.290     0     0 I logd    : logdr: UID=2000 GID=2000 PID=9615 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+11-28 13:11:21.409     0     0 I logd    : logdr: UID=2000 GID=2000 PID=9618 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
