@@ -1159,7 +1159,8 @@ class WalletScreen(
     }
 
     private fun pick(id: String) {
-        sel = id
+        // 28 Nov (owner): tap a pack → it turns green and the Pay bar comes; tap the same pack again → both go away
+        sel = if (picked?.id == id) null else id
         val on = picked?.id
         for ((k, tile) in packTiles) tile.on = k == on
         renderPayBar()
