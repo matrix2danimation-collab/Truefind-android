@@ -925,9 +925,9 @@ class ProfileScreen(ctx: Context, val pages: NativePages) : KeepPage(ctx) {
 
         // ── True Find + the version, grey, at the very bottom ──
         val foot = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        foot.addView(Tf.t(ctx, "True Find", 30f, Ui.c("#B9B4C6")).lineH(36f))
+        foot.addView(Tf.t(ctx, "True Find", 30f, Ui.c("#B9B4C6")).lineH(36f).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, -2))
         val ver = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
-        if (ver.isNotEmpty()) foot.addView(Tf.t(ctx, "v$ver", 14f, Ui.c("#B9B4C6")).lineH(18f))
+        if (ver.isNotEmpty()) foot.addView(Tf.t(ctx, "v$ver", 14f, Ui.c("#B9B4C6")).lineH(18f).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, -2))
         body.addView(foot, LinearLayout.LayoutParams(-1, -2).apply { topMargin = Ui.dpi(40f); bottomMargin = Ui.dpi(20f) })
 
         pageCol.addView(body, LinearLayout.LayoutParams(-1, -2))
